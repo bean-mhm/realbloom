@@ -14,7 +14,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/bean-mhm/realbloom">
-    <img src="images/logo.png" alt="Logo" width="120" height="120">
+    <img src="images/logo.svg" alt="Logo" width="120" height="120">
   </a>
 <h3 align="center">RealBloom</h3>
   <p align="center">
