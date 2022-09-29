@@ -13,9 +13,8 @@
 <br />
 <div align="center">
   <a href="https://github.com/bean-mhm/realbloom">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="images/logo.png" alt="Logo" width="100" height="100">
   </a>
-
 <h3 align="center">RealBloom</h3>
   <p align="center">
     Physically Accurate Bloom Simulation
@@ -61,7 +60,7 @@
 <!-- INTRODUCTION -->
 ## Introduction
 
-RealBloom lets you simulate a physically accurate bloom effect for your 3D renders, or any HDR image.
+RealBloom lets you simulate a more physically accurate bloom effect for your 3D renders, or any HDR image.
 
 [![RealBloom Screenshot][product-screenshot]]
 
