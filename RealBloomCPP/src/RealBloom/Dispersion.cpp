@@ -106,10 +106,7 @@ namespace RealBloom
                 auto lastProgTime = std::chrono::system_clock::now();
                 for (uint32_t i = 1; i <= dispSteps; i++)
                 {
-                    // I don't have scientific proof, but taking it to the power of e
-                    // tends to make the overall color of the final result neutral,
-                    // while other values produce unbalanced colors.
-                    wavelengthPos = pow((double)i / ((double)dispSteps + 1.0), 2.71828182845904523536);
+                    wavelengthPos = pow((double)i / ((double)dispSteps + 1.0), 3.14159265359);
                     wavelength = Wavelength::LEN_MIN + (wavelengthPos * Wavelength::LEN_RANGE);
                     Wavelength::getRGB(wavelength, wlR, wlG, wlB);
                     scale = 1.0f - (dispAmount * (1.0f - (i / (float)dispSteps)));
