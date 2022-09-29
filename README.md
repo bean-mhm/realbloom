@@ -148,37 +148,37 @@ The workflow is rather straightforward:
 
 Load a PNG image that represents the geometric shape of the camera aperture. There are a bunch of example aperture shapes in the `demo` folder.
 
-![enter image description here](images/1-aperture.png)
+![A pentagon-shaped aperture](images/1-aperture.png)
  
 ### Diffraction Pattern
 
 Generate the diffraction pattern of the aperture. This is achieved by an [FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform), using [FFTW](https://www.fftw.org/).
 
-![enter image description here](images/2-diff-pattern.png)
+![The diffraction pattern of the pentagon](images/2-diff-pattern.png)
 
 ### Dispersion
 
 Apply dispersion on the diffraction pattern, as in the real world, the scale of the bloom pattern depends on the wavelength of light. Make sure to save the dispersion result.
 
-![enter image description here](images/3-dispersion.gif)
+![Applying dispersion on the diffraction pattern](images/3-dispersion.gif)
  
 ### Convolution Input
 
 Load an HDR image with bright spots on a relatively dark background. The input image must be in 32-bit floating-point [TIFF](https://en.wikipedia.org/wiki/TIFF) format, with contiguous component values (RGBRGB). You can easily save with this format using Photoshop. Blender does not support 32-bit TIFFs, but it does support OpenEXR. The simplest workaround is to export your render from Blender in OpenEXR format, then use Photoshop (or any other image manipulation software that supports 32-bit TIFFs) to export it in 32-bit floating-point TIFF format.
 
-![enter image description here](images/4-conv-input.png)
+![An HDR image loaded as the convolution input](images/4-conv-input.png)
 
 ### Convolution Kernel
 
 Load the dispersion result from before. This is what defines the "shape" of the bloom pattern. Convolution will be applied on the input image using this kernel. You can learn more about convolution [here](https://en.wikipedia.org/wiki/Kernel_%28image_processing%29). You can play with the transform sliders to adjust the intensity, contrast, rotation, scale, and the center point of the kernel.
 
-![enter image description here](images/5-conv-kernel.png)
+![An HDR image loaded as the convolution kernel](images/5-conv-kernel.png)
 
 ### Convolution Device
 
 This is where the job happens. Convolution can be done on CPU, or GPU. Like most other graphics-heavy things, convolution tends to run a lot faster on the GPU, as long as you own a relatively powerful dedicated GPU. On my GTX 1650, convolution runs 5-6 times faster on average, compared to my CPU.
 
-![enter image description here](images/6-conv-device.png)
+![Convolution parameters](images/6-conv-device.png)
 
 ### Threads 'n Chunks
 
@@ -192,7 +192,7 @@ Each thread processes  a part of the input data *at the same time as all the oth
 
 The lowest value a pixel can have, before being ignored by the convolution process.  We are basically skipping pixels that aren't bright enough to contribute to the final result, and unnecessarily slow down the process.
 
-![enter image description here](images/7-conv-threshold.gif)
+![Adjusting the convolution threshold](images/7-conv-threshold.gif)
  
 ### Convolve!
 
