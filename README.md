@@ -147,13 +147,13 @@ If any or all of these terms sound scary, fear not, as they'll be explained. Bel
 
 ### Aperture
 
-Let's start by loading a PNG image that represents the geometric shape of the camera aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Pentagon.png`.
+An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Let's start by loading a PNG image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Pentagon.png`.
 
 ![A pentagon-shaped aperture](images/1-aperture.png)
  
 ### Diffraction Pattern
 
-If this term is new and/or confusing to you, feel free to learn more [here](https://en.wikipedia.org/wiki/Diffraction), also make sure to watch the first video mentioned in <a href="#introduction">Introduction</a>. Now, let's continue and generate the diffraction pattern of the aperture, by clicking *Compute*. This is done by an [FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform), using the [FFTW](https://www.fftw.org/) library.
+If this term is new and/or confusing, you can learn more [here](https://en.wikipedia.org/wiki/Diffraction), also make sure to watch the first video mentioned in <a href="#introduction">Introduction</a>. Now, let's continue and generate the diffraction pattern of the aperture, by clicking *Compute*. This is done by an [FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform), using the [FFTW](https://www.fftw.org/) library.
 
 Note: the *Grayscale* checkbox can be enabled for color images, in order to make the image black-and-white before feeding it to FFTW. If disabled, FFT will be performed on each color channel.
 
