@@ -172,9 +172,13 @@ Load an HDR image with bright spots on a relatively dark background. The input i
 
 Load the dispersion result from before. This is what defines the "shape" of the bloom pattern. Convolution will be applied on the input image using this kernel. You can learn more about convolution [here](https://en.wikipedia.org/wiki/Kernel_%28image_processing%29). You can play with the transform sliders to adjust the intensity, contrast, rotation, scale, and the center point of the kernel.
 
+![enter image description here](images/5-conv-kernel.png)
+
 ### Convolution Device
 
 This is where the job happens. Convolution can be done on CPU, or GPU. Like most other graphics-heavy things, convolution tends to run a lot faster on the GPU, as long as you own a relatively powerful dedicated GPU. On my GTX 1650, convolution runs 5-6 times faster on average, compared to my CPU.
+
+![enter image description here](images/6-conv-device.png)
 
 ### Threads 'n Chunks
 
@@ -187,6 +191,8 @@ Each thread processes  a part of the input data *at the same time as all the oth
 ### Convolution Threshold
 
 The lowest value a pixel can have, before being ignored by the convolution process.  We are basically skipping pixels that aren't bright enough to contribute to the final result, and unnecessarily slow down the process.
+
+![enter image description here](images/7-conv-threshold.gif)
  
 ### Convolve!
 
