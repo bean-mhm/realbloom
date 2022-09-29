@@ -1,5 +1,6 @@
 
 
+
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
 <!--
@@ -37,7 +38,7 @@
     <li>
       <a href="#introduction">Introduction</a>
       <ul>
-        <li><a href="#what-i-used">What I used</a></li>
+        <li><a href="#how-its-made">How It's Made</a></li>
       </ul>
     </li>
     <li><a href="#running-realbloom">Running RealBloom</a></li>
@@ -48,7 +49,7 @@
         <li><a href="#build">Build</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
+    <li><a href="#get-started">Get Started</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -61,20 +62,20 @@
 <!-- INTRODUCTION -->
 ## Introduction
 
-RealBloom lets you simulate a more physically accurate bloom effect for your 3D renders, or any HDR image.
+RealBloom is a program for Windows that lets you simulate physically accurate bloom effect for your 3D renders, or any HDR image. We will go through what "physically accurate" means <a href="#get-started">further down this documentation</a>.
 
 ![RealBloom Screenshot][product-screenshot]
 
 
-This project was inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it. I recommend watching this video in order to have a basic understanding of how RealBloom works. Check out their [GitHub page](https://github.com/ange-yaghi)!
+This project was inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it. **I highly recommend watching this video** in order to have a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets!
 
-The ultimate goal of this project is to achieve more realism in 3D renders that contain extremely bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night-time, bright lights at a concert, or a flashlight pointing directly at the camera. You can learn about some other cool lens effects such as [Lens Flare](https://en.wikipedia.org/wiki/Lens_flare) and [Bokeh](https://en.wikipedia.org/wiki/Bokeh). If you're a blender user like myself, you might want to watch [this video](https://www.youtube.com/watch?v=UDvuhuU9tFg) on applying a custom bokeh effect in blender.
+The ultimate goal of writing RealBloom was to achieve more realism in 3D renders that contain extremely bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night-time, bright lights at a concert, or a flashlight pointing directly at the camera. You can learn about some other cool lens effects such as [Lens Flare](https://en.wikipedia.org/wiki/Lens_flare) and [Bokeh](https://en.wikipedia.org/wiki/Bokeh). If you're a blender user like myself, you might want to watch [this video](https://www.youtube.com/watch?v=UDvuhuU9tFg) on applying a custom bokeh effect in blender.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
-### What I used
+### How It's Made
 
 RealBloom is written entirely in C++ with Visual Studio 2022. The target platform is exclusively Windows. However, considering the fact that all the libraries used and most of the code for RealBloom are platform-independent, it should be fairly easy to port it to another platform. I personally don't plan on doing that.
 
@@ -86,7 +87,7 @@ RealBloom uses the following libraries:
 | [GLFW](https://www.glfw.org/) | Window and context creation for use in ImGui |
 | [Dear ImGui](https://github.com/ocornut/imgui) | Graphical user interface |
 | [LibTIFF](https://libtiff.gitlab.io/libtiff/) | Reading and writing TIFF image files |
-| [LodePNG](https://lodev.org/lodepng/) | Reading and writing PNG image file |
+| [LodePNG](https://lodev.org/lodepng/) | Reading and writing PNG image files |
 | [NFD](https://github.com/mlabbe/nativefiledialog) | Native file dialogs |
 
 
@@ -95,11 +96,11 @@ RealBloom uses the following libraries:
 <!-- RUNNING -->
 ## Running RealBloom
 
-To run RealBloom, you need to have the [Visual C++ Runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) installed. A 64-bit version of the installer is included with every release build, in the `prerequisites` folder.
+To run RealBloom, [Visual C++ Runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) needs to be installed. Chances are you already have it installed. If not, a 64-bit version of the installer is included with every release build, in the `prerequisites` folder.
 
  - **Recommended specs:** To perform convolutional bloom, you need powerful hardware. I don't have exact lab numbers, but my recommendation would be to use a Windows 10/11 PC with a high-end GPU and a good amount of RAM. If you have a dedicated GPU, always use that for convolution, instead of the CPU.
 
- - **Minimum Requirements:** As for bare minimum requirements, make sure your GPU supports OpenGL 3.0 (for UI rendering). For GPU convolution, OpenGL 3.2 is required. A 64-bit version of Windows is required. I don't recommend using RealBloom on a system with less than 8 GB of RAM.
+ - **Minimum Requirements:** As for bare minimum requirements, make sure your GPU supports OpenGL 3.0 (for UI rendering). For GPU convolution, OpenGL 3.2 is required. A 64-bit version of Windows is required. Using RealBloom on a system with less than 8 GB of RAM is not recommended.
 
  - **My specs:** RealBloom runs fairly easily on my laptop with a Ryzen 7 3750H, and a GTX 1650, and 16 GB of RAM.
 
@@ -134,37 +135,57 @@ To build RealBloom, you need a version of Visual Studio ready. The project was m
 
 
 <!-- USAGE -->
-## Usage
+## Get Started
 
-RealBloom lets you do 3 main things:
+RealBloom provides 3 main features:
 
  1. Generate a **Diffraction Pattern** from an aperture shape.
  2. Apply **Dispersion** on the pattern.
  3.  Perform **Convolution** on an HDR image using the pattern.
 
-The workflow is rather straightforward:
+Below we'll walk through the process of creating a kernel from an aperture shape, and applying convolutional bloom on an HDR image. Run the latest release of RealBloom and follow these steps.
 
 ### Aperture
 
-Load a PNG image that represents the geometric shape of the camera aperture. There are a bunch of example aperture shapes in the `demo` folder.
+Let's start by loading a PNG image that represents the geometric shape of the camera aperture. Click `[Browse Aperture]` in the top right panel `Diffraction Pattern`. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Pentagon.png`.
 
 ![A pentagon-shaped aperture](images/1-aperture.png)
  
 ### Diffraction Pattern
 
-Generate the diffraction pattern of the aperture. This is achieved by an [FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform), using [FFTW](https://www.fftw.org/).
+If this term is new and/or confusing to you, feel free to learn more [here](https://en.wikipedia.org/wiki/Diffraction), also make sure to watch the first video in <a href="#introduction">Introduction</a>. Now, let's continue and generate the diffraction pattern of the aperture, by clicking `[Compute]`. This is done by an [FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform), using [FFTW](https://www.fftw.org/).
+
+*Note: The `Grayscale` checkbox can be enabled for color images, in order to make the image black-and-white before feeding it to FFTW. If disabled, FFT will be performed on each color channel.*
 
 ![The diffraction pattern of the pentagon](images/2-diff-pattern.png)
 
 ### Dispersion
 
-Apply dispersion on the diffraction pattern, as in the real world, the scale of the bloom pattern depends on the wavelength of light. Make sure to save the dispersion result.
+In the real world, the scale of the diffraction pattern depends on the wavelength of light, making it look "rainbowey". We can simulate this phenomenon - [Dispersion](https://en.wikipedia.org/wiki/Dispersion_%28optics%29) - in RealBloom. Here's what each slider in the `Dispersion` section does:
+
+| Parameter | Effect |
+|--|--|
+| Intensity | Brightness of the diffraction pattern. This value is transformed using the <a href="#intensity-curve">Intensity Curve</a>. |
+| Contrast | Contrast of the diffraction pattern. This value is transformed using the <a href="#contrast-curve">Contrast Curve</a>. Note: the diffraction pattern is always normalized after being generated. |
+| Amount | Intensity of the dispersion effect. This is a linear value that defines the smallest scale. |
+| Steps | Number of wavelength samples. A value of 32-64 is enough for previewing. For a final result, use a value higher than 512. |
+| Color | Multiply the dispersion result with a custom color. You would want to keep this at white in most cases, having no effect on the result. |
+
+After adjusting the sliders to your liking, hit `[Apply]` and wait for the simulation to end, after which you'll see the `[Save]` button. Save the final result as `kernel.tif`. We'll use this as our convolution kernel.
 
 ![Applying dispersion on the diffraction pattern](images/3-dispersion.gif)
  
 ### Convolution Input
 
-Load an HDR image with bright spots on a relatively dark background. The input image must be in 32-bit floating-point [TIFF](https://en.wikipedia.org/wiki/TIFF) format, with contiguous component values (RGBRGB). You can easily save with this format using Photoshop. Blender does not support 32-bit TIFFs, but it does support OpenEXR. The simplest workaround is to export your render from Blender in OpenEXR format, then use Photoshop (or any other image manipulation software that supports 32-bit TIFFs) to export it in 32-bit floating-point TIFF format.
+This is the image we want to apply convolutional bloom on. We need an HDR image in 32-bit floating-point [TIFF](https://en.wikipedia.org/wiki/TIFF) format, with contiguous component values (RGBRGB). You can easily save with this format using Photoshop. Blender does not support 32-bit TIFFs, but it does support OpenEXR. The simplest workaround is to export your render from Blender in OpenEXR, and use Photoshop (or any other image manipulation software that supports 32-bit TIFFs) to export it in 32-bit floating-point TIFF format.
+
+![Saving as OpenEXR in Blender](images/blender-exr.png)
+![Saving as 32-bit TIFF in Photoshop](images/ps-tiff.png)
+
+***What do we mean by an "HDR" image?***
+An HDR image can contain color values higher than 1, representing bright spots. Most everyday images (including PNG and JPEG images) do not have a high dynamic range, and their RGB values are clamped between 0 and 1, making it impossible to apply bloom accurately. Image formats like TIFF, OpenEXR, Radiance HDR, and PPM allow us to save RGB values as floating-point numbers. Values higher than 1 **usually** get clamped down to 1 before being displayed on your monitor. Some games/programs use [Tone Mapping](https://en.wikipedia.org/wiki/Tone_mapping) to nicely transform the raw floating-point values into something that looks acceptable. Some games support HDR output if your monitor supports HDR as well, but that's another story.
+
+I have included some example HDR images in `demo/HDR Images`. I will use `Colorful Sphere.tif` for this demonstration.
 
 ![An HDR image loaded as the convolution input](images/4-conv-input.png)
 
@@ -206,6 +227,17 @@ Finally, you can mix the convolution layer and the original input image. In most
 
 After having the result that you like, you can use the "Compare" button to, well, *compare* the result and the input images. Then, click "Save" to export the convolution result in 32-bit floating-point TIFF format.
 
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+## Curves in RealBloom
+
+### Intensity Curve
+...
+
+### Contrast Curve
+..
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
