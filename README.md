@@ -1,4 +1,5 @@
 
+
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
 <!--
@@ -62,7 +63,8 @@
 
 RealBloom lets you simulate a more physically accurate bloom effect for your 3D renders, or any HDR image.
 
-[![RealBloom Screenshot][product-screenshot]]
+![RealBloom Screenshot][product-screenshot]
+
 
 This project was inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it. I recommend watching this video in order to have a basic understanding of how RealBloom works. Check out their [GitHub page](https://github.com/ange-yaghi)!
 
@@ -145,6 +147,7 @@ The workflow is rather straightforward:
 ### Aperture
 
 Load a PNG image that represents the geometric shape of the camera aperture. There are a bunch of example aperture shapes in the `demo` folder.
+![enter image description here](images/1-aperture.png)
  
 ### Diffraction Pattern
 
@@ -198,6 +201,7 @@ After having the result that you like, you can use the "Compare" button to, well
 <!-- ROADMAP -->
 ## Roadmap
 
+- [ ] A more sophisticated image viewer with zoom and pan controls
 - [ ] Diffraction pattern generation from sequences, for animated aperture shapes
 - [ ] Support for moving convolution kernels
 - [ ] Convolution on animations and sequences
