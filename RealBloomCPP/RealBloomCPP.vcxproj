@@ -24,6 +24,7 @@
     <ProjectGuid>{d56aa1c7-bb67-4826-99ee-a813c8ea3dd7}</ProjectGuid>
     <RootNamespace>RealBloomCPP</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>RealBloomCPP</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
