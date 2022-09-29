@@ -18,7 +18,7 @@
 
 <h3 align="center">RealBloom</h3>
   <p align="center">
-    Physically Accurate Bloom Simulation for 3D Renders
+    Physically Accurate Bloom Simulation
     <br />
     <a href="https://github.com/bean-mhm/realbloom/releases">Latest Release</a>
     ·
@@ -62,6 +62,7 @@
 ## Introduction
 
 RealBloom lets you simulate a physically accurate bloom effect for your 3D renders, or any HDR image.
+
 [![RealBloom Screenshot][product-screenshot]]
 
 This project was inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it. I recommend watching this video in order to have a basic understanding of how RealBloom works. Check out their [GitHub page](https://github.com/ange-yaghi)!
@@ -142,40 +143,52 @@ RealBloom lets you do 3 main things:
 
 The workflow is rather straightforward:
 
- - **Aperture**
+### Aperture
+
 Load a PNG image that represents the geometric shape of the camera aperture. There are a bunch of example aperture shapes in the `demo` folder.
  
-- **Diffraction Pattern**
+### Diffraction Pattern
+
 Generate the diffraction pattern of the aperture. This is achieved by an [FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform), using [FFTW](https://www.fftw.org/).
 
- - **Dispersion**
+### Dispersion
+
 Apply dispersion on the diffraction pattern, as in the real world, the scale of the bloom pattern depends on the wavelength of light. Make sure to save the dispersion result.
  
- - **Convolution Input**
+### Convolution Input
+
 Load an HDR image with bright spots on a relatively dark background. The input image must be in 32-bit floating-point [TIFF](https://en.wikipedia.org/wiki/TIFF) format, with contiguous component values (RGBRGB). You can easily save with this format using Photoshop. Blender does not support 32-bit TIFFs, but it does support OpenEXR. The simplest workaround is to export your render from Blender in OpenEXR format, then use Photoshop (or any other image manipulation software that supports 32-bit TIFFs) to export it in 32-bit floating-point TIFF format.
 
- - **Convolution Kernel**
+### Convolution Kernel
+
 Load the dispersion result from before. This is what defines the "shape" of the bloom pattern. Convolution will be applied on the input image using this kernel. You can learn more about convolution [here](https://en.wikipedia.org/wiki/Kernel_%28image_processing%29). You can play with the transform sliders to adjust the intensity, contrast, rotation, scale, and the center point of the kernel.
 
- - **Convolution Device**
+### Convolution Device
+
 This is where the job happens. Convolution can be done on CPU, or GPU. Like most other graphics-heavy things, convolution tends to run a lot faster on the GPU, as long as you own a relatively powerful dedicated GPU. On my GTX 1650, convolution runs 5-6 times faster on average, compared to my CPU.
 
- - **Threads 'n Chunks**
+### Threads 'n Chunks
+
 In CPU mode, you can **split the job** between multiple **threads** that run simultaneously. Generally, the more cores your CPU has, the more threads you can use. Please don't maximize this number, as it can result in extreme slowdowns and potential crashes. On the other hand, you can use chunks in GPU mode. **Chunks split the input data** - which represent the bright pixels in your input image that pass the threshold - before giving it to the GPU. Sometimes the GPU can't handle the amount of data that it has to process, and ends up aborting the process and crashing the caller program. To get around this, we split the data into, say, 50 chunks. Each chunk only contains 1/50th of the input data. We give the first chunk to the GPU and ask it to process it. We get the output and add it (literally blend additively) to our final buffer. Then, we start an entirely new OpenGL context from scratch, and process the second chunk, and so on.
 
- - **Chunks and threads are not the same thing!**
+### Chunks and threads are not the same thing!
+
 Each thread processes  a part of the input data *at the same time as all the other threads*. Chunks are processed *sequentially*, to reduce GPU load. Threads speed up the process by a noticeable amount, chunks may slow down the process by a minor amount, while helping us prevent the GPU from dying.
 
- - **Convolution Threshold**
+### Convolution Threshold
+
 The lowest value a pixel can have, before being ignored by the convolution process.  We are basically skipping pixels that aren't bright enough to contribute to the final result, and unnecessarily slow down the process.
  
- - **Convolve!**
+### Convolve!
+
 After having loaded the input and kenrel images, and set all the parameters, hit this button and watch the convolution result as it's being rendered!
 
- - **Convolution Layers**
+### Convolution Layers
+
 Finally, you can mix the convolution layer and the original input image. In most cases, you will want to keep the input mix at 1.0, and only adjust the convolution mix. However, if you set the threshold to 0.0, you might want to set the input mix to 0.0, and adjust the convolution mix to your liking, this is because all the pixels in the input image will be processed, and there is no need to mix the convolution layer with the input image. Note that the two sliders use different curves.
 
- - **Compare and Save**
+### Compare and Save
+
 After having the result that you like, you can use the "Compare" button to, well, *compare* the result and the input images. Then, click "Save" to export the convolution result in 32-bit floating-point TIFF format.
 
 
@@ -189,6 +202,7 @@ After having the result that you like, you can use the "Compare" button to, well
 - [ ] Diffraction pattern generation from sequences, for animated aperture shapes
 - [ ] Support for moving convolution kernels
 - [ ] Convolution on animations and sequences
+- [ ] OpenEXR support
 
 See the [open issues](https://github.com/bean-mhm/realbloom/issues) for a full list of proposed features (and known issues).
 
