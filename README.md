@@ -14,7 +14,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/bean-mhm/realbloom">
-    <img src="images/logo.png" alt="Logo" width="100" height="100">
+    <img src="images/logo.png" alt="Logo" width="120" height="120">
   </a>
 <h3 align="center">RealBloom</h3>
   <p align="center">
@@ -147,19 +147,26 @@ The workflow is rather straightforward:
 ### Aperture
 
 Load a PNG image that represents the geometric shape of the camera aperture. There are a bunch of example aperture shapes in the `demo` folder.
+
 ![enter image description here](images/1-aperture.png)
  
 ### Diffraction Pattern
 
 Generate the diffraction pattern of the aperture. This is achieved by an [FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform), using [FFTW](https://www.fftw.org/).
 
+![enter image description here](images/2-diff-pattern.png)
+
 ### Dispersion
 
 Apply dispersion on the diffraction pattern, as in the real world, the scale of the bloom pattern depends on the wavelength of light. Make sure to save the dispersion result.
+
+![enter image description here](images/3-dispersion.gif)
  
 ### Convolution Input
 
 Load an HDR image with bright spots on a relatively dark background. The input image must be in 32-bit floating-point [TIFF](https://en.wikipedia.org/wiki/TIFF) format, with contiguous component values (RGBRGB). You can easily save with this format using Photoshop. Blender does not support 32-bit TIFFs, but it does support OpenEXR. The simplest workaround is to export your render from Blender in OpenEXR format, then use Photoshop (or any other image manipulation software that supports 32-bit TIFFs) to export it in 32-bit floating-point TIFF format.
+
+![enter image description here](images/4-conv-input.png)
 
 ### Convolution Kernel
 
