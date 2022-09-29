@@ -18,7 +18,7 @@
   </a>
 <h3 align="center">RealBloom</h3>
   <p align="center">
-    Physically Accurate Bloom Simulation
+    Physically Accurate Bloom Simulation Software for Windows
     <br />
     <a href="https://github.com/bean-mhm/realbloom/releases">Latest Release</a>
     ·
