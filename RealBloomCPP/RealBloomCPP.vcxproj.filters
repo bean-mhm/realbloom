@@ -229,16 +229,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="libs\fftw\libfftw3-3.dll" />
-    <None Include="libs\fftw\libfftw3f-3.dll" />
-    <None Include="libs\fftw\libfftw3l-3.dll" />
     <None Include="libs\glfw3\glfw3.dll" />
     <None Include="include\libtiff\libtiff.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="libs\libtiff\tiff.dll" />
     <None Include="libs\libtiff\tiff.exp" />
-    <None Include="libs\libtiff\tiffxx.dll" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\fftw\libfftw3-3.lib" />
@@ -256,5 +251,77 @@
     <Font Include="assets\Roboto-BoldItalic.ttf" />
     <Font Include="assets\Roboto-Italic.ttf" />
     <Font Include="assets\Roboto-Regular.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="demo\Apertures\Heptagon.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="libs\libtiff\tiff.dll" />
+    <CopyFileToFolders Include="libs\libtiff\tiffxx.dll" />
+    <CopyFileToFolders Include="libs\fftw\libfftw3-3.dll" />
+    <CopyFileToFolders Include="libs\fftw\libfftw3f-3.dll" />
+    <CopyFileToFolders Include="libs\fftw\libfftw3l-3.dll" />
+    <CopyFileToFolders Include="assets\fonts\LICENSE.txt" />
+    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-Bold.ttf" />
+    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-BoldItalic.ttf" />
+    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-Italic.ttf" />
+    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-Light.ttf" />
+    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-LightItalic.ttf" />
+    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-Regular.ttf" />
+    <CopyFileToFolders Include="demo\Apertures\Circle.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Double Slit.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Hexagon.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Pentagon.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Phone Camera.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Pupil.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Rectangle (Horizontal).png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Rectangle (Vertical).png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Square.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Triangle.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Ugly Cat.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Debug\5x5 centered.tif">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Debug\6x6 centered.tif">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Debug\6x6 scaled to 240x240.tif">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Debug\input.tif">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\HDR Images\Colorful Sphere.tif">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\HDR Images\PolyHeaven - Courtyard Night.tif">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\HDR Images\PolyHeaven - Pretville Street.tif">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="imgui.ini" />
   </ItemGroup>
 </Project>
