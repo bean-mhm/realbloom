@@ -18,7 +18,7 @@
 
 <h3 align="center">RealBloom</h3>
   <p align="center">
-    Physically Accurate Bloom Simulation for 3D Renders
+    Physically Accurate Bloom Simulation
     <br />
     <a href="https://github.com/bean-mhm/realbloom/releases">Latest Release</a>
     ·
@@ -62,6 +62,7 @@
 ## Introduction
 
 RealBloom lets you simulate a physically accurate bloom effect for your 3D renders, or any HDR image.
+
 [![RealBloom Screenshot][product-screenshot]]
 
 This project was inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it. I recommend watching this video in order to have a basic understanding of how RealBloom works. Check out their [GitHub page](https://github.com/ange-yaghi)!
@@ -189,6 +190,7 @@ After having the result that you like, you can use the "Compare" button to, well
 - [ ] Diffraction pattern generation from sequences, for animated aperture shapes
 - [ ] Support for moving convolution kernels
 - [ ] Convolution on animations and sequences
+- [ ] OpenEXR support
 
 See the [open issues](https://github.com/bean-mhm/realbloom/issues) for a full list of proposed features (and known issues).
 
