@@ -61,8 +61,8 @@
 ## Introduction
 
 RealBloom lets you simulate a more physically accurate bloom effect for your 3D renders, or any HDR image.
+![RealBloom Screenshot][product-screenshot]
 
-[![RealBloom Screenshot][product-screenshot]]
 
 This project was inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it. I recommend watching this video in order to have a basic understanding of how RealBloom works. Check out their [GitHub page](https://github.com/ange-yaghi)!
 
