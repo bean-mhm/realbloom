@@ -182,8 +182,9 @@ This is the image we want to apply convolutional bloom on. We need an HDR image 
 ![Saving as OpenEXR in Blender](images/blender-exr.png)
 ![Saving as 32-bit TIFF in Photoshop](images/ps-tiff.png)
 
-***What do we mean by an "HDR" image?***
-An HDR image can contain color values higher than 1, representing bright spots. Most everyday images (including PNG and JPEG images) do not have a high dynamic range, and their RGB values are clamped between 0 and 1, making it impossible to apply bloom accurately. Image formats like TIFF, OpenEXR, Radiance HDR, and PPM allow us to save RGB values as floating-point numbers. Values higher than 1 **usually** get clamped down to 1 before being displayed on your monitor. Some games/programs use [Tone Mapping](https://en.wikipedia.org/wiki/Tone_mapping) to nicely transform the raw floating-point values into something that looks acceptable. Some games support HDR output if your monitor supports HDR as well, but that's another story.
+***I'm confused. What do you mean by an "HDR" image?***
+
+*Feel free to skip this paragraph.* An HDR image can contain color values higher than 1, representing bright spots. Most everyday images (including PNG and JPEG images) do not have a high dynamic range, and their RGB values are clamped between 0 and 1, making it impossible to apply bloom accurately. Image formats like TIFF, OpenEXR, Radiance HDR, and PPM allow us to save RGB values as floating-point numbers. Values higher than 1 **usually** get clamped down to 1 before being displayed on your monitor. Some games/programs use [Tone Mapping](https://en.wikipedia.org/wiki/Tone_mapping) to nicely transform the raw floating-point values into something that looks acceptable. Some games support HDR output if your monitor supports HDR as well, but that's another story.
 
 I have included some example HDR images in `demo/HDR Images`. I will use `Colorful Sphere.tif` for this demonstration.
 
