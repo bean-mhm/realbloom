@@ -165,7 +165,7 @@ In the real world, the scale of the diffraction pattern depends on the wavelengt
 
 | Parameter | Effect |
 |--|--|
-| Intensity | Brightness of the diffraction pattern. This value is transformed using the <a href="#intensity-curve">Intensity Curve</a>. |
+| Intensity | Brightness/multiplier of the diffraction pattern. This value is transformed using the <a href="#intensity-curve">Intensity Curve</a>. |
 | Contrast | Contrast of the diffraction pattern. This value is transformed using the <a href="#contrast-curve">Contrast Curve</a>. Note: the diffraction pattern is always normalized after being generated. |
 | Amount | Intensity of the dispersion effect. This is a linear value that defines the smallest scale. |
 | Steps | Number of wavelength samples. A value of 32-64 is enough for previewing. For a final result, use a value higher than 512. |
