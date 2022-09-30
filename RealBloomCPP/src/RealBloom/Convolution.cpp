@@ -82,7 +82,6 @@ namespace RealBloom
             std::lock_guard<Image32Bit> lock2(*m_imageConvPreview);
             float* prevBuffer = m_imageConvPreview->getImageData();
 
-
             float v;
             uint32_t redIndex;
             for (uint32_t y = 0; y < inputHeight; y++)
@@ -95,12 +94,7 @@ namespace RealBloom
                     prevBuffer[redIndex + 2] = 0;
                     prevBuffer[redIndex + 3] = 1;
 
-                    v = inputBuffer[redIndex + 0];
-                    if (inputBuffer[redIndex + 1] > v)
-                        v = inputBuffer[redIndex + 1];
-                    if (inputBuffer[redIndex + 2] > v)
-                        v = inputBuffer[redIndex + 2];
-
+                    v = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
                     if (v > threshold)
                     {
                         numPixels++;

@@ -93,12 +93,7 @@ namespace RealBloom
                     inpColor[1] = m_inputBuffer[redIndexInput + 1];
                     inpColor[2] = m_inputBuffer[redIndexInput + 2];
 
-                    v = inpColor[0];
-                    if (inpColor[1] > v)
-                        v = inpColor[1];
-                    if (inpColor[2] > v)
-                        v = inpColor[2];
-
+                    v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
                     if (v > threshold)
                     {
                         for (int ky = 0; ky < (int)m_kernelHeight; ky++)
@@ -146,12 +141,7 @@ namespace RealBloom
                     inpColor[1] = m_inputBuffer[redIndexInput + 1];
                     inpColor[2] = m_inputBuffer[redIndexInput + 2];
 
-                    v = inpColor[0];
-                    if (inpColor[1] > v)
-                        v = inpColor[1];
-                    if (inpColor[2] > v)
-                        v = inpColor[2];
-
+                    v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
                     if (v > threshold)
                     {
                         ix = i % m_inputWidth;

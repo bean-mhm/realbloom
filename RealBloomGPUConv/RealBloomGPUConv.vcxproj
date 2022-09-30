@@ -172,6 +172,7 @@
     <ClCompile Include="src\Utils\GlContext.cpp" />
     <ClCompile Include="src\Utils\GlUtils.cpp" />
     <ClCompile Include="src\Utils\Misc.cpp" />
+    <ClCompile Include="src\Utils\NumberHelpers.cpp" />
     <ClCompile Include="src\Utils\RandomNumber.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -187,6 +188,7 @@
     <ClInclude Include="src\Utils\GlContext.h" />
     <ClInclude Include="src\Utils\GlUtils.h" />
     <ClInclude Include="src\Utils\Misc.h" />
+    <ClInclude Include="src\Utils\NumberHelpers.h" />
     <ClInclude Include="src\Utils\RandomNumber.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -52,7 +52,7 @@ float cv_kernelContrast = 0.0f;
 float cv_kernelIntensity = 1.0f;
 bool convParamsChanged = false;
 
-float cv_convThreshold = 0.9f;
+float cv_convThreshold = 0.5f;
 bool convThresholdChanged = false;
 bool convThresholdSwitchImage = false;
 

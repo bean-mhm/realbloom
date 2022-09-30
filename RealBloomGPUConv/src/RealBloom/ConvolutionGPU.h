@@ -16,6 +16,7 @@
 #include <thread>
 
 #include "ConvolutionGPUBinary.h"
+#include "../Utils/NumberHelpers.h"
 #include "../Utils/Misc.h"
 
 namespace RealBloom

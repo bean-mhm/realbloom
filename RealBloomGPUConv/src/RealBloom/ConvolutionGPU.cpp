@@ -366,12 +366,7 @@ namespace RealBloom
                 color[1] = binInput->inputBuffer[redIndex + 1];
                 color[2] = binInput->inputBuffer[redIndex + 2];
 
-                v = color[0];
-                if (color[1] > v)
-                    v = color[1];
-                if (color[2] > v)
-                    v = color[2];
-
+                v = rgbToGrayscale(color[0], color[1], color[2]);
                 if (v > threshold)
                 {
                     ix = i % inputWidth;
