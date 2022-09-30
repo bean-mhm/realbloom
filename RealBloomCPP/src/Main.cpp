@@ -45,6 +45,7 @@ float ds_dispersionCol[3]{ 1.0f, 1.0f, 1.0f };
 
 float cv_kernelRotation = 0.0f;
 float cv_kernelScale = 1.0f;
+float cv_kernelCrop = 1.0f;
 float cv_kernelCenter[2] = { 0.5f, 0.5f };
 bool cv_kernelPreviewCenter = false;
 float cv_kernelContrast = 0.0f;
@@ -437,6 +438,9 @@ void layout()
         if (ImGui::SliderFloat("Scale", &cv_kernelScale, 0.1f, 2))
             convParamsChanged = true;
 
+        if (ImGui::SliderFloat("Crop", &cv_kernelCrop, 0.1f, 1.0f))
+            convParamsChanged = true;
+
         if (ImGui::SliderFloat2("Center", cv_kernelCenter, 0, 1))
             convParamsChanged = true;
 
@@ -766,6 +770,7 @@ void updateConvParams()
     convParams->device.numChunks = cv_numChunks;
     convParams->kernelRotation = cv_kernelRotation;
     convParams->kernelScale = cv_kernelScale;
+    convParams->kernelCrop = cv_kernelCrop;
     convParams->kernelCenterX = cv_kernelCenter[0];
     convParams->kernelCenterY = cv_kernelCenter[1];
     convParams->kernelPreviewCenter = cv_kernelPreviewCenter;
