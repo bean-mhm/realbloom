@@ -40,13 +40,14 @@ namespace RealBloom
     struct ConvolutionParams
     {
         ConvolutionDevice device;
-        float kernelRotation = 0;
-        float kernelScale = 1;
+        float kernelRotation = 0.0f;
+        float kernelScale = 1.0f;
+        float kernelCrop = 1.0f;
         float kernelCenterX = 0.5f;
         float kernelCenterY = 0.5f;
         bool  kernelPreviewCenter = true;
-        float kernelContrast = 0;
-        float kernelIntensity = 1;
+        float kernelContrast = 0.0f;
+        float kernelIntensity = 1.0f;
         float convThreshold = 0.1f;
     };
 
