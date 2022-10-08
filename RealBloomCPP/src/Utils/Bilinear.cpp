@@ -1,0 +1,34 @@
+#include "Bilinear.h"
+
+namespace Bilinear
+{
+
+    inline float getT(float value, float start)
+    {
+        return value - start;
+    }
+
+    void calculate(float px, float py, Result& outResult)
+    {
+        outResult.topLeftPos[0] = (int)floorf(px - 0.5f);
+        outResult.topLeftPos[1] = (int)floorf(py - 0.5f);
+
+        outResult.bottomRightPos[0] = outResult.topLeftPos[0] + 1;
+        outResult.bottomRightPos[1] = outResult.topLeftPos[1] + 1;
+
+        outResult.topRightPos[0] = outResult.bottomRightPos[0];
+        outResult.topRightPos[1] = outResult.topLeftPos[1];
+
+        outResult.bottomLeftPos[0] = outResult.topLeftPos[0];
+        outResult.bottomLeftPos[1] = outResult.bottomRightPos[1];
+
+        float alongX = getT(px - 0.5f, outResult.topLeftPos[0]);
+        float alongY = getT(py - 0.5f, outResult.topLeftPos[1]);
+
+        outResult.topLeftWeight = (1 - alongX) * (1 - alongY);
+        outResult.topRightWeight = (alongX) * (1 - alongY);
+        outResult.bottomLeftWeight = (1 - alongX) * (alongY);
+        outResult.bottomRightWeight = (alongX) * (alongY);
+    }
+
+}

@@ -1,0 +1,4 @@
+/bin/**
+/.vs/**
+/RealBloomGPUConv/Shared Source Files.txt
+*.aps
