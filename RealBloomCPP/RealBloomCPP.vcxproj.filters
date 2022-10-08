@@ -347,6 +347,18 @@
     <CopyFileToFolders Include="demo\HDR Images\Sci-Fi Object (Ducky3D Tutorial).tif">
       <Filter>Resource Files</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Circle 2.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Octagon.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Oval.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Apertures\Pupil 2.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RealBloomCPP.rc">
