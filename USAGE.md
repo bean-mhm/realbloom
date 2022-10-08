@@ -264,3 +264,7 @@ If you use RealBloom on your artwork, or make an entire artwork using RealBloom,
 ## Thank You!
 
 If you find RealBloom useful, please consider introducing it to a friend or anyone who you think would be interested. I really appreciate you for spending time reading this, have a bloomy day!
+
+## Read More
+
+ - [Convolutional Bloom in Unreal Engine](https://docs.unrealengine.com/5.0/en-US/bloom-in-unreal-engine/#bloom-convolution:~:text=%235-,Bloom%20Convolution,-The%20Bloom%20Convolution)
