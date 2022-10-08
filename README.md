@@ -32,12 +32,7 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li>
-      <a href="#introduction">Introduction</a>
-      <ul>
-        <li><a href="#how-its-made">How It's Made</a></li>
-      </ul>
-    </li>
+    <li><a href="#introduction">Introduction</a></li>
     <li><a href="#running-realbloom">Running RealBloom</a></li>
     <li><a href="#building-realbloom">Building RealBloom</a></li>
     <li><a href="#using-realbloom">Using RealBloom</a></li>
