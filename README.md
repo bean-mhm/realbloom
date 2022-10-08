@@ -38,20 +38,8 @@
         <li><a href="#how-its-made">How It's Made</a></li>
       </ul>
     </li>
-    <li>
-      <a href="#running-realbloom">Running RealBloom</a>
-      <ul>
-        <li><a href="#recommended-specs">Recommended Specs</a></li>
-        <li><a href="#minimum-requirements">Minimum Requirements</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#building-realbloom">Building RealBloom</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#build">Build</a></li>
-      </ul>
-    </li>
+    <li><a href="#running-realbloom">Running RealBloom</a></li>
+    <li><a href="#building-realbloom">Building RealBloom</a></li>
     <li><a href="#using-realbloom">Using RealBloom</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#nodes">Nodes</a></li>
