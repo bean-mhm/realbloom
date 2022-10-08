@@ -253,7 +253,7 @@ Where ${v}$ is the brightness of a single pixel in a normalized buffer, ${c}$ is
 
 https://user-images.githubusercontent.com/98428255/193428969-f2e550ac-16a2-4edb-b8d7-75876de0ab06.mp4
 
-## The Wrong Way!
+## The Wrong Way
 
 Despite this being a project for simulating physics phenomena, you can get really weird and artistic with the parameters and achieve some creative results. My advice is to definitely try out some unusual settings and see what you can make. You can use an irrelevant image as the kernel, play with the dispersion color, use an unfitting image as the aperture shape, etc.
 
@@ -263,4 +263,4 @@ If you use RealBloom on your artwork, or make an entire artwork using RealBloom,
 
 ## Thank You!
 
-As of writing, October of 2022, this is a newborn project. I will have people test it in the near future, before releasing a stable build. If you find RealBloom useful, please consider introducing it to a friend or anyone who you think would be interested. I *really* appreciate you for spending time reading this, have a *bloomy* day!
+If you find RealBloom useful, please consider introducing it to a friend or anyone who you think would be interested. I really appreciate you for spending time reading this, have a bloomy day!
