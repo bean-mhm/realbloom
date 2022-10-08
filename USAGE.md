@@ -211,8 +211,9 @@ https://user-images.githubusercontent.com/98428255/194543945-c0917b9a-82fd-4a52-
 
 ### Intensity Curve
 
-The intensity curve transforms a positive input value of `x` according to the following function.
+The intensity curve transforms a positive input value of ${x}$ according to the following function.
 
+<!-- Why is it such a pain to use SVGs or math expressions in GitHub -->
 ![Equation](images/eq_intensity.png)
 <!--
 f(x)= \left\{\begin{matrix}
