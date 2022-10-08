@@ -213,7 +213,7 @@ https://user-images.githubusercontent.com/98428255/194543945-c0917b9a-82fd-4a52-
 
 The intensity curve transforms a positive input value of `x` according to the following function.
 
-![Equation](images/eq_intensity.svg)
+![Equation](images/eq_intensity.png)
 <!--
 f(x)= \left\{\begin{matrix}
 x^{2} & 0\leq x\leq 1 \\ 
@@ -239,7 +239,7 @@ Let's plug in some numbers and see how the result changes.
 
 The contrast curve changes based on the contrast value:
 
-![Equation](images/eq_contrast.svg)
+![Equation](images/eq_contrast.png)
 <!--
 a=\frac{4}{5}\left|c\right|+1
 \newline
