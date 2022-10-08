@@ -26,7 +26,7 @@ As of now, there are 5 panels for different purposes. Each panel can be docked o
 
 ## Aperture
 
-An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a diffraction pattern to form, which affects all the images taken by the camera. We'll talk more about this later, but let's start by loading a PNG image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Hexagon.png`.
+An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a diffraction pattern to form, which affects all the images taken by the camera. We'll talk more about this, but let's start by loading a PNG image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Hexagon.png`.
 
 ![A pentagon-shaped aperture](images/1-aperture.png)
  
@@ -42,7 +42,7 @@ Let's see what the diffraction pattern of our aperture looks like. If this term 
 
 ## Dispersion
 
-In the real world, the scale of the pattern depends on the wavelength of light, making it appear colorful and "rainbowey". We can simulate [this phenomenon](https://en.wikipedia.org/wiki/Dispersion_%28optics%29) in RealBloom. Here's what each slider in the *Dispersion* section does:
+In the real world, the scale of the pattern depends on the wavelength of light, making it appear colorful and "rainbow-ey". We can simulate [this phenomenon](https://en.wikipedia.org/wiki/Dispersion_%28optics%29) in RealBloom. Here's what each slider in the *Dispersion* section does:
 
 | Parameter | Effect |
 |--|--|
