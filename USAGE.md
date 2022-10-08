@@ -28,7 +28,7 @@ As of now, there are 5 panels for different purposes. Each panel can be docked o
 
 An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a diffraction pattern to form, which affects all the images taken by the camera. We'll talk more about this, but let's start by loading a PNG image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Hexagon.png`.
 
-![A pentagon-shaped aperture](images/1-aperture.png)
+![A hexagonal aperture](images/1-aperture.png)
  
 ## Diffraction Pattern
 
@@ -173,9 +173,9 @@ In CPU mode, there's not much concern about the number of pixels/thread, and you
 
 In GPU mode, we care about the number of pixels/chunk. This affects the amount of data that the GPU will have to process at a time. In my case, I find values around 10k to be the safe spot. The threshold and the number of chunks both affect this number.
 
-Keep in mind that the size of the kernel buffer also has an impact on whether the GPU will be able to keep up or not. If GPU convolution fails, try increasing the number of chunks. This is an arbitrary number, meaning you can have 1 chunk, 50 chunks, or 1000 chunks. Having a crazy number of chunks can slow down the process because of the repetitive creation and deletion of OpenGL contexts.
-
 ![Convolution parameters for GPU mode](images/6-conv-gpu.png)
+
+Keep in mind that the size of the kernel buffer also has an impact on whether the GPU will be able to keep up or not. If GPU convolution fails, try increasing the number of chunks. This is an arbitrary number, meaning you can have 1 chunk, 50 chunks, or 1000 chunks. Having a crazy number of chunks can slow down the process because of the repetitive creation and deletion of OpenGL contexts.
 
 ### Dual-GPU Systems
 
