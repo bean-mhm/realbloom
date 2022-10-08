@@ -72,13 +72,9 @@ RealBloom lets you simulate physically accurate bloom effect for your 3D renders
 
 ![RealBloom Screenshot](images/screenshot4.png)
 
-RealBloom was started as a hobby project in late August 2022. This project was inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it. **I highly recommend watching this video** in order to have a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets!
+RealBloom was started as a hobby project in late August 2022. This project was inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it. **I highly recommend watching this video** in order to have a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets as well!
 
-The ultimate goal of writing this project was to achieve more realism in 3D renders that contain bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night-time, bright lights at a concert, or a flashlight pointing directly at the camera. You can learn about some other lens effects such as [Lens Flare](https://en.wikipedia.org/wiki/Lens_flare) and [Bokeh](https://en.wikipedia.org/wiki/Bokeh). If you're a [Blender](https://blender.org/) user like myself, you might want to watch [this video](https://www.youtube.com/watch?v=UDvuhuU9tFg) on applying a custom bokeh effect in Blender. The custom bokeh effect can be used alongside convolutional bloom to achieve a more life-like render.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
+The ultimate goal of writing this project was to achieve more realism in 3D renders that contain bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night, bright lights at a concert, or a flashlight pointing directly at the camera. You can learn about some other lens effects such as [Lens Flare](https://en.wikipedia.org/wiki/Lens_flare) and [Bokeh](https://en.wikipedia.org/wiki/Bokeh). If you're a [Blender](https://blender.org/) user like myself, you might want to watch [this video](https://www.youtube.com/watch?v=UDvuhuU9tFg) on applying a custom bokeh effect in Blender. The custom bokeh effect can be used alongside convolutional bloom to achieve a more life-like render.
 
 ### How It's Made
 
@@ -96,8 +92,9 @@ RealBloom uses the following libraries:
 | [NFD](https://github.com/mlabbe/nativefiledialog) | Native file dialogs |
 | [inih](https://github.com/jtilly/inih) | Parsing config files |
 
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
 
 <!-- RUNNING -->
 ## Running RealBloom
@@ -129,7 +126,7 @@ My Specs: As the developer, RealBloom runs quite well on my laptop with a Ryzen 
 
 ### Prerequisites
 
-To build a local copy of RealBloom, have a version of Visual Studio up and running. The project was made for Windows and built with MSVC, so you're likely going to need a Windows system as well.
+The project was made for Windows and built with MSVC, so you're going to need a Windows system. To build a local copy of RealBloom, have a version of Visual Studio ready.
 
 ### Build
 
