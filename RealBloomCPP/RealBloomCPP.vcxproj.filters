@@ -359,6 +359,9 @@
     <CopyFileToFolders Include="demo\Apertures\Pupil 2.png">
       <Filter>Resource Files</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="demo\Debug\identity.tif">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RealBloomCPP.rc">
