@@ -264,7 +264,7 @@ If you use RealBloom on your artwork, or make an entire artwork using RealBloom,
 
 ## Thank You!
 
-If you find RealBloom useful, please consider introducing it to a friend or anyone who you think would be interested. I really appreciate you for spending time reading this, have a bloomy day!
+If you find RealBloom useful, consider introducing it to a friend or anyone who you think would be interested. Don't forget to give the project a star! I really appreciate you for your time, have a bloomy day!
 
 ## Read More
 
