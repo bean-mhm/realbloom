@@ -22,12 +22,8 @@
 inline void threadJoin(std::thread* t)
 {
     if (t)
-    {
         if (t->joinable())
-        {
             t->join();
-        }
-    }
 }
 
 template<typename ... Args>

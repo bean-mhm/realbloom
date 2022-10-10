@@ -2,14 +2,14 @@
 
 using namespace std;
 
-Image32Bit::Image32Bit(uint32_t id, std::string name, uint32_t width, uint32_t height, ImVec4 fillColor)
+Image32Bit::Image32Bit(const std::string& id, const std::string& name, uint32_t width, uint32_t height, ImVec4 fillColor)
     : m_id(id), m_name(name), m_width(width), m_height(height)
 {
     resize(width, height);
     fill(fillColor);
 }
 
-Image32Bit::Image32Bit(uint32_t id, std::string name, uint32_t squareSize, ImVec4 fillColor)
+Image32Bit::Image32Bit(const std::string& id, const std::string& name, uint32_t squareSize, ImVec4 fillColor)
     : m_id(id), m_name(name), m_width(squareSize), m_height(squareSize)
 {
     resize(squareSize, squareSize);
@@ -31,7 +31,7 @@ Image32Bit::~Image32Bit()
     }
 }
 
-uint32_t Image32Bit::getID()
+std::string Image32Bit::getID()
 {
     return m_id;
 }

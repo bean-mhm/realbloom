@@ -18,7 +18,7 @@
 class Image32Bit
 {
 private:
-    uint32_t m_id;
+    std::string m_id;
     std::string m_name;
 
     uint32_t m_width, m_height;
@@ -30,11 +30,11 @@ private:
     uint32_t m_oldWidth = 0, m_oldHeight = 0;
     GLuint m_glTexture = 0;
 public:
-    Image32Bit(uint32_t id, std::string name, uint32_t width, uint32_t height, ImVec4 fillColor = { 0, 0, 0, 1 });
-    Image32Bit(uint32_t id, std::string name, uint32_t squareSize, ImVec4 fillColor = { 0, 0, 0, 1 });
+    Image32Bit(const std::string& id, const std::string& name, uint32_t width, uint32_t height, ImVec4 fillColor = { 0, 0, 0, 1 });
+    Image32Bit(const std::string& id, const std::string& name, uint32_t squareSize, ImVec4 fillColor = { 0, 0, 0, 1 });
     ~Image32Bit();
 
-    uint32_t getID();
+    std::string getID();
     std::string getName();
 
     void lock();

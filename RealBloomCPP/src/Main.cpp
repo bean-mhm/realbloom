@@ -44,16 +44,34 @@ int main()
     if (!setupImGui())
         return 1;
 
-    // Create the images to be used throughout the program
-    images.push_back(new Image32Bit(101, "Aperture Shape", defaultDims));
-    images.push_back(new Image32Bit(102, "Diffraction Pattern", defaultDims));
-    images.push_back(new Image32Bit(103, "Dispersion", defaultDims));
-    images.push_back(new Image32Bit(201, "Conv. Input", defaultDims));
-    images.push_back(new Image32Bit(202, "Conv. Kernel", defaultDims));
-    images.push_back(new Image32Bit(203, "Conv. Kernel (Transformed)", defaultDims));
-    images.push_back(new Image32Bit(204, "Conv. Preview", defaultDims));
-    images.push_back(new Image32Bit(205, "Conv. Layer", defaultDims));
-    images.push_back(new Image32Bit(206, "Conv. Result", defaultDims));
+    // Create images to be used throughout the program
+    images.push_back(new Image32Bit(
+        "aperture",
+        "Aperture Shape", defaultDims));
+    images.push_back(new Image32Bit(
+        "diff",
+        "Diffraction Pattern", defaultDims));
+    images.push_back(new Image32Bit(
+        "disp",
+        "Dispersion", defaultDims));
+    images.push_back(new Image32Bit(
+        "cv-input",
+        "Conv. Input", defaultDims));
+    images.push_back(new Image32Bit(
+        "cv-kernel",
+        "Conv. Kernel", defaultDims));
+    images.push_back(new Image32Bit(
+        "cv-kernel-prev",
+        "Conv. Kernel (Transformed)", defaultDims));
+    images.push_back(new Image32Bit(
+        "cv-prev",
+        "Conv. Preview", defaultDims));
+    images.push_back(new Image32Bit(
+        "cv-layer",
+        "Conv. Layer", defaultDims));
+    images.push_back(new Image32Bit(
+        "cv-result",
+        "Conv. Result", defaultDims));
 
     for (uint32_t i = 0; i < images.size(); i++)
     {
@@ -65,17 +83,17 @@ int main()
         imageNames.push_back(c);
     }
 
-    // Set up the convolution object
-    conv.setInputImage(getImage(201));
-    conv.setKernelImage(getImage(202));
-    conv.setKernelPreviewImage(getImage(203));
-    conv.setConvPreviewImage(getImage(204));
-    conv.setConvLayerImage(getImage(205));
-    conv.setConvMixImage(getImage(206));
+    // Set up images for convolution
+    conv.setInputImage(getImage("cv-input"));
+    conv.setKernelImage(getImage("cv-kernel"));
+    conv.setKernelPreviewImage(getImage("cv-kernel-prev"));
+    conv.setConvPreviewImage(getImage("cv-prev"));
+    conv.setConvLayerImage(getImage("cv-layer"));
+    conv.setConvMixImage(getImage("cv-result"));
 
-    // Set up the dispersion object
-    dispersion.setDiffPatternImage(getImage(102));
-    dispersion.setDispersionImage(getImage(103));
+    // Set up images for dispersion
+    dispersion.setDiffPatternImage(getImage("diff"));
+    dispersion.setDispersionImage(getImage("disp"));
 
     // Will be shared with Convolution and Dispersion
     Async::putShared("convMixParamsChanged", &(vars.convMixParamsChanged));
@@ -221,11 +239,11 @@ void layout()
         ImGui::PushFont(fontMono);
         if (ImGui::SmallButton("+"))
             imageZoom = fminf(fmaxf(imageZoom + 0.125f, 0.25f), 2.0f);
-        
+
         ImGui::SameLine();
         if (ImGui::SmallButton("-"))
             imageZoom = fminf(fmaxf(imageZoom - 0.125f, 0.25f), 2.0f);
-        
+
         ImGui::SameLine();
         if (ImGui::SmallButton("R"))
             imageZoom = 1.0f;
@@ -241,13 +259,13 @@ void layout()
     }
 
     // Controls
-    Image32Bit& imgAperture = *getImage(101);
-    Image32Bit& imgDiffPattern = *getImage(102);
-    Image32Bit& imgDispersion = *getImage(103);
-    Image32Bit& imgConvInput = *getImage(201);
-    Image32Bit& imgKernel = *getImage(202);
-    Image32Bit& imgConvLayer = *getImage(205);
-    Image32Bit& imgConvResult = *getImage(206);
+    Image32Bit& imgAperture = *getImage("aperture");
+    Image32Bit& imgDiffPattern = *getImage("diff");
+    Image32Bit& imgDispersion = *getImage("disp");
+    Image32Bit& imgConvInput = *getImage("cv-input");
+    Image32Bit& imgKernel = *getImage("cv-kernel");
+    Image32Bit& imgConvLayer = *getImage("cv-layer");
+    Image32Bit& imgConvResult = *getImage("cv-result");
     {
         ImGui::Begin("Diffraction Pattern");
 
@@ -554,7 +572,10 @@ void layout()
 
         IMGUI_DIV;
         ImGui::End(); // Convolution
+    }
 
+    // Info
+    {
         ImGui::Begin("Info");
 
         if (ImGui::InputFloat("UI Scale", &(Config::UI_SCALE), 0.125f, 0.125f, "%.3f"))
@@ -608,14 +629,11 @@ bool lb1ItemGetter(void* data, int index, const char** outText)
 
 bool cb1ItemGetter(void* data, int index, const char** outText)
 {
-    if (index == 0)
-        *outText = "CPU";
-    else
-        *outText = "GPU";
+    *outText = (index == 0) ? "CPU" : "GPU";
     return true;
 }
 
-Image32Bit* getImage(uint32_t id)
+Image32Bit* getImage(const std::string& id)
 {
     for (uint32_t i = 0; i < images.size(); i++)
     {
@@ -741,7 +759,7 @@ bool saveDialog(std::string extension, std::string& outFilename)
 
 void renderDiffPattern()
 {
-    Image32Bit& imgDiffPattern = *getImage(102);
+    Image32Bit& imgDiffPattern = *getImage("diff");
 
     if (diffPattern.hasRawData())
     {

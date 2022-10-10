@@ -19,15 +19,11 @@
 #define AS_BYTES(X) reinterpret_cast<char*>(&(X))
 #define PTR_AS_BYTES(X) reinterpret_cast<char*>(X)
 
-inline void threadJoin(std::thread* t)
+inline void threadJoin(std::thread * t)
 {
     if (t)
-    {
         if (t->joinable())
-        {
             t->join();
-        }
-    }
 }
 
 template<typename ... Args>

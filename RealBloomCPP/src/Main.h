@@ -56,7 +56,7 @@ void imGuiText(const std::string& text, bool isError, bool newLine);
 bool lb1ItemGetter(void* data, int index, const char** outText);
 bool cb1ItemGetter(void* data, int index, const char** outText);
 
-Image32Bit* getImage(uint32_t id);
+Image32Bit* getImage(const std::string& id);
 bool loadImage(std::string filename, ImageFormat format, Image32Bit& image, LoadImageResult& outResult);
 bool saveDialog(std::string extension, std::string& outFilename);
 
