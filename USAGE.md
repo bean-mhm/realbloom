@@ -115,7 +115,7 @@ We see a strange square pattern appear. This is because there's always *some* am
 
 ![Increasing kernel contrast](images/5-kernel-5.png)
 
-There's no easy way to determine the right amount for the contrast. As long as the noise and the halo around the main pattern - the star pattern in my case - are noticeably darker than the pattern itself, and it "matches" the contrast of the input image, you should be good.
+There's no easy way to determine the right amount of contrast. As long as the noise and the halo around the main pattern - *the star pattern in my case* - are noticeably darker than the pattern itself, and it "matches" the contrast of the input image, you should be good.
 
 Let's finalize our kernel and move on to the next part. I will be using the following values:
 
