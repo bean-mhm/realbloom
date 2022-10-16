@@ -34,8 +34,8 @@
   <ol>
     <li><a href="#introduction">Introduction</a></li>
     <li><a href="#running-realbloom">Running RealBloom</a></li>
-    <li><a href="#building-realbloom">Building RealBloom</a></li>
     <li><a href="#using-realbloom">Using RealBloom</a></li>
+    <li><a href="#building-realbloom">Building RealBloom</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#nodes">Nodes</a></li>
     <li><a href="#contributing">Contributing</a></li>
@@ -104,6 +104,14 @@ My Specs: As the developer, RealBloom runs quite well on my laptop with a Ryzen 
 
 
 
+<!-- USAGE -->
+## Using RealBloom
+
+Check out [this page](USAGE.md) for a detailed step-by-step tutorial on getting started with RealBloom.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
 <!-- BUILDING -->
 ## Building RealBloom
 
@@ -125,15 +133,6 @@ The project was made for Windows and built with MSVC, so you're going to need a 
 4. Build the solution and run `RealBloom.exe`. Feel free to explore and play with the code!
 
 >*`RealBloomGPUConv.exe` takes an input file containing buffers and parameters required for GPU convolution, performs convolution, then writes the result to an output file which gets read by `RealBloom.exe`.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- USAGE -->
-## Using RealBloom
-
-Check out [this page](USAGE.md) for a detailed step-by-step tutorial on getting started with RealBloom.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
