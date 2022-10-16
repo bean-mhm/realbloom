@@ -90,7 +90,7 @@ struct UiVars
     bool convParamsChanged = false;
 
     float cv_convThreshold = 0.5f;
-    float cv_convKnee = 0.2f;
+    float cv_convKnee = 0.0f;
     bool convThresholdChanged = false;
     bool convThresholdSwitchImage = false;
 
