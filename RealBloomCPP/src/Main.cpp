@@ -272,7 +272,7 @@ void layout()
 
         {
             static LoadImageResult pngResult;
-            if (ImGui::Button("Browse Aperture"))
+            if (ImGui::Button("Browse Aperture##DP"))
             {
                 if (loadImage("", ImageFormat::PNG, imgAperture, pngResult))
                     selImageIndex = 0;
@@ -282,8 +282,8 @@ void layout()
 
         IMGUI_DIV;
         IMGUI_BOLD("Diffraction Pattern");
-        ImGui::Checkbox("Grayscale", &(vars.dp_grayscale));
-        if (ImGui::Button("Compute"))
+        ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
+        if (ImGui::Button("Compute##DP"))
         {
             {
                 std::lock_guard<Image32Bit> lock(imgAperture);
@@ -315,9 +315,9 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("Dispersion");
 
-        if (ImGui::SliderFloat("Intensity", &(vars.dp_multiplier), 0, 5))
+        if (ImGui::SliderFloat("Intensity##Disp", &(vars.dp_multiplier), 0, 5))
             vars.dpParamsChanged = true;
-        if (ImGui::SliderFloat("Contrast", &(vars.dp_contrast), -1, 1))
+        if (ImGui::SliderFloat("Contrast##Disp", &(vars.dp_contrast), -1, 1))
             vars.dpParamsChanged = true;
 
         if (vars.dpParamsChanged)
@@ -327,11 +327,11 @@ void layout()
             selImageIndex = 1;
         }
 
-        ImGui::SliderFloat("Amount", &(vars.ds_dispersionAmount), 0, 1);
-        ImGui::SliderInt("Steps", &(vars.ds_dispersionSteps), 32, 1024);
-        ImGui::ColorEdit3("Color", vars.ds_dispersionCol, ImGuiColorEditFlags_NoInputs);
+        ImGui::SliderFloat("Amount##Disp", &(vars.ds_dispersionAmount), 0, 1);
+        ImGui::SliderInt("Steps##Disp", &(vars.ds_dispersionSteps), 32, 1024);
+        ImGui::ColorEdit3("Color##Disp", vars.ds_dispersionCol, ImGuiColorEditFlags_NoInputs);
 
-        if (ImGui::Button("Apply"))
+        if (ImGui::Button("Apply##Disp"))
         {
             RealBloom::DispersionParams* dispersionParams = dispersion.getParams();
             dispersionParams->amount = vars.ds_dispersionAmount;
@@ -345,12 +345,12 @@ void layout()
         ImGui::SameLine();
         if (dispersion.isWorking())
         {
-            if (ImGui::Button("Cancel"))
+            if (ImGui::Button("Cancel##Disp"))
                 dispersion.cancel();
         } else
         {
             static std::string tiffError = "";
-            if (ImGui::Button("Save"))
+            if (ImGui::Button("Save##Disp"))
             {
                 std::lock_guard<Image32Bit> lock(imgDispersion);
 
@@ -378,7 +378,7 @@ void layout()
 
         {
             static LoadImageResult tiffResult;
-            if (ImGui::Button("Browse Input"))
+            if (ImGui::Button("Browse Input##Conv"))
             {
                 if (loadImage("", ImageFormat::TIFF, imgConvInput, tiffResult))
                 {
@@ -391,7 +391,7 @@ void layout()
 
         {
             static LoadImageResult tiffResult;
-            if (ImGui::Button("Browse Kernel"))
+            if (ImGui::Button("Browse Kernel##Conv"))
             {
                 if (loadImage("", ImageFormat::TIFF, imgKernel, tiffResult))
                 {
@@ -405,25 +405,25 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("Kernel");
 
-        if (ImGui::SliderFloat("Intensity", &(vars.cv_kernelIntensity), 0, 5))
+        if (ImGui::SliderFloat("Intensity##Kernel", &(vars.cv_kernelIntensity), 0, 5))
             vars.convParamsChanged = true;
 
-        if (ImGui::SliderFloat("Contrast", &(vars.cv_kernelContrast), -1, 1))
+        if (ImGui::SliderFloat("Contrast##Kernel", &(vars.cv_kernelContrast), -1, 1))
             vars.convParamsChanged = true;
 
-        if (ImGui::SliderFloat("Rotation", &(vars.cv_kernelRotation), -180.0f, 180.0f))
+        if (ImGui::SliderFloat("Rotation##Kernel", &(vars.cv_kernelRotation), -180.0f, 180.0f))
             vars.convParamsChanged = true;
 
-        if (ImGui::SliderFloat("Scale", &(vars.cv_kernelScale), 0.1f, 2))
+        if (ImGui::SliderFloat("Scale##Kernel", &(vars.cv_kernelScale), 0.1f, 2))
             vars.convParamsChanged = true;
 
-        if (ImGui::SliderFloat("Crop", &(vars.cv_kernelCrop), 0.1f, 1.0f))
+        if (ImGui::SliderFloat("Crop##Kernel", &(vars.cv_kernelCrop), 0.1f, 1.0f))
             vars.convParamsChanged = true;
 
-        if (ImGui::SliderFloat2("Center", vars.cv_kernelCenter, 0, 1))
+        if (ImGui::SliderFloat2("Center##Kernel", vars.cv_kernelCenter, 0, 1))
             vars.convParamsChanged = true;
 
-        if (ImGui::Checkbox("Preview Center", &(vars.cv_kernelPreviewCenter)))
+        if (ImGui::Checkbox("Preview Center##Kernel", &(vars.cv_kernelPreviewCenter)))
             vars.convParamsChanged = true;
 
         if (vars.convParamsChanged)
@@ -437,11 +437,11 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("Convolution");
 
-        ImGui::Combo("Device", &(vars.cv_deviceType), cb1ItemGetter, nullptr, 2);
+        ImGui::Combo("Device##Conv", &(vars.cv_deviceType), cb1ItemGetter, nullptr, 2);
 
         if (vars.cv_deviceType == 0)
         {
-            ImGui::SliderInt("Threads", &(vars.cv_numThreads), 1, vars.cv_maxThreads);
+            ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, vars.cv_maxThreads);
             if (vars.cv_numThreads > vars.cv_halfMaxThreads)
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, colorWarningText);
@@ -457,17 +457,17 @@ void layout()
             }
         } else
         {
-            ImGui::InputInt("Chunks", &(vars.cv_numChunks));
+            ImGui::InputInt("Chunks##Conv", &(vars.cv_numChunks));
             vars.cv_numChunks = std::min(std::max(1, vars.cv_numChunks), RealBloom::CONV_MAX_CHUNKS);
         }
 
-        if (ImGui::SliderFloat("Threshold", &(vars.cv_convThreshold), 0, 2))
+        if (ImGui::SliderFloat("Threshold##Conv", &(vars.cv_convThreshold), 0, 2))
         {
             vars.convThresholdChanged = true;
             vars.convThresholdSwitchImage = true;
         }
 
-        if (ImGui::SliderFloat("Knee", &(vars.cv_convKnee), 0, 2))
+        if (ImGui::SliderFloat("Knee##Conv", &(vars.cv_convKnee), 0, 2))
         {
             vars.convThresholdChanged = true;
             vars.convThresholdSwitchImage = true;
@@ -485,7 +485,7 @@ void layout()
             vars.convThresholdChanged = false;
         }
 
-        if (ImGui::Button("Convolve"))
+        if (ImGui::Button("Convolve##Conv"))
         {
             imgConvLayer.resize(imgConvInput.getWidth(), imgConvInput.getHeight());
             imgConvLayer.fill({ 0, 0, 0, 1 });
@@ -498,7 +498,7 @@ void layout()
         if (conv.isWorking())
         {
             ImGui::SameLine();
-            if (ImGui::Button("Cancel"))
+            if (ImGui::Button("Cancel##Conv"))
                 conv.cancelConv();
         }
 
@@ -540,20 +540,20 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("Layers");
 
-        if (ImGui::Checkbox("Additive", &(vars.cm_additive)))
+        if (ImGui::Checkbox("Additive##Conv", &(vars.cm_additive)))
             vars.convMixParamsChanged = true;
 
         if (vars.cm_additive)
         {
-            if (ImGui::SliderFloat("Input", &(vars.cm_inputMix), 0, 2))
+            if (ImGui::SliderFloat("Input##Conv", &(vars.cm_inputMix), 0, 2))
                 vars.convMixParamsChanged = true;
-            if (ImGui::SliderFloat("Conv.", &(vars.cm_convMix), 0, 5))
+            if (ImGui::SliderFloat("Conv.##Conv", &(vars.cm_convMix), 0, 5))
                 vars.convMixParamsChanged = true;
         } else
         {
-            if (ImGui::SliderFloat("Mix", &(vars.cm_mix), 0, 1))
+            if (ImGui::SliderFloat("Mix##Conv", &(vars.cm_mix), 0, 1))
                 vars.convMixParamsChanged = true;
-            if (ImGui::SliderFloat("Intensity", &(vars.cm_convIntensity), 0, 5))
+            if (ImGui::SliderFloat("Intensity##Conv", &(vars.cm_convIntensity), 0, 5))
                 vars.convMixParamsChanged = true;
         }
 
@@ -566,7 +566,7 @@ void layout()
 
         {
             static std::string tiffError = "";
-            if (ImGui::Button("Save"))
+            if (ImGui::Button("Save##Conv"))
             {
                 std::lock_guard<Image32Bit> lock(imgConvResult);
 
