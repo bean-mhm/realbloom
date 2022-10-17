@@ -22,7 +22,7 @@
 namespace RealBloom
 {
     constexpr float CONV_MULTIPLIER = 0.001f;
-    constexpr int CONV_MAX_CHUNKS = 1024;
+    constexpr int CONV_MAX_CHUNKS = 2048;
 
     enum class ConvolutionDeviceType
     {
