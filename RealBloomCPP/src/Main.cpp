@@ -43,6 +43,7 @@ int main()
         return 1;
     if (!setupImGui())
         return 1;
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
 
     // Create images to be used throughout the program
     images.push_back(new Image32Bit(
