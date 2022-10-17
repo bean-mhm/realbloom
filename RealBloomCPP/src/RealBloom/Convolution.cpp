@@ -323,10 +323,17 @@ namespace RealBloom
         m_imageKernelPreview->moveToGPU();
     }
 
-    void Convolution::mixConv(float inputMix, float convMix)
+    void Convolution::mixConv(bool additive, float inputMix, float convMix, float mix, float convIntensity)
     {
         inputMix = fmaxf(inputMix, 0.0f);
         convMix = fmaxf(convMix, 0.0f);
+        convIntensity = fmaxf(convIntensity, 0.0f);
+        if (!additive)
+        {
+            mix = fminf(fmaxf(mix, 0.0f), 1.0f);
+            convMix = mix;
+            inputMix = 1.0f - mix;
+        }
 
         {
             // Input buffer
@@ -349,7 +356,12 @@ namespace RealBloom
                 std::lock_guard<Image32Bit> convMixImageLock(*m_imageConvMix);
                 float* convMixBuffer = m_imageConvMix->getImageData();
 
-                float multiplier = intensityCurve(convMix);
+                float multiplier;
+                if (additive)
+                    multiplier = intensityCurve(convMix);
+                else
+                    multiplier = convMix * intensityCurve(convIntensity);
+
                 uint32_t redIndex;
                 for (uint32_t y = 0; y < inputHeight; y++)
                 {

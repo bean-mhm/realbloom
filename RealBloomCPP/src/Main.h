@@ -100,6 +100,10 @@ struct UiVars
     int cv_numThreads = cv_halfMaxThreads;
     int cv_numChunks = 10;
 
-    float cm_inputMix = 1.0f, cm_convMix = 1.0f;
+    bool cm_additive = true;
+    float cm_inputMix = 1.0f;       // for additive blending
+    float cm_convMix = 1.0f;        // for additive blending
+    float cm_mix = 0.2f;            // for normal blending
+    float cm_convIntensity = 1.0f;  // for normal blending
     bool convMixParamsChanged = false;
 };

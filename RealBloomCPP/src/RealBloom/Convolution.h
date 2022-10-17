@@ -100,7 +100,7 @@ namespace RealBloom
 
         void previewThreshold(size_t* outNumPixels = nullptr);
         void kernel(bool previewMode = true, float** outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
-        void mixConv(float inputMix, float convMix);
+        void mixConv(bool additive, float inputMix, float convMix, float mix, float convIntensity);
 
         void convolve();
         void cancelConv();

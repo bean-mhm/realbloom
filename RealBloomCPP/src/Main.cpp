@@ -539,15 +539,27 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("Layers");
 
-        if (ImGui::SliderFloat("Input", &(vars.cm_inputMix), 0, 2))
+        if (ImGui::Checkbox("Additive", &(vars.cm_additive)))
             vars.convMixParamsChanged = true;
-        if (ImGui::SliderFloat("Conv.", &(vars.cm_convMix), 0, 5))
-            vars.convMixParamsChanged = true;
+
+        if (vars.cm_additive)
+        {
+            if (ImGui::SliderFloat("Input", &(vars.cm_inputMix), 0, 2))
+                vars.convMixParamsChanged = true;
+            if (ImGui::SliderFloat("Conv.", &(vars.cm_convMix), 0, 5))
+                vars.convMixParamsChanged = true;
+        } else
+        {
+            if (ImGui::SliderFloat("Mix", &(vars.cm_mix), 0, 1))
+                vars.convMixParamsChanged = true;
+            if (ImGui::SliderFloat("Intensity", &(vars.cm_convIntensity), 0, 5))
+                vars.convMixParamsChanged = true;
+        }
 
         if (vars.convMixParamsChanged)
         {
             vars.convMixParamsChanged = false;
-            conv.mixConv(vars.cm_inputMix, vars.cm_convMix);
+            conv.mixConv(vars.cm_additive, vars.cm_inputMix, vars.cm_convMix, vars.cm_mix, vars.cm_convIntensity);
             selImageIndex = 8;
         }
 
