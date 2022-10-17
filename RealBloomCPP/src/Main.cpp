@@ -466,7 +466,7 @@ void layout()
             vars.convThresholdSwitchImage = true;
         }
 
-        if (ImGui::SliderFloat("Knee", &(vars.cv_convKnee), 0, 1))
+        if (ImGui::SliderFloat("Knee", &(vars.cv_convKnee), 0, 2))
         {
             vars.convThresholdChanged = true;
             vars.convThresholdSwitchImage = true;
