@@ -441,7 +441,10 @@ void layout()
 
         if (vars.cv_deviceType == 0)
         {
+            // Threads
             ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, vars.cv_maxThreads);
+
+            // Warning Text
             if (vars.cv_numThreads > vars.cv_halfMaxThreads)
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, colorWarningText);
@@ -457,8 +460,13 @@ void layout()
             }
         } else
         {
-            ImGui::InputInt("Chunks##Conv", &(vars.cv_numChunks));
-            vars.cv_numChunks = std::min(std::max(1, vars.cv_numChunks), RealBloom::CONV_MAX_CHUNKS);
+            // Chunks
+            if (ImGui::InputInt("Chunks##Conv", &(vars.cv_numChunks)))
+                vars.cv_numChunks = std::min(std::max(vars.cv_numChunks, 1), RealBloom::CONV_MAX_CHUNKS);
+
+            // Chunk Sleep Time
+            if (ImGui::InputInt("Sleep (ms)##Conv", &(vars.cv_chunkSleep)))
+                vars.cv_chunkSleep = std::min(std::max(vars.cv_chunkSleep, 0), RealBloom::CONV_MAX_SLEEP);
         }
 
         if (ImGui::SliderFloat("Threshold##Conv", &(vars.cv_convThreshold), 0, 2))
@@ -495,6 +503,10 @@ void layout()
             updateConvParams();
             conv.convolve();
         }
+
+        if (ImGui::IsItemHovered() && !convResUsage.empty())
+            ImGui::SetTooltip(convResUsage.c_str());
+
         if (conv.isWorking())
         {
             ImGui::SameLine();
@@ -528,13 +540,6 @@ void layout()
             {
                 ImGui::Text(convStatus.c_str());
             }
-        }
-
-        if (!convResUsage.empty())
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, colorInfoText);
-            ImGui::TextWrapped(convResUsage.c_str());
-            ImGui::PopStyleColor();
         }
 
         IMGUI_DIV;
@@ -808,6 +813,7 @@ void updateConvParams()
         (vars.cv_deviceType == 0) ? RealBloom::ConvolutionDeviceType::CPU : RealBloom::ConvolutionDeviceType::GPU;
     convParams->device.numThreads = vars.cv_numThreads;
     convParams->device.numChunks = vars.cv_numChunks;
+    convParams->device.chunkSleep = vars.cv_chunkSleep;
     convParams->kernelRotation = vars.cv_kernelRotation;
     convParams->kernelScale = vars.cv_kernelScale;
     convParams->kernelCrop = vars.cv_kernelCrop;

@@ -401,6 +401,8 @@ namespace RealBloom
         if (numChunks < 1) numChunks = 1;
         if (numChunks > CONV_MAX_CHUNKS) numChunks = CONV_MAX_CHUNKS;
 
+        uint32_t chunkSleep = m_params.device.chunkSleep;
+
         // Reset state
         m_state.working = true;
         m_state.mustCancel = false;
@@ -412,7 +414,7 @@ namespace RealBloom
         m_state.numChunksDone = 0;
 
         // Start the main thread
-        m_thread = new std::thread([this, numThreads, maxThreads, numChunks]()
+        m_thread = new std::thread([this, numThreads, maxThreads, numChunks, chunkSleep]()
             {
                 // Kernel Buffer
                 float* kernelBuffer = nullptr;
@@ -547,6 +549,7 @@ namespace RealBloom
                 {
                     // Prepare input data for GPU convolution
                     cgBinInput.numChunks = numChunks;
+                    cgBinInput.chunkSleep = chunkSleep;
                     cgBinInput.cp_kernelCenterX = m_params.kernelCenterX;
                     cgBinInput.cp_kernelCenterY = m_params.kernelCenterY;
                     cgBinInput.cp_convThreshold = m_params.convThreshold;
@@ -637,6 +640,7 @@ namespace RealBloom
                     {
                         cgInpFile.write(AS_BYTES(cgBinInput.statMutexNameSize), sizeof(cgBinInput.statMutexNameSize));
                         cgInpFile.write(AS_BYTES(cgBinInput.numChunks), sizeof(cgBinInput.numChunks));
+                        cgInpFile.write(AS_BYTES(cgBinInput.chunkSleep), sizeof(cgBinInput.chunkSleep));
 
                         cgInpFile.write(AS_BYTES(cgBinInput.cp_kernelCenterX), sizeof(cgBinInput.cp_kernelCenterX));
                         cgInpFile.write(AS_BYTES(cgBinInput.cp_kernelCenterY), sizeof(cgBinInput.cp_kernelCenterY));

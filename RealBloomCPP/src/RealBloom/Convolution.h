@@ -23,6 +23,7 @@ namespace RealBloom
 {
     constexpr float CONV_MULTIPLIER = 0.001f;
     constexpr int CONV_MAX_CHUNKS = 2048;
+    constexpr int CONV_MAX_SLEEP = 5000;
 
     enum class ConvolutionDeviceType
     {
@@ -35,6 +36,7 @@ namespace RealBloom
         ConvolutionDeviceType deviceType = ConvolutionDeviceType::CPU;
         uint32_t numThreads = 1;
         uint32_t numChunks = 1;
+        uint32_t chunkSleep = 0;
     };
 
     struct ConvolutionParams

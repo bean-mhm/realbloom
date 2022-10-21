@@ -99,6 +99,7 @@ struct UiVars
     int cv_halfMaxThreads = std::max(1, cv_maxThreads / 2);
     int cv_numThreads = cv_halfMaxThreads;
     int cv_numChunks = 10;
+    int cv_chunkSleep = 0;
 
     bool cm_additive = true;
     float cm_inputMix = 1.0f;       // for additive blending

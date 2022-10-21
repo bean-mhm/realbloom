@@ -157,6 +157,12 @@ int main(int argc, char* argv[])
     }
     if (!parseFailed)
     {
+        inpFile.read(AS_BYTES(cgInput.chunkSleep), sizeof(cgInput.chunkSleep));
+        parseFailed |= inpFile.fail();
+        parseStage = "chunkSleep";
+    }
+    if (!parseFailed)
+    {
         inpFile.read(AS_BYTES(cgInput.cp_kernelCenterX), sizeof(cgInput.cp_kernelCenterX));
         parseFailed |= inpFile.fail();
         parseStage = "cp_kernelCenterX";
@@ -242,6 +248,8 @@ int main(int argc, char* argv[])
     }
     inpFile.close();
     logAdd(LogLevel::Info, "Closed the input file.");
+
+    logAdd(LogLevel::Debug, "Chunk sleep: " + std::to_string(cgInput.chunkSleep));
 
     // Will be manipulated later
     bool cgFinalSuccess = true;

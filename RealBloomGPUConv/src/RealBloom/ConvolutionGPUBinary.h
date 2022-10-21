@@ -10,6 +10,7 @@ namespace RealBloom
     {
         uint32_t statMutexNameSize = 0;
         uint32_t numChunks = 1;
+        uint32_t chunkSleep = 0;
 
         float cp_kernelCenterX = 0.5f;
         float cp_kernelCenterY = 0.5f;
