@@ -19,7 +19,7 @@
 #define AS_BYTES(X) reinterpret_cast<char*>(&(X))
 #define PTR_AS_BYTES(X) reinterpret_cast<char*>(X)
 
-inline void threadJoin(std::thread * t)
+inline void threadJoin(std::thread* t)
 {
     if (t)
         if (t->joinable())
@@ -72,3 +72,4 @@ void killProcess(PROCESS_INFORMATION pi);
 bool processIsRunning(PROCESS_INFORMATION pi);
 bool deleteFile(const std::string& filename);
 void getTempDirectory(std::string& outDir);
+void openURL(std::string url);

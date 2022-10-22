@@ -140,3 +140,8 @@ void getTempDirectory(std::string& outDir)
     else
         outDir = std::filesystem::temp_directory_path().string();
 }
+
+void openURL(std::string url)
+{
+    ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}

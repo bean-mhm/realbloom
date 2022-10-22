@@ -611,11 +611,16 @@ void layout()
 
         // Renderer
         static std::string uiRenderer = (const char*)glGetString(GL_RENDERER);
+        ImGui::NewLine();
         ImGui::TextWrapped("UI Renderer: %s", uiRenderer.c_str());
 
         // Version
         ImGui::NewLine();
         ImGui::TextWrapped("%s v%s", Config::S_APP_TITLE, Config::S_APP_VERSION);
+
+        // GitHub
+        if (ImGui::Button("GitHub"))
+            openURL(Config::S_GITHUB_URL);
 
         ImGui::End();
     }

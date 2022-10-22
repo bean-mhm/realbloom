@@ -4,15 +4,17 @@ using namespace std;
 
 constexpr const char* cfgFilename = "config.ini";
 
-// const
+// Const
 const char* Config::S_APP_TITLE = "RealBloom";
 const char* Config::S_APP_VERSION = "0.2.0-beta";
+const char* Config::S_GITHUB_URL = "https://github.com/bean-mhm/realbloom";
+
 const uint32_t Config::S_WINDOW_WIDTH = 1366;
 const uint32_t Config::S_WINDOW_HEIGHT = 768;
 const float Config::S_UI_MAX_SCALE = 1.50f;
 const float Config::S_UI_MIN_SCALE = 0.75f;
 
-// variable
+// Variable
 float Config::UI_SCALE = 1.0f;
 
 void Config::load()
