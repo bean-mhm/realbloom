@@ -249,8 +249,6 @@ int main(int argc, char* argv[])
     inpFile.close();
     logAdd(LogLevel::Info, "Closed the input file.");
 
-    logAdd(LogLevel::Debug, "Chunk sleep: " + std::to_string(cgInput.chunkSleep));
-
     // Will be manipulated later
     bool cgFinalSuccess = true;
     std::string cgFinalError = "";
@@ -289,6 +287,7 @@ int main(int argc, char* argv[])
             RealBloom::ConvolutionGPUData cgData;
             cgData.binaryInput = &cgInput;
 
+            // Start Convolution
             RealBloom::ConvolutionGPU conv(&cgData);
             conv.start(cgInput.numChunks, i);
 
@@ -368,6 +367,16 @@ int main(int argc, char* argv[])
                 releaseMutex(hMutex);
                 closeMutex(hMutex);
                 lastStatWriteTime = std::chrono::system_clock::now();
+            }
+
+            // Sleep
+            if ((cgInput.chunkSleep > 0) && (i < (cgInput.numChunks - 1)))
+            {
+                logAdd(LogLevel::Info, stringFormat("Sleeping for %u ms...", cgInput.chunkSleep));
+
+                auto t1 = std::chrono::system_clock::now();
+                while (getElapsedMs(t1) < cgInput.chunkSleep)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }
 
