@@ -6,7 +6,7 @@ constexpr const char* cfgFilename = "config.ini";
 
 // Const
 const char* Config::S_APP_TITLE = "RealBloom";
-const char* Config::S_APP_VERSION = "0.2.0-beta";
+const char* Config::S_APP_VERSION = "0.3.0-alpha";
 const char* Config::S_GITHUB_URL = "https://github.com/bean-mhm/realbloom";
 
 const uint32_t Config::S_WINDOW_WIDTH = 1366;
