@@ -141,9 +141,10 @@ The project was made for Windows and built with MSVC, so you're going to need a 
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Support for animations: animated apertures, kernels, input images, and animated parameters
+- [ ] Color Management System
 - [ ] OpenEXR support
 - [ ] Node-based workflow
+- [ ] Support for animated apertures, kernels and input images
 
 See the [open issues](https://github.com/bean-mhm/realbloom/issues) for a full list of proposed features (and known issues).
 
