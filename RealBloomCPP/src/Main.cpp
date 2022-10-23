@@ -414,20 +414,60 @@ void layout()
         if (ImGui::SliderFloat("Rotation##Kernel", &(vars.cv_kernelRotation), -180.0f, 180.0f))
             vars.convParamsChanged = true;
 
-        ImGui::SmallButton("L");
-        ImGui::SameLine();
-        if (ImGui::SliderFloat2("Scale##Kernel", vars.cv_kernelScale, 0.1f, 2))
-            vars.convParamsChanged = true;
+        // Scale
+        {
+            if (ImGui::Checkbox("Lock Scale##Kernel", &(vars.cv_kernelLockScale)))
+            {
+                if (vars.cv_kernelLockScale)
+                {
+                    vars.cv_kernelScale[0] = (vars.cv_kernelScale[0] + vars.cv_kernelScale[1]) / 2.0f;
+                    vars.cv_kernelScale[1] = vars.cv_kernelScale[0];
+                }
+                vars.convParamsChanged = true;
+            }
+            if (vars.cv_kernelLockScale)
+            {
+                if (ImGui::SliderFloat("Scale##Kernel", &(vars.cv_kernelScale[0]), 0.1f, 2))
+                {
+                    vars.cv_kernelScale[1] = vars.cv_kernelScale[0];
+                    vars.convParamsChanged = true;
+                }
+            } else
+            {
+                if (ImGui::SliderFloat2("Scale##Kernel", vars.cv_kernelScale, 0.1f, 2))
+                    vars.convParamsChanged = true;
+            }
+        }
 
-        ImGui::SmallButton("L");
-        ImGui::SameLine();
-        if (ImGui::SliderFloat2("Crop##Kernel", vars.cv_kernelCrop, 0.1f, 1.0f))
+        // Crop
+        {
+            if (ImGui::Checkbox("Lock Crop##Kernel", &(vars.cv_kernelLockCrop)))
+            {
+                if (vars.cv_kernelLockCrop)
+                {
+                    vars.cv_kernelCrop[0] = (vars.cv_kernelCrop[0] + vars.cv_kernelCrop[1]) / 2.0f;
+                    vars.cv_kernelCrop[1] = vars.cv_kernelCrop[0];
+                }
+                vars.convParamsChanged = true;
+            }
+            if (vars.cv_kernelLockCrop)
+            {
+                if (ImGui::SliderFloat("Crop##Kernel", &(vars.cv_kernelCrop[0]), 0.1f, 1.0f))
+                {
+                    vars.cv_kernelCrop[1] = vars.cv_kernelCrop[0];
+                    vars.convParamsChanged = true;
+                }
+            } else
+            {
+                if (ImGui::SliderFloat2("Crop##Kernel", vars.cv_kernelCrop, 0.1f, 1.0f))
+                    vars.convParamsChanged = true;
+            }
+        }
+
+        if (ImGui::Checkbox("Preview Center##Kernel", &(vars.cv_kernelPreviewCenter)))
             vars.convParamsChanged = true;
 
         if (ImGui::SliderFloat2("Center##Kernel", vars.cv_kernelCenter, 0, 1))
-            vars.convParamsChanged = true;
-
-        if (ImGui::Checkbox("Preview Center##Kernel", &(vars.cv_kernelPreviewCenter)))
             vars.convParamsChanged = true;
 
         if (vars.convParamsChanged)

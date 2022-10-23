@@ -82,7 +82,9 @@ struct UiVars
     float ds_dispersionCol[3]{ 1.0f, 1.0f, 1.0f };
 
     float cv_kernelRotation = 0.0f;
+    bool cv_kernelLockScale = true;
     float cv_kernelScale[2] = { 1.0f, 1.0f };
+    bool cv_kernelLockCrop = true;
     float cv_kernelCrop[2] = { 1.0f, 1.0f };
     float cv_kernelCenter[2] = { 0.5f, 0.5f };
     bool cv_kernelPreviewCenter = false;

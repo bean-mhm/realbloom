@@ -132,24 +132,26 @@ namespace RealBloom
             centerX = (float)kernelWidth / 2.0f;
             centerY = (float)kernelHeight / 2.0f;
 
-            float scale = fmaxf(m_params.kernelScale, 0.01f);
-            float crop = fminf(fmaxf(m_params.kernelCrop, 0.1f), 1.0f);
+            float scaleW = fmaxf(m_params.kernelScaleW, 0.01f);
+            float scaleH = fmaxf(m_params.kernelScaleH, 0.01f);
+            float cropW = fminf(fmaxf(m_params.kernelCropW, 0.1f), 1.0f);
+            float cropH = fminf(fmaxf(m_params.kernelCropH, 0.1f), 1.0f);
             float rotation = m_params.kernelRotation;
 
             float kernelContrast = m_params.kernelContrast;
             float kernelMultiplier = intensityCurve(fmaxf(0.0f, m_params.kernelIntensity));
 
             uint32_t scaledWidth, scaledHeight;
-            scaledWidth = (uint32_t)floorf(scale * (float)kernelWidth);
-            scaledHeight = (uint32_t)floorf(scale * (float)kernelHeight);
+            scaledWidth = (uint32_t)floorf(scaleW * (float)kernelWidth);
+            scaledHeight = (uint32_t)floorf(scaleH * (float)kernelHeight);
 
             uint32_t croppedWidth, croppedHeight;
-            croppedWidth = (uint32_t)floorf(crop * (float)scaledWidth);
-            croppedHeight = (uint32_t)floorf(crop * (float)scaledHeight);
+            croppedWidth = (uint32_t)floorf(cropW * (float)scaledWidth);
+            croppedHeight = (uint32_t)floorf(cropH * (float)scaledHeight);
 
             float scaledCenterX, scaledCenterY;
-            scaledCenterX = (scale * (float)kernelWidth) / 2.0f;
-            scaledCenterY = (scale * (float)kernelHeight) / 2.0f;
+            scaledCenterX = (scaleW * (float)kernelWidth) / 2.0f;
+            scaledCenterY = (scaleH * (float)kernelHeight) / 2.0f;
 
             // Normalize, apply contrast and multiplier
             {
@@ -187,7 +189,7 @@ namespace RealBloom
             // Scale and Rotation
             std::vector<float> scaledBuffer;
             uint32_t scaledBufferSize = 0;
-            if (areEqual(scale, 1) && areEqual(rotation, 0))
+            if (areEqual(scaleW, 1) && areEqual(scaleH, 1) && areEqual(rotation, 0))
             {
                 scaledBufferSize = kernelBufferSize;
                 scaledBuffer.resize(scaledBufferSize);
@@ -206,8 +208,8 @@ namespace RealBloom
                 {
                     for (uint32_t x = 0; x < scaledWidth; x++)
                     {
-                        transX = ((float)x + 0.5f) / scale;
-                        transY = ((float)y + 0.5f) / scale;
+                        transX = ((float)x + 0.5f) / scaleW;
+                        transY = ((float)y + 0.5f) / scaleH;
                         rotatePoint(transX, transY, centerX, centerY, -rotation, transX_rot, transY_rot);
                         Bilinear::calculate(transX_rot, transY_rot, bil);
 
@@ -253,7 +255,7 @@ namespace RealBloom
             // Crop
             std::vector<float> croppedBuffer;
             uint32_t croppedBufferSize = 0;
-            if (areEqual(crop, 1))
+            if (areEqual(cropW, 1) && areEqual(cropH, 1))
             {
                 croppedBufferSize = scaledBufferSize;
                 croppedBuffer.resize(croppedBufferSize);
