@@ -1095,14 +1095,14 @@ namespace RealBloom
         if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
         {
             return stringFormat(
-                "Pixels: %s\nAvg. Pixels/Thread: %s\nEst. Memory: %s",
+                "Total Pixels: %s\nPixels/Thread: %s\nEst. Memory: %s",
                 stringFromBigNumber(numPixels).c_str(),
                 stringFromBigNumber(numPixelsPerBlock).c_str(),
                 stringFromSize(ramUsage).c_str());
         } else
         {
             return stringFormat(
-                "Pixels: %s\nAvg. Pixels/Chunk: %s\nEst. Memory: %s\nEst. VRAM: %s",
+                "Total Pixels: %s\nPixels/Chunk: %s\nEst. Memory: %s\nEst. VRAM: %s",
                 stringFromBigNumber(numPixels).c_str(),
                 stringFromBigNumber(numPixelsPerBlock).c_str(),
                 stringFromSize(ramUsage).c_str(),
