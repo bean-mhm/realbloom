@@ -414,10 +414,14 @@ void layout()
         if (ImGui::SliderFloat("Rotation##Kernel", &(vars.cv_kernelRotation), -180.0f, 180.0f))
             vars.convParamsChanged = true;
 
-        if (ImGui::SliderFloat("Scale##Kernel", &(vars.cv_kernelScale), 0.1f, 2))
+        ImGui::SmallButton("L");
+        ImGui::SameLine();
+        if (ImGui::SliderFloat2("Scale##Kernel", vars.cv_kernelScale, 0.1f, 2))
             vars.convParamsChanged = true;
 
-        if (ImGui::SliderFloat("Crop##Kernel", &(vars.cv_kernelCrop), 0.1f, 1.0f))
+        ImGui::SmallButton("L");
+        ImGui::SameLine();
+        if (ImGui::SliderFloat2("Crop##Kernel", vars.cv_kernelCrop, 0.1f, 1.0f))
             vars.convParamsChanged = true;
 
         if (ImGui::SliderFloat2("Center##Kernel", vars.cv_kernelCenter, 0, 1))
@@ -820,8 +824,10 @@ void updateConvParams()
     convParams->device.numChunks = vars.cv_numChunks;
     convParams->device.chunkSleep = vars.cv_chunkSleep;
     convParams->kernelRotation = vars.cv_kernelRotation;
-    convParams->kernelScale = vars.cv_kernelScale;
-    convParams->kernelCrop = vars.cv_kernelCrop;
+    convParams->kernelScaleW = vars.cv_kernelScale[0];
+    convParams->kernelScaleH = vars.cv_kernelScale[1];
+    convParams->kernelCropW = vars.cv_kernelCrop[0];
+    convParams->kernelCropH = vars.cv_kernelCrop[1];
     convParams->kernelCenterX = vars.cv_kernelCenter[0];
     convParams->kernelCenterY = vars.cv_kernelCenter[1];
     convParams->kernelPreviewCenter = vars.cv_kernelPreviewCenter;
@@ -1005,7 +1011,7 @@ void applyStyle_RealBloom()
     style.Colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.0, 1.0, 1.0, 0.03921568766236305);
     style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.5450980663299561, 0.3764705955982208, 0.1372549086809158, 0.3921568691730499);
     style.Colors[ImGuiCol_DragDropTarget] = ImVec4(0.6235294342041016, 0.4235294163227081, 0.1215686276555061, 0.9019607901573181);
-    style.Colors[ImGuiCol_NavHighlight] = ImVec4(0.5450980663299561, 0.3764705955982208, 0.1372549086809158, 0.7843137383460999);
+    style.Colors[ImGuiCol_NavHighlight] = ImVec4(0.196078434586525, 0.196078434586525, 0.196078434586525, 1.0);
     style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0, 1.0, 1.0, 0.7019608020782471);
     style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.800000011920929, 0.800000011920929, 0.800000011920929, 0.2000000029802322);
     style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.800000011920929, 0.800000011920929, 0.800000011920929, 0.3499999940395355);

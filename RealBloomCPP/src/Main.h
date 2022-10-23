@@ -82,8 +82,8 @@ struct UiVars
     float ds_dispersionCol[3]{ 1.0f, 1.0f, 1.0f };
 
     float cv_kernelRotation = 0.0f;
-    float cv_kernelScale = 1.0f;
-    float cv_kernelCrop = 1.0f;
+    float cv_kernelScale[2] = { 1.0f, 1.0f };
+    float cv_kernelCrop[2] = { 1.0f, 1.0f };
     float cv_kernelCenter[2] = { 0.5f, 0.5f };
     bool cv_kernelPreviewCenter = false;
     float cv_kernelContrast = 0.0f;

@@ -43,8 +43,10 @@ namespace RealBloom
     {
         ConvolutionDevice device;
         float kernelRotation = 0.0f;
-        float kernelScale = 1.0f;
-        float kernelCrop = 1.0f;
+        float kernelScaleW = 1.0f;
+        float kernelScaleH = 1.0f;
+        float kernelCropW = 1.0f;
+        float kernelCropH = 1.0f;
         float kernelCenterX = 0.5f;
         float kernelCenterY = 0.5f;
         bool  kernelPreviewCenter = true;
