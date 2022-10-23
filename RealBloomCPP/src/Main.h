@@ -65,7 +65,8 @@ void updateConvParams();
 
 bool setupGLFW();
 bool setupImGui();
-void applyStyle();
+void applyStyle_RealBloom();
+void applyStyle_Blender();
 void cleanUp();
 
 struct UiVars
