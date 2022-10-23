@@ -665,6 +665,8 @@ void layout()
         // GitHub
         if (ImGui::Button("GitHub"))
             openURL(Config::S_GITHUB_URL);
+        if (ImGui::Button("Tutorial"))
+            openURL(Config::S_DOCS_URL);
 
         ImGui::End();
     }

@@ -15,6 +15,7 @@ public:
     static const char* S_APP_TITLE;
     static const char* S_APP_VERSION;
     static const char* S_GITHUB_URL;
+    static const char* S_DOCS_URL;
     static const uint32_t S_WINDOW_WIDTH;
     static const uint32_t S_WINDOW_HEIGHT;
     static const float S_UI_MAX_SCALE;
