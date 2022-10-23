@@ -189,7 +189,7 @@ namespace RealBloom
             // Scale and Rotation
             std::vector<float> scaledBuffer;
             uint32_t scaledBufferSize = 0;
-            if (areEqual(scaleW, 1) && areEqual(scaleH, 1) && areEqual(rotation, 0))
+            if ((scaleW == 1) && (scaleH == 1) && (rotation == 0))
             {
                 scaledBufferSize = kernelBufferSize;
                 scaledBuffer.resize(scaledBufferSize);
@@ -255,7 +255,7 @@ namespace RealBloom
             // Crop
             std::vector<float> croppedBuffer;
             uint32_t croppedBufferSize = 0;
-            if (areEqual(cropW, 1) && areEqual(cropH, 1))
+            if ((cropW == 1) && (cropH == 1))
             {
                 croppedBufferSize = scaledBufferSize;
                 croppedBuffer.resize(croppedBufferSize);
