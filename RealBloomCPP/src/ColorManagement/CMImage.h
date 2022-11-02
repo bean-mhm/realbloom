@@ -50,13 +50,19 @@ public:
 
     uint32_t getWidth() const;
     uint32_t getHeight() const;
-    uint32_t getImageDataSize() const; // Number of elements in imageData
-    float* getImageData(); // RGBA. Every 4 elements represent a pixel
+
+    // Number of elements in imageData
+    uint32_t getImageDataSize() const;
+
+    // RGBA. Every 4 elements represent a pixel.
+    float* getImageData();
 
     void moveToGPU();
     GLuint getGlTexture();
 
-    void resize(uint32_t newWidth, uint32_t newHeight);
+    // shouldLock must be false if the image is already locked.
+    void resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock);
+
     void fill(std::array<float, 4> color);
     void fill(std::vector<float> buffer);
     void fill(float* buffer);

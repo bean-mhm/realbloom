@@ -16,5 +16,7 @@ class CMImageIO
 {
 public:
     static bool readImage(CMImage& target, const std::string& filename, const std::string& colorSpace, std::string& outError);
+
+    // Save as OpenEXR in the RGB32F format
     static bool writeImage(CMImage& source, const std::string& filename, const std::string& colorSpace, std::string& outError);
 };

@@ -20,7 +20,7 @@ bool CMImageIO::readImage(CMImage& target, const std::string& filename, const st
 
     if ((channels != 1) && (channels != 3) && (channels != 4))
     {
-        outError = "Image must have 1, 3, or 4 color channels.";
+        outError = stringFormat("Image must have 1, 3, or 4 color channels. (%d)", channels);
         inp->close();
         return false;
     }
@@ -62,8 +62,8 @@ bool CMImageIO::readImage(CMImage& target, const std::string& filename, const st
 
     // Move buffer to the target image
     {
-        target.resize(xres, yres);
         std::lock_guard<CMImage> lock(target);
+        target.resize(xres, yres, false);
         float* targetBuffer = target.getImageData();
 
         if (channels == 4)
@@ -83,9 +83,9 @@ bool CMImageIO::readImage(CMImage& target, const std::string& filename, const st
                     targetBuffer[redIndexTarget + 3] = 1.0f;
                 }
             }
-        }
-        else if (channels == 1)
+        } else if (channels == 1)
         {
+            float v;
             uint32_t redIndexSource, redIndexTarget;
             for (uint32_t y = 0; y < yres; y++)
             {
@@ -93,9 +93,11 @@ bool CMImageIO::readImage(CMImage& target, const std::string& filename, const st
                 {
                     redIndexSource = y * xres + x;
                     redIndexTarget = (y * xres + x) * 4;
-                    targetBuffer[redIndexTarget + 0] = buffer[redIndexSource];
-                    targetBuffer[redIndexTarget + 1] = buffer[redIndexSource];
-                    targetBuffer[redIndexTarget + 2] = buffer[redIndexSource];
+
+                    v = buffer[redIndexSource];
+                    targetBuffer[redIndexTarget + 0] = v;
+                    targetBuffer[redIndexTarget + 1] = v;
+                    targetBuffer[redIndexTarget + 2] = v;
                     targetBuffer[redIndexTarget + 3] = 1.0f;
                 }
             }
@@ -139,7 +141,7 @@ bool CMImageIO::writeImage(CMImage& source, const std::string& filename, const s
     try
     {
         OCIO::ConstConfigRcPtr config = CMS::getConfig();
-        OCIO::PackedImageDesc img(bufferRGB.data(), xres, yres, 3);
+        OCIO::PackedImageDesc img(bufferRGB.data(), xres, yres, 3L);
 
         OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
         transform->setSrc(OCIO::ROLE_SCENE_LINEAR);
@@ -176,7 +178,7 @@ bool CMImageIO::writeImage(CMImage& source, const std::string& filename, const s
         }
     } else
     {
-        outError = stringFormat("Couldn't create output file \"%s\".", filename.c_str());
+        outError = stringFormat("Couldn't open output file \"%s\".", filename.c_str());
         return false;
     }
 

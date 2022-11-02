@@ -5,7 +5,7 @@ using namespace std;
 CMImage::CMImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor)
     : m_id(id), m_name(name), m_width(width), m_height(height)
 {
-    resize(width, height);
+    resize(width, height, true);
     fill(fillColor);
 }
 
@@ -34,15 +34,21 @@ std::string CMImage::getName()
     return m_name;
 }
 
-void CMImage::resize(uint32_t newWidth, uint32_t newHeight)
+void CMImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
 {
-    lock_guard<mutex> lock(m_mutex);
+    if (shouldLock) lock();
 
     if ((m_imageData != nullptr) && (m_width == newWidth) && (m_height == newHeight))
+    {
+        if (shouldLock) unlock();
         return;
+    }
 
     if (newWidth < 2 || newHeight < 2)
+    {
+        if (shouldLock) unlock();
         return;
+    }
 
     if (m_imageData)
     {
@@ -55,6 +61,8 @@ void CMImage::resize(uint32_t newWidth, uint32_t newHeight)
 
     m_imageDataSize = m_width * m_height * 4;
     m_imageData = new float[m_imageDataSize];
+
+    if (shouldLock) unlock();
 }
 
 void CMImage::fill(std::array<float, 4> color)
