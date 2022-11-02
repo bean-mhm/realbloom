@@ -26,9 +26,9 @@
 
 #include "Async.h"
 
+#include "ColorManagement/CMS.h"
+
 #include "Utils/Image32Bit.h"
-#include "Utils/PngUtils.h"
-#include "Utils/TiffUtils.h"
 #include "nfd/nfd.h"
 #include "Config.h"
 

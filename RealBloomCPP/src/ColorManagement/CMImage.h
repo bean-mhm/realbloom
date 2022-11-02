@@ -1,0 +1,64 @@
+#pragma once
+
+#include <string>
+#include <stdint.h>
+#include <mutex>
+#include <array>
+#include <vector>
+
+#ifndef GLEW_STATIC
+#define GLEW_STATIC
+#endif
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
+#include "CMS.h"
+
+// Color Managed Image
+// Internal format is always RGBA32F
+class CMImage
+{
+private:
+    std::string m_id;
+    std::string m_name;
+
+    uint32_t m_width, m_height;
+    float* m_imageData = nullptr;
+    uint32_t m_imageDataSize = 0;
+
+    std::mutex m_mutex;
+
+    uint32_t m_oldWidth = 0, m_oldHeight = 0;
+    GLuint m_glTexture = 0;
+
+    bool m_moveToGpu = false;
+    void moveToGPU_Internal();
+public:
+    CMImage(
+        const std::string& id,
+        const std::string& name,
+        uint32_t width = 128,
+        uint32_t height = 128,
+        std::array<float, 4> fillColor = { 0, 0, 0, 1 });
+    ~CMImage();
+
+    std::string getID();
+    std::string getName();
+
+    void lock();
+    void unlock();
+
+    uint32_t getWidth() const;
+    uint32_t getHeight() const;
+    uint32_t getImageDataSize() const; // Number of elements in imageData
+    float* getImageData(); // RGBA. Every 4 elements represent a pixel
+
+    void moveToGPU();
+    GLuint getGlTexture();
+
+    void resize(uint32_t newWidth, uint32_t newHeight);
+    void fill(std::array<float, 4> color);
+    void fill(std::vector<float> buffer);
+    void fill(float* buffer);
+    void renderUV();
+};

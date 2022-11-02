@@ -36,13 +36,21 @@ std::string convResUsage = "";
 
 int main()
 {
+    // Load config
     Config::load();
     Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
 
+    // Setup a window
     if (!setupGLFW())
         return 1;
     if (!setupImGui())
         return 1;
+
+    // Color Management System
+    if (!CMS::init())
+        return 1;
+
+    // Hide the console window
     ShowWindow(GetConsoleWindow(), SW_HIDE);
 
     // Create images to be used throughout the program
@@ -898,7 +906,10 @@ bool setupGLFW()
     // Create window with graphics context
     window = glfwCreateWindow(Config::S_WINDOW_WIDTH, Config::S_WINDOW_HEIGHT, Config::S_APP_TITLE, NULL, NULL);
     if (window == NULL)
+    {
+        std::cerr << "Failed to create a window.\n";
         return false;
+    }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
@@ -952,10 +963,14 @@ bool setupImGui()
     fontRoboto = io->Fonts->AddFontFromFileTTF("./assets/fonts/RobotoCondensed-Regular.ttf", 18.0f * Config::S_UI_MAX_SCALE);
     fontRobotoBold = io->Fonts->AddFontFromFileTTF("./assets/fonts/RobotoCondensed-Bold.ttf", 22.0f * Config::S_UI_MAX_SCALE);
     fontMono = io->Fonts->AddFontFromFileTTF("./assets/fonts/mono/RobotoMono-Regular.ttf", 18.0f * Config::S_UI_MAX_SCALE);
-    if ((!fontRoboto) || (!fontRobotoBold) || (!fontMono))
-        std::cout << "The required fonts could not be loaded.\n";
 
-    return (fontRoboto && fontRobotoBold && fontMono);
+    if (fontRoboto && fontRobotoBold && fontMono)
+        return true;
+    else
+    {
+        std::cerr << "The required fonts could not be loaded.\n";
+        return false;
+    }
 }
 
 static inline ImVec4 ImLerp(const ImVec4& a, const ImVec4& b, float t)

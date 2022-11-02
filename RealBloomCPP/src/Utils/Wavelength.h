@@ -1,8 +1,6 @@
 #pragma once
 
 #include <math.h>
-#include "ColorSystem.h"
-#include "NumberHelpers.h"
 
 namespace Wavelength
 {
