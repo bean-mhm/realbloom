@@ -66,6 +66,10 @@ bool CMS::init()
     {
         S_VARS.config = OCIO::Config::CreateFromFile(OCIO_CONFIG_PATH);
 
+        OCIO::ConstColorSpaceRcPtr sceneLinear = S_VARS.config->getColorSpace(OCIO::ROLE_SCENE_LINEAR);
+        S_VARS.workingSpace = sceneLinear->getName();
+        S_VARS.workingSpaceDesc = sceneLinear->getDescription();
+
         S_VARS.activeDisplay = S_VARS.config->getDefaultDisplay();
         S_VARS.activeView = S_VARS.config->getDefaultView(S_VARS.activeDisplay.c_str());
 
@@ -85,6 +89,16 @@ bool CMS::init()
 OCIO::ConstConfigRcPtr CMS::getConfig()
 {
     return S_VARS.config;
+}
+
+const std::string& CMS::getWorkingSpace()
+{
+    return S_VARS.workingSpace;
+}
+
+const std::string& CMS::getWorkingSpaceDesc()
+{
+    return S_VARS.workingSpaceDesc;
 }
 
 const std::vector<std::string>& CMS::getAvailableColorSpaces()
@@ -137,4 +151,14 @@ void CMS::setActiveView(const std::string& newView)
 void CMS::setActiveLook(const std::string& newLook)
 {
     S_VARS.activeLook = newLook;
+}
+
+float CMS::getExposure()
+{
+    return S_VARS.exposure;
+}
+
+void CMS::setExposure(float newExposure)
+{
+    S_VARS.exposure = newExposure;
 }

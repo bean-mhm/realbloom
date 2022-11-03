@@ -33,7 +33,7 @@ private:
     uint32_t m_oldWidth = 0, m_oldHeight = 0;
     GLuint m_glTexture = 0;
 
-    bool m_moveToGpu = false;
+    bool m_moveToGpu = true;
     void moveToGPU_Internal();
 public:
     CMImage(

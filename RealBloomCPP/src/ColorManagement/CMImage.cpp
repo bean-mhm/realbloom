@@ -187,9 +187,20 @@ void CMImage::moveToGPU_Internal()
         sizeChanged = true;
     }
 
-    // Color Transform
+    // Temporary buffer to apply transforms on
     float* transData = new float[m_imageDataSize];
     std::copy(m_imageData, m_imageData + m_imageDataSize, transData);
+
+    // Exposure
+    float exposure = CMS::getExposure();
+    if (exposure != 0)
+    {
+        float exposureMul = powf(2, exposure);
+        for (uint32_t i = 0; i < m_imageDataSize; i++)
+            if (i % 4 != 3) transData[i] *= exposureMul;
+    }
+
+    // Color Transform
     try
     {
         OCIO::ConstConfigRcPtr config = CMS::getConfig();

@@ -580,8 +580,63 @@ void layout()
     // Color Management
     {
         ImGui::Begin("Color Management");
+        
+        // Working Space
+        static std::string workingSpace = CMS::getWorkingSpace();
+        static std::string workingSpaceDesc = CMS::getWorkingSpaceDesc();
+        ImGui::TextWrapped("Working Space: %s", workingSpace.c_str());
+        if (ImGui::IsItemHovered() && !workingSpaceDesc.empty())
+            ImGui::SetTooltip(workingSpaceDesc.c_str());
+        ImGui::NewLine();
 
-        //
+        // Exposure
+        if (ImGui::SliderFloat("Exposure##CMS", &(vars.cms_exposure), -10, 10))
+        {
+            CMS::setExposure(vars.cms_exposure);
+            vars.cmsParamsChanged = true;
+        }
+
+        static int selDisplay = 0;
+        static int selView = 0;
+        static int selLook = 0;
+
+        // Display
+        std::vector<std::string> displays = CMS::getAvailableDisplays();
+        if (imguiCombo("Display##CMS", displays, &selDisplay, false))
+        {
+            CMS::setActiveDisplay(displays[selDisplay]);
+            vars.cmsParamsChanged = true;
+
+            // Update selView
+            std::vector<std::string> views = CMS::getAvailableViews();
+            std::string activeView = CMS::getActiveView();
+            ptrdiff_t activeViewIndex = std::distance(views.begin(), std::find(views.begin(), views.end(), activeView));
+            if (activeViewIndex < views.size())
+                selView = activeViewIndex;
+        }
+
+        // View
+        std::vector<std::string> views = CMS::getAvailableViews();
+        if (imguiCombo("View##CMS", views, &selView, false))
+        {
+            CMS::setActiveView(views[selView]);
+            vars.cmsParamsChanged = true;
+        }
+
+        // Look
+        std::vector<std::string> looks = CMS::getAvailableLooks();
+        if (imguiCombo("Look##CMS", looks, &selLook, false))
+        {
+            CMS::setActiveLook(looks[selLook]);
+            vars.cmsParamsChanged = true;
+        }
+
+        if (vars.cmsParamsChanged)
+        {
+            vars.cmsParamsChanged = false;
+            for (CMImage* image : images)
+                image->moveToGPU();
+        }
 
         ImGui::NewLine();
         ImGui::End();
@@ -647,14 +702,17 @@ bool comboItemGetter(void* data, int index, const char** outText)
     return true;
 }
 
-bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex)
+bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth)
 {
     activeComboList = items;
-
     bool result;
-    ImGui::PushItemWidth(-1);
+
+    if (fullWidth)
+        ImGui::PushItemWidth(-1);
     result = ImGui::Combo(label.c_str(), selectedIndex, comboItemGetter, nullptr, activeComboList.size());
-    ImGui::PopItemWidth();
+    if (fullWidth)
+        ImGui::PopItemWidth();
+
     return result;
 }
 
@@ -753,7 +811,7 @@ void imGuiDialogs()
         ImGui::Text("Color space of the file:");
 
         static int selColorSpace = 0;
-        imguiCombo("##ColorSpace", CMS::getAvailableColorSpaces(), &selColorSpace);
+        imguiCombo("##ColorSpace", CMS::getAvailableColorSpaces(), &selColorSpace, true);
 
         if (ImGui::Button("OK", buttonSize))
         {

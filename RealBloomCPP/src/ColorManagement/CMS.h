@@ -16,6 +16,9 @@ private:
     {
         OCIO::ConstConfigRcPtr config = nullptr;
 
+        std::string workingSpace = "";
+        std::string workingSpaceDesc = "";
+
         std::vector<std::string> colorSpaces;
         std::vector<std::string> displays;
         std::vector<std::string> views;
@@ -24,6 +27,8 @@ private:
         std::string activeDisplay = "";
         std::string activeView = "";
         std::string activeLook = "";
+
+        float exposure = 0.0f;
 
         void retrieveColorSpaces();
         void retrieveDisplays();
@@ -37,6 +42,9 @@ public:
     static bool init();
     static OCIO::ConstConfigRcPtr getConfig();
 
+    static const std::string& getWorkingSpace();
+    static const std::string& getWorkingSpaceDesc();
+
     static const std::vector<std::string>& getAvailableColorSpaces();
     static const std::vector<std::string>& getAvailableDisplays();
     static const std::vector<std::string>& getAvailableViews();
@@ -49,4 +57,7 @@ public:
     static void setActiveDisplay(const std::string& newDisplay);
     static void setActiveView(const std::string& newView);
     static void setActiveLook(const std::string& newLook);
+
+    static float getExposure();
+    static void setExposure(float newExposure);
 };

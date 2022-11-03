@@ -13,12 +13,12 @@
 #include <memory>
 #include <future>
 #include <functional>
+#include <algorithm>
 #include <stdint.h>
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC
 #endif
-
 #include <GL/glew.h>
 
 #include "imgui/imgui.h"
@@ -44,7 +44,7 @@ void layout();
 void imGuiText(const std::string& text, bool isError, bool newLine);
 
 bool comboItemGetter(void* data, int index, const char** outText);
-bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex);
+bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth);
 
 bool lb1ItemGetter(void* data, int index, const char** outText);
 bool cb1ItemGetter(void* data, int index, const char** outText);
@@ -69,16 +69,18 @@ void cleanUp();
 
 struct UiVars
 {
+    // Diffraction Pattern
     bool dp_grayscale = false;
-
     float dp_contrast = 0.0f;
     float dp_multiplier = 2.0f;
     bool dpParamsChanged = false;
 
+    // Dispersion
     float ds_dispersionAmount = 0.4f;
     int ds_dispersionSteps = 32;
     float ds_dispersionCol[3]{ 1.0f, 1.0f, 1.0f };
 
+    // Convolution Kernel
     float cv_kernelRotation = 0.0f;
     bool cv_kernelLockScale = true;
     float cv_kernelScale[2] = { 1.0f, 1.0f };
@@ -90,11 +92,13 @@ struct UiVars
     float cv_kernelIntensity = 1.0f;
     bool convParamsChanged = false;
 
+    // Convolution Threshold
     float cv_convThreshold = 0.5f;
     float cv_convKnee = 0.0f;
     bool convThresholdChanged = false;
     bool convThresholdSwitchImage = false;
 
+    // Convolution Device
     int cv_deviceType = 0;
     int cv_maxThreads = std::max((uint32_t)1, std::thread::hardware_concurrency());
     int cv_halfMaxThreads = std::max(1, cv_maxThreads / 2);
@@ -102,10 +106,15 @@ struct UiVars
     int cv_numChunks = 10;
     int cv_chunkSleep = 0;
 
+    // Convolution Mix (Layers)
     bool cm_additive = true;
     float cm_inputMix = 1.0f;       // for additive blending
     float cm_convMix = 1.0f;        // for additive blending
     float cm_mix = 0.2f;            // for normal blending
     float cm_convIntensity = 1.0f;  // for normal blending
     bool convMixParamsChanged = false;
+
+    // Color Management
+    float cms_exposure = 0.0f;
+    bool cmsParamsChanged = false;
 };
