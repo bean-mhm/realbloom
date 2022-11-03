@@ -827,6 +827,14 @@ void imGuiDialogs()
         static int selColorSpace = 0;
         imguiCombo("##ColorSpace", CMS::getAvailableColorSpaces(), &selColorSpace, true);
 
+        if (ImGui::IsItemHovered() && selColorSpace >= 0)
+        {
+            std::string colorSpaceDesc = CMS::getConfig()
+                ->getColorSpace(CMS::getAvailableColorSpaces()[selColorSpace].c_str())
+                ->getDescription();
+            ImGui::SetTooltip(colorSpaceDesc.c_str());
+        }
+
         if (ImGui::Button("OK", buttonSize))
         {
             dialogResult_ColorSpace = CMS::getAvailableColorSpaces()[selColorSpace];
