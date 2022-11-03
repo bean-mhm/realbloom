@@ -43,18 +43,16 @@ void layout();
 
 void imGuiText(const std::string& text, bool isError, bool newLine);
 
+bool lb1ItemGetter(void* data, int index, const char** outText);
 bool comboItemGetter(void* data, int index, const char** outText);
 bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth);
-
-bool lb1ItemGetter(void* data, int index, const char** outText);
-bool cb1ItemGetter(void* data, int index, const char** outText);
 
 CMImage* getImage(const std::string& id);
 
 bool openImageDialog(std::string& outFilename);
 bool saveImageDialog(std::string& outFilename);
 
-void loadImage(CMImage& image, int imageIndex, std::string& outError);
+void loadImage(CMImage& image, int imageIndex, bool* toSetTrue, std::string& outError);
 void saveImage(CMImage& image, std::string& outError);
 
 void imGuiDialogs();
@@ -64,7 +62,7 @@ void updateConvParams();
 bool setupGLFW();
 bool setupImGui();
 void applyStyle_RealBloom();
-void applyStyle_Blender();
+void applyStyle_RealBloomGray();
 void cleanUp();
 
 struct UiVars
@@ -109,8 +107,8 @@ struct UiVars
     // Convolution Mix (Layers)
     bool cm_additive = true;
     float cm_inputMix = 1.0f;       // for additive blending
-    float cm_convMix = 1.0f;        // for additive blending
-    float cm_mix = 0.2f;            // for normal blending
+    float cm_convMix = 0.2f;        // for additive blending
+    float cm_mix = 0.1f;            // for normal blending
     float cm_convIntensity = 1.0f;  // for normal blending
     bool convMixParamsChanged = false;
 
