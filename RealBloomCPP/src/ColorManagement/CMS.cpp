@@ -87,37 +87,37 @@ OCIO::ConstConfigRcPtr CMS::getConfig()
     return S_VARS.config;
 }
 
-std::vector<std::string> CMS::getAvailableColorSpaces()
+const std::vector<std::string>& CMS::getAvailableColorSpaces()
 {
     return S_VARS.colorSpaces;
 }
 
-std::vector<std::string> CMS::getAvailableDisplays()
+const std::vector<std::string>& CMS::getAvailableDisplays()
 {
     return S_VARS.displays;
 }
 
-std::vector<std::string> CMS::getAvailableViews()
+const std::vector<std::string>& CMS::getAvailableViews()
 {
     return S_VARS.views;
 }
 
-std::vector<std::string> CMS::getAvailableLooks()
+const std::vector<std::string>& CMS::getAvailableLooks()
 {
     return S_VARS.looks;
 }
 
-std::string CMS::getActiveDisplay()
+const std::string& CMS::getActiveDisplay()
 {
     return S_VARS.activeDisplay;
 }
 
-std::string CMS::getActiveView()
+const std::string& CMS::getActiveView()
 {
     return S_VARS.activeView;
 }
 
-std::string CMS::getActiveLook()
+const std::string& CMS::getActiveLook()
 {
     return S_VARS.activeLook;
 }

@@ -16,12 +16,12 @@ namespace RealBloom
         return &m_params;
     }
 
-    void Dispersion::setDiffPatternImage(Image32Bit* image)
+    void Dispersion::setDiffPatternImage(CMImage* image)
     {
         m_imageDP = image;
     }
 
-    void Dispersion::setDispersionImage(Image32Bit* image)
+    void Dispersion::setDispersionImage(CMImage* image)
     {
         m_imageDisp = image;
     }
@@ -44,9 +44,10 @@ namespace RealBloom
                 uint32_t dpBufferSize = 0;
                 {
                     // Buffer from diff pattern image
-                    std::lock_guard<Image32Bit> dpImageLock(*m_imageDP);
-                    m_imageDP->getDimensions(dpWidth, dpHeight);
+                    std::lock_guard<CMImage> dpImageLock(*m_imageDP);
                     float* dpImageData = m_imageDP->getImageData();
+                    dpWidth = m_imageDP->getWidth();
+                    dpHeight = m_imageDP->getHeight();
 
                     // Copy the buffer so the image doesn't stay locked throughout the process
                     dpBufferSize = m_imageDP->getImageDataSize();
@@ -221,9 +222,9 @@ namespace RealBloom
                         && (getElapsedMs(lastProgTime) > DISP_PROG_TIMESTEP)  // update every x ms
                         && (m_state.numStepsDone < m_state.numSteps))         // skip the last step
                     {
-                        m_imageDisp->resize(dpWidth, dpHeight);
                         {
-                            std::lock_guard<Image32Bit> dispImageLock(*m_imageDisp);
+                            std::lock_guard<CMImage> dispImageLock(*m_imageDisp);
+                            m_imageDisp->resize(dpWidth, dpHeight, false);
                             float* imageBuffer = m_imageDisp->getImageData();
                             std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);
                         }
@@ -294,9 +295,9 @@ namespace RealBloom
                 // Update the dispersion image
                 if (!m_state.mustCancel)
                 {
-                    m_imageDisp->resize(dpWidth, dpHeight);
                     {
-                        std::lock_guard<Image32Bit> dispImageLock(*m_imageDisp);
+                        std::lock_guard<CMImage> dispImageLock(*m_imageDisp);
+                        m_imageDisp->resize(dpWidth, dpHeight, false);
                         float* imageBuffer = m_imageDisp->getImageData();
                         std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);
                     }

@@ -7,8 +7,8 @@
 #include "../Utils/Bilinear.h"
 #include "../Utils/Wavelength.h"
 
+#include "../ColorManagement/CMImage.h"
 #include "../Utils/Misc.h"
-#include "../Utils/Image32Bit.h"
 #include "../Async.h"
 
 namespace RealBloom
@@ -35,15 +35,15 @@ namespace RealBloom
     private:
         DispersionState m_state;
         DispersionParams m_params;
-        Image32Bit* m_imageDP = nullptr;
-        Image32Bit* m_imageDisp = nullptr;
+        CMImage* m_imageDP = nullptr;
+        CMImage* m_imageDisp = nullptr;
         std::thread* m_thread = nullptr;
 
     public:
         Dispersion();
         DispersionParams* getParams();
-        void setDiffPatternImage(Image32Bit* image);
-        void setDispersionImage(Image32Bit* image);
+        void setDiffPatternImage(CMImage* image);
+        void setDispersionImage(CMImage* image);
 
         void compute();
         void cancel();

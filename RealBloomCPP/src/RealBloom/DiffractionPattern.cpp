@@ -5,14 +5,10 @@ constexpr double CONTRAST_CONSTANT = 0.0002187;
 namespace RealBloom
 {
 
-    DiffractionPattern::DiffractionPattern(uint32_t width, uint32_t height)
+    DiffractionPattern::DiffractionPattern()
         : m_hasRawData(false), m_maxMag{ EPSILON, EPSILON, EPSILON }, m_success(false), m_error("")
     {
-        m_params.width = 0;
-        m_params.height = 0;
-        m_params.contrast = 0;
-        m_params.multiplier = 1;
-        m_params.grayscale = false;
+        //
     }
 
     RealBloom::DiffractionPatternParams* DiffractionPattern::getParams()

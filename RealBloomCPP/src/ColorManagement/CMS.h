@@ -37,14 +37,14 @@ public:
     static bool init();
     static OCIO::ConstConfigRcPtr getConfig();
 
-    static std::vector<std::string> getAvailableColorSpaces();
-    static std::vector<std::string> getAvailableDisplays();
-    static std::vector<std::string> getAvailableViews();
-    static std::vector<std::string> getAvailableLooks();
+    static const std::vector<std::string>& getAvailableColorSpaces();
+    static const std::vector<std::string>& getAvailableDisplays();
+    static const std::vector<std::string>& getAvailableViews();
+    static const std::vector<std::string>& getAvailableLooks();
 
-    static std::string getActiveDisplay();
-    static std::string getActiveView();
-    static std::string getActiveLook();
+    static const std::string& getActiveDisplay();
+    static const std::string& getActiveView();
+    static const std::string& getActiveLook();
 
     static void setActiveDisplay(const std::string& newDisplay);
     static void setActiveView(const std::string& newView);

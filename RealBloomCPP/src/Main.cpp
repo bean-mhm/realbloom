@@ -6,7 +6,7 @@
 ImGui::Text(TEXT); \
 ImGui::PopFont();
 
-const char* glsl_version = "#version 130";
+const char* glslVersion = "#version 130";
 GLFWwindow* window = nullptr;
 ImGuiIO* io;
 bool appRunning = true;
@@ -14,25 +14,29 @@ bool appRunning = true;
 ImFont* fontRoboto = nullptr;
 ImFont* fontRobotoBold = nullptr;
 ImFont* fontMono = nullptr;
-ImVec4 bgColor{ 0.13f, 0.13f, 0.13f, 1.00f };
 
-constexpr uint32_t defaultDims = 128;
-std::vector<Image32Bit*> images;
-std::vector<char*> imageNames;
-int selImageIndex = 0;
-float imageZoom = 1.0f;
-
+const ImVec4 bgColor{ 0.13f, 0.13f, 0.13f, 1.00f };
 const ImVec4 colorInfoText{ 0.328f, 0.735f, 0.910f, 1.0f };
 const ImVec4 colorWarningText{ 0.940f, 0.578f, 0.282f, 1.0f };
 const ImVec4 colorErrorText{ 0.950f, 0.300f, 0.228f, 1.0f };
 
-RealBloom::DiffractionPattern diffPattern(defaultDims, defaultDims);
+const ImVec2 buttonSize{ -1, 27 };
+std::vector<std::string> activeComboList;
+
+std::vector<CMImage*> images;
+std::vector<std::string> imageNames;
+int selImageIndex = 0;
+float imageZoom = 1.0f;
+
+RealBloom::DiffractionPattern diffPattern;
 RealBloom::Dispersion dispersion;
 RealBloom::Convolution conv;
-
 UiVars vars;
-
 std::string convResUsage = "";
+
+constexpr const char* DIALOG_COLORSPACE = "Color Space";
+std::packaged_task<void()> dialogAction_ColorSpace;
+std::string dialogResult_ColorSpace;
 
 int main()
 {
@@ -54,43 +58,18 @@ int main()
     ShowWindow(GetConsoleWindow(), SW_HIDE);
 
     // Create images to be used throughout the program
-    images.push_back(new Image32Bit(
-        "aperture",
-        "Aperture Shape", defaultDims));
-    images.push_back(new Image32Bit(
-        "diff",
-        "Diffraction Pattern", defaultDims));
-    images.push_back(new Image32Bit(
-        "disp",
-        "Dispersion", defaultDims));
-    images.push_back(new Image32Bit(
-        "cv-input",
-        "Conv. Input", defaultDims));
-    images.push_back(new Image32Bit(
-        "cv-kernel",
-        "Conv. Kernel", defaultDims));
-    images.push_back(new Image32Bit(
-        "cv-kernel-prev",
-        "Conv. Kernel (Transformed)", defaultDims));
-    images.push_back(new Image32Bit(
-        "cv-prev",
-        "Conv. Preview", defaultDims));
-    images.push_back(new Image32Bit(
-        "cv-layer",
-        "Conv. Layer", defaultDims));
-    images.push_back(new Image32Bit(
-        "cv-result",
-        "Conv. Result", defaultDims));
+    images.push_back(new CMImage("aperture", "Aperture Shape"));
+    images.push_back(new CMImage("diff", "Diffraction Pattern"));
+    images.push_back(new CMImage("disp", "Dispersion"));
+    images.push_back(new CMImage("cv-input", "Conv. Input"));
+    images.push_back(new CMImage("cv-kernel", "Conv. Kernel"));
+    images.push_back(new CMImage("cv-kernel-prev", "Conv. Kernel (Transformed)"));
+    images.push_back(new CMImage("cv-prev", "Conv. Preview"));
+    images.push_back(new CMImage("cv-layer", "Conv. Layer"));
+    images.push_back(new CMImage("cv-result", "Conv. Result"));
 
     for (uint32_t i = 0; i < images.size(); i++)
-    {
-        char* c = new char[128];
-        std::string s = images[i]->getName();
-        s.copy(c, 128);
-        c[std::min((uint32_t)s.size(), (uint32_t)127)] = '\0';
-
-        imageNames.push_back(c);
-    }
+        imageNames.push_back(images[i]->getName());
 
     // Set up images for convolution
     conv.setInputImage(getImage("cv-input"));
@@ -206,39 +185,48 @@ int main()
 
 void layout()
 {
+    CMImage& selImage = *(images[selImageIndex]);
+
     // Image Selector
     {
         ImGui::Begin("Image List");
         ImGui::PushItemWidth(-1);
-        ImGui::ListBox("##Images", &selImageIndex, &lb1ItemGetter, nullptr, images.size(), images.size());
+        ImGui::ListBox("##Slots", &selImageIndex, &lb1ItemGetter, nullptr, images.size(), images.size());
         ImGui::PopItemWidth();
 
         // For comparing conv. input and result
         if (selImageIndex == 3 || selImageIndex == 8)
         {
-            if (ImGui::Button("Compare"))
+            if (ImGui::Button("Compare", buttonSize))
             {
-                if (selImageIndex == 3)
-                    selImageIndex = 8;
-                else
-                    selImageIndex = 3;
+                if (selImageIndex == 3) selImageIndex = 8;
+                else selImageIndex = 3;
             }
         }
 
+        // Save
+        {
+            static std::string saveError = "";
+            if (ImGui::Button("Save", buttonSize))
+                saveImage(selImage, saveError);
+            imGuiText(saveError, true, false);
+        }
+
+        ImGui::NewLine();
+        imGuiDialogs();
         ImGui::End();
     }
 
     // Image Viewer
     {
-        Image32Bit& selImage = *(images[selImageIndex]);
         ImGui::Begin("Image Viewer", 0, ImGuiWindowFlags_HorizontalScrollbar);
 
         // Name
         ImGui::Text(selImage.getName().c_str());
 
         // Size
-        uint32_t imageWidth = 0, imageHeight = 0;
-        selImage.getDimensions(imageWidth, imageHeight);
+        uint32_t imageWidth = selImage.getWidth();
+        uint32_t imageHeight = selImage.getHeight();
         ImGui::Text("Size: %dx%d", imageWidth, imageHeight);
 
         // Zoom
@@ -268,41 +256,35 @@ void layout()
     }
 
     // Controls
-    Image32Bit& imgAperture = *getImage("aperture");
-    Image32Bit& imgDiffPattern = *getImage("diff");
-    Image32Bit& imgDispersion = *getImage("disp");
-    Image32Bit& imgConvInput = *getImage("cv-input");
-    Image32Bit& imgKernel = *getImage("cv-kernel");
-    Image32Bit& imgConvLayer = *getImage("cv-layer");
-    Image32Bit& imgConvResult = *getImage("cv-result");
+    CMImage& imgAperture = *getImage("aperture");
+    CMImage& imgDiffPattern = *getImage("diff");
+    CMImage& imgDispersion = *getImage("disp");
+    CMImage& imgConvInput = *getImage("cv-input");
+    CMImage& imgKernel = *getImage("cv-kernel");
+    CMImage& imgConvLayer = *getImage("cv-layer");
+    CMImage& imgConvResult = *getImage("cv-result");
     {
         ImGui::Begin("Diffraction Pattern");
 
         {
-            static LoadImageResult pngResult;
-            if (ImGui::Button("Browse Aperture##DP"))
-            {
-                if (loadImage("", ImageFormat::PNG, imgAperture, pngResult))
-                    selImageIndex = 0;
-            }
-            imGuiText(pngResult.error, !pngResult.success, false);
+            static std::string loadResult;
+            if (ImGui::Button("Browse Aperture##DP", buttonSize))
+                loadImage(imgAperture, 0, loadResult);
+            imGuiText(loadResult, true, false);
         }
 
         IMGUI_DIV;
         IMGUI_BOLD("Diffraction Pattern");
         ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
-        if (ImGui::Button("Compute##DP"))
+        if (ImGui::Button("Compute##DP", buttonSize))
         {
             {
-                std::lock_guard<Image32Bit> lock(imgAperture);
+                std::lock_guard<CMImage> lock(imgAperture);
                 float* image1Buffer = imgAperture.getImageData();
 
-                uint32_t image1Width = 0, image1Height = 0;
-                imgAperture.getDimensions(image1Width, image1Height);
-
                 RealBloom::DiffractionPatternParams* dpParams = diffPattern.getParams();
-                dpParams->width = image1Width;
-                dpParams->height = image1Height;
+                dpParams->width = imgAperture.getWidth();
+                dpParams->height = imgAperture.getHeight();
                 dpParams->grayscale = vars.dp_grayscale;
 
                 diffPattern.compute(image1Buffer);
@@ -339,7 +321,7 @@ void layout()
         ImGui::SliderInt("Steps##Disp", &(vars.ds_dispersionSteps), 32, 1024);
         ImGui::ColorEdit3("Color##Disp", vars.ds_dispersionCol, ImGuiColorEditFlags_NoInputs);
 
-        if (ImGui::Button("Apply##Disp"))
+        if (ImGui::Button("Apply##Disp", buttonSize))
         {
             RealBloom::DispersionParams* dispersionParams = dispersion.getParams();
             dispersionParams->amount = vars.ds_dispersionAmount;
@@ -350,64 +332,34 @@ void layout()
             dispersion.compute();
         }
 
-        ImGui::SameLine();
         if (dispersion.isWorking())
         {
-            if (ImGui::Button("Cancel##Disp"))
+            if (ImGui::Button("Cancel##Disp", buttonSize))
                 dispersion.cancel();
-        } else
-        {
-            static std::string tiffError = "";
-            if (ImGui::Button("Save##Disp"))
-            {
-                std::lock_guard<Image32Bit> lock(imgDispersion);
-
-                float* image3Buffer = imgDispersion.getImageData();
-                uint32_t image3Width = 0, image3Height = 0;
-                imgDispersion.getDimensions(image3Width, image3Height);
-
-                std::string filename;
-                if (saveDialog("tif", filename))
-                {
-                    saveTIFF(filename, image3Buffer, image3Width, image3Height, tiffError);
-                }
-            }
-            imGuiText(tiffError, true, false);
         }
 
         std::string dispStats = dispersion.getStats();
         if (!dispStats.empty())
             ImGui::Text(dispStats.c_str());
 
-        IMGUI_DIV;
+        ImGui::NewLine();
+        imGuiDialogs();
         ImGui::End(); // Diffraction Pattern
 
         ImGui::Begin("Convolution");
 
         {
-            static LoadImageResult tiffResult;
-            if (ImGui::Button("Browse Input##Conv"))
-            {
-                if (loadImage("", ImageFormat::TIFF, imgConvInput, tiffResult))
-                {
-                    selImageIndex = 3;
-                    vars.convThresholdChanged = true;
-                }
-            }
-            imGuiText(tiffResult.error, !tiffResult.success, true);
+            static std::string loadResult;
+            if (ImGui::Button("Browse Input##Conv", buttonSize))
+                loadImage(imgConvInput, 3, loadResult);
+            imGuiText(loadResult, true, false);
         }
 
         {
-            static LoadImageResult tiffResult;
-            if (ImGui::Button("Browse Kernel##Conv"))
-            {
-                if (loadImage("", ImageFormat::TIFF, imgKernel, tiffResult))
-                {
-                    selImageIndex = 4;
-                    vars.convParamsChanged = true;
-                }
-            }
-            imGuiText(tiffResult.error, !tiffResult.success, true);
+            static std::string loadResult;
+            if (ImGui::Button("Browse Kernel##Conv", buttonSize))
+                loadImage(imgKernel, 4, loadResult);
+            imGuiText(loadResult, true, false);
         }
 
         IMGUI_DIV;
@@ -545,10 +497,10 @@ void layout()
             vars.convThresholdChanged = false;
         }
 
-        if (ImGui::Button("Convolve##Conv"))
+        if (ImGui::Button("Convolve##Conv", buttonSize))
         {
-            imgConvLayer.resize(imgConvInput.getWidth(), imgConvInput.getHeight());
-            imgConvLayer.fill({ 0, 0, 0, 1 });
+            imgConvLayer.resize(imgConvInput.getWidth(), imgConvInput.getHeight(), true);
+            imgConvLayer.fill(color_t{ 0, 0, 0, 1 }, true);
             imgConvLayer.moveToGPU();
             selImageIndex = 7;
 
@@ -561,8 +513,7 @@ void layout()
 
         if (conv.isWorking())
         {
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel##Conv"))
+            if (ImGui::Button("Cancel##Conv", buttonSize))
                 conv.cancelConv();
         }
 
@@ -621,27 +572,19 @@ void layout()
             selImageIndex = 8;
         }
 
-        {
-            static std::string tiffError = "";
-            if (ImGui::Button("Save##Conv"))
-            {
-                std::lock_guard<Image32Bit> lock(imgConvResult);
-
-                float* imageBuffer = imgConvResult.getImageData();
-                uint32_t imageWidth = 0, imageHeight = 0;
-                imgConvResult.getDimensions(imageWidth, imageHeight);
-
-                std::string filename;
-                if (saveDialog("tif", filename))
-                {
-                    saveTIFF(filename, imageBuffer, imageWidth, imageHeight, tiffError);
-                }
-            }
-            imGuiText(tiffError, true, false);
-        }
-
-        IMGUI_DIV;
+        ImGui::NewLine();
+        imGuiDialogs();
         ImGui::End(); // Convolution
+    }
+
+    // Color Management
+    {
+        ImGui::Begin("Color Management");
+
+        //
+
+        ImGui::NewLine();
+        ImGui::End();
     }
 
     // Info
@@ -671,9 +614,9 @@ void layout()
         ImGui::TextWrapped("%s v%s", Config::S_APP_TITLE, Config::S_APP_VERSION);
 
         // GitHub
-        if (ImGui::Button("GitHub"))
+        if (ImGui::Button("GitHub", buttonSize))
             openURL(Config::S_GITHUB_URL);
-        if (ImGui::Button("Tutorial"))
+        if (ImGui::Button("Tutorial", buttonSize))
             openURL(Config::S_DOCS_URL);
 
         ImGui::End();
@@ -698,9 +641,26 @@ void imGuiText(const std::string& text, bool isError, bool newLine)
     }
 }
 
+bool comboItemGetter(void* data, int index, const char** outText)
+{
+    *outText = activeComboList[index].c_str();
+    return true;
+}
+
+bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex)
+{
+    activeComboList = items;
+
+    bool result;
+    ImGui::PushItemWidth(-1);
+    result = ImGui::Combo(label.c_str(), selectedIndex, comboItemGetter, nullptr, activeComboList.size());
+    ImGui::PopItemWidth();
+    return result;
+}
+
 bool lb1ItemGetter(void* data, int index, const char** outText)
 {
-    *outText = imageNames[index];
+    *outText = imageNames[index].c_str();
     return true;
 }
 
@@ -710,133 +670,105 @@ bool cb1ItemGetter(void* data, int index, const char** outText)
     return true;
 }
 
-Image32Bit* getImage(const std::string& id)
+CMImage* getImage(const std::string& id)
 {
     for (uint32_t i = 0; i < images.size(); i++)
     {
         if (images[i]->getID() == id)
             return images[i];
     }
-
     return nullptr;
 }
 
-bool loadImage(std::string filename, ImageFormat format, Image32Bit& image, LoadImageResult& outResult)
-{
-    outResult.success = true;
-    outResult.error = "";
-
-    bool haveFilename = false;
-    if (filename.empty())
-    {
-        std::string filterList;
-        if (format == ImageFormat::PNG)
-            filterList = FILTER_LIST_PNG;
-        else
-            filterList = FILTER_LIST_TIFF;
-
-        nfdchar_t* outPath = NULL;
-        nfdresult_t result = NFD_OpenDialog(filterList.c_str(), NULL, &outPath);
-
-        if (result == NFD_OKAY)
-        {
-            filename = outPath;
-            free(outPath);
-            haveFilename = true;
-        }
-    } else
-    {
-        haveFilename = true;
-    }
-
-    if (!haveFilename)
-        return false;
-
-    if (format == ImageFormat::PNG)
-    {
-        std::vector<float> pngBuffer;
-        uint32_t pngWidth = 0, pngHeight = 0;
-
-        if (loadPNG(filename.c_str(), pngBuffer, pngWidth, pngHeight, outResult.error))
-        {
-            image.resize(pngWidth, pngHeight);
-            {
-                std::lock_guard<Image32Bit> lock(image);
-                float* imageBuffer = image.getImageData();
-
-                uint32_t bufferSize = pngWidth * pngHeight * 4;
-                for (uint32_t i = 0; i < bufferSize; i++)
-                {
-                    imageBuffer[i] = pngBuffer[i];
-                }
-            }
-            image.moveToGPU();
-        } else
-        {
-            outResult.success = false;
-        }
-    } else if (format == ImageFormat::TIFF)
-    {
-        std::vector<float> tiffBuffer;
-        uint32_t tiffWidth = 0, tiffHeight = 0;
-
-        if (loadTIFF(filename.c_str(), tiffBuffer, tiffWidth, tiffHeight, outResult.error))
-        {
-            image.resize(tiffWidth, tiffHeight);
-            {
-                std::lock_guard<Image32Bit> lock(image);
-                float* imageBuffer = image.getImageData();
-
-                uint32_t redIndex = 0;
-                for (uint32_t y = 0; y < tiffHeight; y++)
-                {
-                    for (uint32_t x = 0; x < tiffWidth; x++)
-                    {
-                        redIndex = 4 * (y * tiffWidth + x);
-
-                        imageBuffer[redIndex + 0] = tiffBuffer[redIndex + 0];
-                        imageBuffer[redIndex + 1] = tiffBuffer[redIndex + 1];
-                        imageBuffer[redIndex + 2] = tiffBuffer[redIndex + 2];
-                        imageBuffer[redIndex + 3] = 1;
-                    }
-                }
-            }
-            image.moveToGPU();
-        } else
-        {
-            outResult.success = false;
-        }
-    }
-
-    return outResult.success;
-}
-
-bool saveDialog(std::string extension, std::string& outFilename)
+bool openImageDialog(std::string& outFilename)
 {
     nfdchar_t* outPath = NULL;
-    nfdresult_t result = NFD_SaveDialog(extension.c_str(), NULL, &outPath);
+    nfdresult_t result = NFD_OpenDialog("", NULL, &outPath);
+    if (result == NFD_OKAY)
+    {
+        outFilename = outPath;
+        free(outPath);
+        return true;
+    }
+    return false;
+}
+
+bool saveImageDialog(std::string& outFilename)
+{
+    const char* fileExtension = "exr";
+    nfdchar_t* outPath = NULL;
+    nfdresult_t result = NFD_SaveDialog(fileExtension, NULL, &outPath);
     if (result == NFD_OKAY)
     {
         outFilename = outPath;
         free(outPath);
 
         bool hasExtension = false;
-        uint32_t lastDotIndex = outFilename.find_last_of('.');
-        if (lastDotIndex >= 0)
-            if (outFilename.substr(lastDotIndex + 1) == extension)
+        size_t lastDotIndex = outFilename.find_last_of('.');
+        if (lastDotIndex != std::string::npos)
+            if (outFilename.substr(lastDotIndex + 1) == fileExtension)
                 hasExtension = true;
 
         if (!hasExtension)
-            outFilename += "." + extension;
+            outFilename += "." + std::string(fileExtension);
 
         return true;
     }
     return false;
 }
 
+void loadImage(CMImage& image, int imageIndex, std::string& outError)
+{
+    std::string filename;
+    if (openImageDialog(filename))
+    {
+        dialogAction_ColorSpace = std::packaged_task<void()>(
+            [&image, imageIndex, filename, &outError]()
+            {
+                CMImageIO::readImage(image, filename, dialogResult_ColorSpace, outError);
+                selImageIndex = imageIndex;
+            });
+        ImGui::OpenPopup(DIALOG_COLORSPACE);
+    }
+}
+
+void saveImage(CMImage& image, std::string& outError)
+{
+    std::string filename;
+    if (saveImageDialog(filename))
+    {
+        dialogAction_ColorSpace = std::packaged_task<void()>(
+            [&image, filename, &outError]()
+            {
+                CMImageIO::writeImage(image, filename, dialogResult_ColorSpace, outError);
+            });
+        ImGui::OpenPopup(DIALOG_COLORSPACE);
+    }
+}
+
+void imGuiDialogs()
+{
+    if (ImGui::BeginPopupModal(DIALOG_COLORSPACE))
+    {
+        ImGui::Text("Color space of the file:");
+
+        static int selColorSpace = 0;
+        imguiCombo("##ColorSpace", CMS::getAvailableColorSpaces(), &selColorSpace);
+
+        if (ImGui::Button("OK", buttonSize))
+        {
+            dialogResult_ColorSpace = CMS::getAvailableColorSpaces()[selColorSpace];
+            dialogAction_ColorSpace();
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Button("Cancel", buttonSize))
+            ImGui::CloseCurrentPopup();
+    }
+}
+
 void renderDiffPattern()
 {
-    Image32Bit& imgDiffPattern = *getImage("diff");
+    CMImage& imgDiffPattern = *getImage("diff");
 
     if (diffPattern.hasRawData())
     {
@@ -849,10 +781,9 @@ void renderDiffPattern()
 
         uint32_t width = dpParams->width;
         uint32_t height = dpParams->height;
-
-        imgDiffPattern.resize(width, height);
         {
-            std::lock_guard<Image32Bit> lock(imgDiffPattern);
+            std::lock_guard<CMImage> lock(imgDiffPattern);
+            imgDiffPattern.resize(width, height, false);
             float* image2Buffer = imgDiffPattern.getImageData();
 
             uint32_t imageSize = width * height * 4;
@@ -943,7 +874,7 @@ bool setupImGui()
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    ImGui_ImplOpenGL3_Init(glslVersion);
 
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.

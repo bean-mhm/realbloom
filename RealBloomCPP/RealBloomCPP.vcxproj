@@ -109,7 +109,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;nfd.lib;tiff.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glew32s.lib;nfd.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
@@ -137,7 +137,7 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;nfd.lib;tiff.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glew32s.lib;nfd.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
@@ -160,7 +160,7 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;nfd.lib;tiff.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glew32s.lib;nfd.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
@@ -188,7 +188,7 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;nfd.lib;tiff.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glew32s.lib;nfd.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
@@ -315,18 +315,6 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
     <ClInclude Include="src\imgui\imstb_textedit.h" />
     <ClInclude Include="src\imgui\imstb_truetype.h" />
     <ClInclude Include="src\RealBloom\Convolution.h" />
-    <ClInclude Include="include\libtiff\t4.h" />
-    <ClInclude Include="include\libtiff\tiff.h" />
-    <ClInclude Include="include\libtiff\tiffconf.h" />
-    <ClInclude Include="include\libtiff\tiffio.h" />
-    <ClInclude Include="include\libtiff\tiffio.hxx" />
-    <ClInclude Include="include\libtiff\tiffiop.h" />
-    <ClInclude Include="include\libtiff\tiffvers.h" />
-    <ClInclude Include="include\libtiff\tif_config.h" />
-    <ClInclude Include="include\libtiff\tif_dir.h" />
-    <ClInclude Include="include\libtiff\tif_fax3.h" />
-    <ClInclude Include="include\libtiff\tif_predict.h" />
-    <ClInclude Include="include\libtiff\uvcode.h" />
     <ClInclude Include="src\RealBloom\Dispersion.h" />
     <ClInclude Include="src\Utils\Bilinear.h" />
     <ClInclude Include="src\Utils\NumberHelpers.h" />
@@ -354,7 +342,6 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </CopyFileToFolders>
-    <None Include="include\libtiff\libtiff.def" />
     <CopyFileToFolders Include="libs\fftw\libfftw3-3.dll">
       <DeploymentContent>false</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
@@ -378,18 +365,6 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </CopyFileToFolders>
     <None Include="libs\glfw3\glfw3.dll" />
-    <CopyFileToFolders Include="libs\libtiff\tiff.dll">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-    <None Include="libs\libtiff\tiff.exp" />
-    <CopyFileToFolders Include="libs\libtiff\tiffxx.dll">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-    </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\fftw\libfftw3-3.lib" />
@@ -399,7 +374,6 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
     <Library Include="libs\glfw3\glfw3.lib" />
     <Library Include="libs\glfw3\glfw3dll.lib" />
     <Library Include="libs\glfw3\glfw3_mt.lib" />
-    <Library Include="libs\libtiff\tiff.lib" />
     <Library Include="libs\nfd\nfd.lib" />
     <Library Include="libs\ocio\OpenColorIO.lib" />
     <Library Include="libs\oiio\OpenImageIO.lib" />

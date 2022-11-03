@@ -6,7 +6,7 @@ CMImage::CMImage(const std::string& id, const std::string& name, uint32_t width,
     : m_id(id), m_name(name), m_width(width), m_height(height)
 {
     resize(width, height, true);
-    fill(fillColor);
+    fill(fillColor, true);
 }
 
 CMImage::~CMImage()
@@ -65,12 +65,14 @@ void CMImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
     if (shouldLock) unlock();
 }
 
-void CMImage::fill(std::array<float, 4> color)
+void CMImage::fill(color_t color, bool shouldLock)
 {
-    lock_guard<mutex> lock(m_mutex);
-
+    if (shouldLock) lock();
     if (!m_imageData)
+    {
+        if (shouldLock) unlock();
         return;
+    }
 
     for (size_t i = 0; i < m_imageDataSize; i += 4)
     {
@@ -79,20 +81,34 @@ void CMImage::fill(std::array<float, 4> color)
         m_imageData[i + 2] = color[2];
         m_imageData[i + 3] = color[3];
     }
+
+    if (shouldLock) unlock();
 }
 
-void CMImage::fill(std::vector<float> buffer)
+void CMImage::fill(std::vector<float> buffer, bool shouldLock)
 {
-    lock();
+    if (shouldLock) lock();
+    if (!m_imageData)
+    {
+        if (shouldLock) unlock();
+        return;
+    }
+
     std::copy(buffer.data(), buffer.data() + std::min(m_imageDataSize, (uint32_t)buffer.size()), m_imageData);
-    unlock();
+    if (shouldLock) unlock();
 }
 
-void CMImage::fill(float* buffer)
+void CMImage::fill(float* buffer, bool shouldLock)
 {
-    lock();
+    if (shouldLock) lock();
+    if (!m_imageData)
+    {
+        if (shouldLock) unlock();
+        return;
+    }
+
     std::copy(buffer, buffer + m_imageDataSize, m_imageData);
-    unlock();
+    if (shouldLock) unlock();
 }
 
 void CMImage::renderUV()
@@ -177,7 +193,15 @@ void CMImage::moveToGPU_Internal()
     try
     {
         OCIO::ConstConfigRcPtr config = CMS::getConfig();
-        OCIO::PackedImageDesc img(transData, m_width, m_height, 4L);
+        OCIO::PackedImageDesc img(
+            transData,
+            m_width,
+            m_height,
+            OCIO::ChannelOrdering::CHANNEL_ORDERING_RGBA,
+            OCIO::BitDepth::BIT_DEPTH_F32,
+            4,                 // 4 bytes to go to the next color channel
+            4 * 4,             // 4 color channels * 4 bytes per channel
+            m_width * 4 * 4);  // width * 4 channels * 4 bytes
 
         // Display View Transform
         {

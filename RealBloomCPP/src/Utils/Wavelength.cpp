@@ -200,11 +200,11 @@ namespace Wavelength
         double y = interpolate(Y, index, offset);
         double z = interpolate(Z, index, offset);
 
-        ColorSystems::Rec709.XYZtoRGB(x, y, z, outR, outG, outB);
+        //ColorSystems::Rec709.XYZtoRGB(x, y, z, outR, outG, outB);
 
-        outR = srgbToLinear(outR);
-        outG = srgbToLinear(outG);
-        outB = srgbToLinear(outB);
+        outR = x;
+        outG = y;
+        outB = z;
     }
 
     double interpolate(const double* values, int index, double offset)

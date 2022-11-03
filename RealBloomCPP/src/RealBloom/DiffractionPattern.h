@@ -13,11 +13,11 @@ namespace RealBloom
 {
     struct DiffractionPatternParams
     {
-        uint32_t width;
-        uint32_t height;
-        double contrast;
-        double multiplier;
-        bool grayscale;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        double contrast = 0;
+        double multiplier = 1;
+        bool grayscale = false;
     };
 
     class DiffractionPattern
@@ -35,7 +35,7 @@ namespace RealBloom
         std::string m_error;
 
     public:
-        DiffractionPattern(uint32_t width, uint32_t height);
+        DiffractionPattern();
 
         DiffractionPatternParams* getParams();
         void compute(float* buffer);

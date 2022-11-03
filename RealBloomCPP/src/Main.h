@@ -11,6 +11,8 @@
 #include <chrono>
 #include <mutex>
 #include <memory>
+#include <future>
+#include <functional>
 #include <stdint.h>
 
 #ifndef GLEW_STATIC
@@ -27,8 +29,9 @@
 #include "Async.h"
 
 #include "ColorManagement/CMS.h"
+#include "ColorManagement/CMImage.h"
+#include "ColorManagement/CMImageIO.h"
 
-#include "Utils/Image32Bit.h"
 #include "nfd/nfd.h"
 #include "Config.h"
 
@@ -36,30 +39,25 @@
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
-#define FILTER_LIST_TIFF "tif,tiff"
-#define FILTER_LIST_PNG  "png"
-
-enum class ImageFormat
-{
-    PNG, TIFF
-};
-
-struct LoadImageResult
-{
-    bool success = true;
-    std::string error = "";
-};
-
 void layout();
 
 void imGuiText(const std::string& text, bool isError, bool newLine);
+
+bool comboItemGetter(void* data, int index, const char** outText);
+bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex);
+
 bool lb1ItemGetter(void* data, int index, const char** outText);
 bool cb1ItemGetter(void* data, int index, const char** outText);
 
-Image32Bit* getImage(const std::string& id);
-bool loadImage(std::string filename, ImageFormat format, Image32Bit& image, LoadImageResult& outResult);
-bool saveDialog(std::string extension, std::string& outFilename);
+CMImage* getImage(const std::string& id);
 
+bool openImageDialog(std::string& outFilename);
+bool saveImageDialog(std::string& outFilename);
+
+void loadImage(CMImage& image, int imageIndex, std::string& outError);
+void saveImage(CMImage& image, std::string& outError);
+
+void imGuiDialogs();
 void renderDiffPattern();
 void updateConvParams();
 

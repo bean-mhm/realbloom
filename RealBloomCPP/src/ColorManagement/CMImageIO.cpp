@@ -38,13 +38,61 @@ bool CMImageIO::readImage(CMImage& target, const std::string& filename, const st
     }
     inp->close();
 
+    // Convert to RGBA
+    std::vector<float> bufferRGBA;
+    bufferRGBA.resize(xres * yres * 4);
+    if (channels == 4)
+        std::copy(buffer.data(), buffer.data() + buffer.size(), bufferRGBA.data());
+    else if (channels == 3)
+    {
+        uint32_t redIndexSource, redIndexTarget;
+        for (uint32_t y = 0; y < yres; y++)
+        {
+            for (uint32_t x = 0; x < xres; x++)
+            {
+                redIndexSource = (y * xres + x) * 3;
+                redIndexTarget = (y * xres + x) * 4;
+                bufferRGBA[redIndexTarget + 0] = buffer[redIndexSource + 0];
+                bufferRGBA[redIndexTarget + 1] = buffer[redIndexSource + 1];
+                bufferRGBA[redIndexTarget + 2] = buffer[redIndexSource + 2];
+                bufferRGBA[redIndexTarget + 3] = 1.0f;
+            }
+        }
+    } else if (channels == 1)
+    {
+        float v;
+        uint32_t redIndexSource, redIndexTarget;
+        for (uint32_t y = 0; y < yres; y++)
+        {
+            for (uint32_t x = 0; x < xres; x++)
+            {
+                redIndexSource = y * xres + x;
+                redIndexTarget = (y * xres + x) * 4;
+
+                v = buffer[redIndexSource];
+                bufferRGBA[redIndexTarget + 0] = v;
+                bufferRGBA[redIndexTarget + 1] = v;
+                bufferRGBA[redIndexTarget + 2] = v;
+                bufferRGBA[redIndexTarget + 3] = 1.0f;
+            }
+        }
+    }
+
     // Color Space Conversion
     if (channels > 1)
     {
         try
         {
             OCIO::ConstConfigRcPtr config = CMS::getConfig();
-            OCIO::PackedImageDesc img(buffer.data(), xres, yres, channels);
+            OCIO::PackedImageDesc img(
+                bufferRGBA.data(),
+                xres,
+                yres,
+                OCIO::ChannelOrdering::CHANNEL_ORDERING_RGBA,
+                OCIO::BitDepth::BIT_DEPTH_F32,
+                4,                 // 4 bytes to go to the next color channel
+                4 * 4,             // 4 color channels * 4 bytes per channel
+                xres * 4 * 4);     // width * 4 channels * 4 bytes
 
             OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
             transform->setSrc(colorSpace.c_str());
@@ -65,43 +113,7 @@ bool CMImageIO::readImage(CMImage& target, const std::string& filename, const st
         std::lock_guard<CMImage> lock(target);
         target.resize(xres, yres, false);
         float* targetBuffer = target.getImageData();
-
-        if (channels == 4)
-            std::copy(buffer.data(), buffer.data() + buffer.size(), targetBuffer);
-        else if (channels == 3)
-        {
-            uint32_t redIndexSource, redIndexTarget;
-            for (uint32_t y = 0; y < yres; y++)
-            {
-                for (uint32_t x = 0; x < xres; x++)
-                {
-                    redIndexSource = (y * xres + x) * 3;
-                    redIndexTarget = (y * xres + x) * 4;
-                    targetBuffer[redIndexTarget + 0] = buffer[redIndexSource + 0];
-                    targetBuffer[redIndexTarget + 1] = buffer[redIndexSource + 1];
-                    targetBuffer[redIndexTarget + 2] = buffer[redIndexSource + 2];
-                    targetBuffer[redIndexTarget + 3] = 1.0f;
-                }
-            }
-        } else if (channels == 1)
-        {
-            float v;
-            uint32_t redIndexSource, redIndexTarget;
-            for (uint32_t y = 0; y < yres; y++)
-            {
-                for (uint32_t x = 0; x < xres; x++)
-                {
-                    redIndexSource = y * xres + x;
-                    redIndexTarget = (y * xres + x) * 4;
-
-                    v = buffer[redIndexSource];
-                    targetBuffer[redIndexTarget + 0] = v;
-                    targetBuffer[redIndexTarget + 1] = v;
-                    targetBuffer[redIndexTarget + 2] = v;
-                    targetBuffer[redIndexTarget + 3] = 1.0f;
-                }
-            }
-        }
+        std::copy(bufferRGBA.data(), bufferRGBA.data() + bufferRGBA.size(), targetBuffer);
     }
     target.moveToGPU();
 
@@ -141,7 +153,15 @@ bool CMImageIO::writeImage(CMImage& source, const std::string& filename, const s
     try
     {
         OCIO::ConstConfigRcPtr config = CMS::getConfig();
-        OCIO::PackedImageDesc img(bufferRGB.data(), xres, yres, 3L);
+        OCIO::PackedImageDesc img(
+            bufferRGB.data(),
+            xres,
+            yres,
+            OCIO::ChannelOrdering::CHANNEL_ORDERING_RGB,
+            OCIO::BitDepth::BIT_DEPTH_F32,
+            4,                 // 4 bytes to go to the next color channel
+            3 * 4,             // 3 color channels * 4 bytes per channel
+            xres * 3 * 4);     // width * 3 channels * 4 bytes
 
         OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
         transform->setSrc(OCIO::ROLE_SCENE_LINEAR);

@@ -14,6 +14,8 @@
 
 #include "CMS.h"
 
+typedef std::array<float, 4> color_t;
+
 // Color Managed Image
 // Internal format is always RGBA32F
 class CMImage
@@ -63,8 +65,8 @@ public:
     // shouldLock must be false if the image is already locked.
     void resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock);
 
-    void fill(std::array<float, 4> color);
-    void fill(std::vector<float> buffer);
-    void fill(float* buffer);
+    void fill(color_t color, bool shouldLock);
+    void fill(std::vector<float> buffer, bool shouldLock);
+    void fill(float* buffer, bool shouldLock);
     void renderUV();
 };
