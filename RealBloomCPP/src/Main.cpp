@@ -190,6 +190,9 @@ void layout()
     // Image Selector
     {
         ImGui::Begin("Image List");
+
+        IMGUI_BOLD("IMAGE SLOTS");
+
         ImGui::PushItemWidth(-1);
         ImGui::ListBox("##Slots", &selImageIndex, &lb1ItemGetter, nullptr, images.size(), images.size());
         ImGui::PopItemWidth();
@@ -266,6 +269,8 @@ void layout()
     {
         ImGui::Begin("Diffraction Pattern");
 
+        IMGUI_BOLD("APERTURE");
+
         {
             static std::string loadResult;
             if (ImGui::Button("Browse Aperture##DP", buttonSize))
@@ -275,6 +280,7 @@ void layout()
 
         IMGUI_DIV;
         IMGUI_BOLD("DIFFRACTION");
+
         ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
         if (ImGui::Button("Compute##DP", buttonSize))
         {
@@ -347,6 +353,8 @@ void layout()
         ImGui::End(); // Diffraction Pattern
 
         ImGui::Begin("Convolution");
+
+        IMGUI_BOLD("INPUT");
 
         {
             static std::string loadResult;
@@ -955,7 +963,7 @@ bool setupImGui()
     //IM_ASSERT(font != NULL);
     io->FontGlobalScale = Config::UI_SCALE / Config::S_UI_MAX_SCALE;
     fontRoboto = io->Fonts->AddFontFromFileTTF("./assets/fonts/RobotoCondensed-Regular.ttf", 18.0f * Config::S_UI_MAX_SCALE);
-    fontRobotoBold = io->Fonts->AddFontFromFileTTF("./assets/fonts/RobotoCondensed-Bold.ttf", 20.0f * Config::S_UI_MAX_SCALE);
+    fontRobotoBold = io->Fonts->AddFontFromFileTTF("./assets/fonts/RobotoCondensed-Bold.ttf", 19.0f * Config::S_UI_MAX_SCALE);
     fontMono = io->Fonts->AddFontFromFileTTF("./assets/fonts/mono/RobotoMono-Regular.ttf", 18.0f * Config::S_UI_MAX_SCALE);
 
     if (fontRoboto && fontRobotoBold && fontMono)
