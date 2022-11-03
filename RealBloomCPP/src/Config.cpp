@@ -8,8 +8,8 @@ constexpr const char* cfgFilename = "config.ini";
 const char* Config::S_APP_TITLE = "RealBloom";
 const char* Config::S_APP_VERSION = "0.3.0-alpha";
 
-const uint32_t Config::S_WINDOW_WIDTH = 1366;
-const uint32_t Config::S_WINDOW_HEIGHT = 768;
+const uint32_t Config::S_WINDOW_WIDTH = 1440;
+const uint32_t Config::S_WINDOW_HEIGHT = 810;
 const float Config::S_UI_MAX_SCALE = 1.50f;
 const float Config::S_UI_MIN_SCALE = 0.75f;
 
