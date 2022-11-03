@@ -30,13 +30,19 @@ private:
 
         float exposure = 0.0f;
 
+        bool hasProcessors = false;
+        OCIO::GroupTransformRcPtr groupTransform;
+        OCIO::ConstProcessorRcPtr processor;
+        OCIO::ConstCPUProcessorRcPtr cpuProcessor;
+
         void retrieveColorSpaces();
         void retrieveDisplays();
         void retrieveViews();
         void retrieveLooks();
     };
-
     static CMVars S_VARS;
+
+    static void updateProcessors();
 
 public:
     static bool init();
@@ -60,4 +66,7 @@ public:
 
     static float getExposure();
     static void setExposure(float newExposure);
+
+    static bool hasProcessors();
+    static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();
 };

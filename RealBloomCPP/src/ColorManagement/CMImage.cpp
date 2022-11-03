@@ -203,7 +203,6 @@ void CMImage::moveToGPU_Internal()
     // Color Transform
     try
     {
-        OCIO::ConstConfigRcPtr config = CMS::getConfig();
         OCIO::PackedImageDesc img(
             transData,
             m_width,
@@ -214,27 +213,9 @@ void CMImage::moveToGPU_Internal()
             4 * 4,             // 4 color channels * 4 bytes per channel
             m_width * 4 * 4);  // width * 4 channels * 4 bytes
 
-        // Display View Transform
+        if (CMS::hasProcessors())
         {
-            OCIO::DisplayViewTransformRcPtr transform = OCIO::DisplayViewTransform::Create();
-            transform->setSrc(OCIO::ROLE_SCENE_LINEAR);
-            transform->setDisplay(CMS::getActiveDisplay().c_str());
-            transform->setView(CMS::getActiveView().c_str());
-
-            OCIO::ConstProcessorRcPtr proc = config->getProcessor(transform);
-            OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
-            cpuProc->apply(img);
-        }
-
-        // Look Transform
-        std::string lookName = CMS::getActiveLook();
-        if ((!lookName.empty()) && (lookName != "None"))
-        {
-            OCIO::ConstLookRcPtr look = config->getLook(lookName.c_str());
-            OCIO::ConstTransformRcPtr transform = look->getTransform();
-
-            OCIO::ConstProcessorRcPtr proc = config->getProcessor(transform);
-            OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
+            OCIO::ConstCPUProcessorRcPtr cpuProc = CMS::getCpuProcessor();
             cpuProc->apply(img);
         }
     } catch (OCIO::Exception& exception)

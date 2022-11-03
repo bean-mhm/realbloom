@@ -78,6 +78,8 @@ bool CMS::init()
         S_VARS.retrieveViews();
         S_VARS.retrieveLooks();
 
+        updateProcessors();
+
         success = true;
     } catch (OCIO::Exception& exception)
     {
@@ -141,16 +143,20 @@ void CMS::setActiveDisplay(const std::string& newDisplay)
     S_VARS.activeDisplay = newDisplay;
     S_VARS.activeView = S_VARS.config->getDefaultView(S_VARS.activeDisplay.c_str());
     S_VARS.retrieveViews();
+
+    updateProcessors();
 }
 
 void CMS::setActiveView(const std::string& newView)
 {
     S_VARS.activeView = newView;
+    updateProcessors();
 }
 
 void CMS::setActiveLook(const std::string& newLook)
 {
     S_VARS.activeLook = newLook;
+    updateProcessors();
 }
 
 float CMS::getExposure()
@@ -161,4 +167,51 @@ float CMS::getExposure()
 void CMS::setExposure(float newExposure)
 {
     S_VARS.exposure = newExposure;
+}
+
+void CMS::updateProcessors()
+{
+    S_VARS.hasProcessors = false;
+    try
+    {
+        // Create group transform
+        S_VARS.groupTransform = OCIO::GroupTransform::Create();
+
+        // Add display view transform
+        OCIO::DisplayViewTransformRcPtr displayViewTransform = OCIO::DisplayViewTransform::Create();
+        displayViewTransform->setSrc(OCIO::ROLE_SCENE_LINEAR);
+        displayViewTransform->setDisplay(S_VARS.activeDisplay.c_str());
+        displayViewTransform->setView(S_VARS.activeView.c_str());
+        S_VARS.groupTransform->appendTransform(displayViewTransform);
+
+        // Add look transform
+        std::string lookName = S_VARS.activeLook;
+        if ((!lookName.empty()) && (lookName != "None"))
+        {
+            OCIO::ConstLookRcPtr look = S_VARS.config->getLook(lookName.c_str());
+            S_VARS.groupTransform->appendTransform(look->getTransform()->createEditableCopy());
+        }
+
+        // Get processor
+        S_VARS.processor = S_VARS.config->getProcessor(S_VARS.groupTransform);
+        S_VARS.cpuProcessor = S_VARS.processor->getDefaultCPUProcessor();
+
+        // Won't be called if an error occurs
+        S_VARS.hasProcessors = true;
+    } catch (OCIO::Exception& exception)
+    {
+        std::cerr << "OpenColorIO Error [CMS::updateProcessor()]: " << exception.what() << std::endl;
+    }
+}
+
+bool CMS::hasProcessors()
+{
+    return S_VARS.hasProcessors;
+}
+
+OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()
+{
+    if (S_VARS.hasProcessors)
+        return S_VARS.cpuProcessor;
+    return nullptr;
 }
