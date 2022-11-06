@@ -36,7 +36,7 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
         << "void main()" << std::endl
         << "{" << std::endl
         << "    vec4 col = texture(img, vTexUV) * vec4(exposureMul, exposureMul, exposureMul, 1.0);" << std::endl
-        << "    outColor = " << "vec4(1.0, 0.0, 0.0, 1.0);"/*shaderDesc->getFunctionName() << "(col);"*/ << std::endl
+        << "    outColor = " << shaderDesc->getFunctionName() << "(col);" << std::endl
         << "}" << std::endl;
 
     // Print out the shader source code
@@ -96,17 +96,6 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
     glUseProgram(m_program);
     if (!checkGlStatus(__FUNCTION__, "glUseProgram")) return;
 
-    // Specify the layout of the vertex data
-    GLint posAttrib = glGetAttribLocation(m_program, "pos");
-    glEnableVertexAttribArray(posAttrib);
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
-    if (!checkGlStatus(__FUNCTION__, "Vertex buffer layout specification (pos)")) return;
-
-    GLint texAttrib = glGetAttribLocation(m_program, "texUV");
-    glEnableVertexAttribArray(texAttrib);
-    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
-    if (!checkGlStatus(__FUNCTION__, "Vertex buffer layout specification (texUV)")) return;
-
     prepareLuts();
 }
 
@@ -162,4 +151,30 @@ void OcioShader::setExposureMul(float exposureMul)
 
     glUniform1f(uniform, exposureMul);
     if (!checkGlStatus(__FUNCTION__, "glUniform1f")) return;
+}
+
+void OcioShader::enableAttribs()
+{
+    // Specify the layout of the vertex data
+    GLint posAttrib = glGetAttribLocation(m_program, "pos");
+    glEnableVertexAttribArray(posAttrib);
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+    if (!checkGlStatus(__FUNCTION__, "posAttrib")) return;
+
+    GLint texAttrib = glGetAttribLocation(m_program, "texUV");
+    glEnableVertexAttribArray(texAttrib);
+    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+    if (!checkGlStatus(__FUNCTION__, "texAttrib")) return;
+}
+
+void OcioShader::disableAttribs()
+{
+    // Specify the layout of the vertex data
+    GLint posAttrib = glGetAttribLocation(m_program, "pos");
+    glDisableVertexAttribArray(posAttrib);
+    if (!checkGlStatus(__FUNCTION__, "posAttrib")) return;
+
+    GLint texAttrib = glGetAttribLocation(m_program, "texUV");
+    glDisableVertexAttribArray(texAttrib);
+    if (!checkGlStatus(__FUNCTION__, "texAttrib")) return;
 }

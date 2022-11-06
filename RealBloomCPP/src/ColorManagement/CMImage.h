@@ -47,7 +47,7 @@ public:
         const std::string& name,
         uint32_t width = 128,
         uint32_t height = 128,
-        std::array<float, 4> fillColor = { 0, 1, 0, 1 });
+        std::array<float, 4> fillColor = { 0, 0, 0, 1 });
     ~CMImage();
     static void cleanUp();
 

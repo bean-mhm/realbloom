@@ -224,8 +224,8 @@ void CMImage::moveToGPU_Internal()
         }
     }
 
-    // Recreate the textures if the size has changed
-    if (sizeChanged)
+    // Recreate the texture if the size has changed or if it's in error state
+    if (sizeChanged || m_texture->hasFailed())
         m_texture = std::make_shared<GlTexture>(m_width, m_height, GL_CLAMP, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
 
     // Upload texture data
@@ -319,12 +319,12 @@ void CMImage::moveToGPU_Internal()
         // Create a Vertex Buffer Object and copy the vertex data to it
         GLfloat vertices[] = {
             //  Position      Texcoords
-                -0.5f,  0.5f, 0.0f, 0.0f, // Top-left
-                 0.5f,  0.5f, 1.0f, 0.0f, // Top-right
-                 0.5f, -0.5f, 1.0f, 1.0f, // Bottom-right
-                 0.5f, -0.5f, 1.0f, 1.0f, // Bottom-right
-                -0.5f, -0.5f, 0.0f, 1.0f  // Bottom-left
-                - 0.5f,  0.5f, 0.0f, 0.0f, // Top-left
+                -1.0f,  1.0f, 0.0f, 1.0f, // Top-left
+                 1.0f,  1.0f, 1.0f, 1.0f, // Top-right
+                 1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
+                 1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
+                -1.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
+                -1.0f,  1.0f, 0.0f, 1.0f, // Top-left
         };
         GLuint vbo;
         if (!failed)
@@ -335,13 +335,39 @@ void CMImage::moveToGPU_Internal()
             failed = !checkGlErrors(__FUNCTION__, "VBO");
         }
 
+        // Clear the buffer
+        if (!failed)
+        {
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            failed = !checkGlErrors(__FUNCTION__, "Clear");
+        }
+
         // Draw
         if (!failed)
         {
-            glClearColor(0.0f, 1.0f, 0.6f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
+            glBindVertexArray(vao);
+            failed = !checkGlErrors(__FUNCTION__, "glBindVertexArray(vao)");
+        }
+        if (!failed)
+        {
+            shader->enableAttribs();
+            failed = shader->hasFailed();
+        }
+        if (!failed)
+        {
             glDrawArrays(GL_TRIANGLES, 0, 6);
-            failed = !checkGlErrors(__FUNCTION__, "Draw");
+            failed = !checkGlErrors(__FUNCTION__, "glDrawArrays");
+        }
+        if (!failed)
+        {
+            shader->disableAttribs();
+            failed = shader->hasFailed();
+        }
+        if (!failed)
+        {
+            glBindVertexArray(0);
+            failed = !checkGlErrors(__FUNCTION__, "glBindVertexArray(0)");
         }
 
         // Unbind the frame buffer so we can continue rendering to the screen

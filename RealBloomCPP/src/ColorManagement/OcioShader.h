@@ -30,7 +30,11 @@ public:
     void useProgram();
 
     void prepareLuts();
+
     void setInputTexture(GLint tex);
     void setExposureMul(float exposureMul);
+
+    void enableAttribs();
+    void disableAttribs();
 };
 
