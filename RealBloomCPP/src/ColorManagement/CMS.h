@@ -7,10 +7,11 @@
 #include <OpenColorIO/OpenColorIO.h>
 namespace OCIO = OpenColorIO_v2_1;
 
+#include "../Utils/GlUtils.h"
 #include "../Utils/Misc.h"
 
 constexpr const char* OCIO_CONFIG_PATH = "./ocio/config.ocio";
-constexpr const bool CMS_USE_GPU = false;
+constexpr const bool CMS_USE_GPU = true;
 
 class CMS
 {

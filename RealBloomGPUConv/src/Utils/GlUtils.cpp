@@ -62,7 +62,7 @@ bool GlWrapper::checkGlStatus(const std::string& source, const std::string& stag
     std::string errorList = "";
     if (!checkGlErrors(errorList))
     {
-        setError(source, stringFormat("OpenGL Error in \"%s\": %s", stage.c_str(), errorList.c_str()));
+        setError(source, stringFormat("%s: %s", stage.c_str(), errorList.c_str()));
         return false;
     }
     return true;

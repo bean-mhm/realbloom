@@ -46,16 +46,25 @@ int main()
 
     // Setup GLFW and ImGui
     if (!setupGLFW())
+    {
+        system("PAUSE");
         return 1;
+    }
     if (!setupImGui())
+    {
+        system("PAUSE");
         return 1;
+    }
 
     // GLEW for loading OpenGL extensions
     glewInit();
 
     // Color Management System
     if (!CMS::init())
+    {
+        system("PAUSE");
         return 1;
+    }
 
     // Hide the console window
     ShowWindow(GetConsoleWindow(), SW_HIDE);
