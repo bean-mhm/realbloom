@@ -7,7 +7,7 @@ uint8_t doubleTo8bit(double v)
     return (uint8_t)(round(v * 255.0));
 }
 
-float srgbToLinear(float x)
+float srgbToLinear_DEPRECATED(float x)
 {
     if (x <= 0.0f)
         return 0.0f;
@@ -19,7 +19,7 @@ float srgbToLinear(float x)
         return powf((x + 0.055f) / 1.055f, 2.4f);
 }
 
-float linearToSrgb(float x)
+float linearToSrgb_DEPRECATED(float x)
 {
     if (x <= 0.0f)
         return 0.0f;

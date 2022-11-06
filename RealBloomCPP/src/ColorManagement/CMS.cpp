@@ -12,7 +12,7 @@ void CMS::CMVars::retrieveColorSpaces()
             colorSpaces.push_back(config->getColorSpaceNameByIndex(i));
     } catch (OCIO::Exception& exception)
     {
-        std::cerr << "OpenColorIO Error: " << exception.what() << std::endl;
+        printErr(__FUNCTION__, exception);
     }
 }
 
@@ -26,7 +26,7 @@ void CMS::CMVars::retrieveDisplays()
             displays.push_back(config->getDisplay(i));
     } catch (OCIO::Exception& exception)
     {
-        std::cerr << "OpenColorIO Error: " << exception.what() << std::endl;
+        printErr(__FUNCTION__, exception);
     }
 }
 
@@ -40,7 +40,7 @@ void CMS::CMVars::retrieveViews()
             views.push_back(config->getView(activeDisplay.c_str(), i));
     } catch (OCIO::Exception& exception)
     {
-        std::cerr << "OpenColorIO Error: " << exception.what() << std::endl;
+        printErr(__FUNCTION__, exception);
     }
 }
 
@@ -55,7 +55,7 @@ void CMS::CMVars::retrieveLooks()
             looks.push_back(config->getLookNameByIndex(i));
     } catch (OCIO::Exception& exception)
     {
-        std::cerr << "OpenColorIO Error: " << exception.what() << std::endl;
+        printErr(__FUNCTION__, exception);
     }
 }
 
@@ -83,7 +83,7 @@ bool CMS::init()
         success = true;
     } catch (OCIO::Exception& exception)
     {
-        std::cerr << "OpenColorIO Error: " << exception.what() << std::endl;
+        printErr(__FUNCTION__, exception);
     }
     return success;
 }
@@ -192,15 +192,85 @@ void CMS::updateProcessors()
             S_VARS.groupTransform->appendTransform(look->getTransform()->createEditableCopy());
         }
 
-        // Get processor
+        // Get processors
         S_VARS.processor = S_VARS.config->getProcessor(S_VARS.groupTransform);
         S_VARS.cpuProcessor = S_VARS.processor->getDefaultCPUProcessor();
+        S_VARS.gpuProcessor = S_VARS.processor->getDefaultGPUProcessor();
+
+        if (CMS_USE_GPU)
+        {
+            // Prepare shader description
+            OCIO::GpuShaderDescRcPtr shaderDesc = OCIO::GpuShaderDesc::CreateShaderDesc();
+            shaderDesc->setLanguage(OCIO::GPU_LANGUAGE_GLSL_1_3);
+            shaderDesc->setFunctionName("OCIODisplay");
+            shaderDesc->setResourcePrefix("ocio_");
+
+            // Extract shader info into shaderDesc
+            S_VARS.gpuProcessor->extractGpuShaderInfo(shaderDesc);
+
+            // Define vertex shader source code
+            std::string vertexShader =
+                "#version 150 core\n"
+                "\n"
+                "in vec2 pos;\n"
+                "in vec2 texUV;\n"
+                "\n"
+                "out vec2 vTexUV;\n"
+                "\n"
+                "void main()\n"
+                "{\n"
+                "    gl_Position = vec4(pos, 0.0, 1.0);\n"
+                "    vTexUV = texUV;\n"
+                "}\n";
+
+            // Define fragment shader source code
+            std::ostringstream fragmentShader;
+            fragmentShader
+                << "#version 150 core" << std::endl
+                << std::endl
+                << shaderDesc->getShaderText() << std::endl
+                << std::endl
+                << "in vec2 vTexUV;" << std::endl
+                << std::endl
+                << "out vec4 outColor;" << std::endl
+                << std::endl
+                << "uniform sampler2D img;" << std::endl
+                << "uniform float exposureMul;" << std::endl
+                << std::endl
+                << "void main()" << std::endl
+                << "{" << std::endl
+                << "    vec4 col = texture(img, vTexUV) * vec4(exposureMul, exposureMul, exposureMul, 1.0);" << std::endl
+                << "    outColor = " << shaderDesc->getFunctionName() << "(col);" << std::endl
+                << "}" << std::endl;
+
+            // Print out the shader texts
+            std::cout << stringFormat(
+                "\n"
+                "-------------------------------------------------------------------\n"
+                "\n"
+                "[%s]\n"
+                "\n"
+                "Vertex Shader:\n"
+                "\n"
+                "%s\n"
+                "\n"
+                "Fragment Shader:\n"
+                "\n"
+                "%s\n"
+                "\n"
+                "-------------------------------------------------------------------\n"
+                "\n",
+
+                __FUNCTION__,
+                vertexShader.c_str(),
+                fragmentShader.str().c_str());
+        }
 
         // Won't be called if an error occurs
         S_VARS.hasProcessors = true;
-    } catch (OCIO::Exception& exception)
+    } catch (std::exception& exception)
     {
-        std::cerr << "OpenColorIO Error [CMS::updateProcessor()]: " << exception.what() << std::endl;
+        printErr(__FUNCTION__, exception);
     }
 }
 
@@ -213,5 +283,12 @@ OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()
 {
     if (S_VARS.hasProcessors)
         return S_VARS.cpuProcessor;
+    return nullptr;
+}
+
+OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
+{
+    if (S_VARS.hasProcessors)
+        return S_VARS.gpuProcessor;
     return nullptr;
 }

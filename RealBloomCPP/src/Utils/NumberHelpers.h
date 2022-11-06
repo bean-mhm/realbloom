@@ -82,8 +82,8 @@ inline void blendAddRGB(float* colorA, uint32_t indexA, float* colorB, uint32_t 
 }
 
 uint8_t doubleTo8bit(double v);
-float srgbToLinear(float x);
-float linearToSrgb(float x);
+float srgbToLinear_DEPRECATED(float x);
+float linearToSrgb_DEPRECATED(float x);
 float contrastCurve(float v, float contrast);
 double contrastCurve(double v, double contrast);
 float intensityCurve(float v);

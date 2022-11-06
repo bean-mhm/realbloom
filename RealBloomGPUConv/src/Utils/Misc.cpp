@@ -1,5 +1,15 @@
 #include "Misc.h"
 
+void printErr(const std::string& source, const std::string& message)
+{
+    std::cerr << stringFormat("[%s] %s\n", source.c_str(), message.c_str());
+}
+
+void printErr(const std::string& source, const std::exception& e)
+{
+    std::cerr << stringFormat("[%s] %s\n", source.c_str(), e.what());
+}
+
 std::string stringFromDuration(float seconds)
 {
     if (seconds < 60.0f)

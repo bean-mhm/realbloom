@@ -87,6 +87,15 @@
     <ClCompile Include="src\ColorManagement\CMS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ColorManagement\glsl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\GlFrameBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils\GlUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RealBloom\DiffractionPattern.h">
@@ -395,6 +404,15 @@
     <ClInclude Include="src\ColorManagement\CMS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\ColorManagement\glsl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\GlFrameBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\GlUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="libs\glfw3\glfw3.dll" />
@@ -413,8 +431,6 @@
     <Library Include="libs\oiio\OpenImageIO.lib" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="libs\libtiff\tiff.dll" />
-    <CopyFileToFolders Include="libs\libtiff\tiffxx.dll" />
     <CopyFileToFolders Include="libs\fftw\libfftw3-3.dll" />
     <CopyFileToFolders Include="libs\fftw\libfftw3f-3.dll" />
     <CopyFileToFolders Include="libs\fftw\libfftw3l-3.dll" />
@@ -430,5 +446,11 @@
     <Image Include="icon.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="assets\Roboto-Bold.ttf" />
+    <Font Include="assets\Roboto-BoldItalic.ttf" />
+    <Font Include="assets\Roboto-Italic.ttf" />
+    <Font Include="assets\Roboto-Regular.ttf" />
   </ItemGroup>
 </Project>

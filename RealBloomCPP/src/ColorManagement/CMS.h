@@ -7,7 +7,10 @@
 #include <OpenColorIO/OpenColorIO.h>
 namespace OCIO = OpenColorIO_v2_1;
 
+#include "../Utils/Misc.h"
+
 constexpr const char* OCIO_CONFIG_PATH = "./ocio/config.ocio";
+constexpr const bool CMS_USE_GPU = false;
 
 class CMS
 {
@@ -34,6 +37,7 @@ private:
         OCIO::GroupTransformRcPtr groupTransform;
         OCIO::ConstProcessorRcPtr processor;
         OCIO::ConstCPUProcessorRcPtr cpuProcessor;
+        OCIO::ConstGPUProcessorRcPtr gpuProcessor;
 
         void retrieveColorSpaces();
         void retrieveDisplays();
@@ -69,4 +73,5 @@ public:
 
     static bool hasProcessors();
     static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();
+    static OCIO::ConstGPUProcessorRcPtr getGpuProcessor();
 };

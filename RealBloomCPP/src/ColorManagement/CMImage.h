@@ -5,14 +5,16 @@
 #include <mutex>
 #include <array>
 #include <vector>
+#include <memory>
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
 
 #include "CMS.h"
+#include "glsl.h"
+#include "../Utils/GlFrameBuffer.h"
 
 typedef std::array<float, 4> color_t;
 
@@ -34,6 +36,8 @@ private:
     GLuint m_glTexture = 0;
 
     bool m_moveToGpu = true;
+    std::shared_ptr<GlFrameBuffer> m_frameBuffer = nullptr;
+
     void moveToGPU_Internal();
 public:
     CMImage(
@@ -41,7 +45,7 @@ public:
         const std::string& name,
         uint32_t width = 128,
         uint32_t height = 128,
-        std::array<float, 4> fillColor = { 0, 0, 0, 1 });
+        std::array<float, 4> fillColor = { 0, 1, 0, 1 });
     ~CMImage();
 
     std::string getID();

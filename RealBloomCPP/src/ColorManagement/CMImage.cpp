@@ -62,6 +62,9 @@ void CMImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
     m_imageDataSize = m_width * m_height * 4;
     m_imageData = new float[m_imageDataSize];
 
+    m_frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
+    m_frameBuffer->unbind();
+
     if (shouldLock) unlock();
 }
 
@@ -187,40 +190,39 @@ void CMImage::moveToGPU_Internal()
         sizeChanged = true;
     }
 
-    // Temporary buffer to apply transforms on
-    float* transData = new float[m_imageDataSize];
-    std::copy(m_imageData, m_imageData + m_imageDataSize, transData);
-
     // Exposure
     float exposure = CMS::getExposure();
-    if (exposure != 0)
-    {
-        float exposureMul = powf(2, exposure);
-        for (uint32_t i = 0; i < m_imageDataSize; i++)
-            if (i % 4 != 3) transData[i] *= exposureMul;
-    }
+    float exposureMul = powf(2, exposure);
 
-    // Color Transform
-    try
-    {
-        OCIO::PackedImageDesc img(
-            transData,
-            m_width,
-            m_height,
-            OCIO::ChannelOrdering::CHANNEL_ORDERING_RGBA,
-            OCIO::BitDepth::BIT_DEPTH_F32,
-            4,                 // 4 bytes to go to the next color channel
-            4 * 4,             // 4 color channels * 4 bytes per channel
-            m_width * 4 * 4);  // width * 4 channels * 4 bytes
+    // Temporary buffer to apply transforms on (CPU)
+    float* transData = nullptr;
 
-        if (CMS::hasProcessors())
+    // Color Transform (CPU)
+    if (!CMS_USE_GPU && CMS::hasProcessors())
+    {
+        transData = new float[m_imageDataSize];
+        std::copy(m_imageData, m_imageData + m_imageDataSize, transData);
+
+        if (exposure != 0)
+            for (uint32_t i = 0; i < m_imageDataSize; i++)
+                if (i % 4 != 3) transData[i] *= exposureMul;
+        try
         {
-            OCIO::ConstCPUProcessorRcPtr cpuProc = CMS::getCpuProcessor();
-            cpuProc->apply(img);
+            OCIO::PackedImageDesc img(
+                transData,
+                m_width,
+                m_height,
+                OCIO::ChannelOrdering::CHANNEL_ORDERING_RGBA,
+                OCIO::BitDepth::BIT_DEPTH_F32,
+                4,                 // 4 bytes to go to the next color channel
+                4 * 4,             // 4 color channels * 4 bytes per channel (till the next pixel)
+                m_width * 4 * 4);  // width * 4 channels * 4 bytes (till the next row)
+
+            CMS::getCpuProcessor()->apply(img);
+        } catch (std::exception& exception)
+        {
+            printErr(__FUNCTION__, exception);
         }
-    } catch (OCIO::Exception& exception)
-    {
-        std::cerr << "OpenColorIO Error [CMImage::moveToGPU_Internal()]: " << exception.what() << std::endl;
     }
 
     // OpenGL Texture
@@ -242,16 +244,110 @@ void CMImage::moveToGPU_Internal()
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
 
-        // Upload to GPU
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_FLOAT, transData);
+        // Upload to GPU (use transData in CPU mode)
+        if (!CMS_USE_GPU && (transData != nullptr))
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_FLOAT, transData);
+        else
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_FLOAT, m_imageData);
     }
 
     // Clean up
-    delete[] transData;
+    DELARR(transData);
 
+    // In CPU mode, m_glTexture will be used as the texture that ImGui needs to draw.
+    // In GPU mode, it'll be fed into the shader program which will process it.
     m_glTexture = imageTexture;
     if (sizeChanged)
         glDeleteTextures(1, &oldTexture);
+
+    // Color Transform (GPU)
+    if (CMS_USE_GPU)
+    {
+        // Bind the frame buffer so we can render the transformed image into it.
+        m_frameBuffer->bind();
+
+        //
+
+        // Detach the frame buffer so we can continue rendering to the screen
+        m_frameBuffer->unbind();
+    }
+
+    // (Junk code, will be removed)
+    if (false)
+    {
+        OCIO::GpuShaderDescRcPtr shaderDesc = OCIO::GpuShaderDesc::CreateShaderDesc();
+        shaderDesc->setLanguage(OCIO::GPU_LANGUAGE_GLSL_4_0);
+        shaderDesc->setFunctionName("OCIODisplay");
+        shaderDesc->setResourcePrefix("ocio_");
+
+        OCIO::ConstGPUProcessorRcPtr gpuProc = CMS::getGpuProcessor();
+        gpuProc->extractGpuShaderInfo(shaderDesc);
+
+        // Create oglBuilder using the shaderDesc.
+        OCIO::OpenGLBuilderRcPtr m_oglBuilder = OCIO::OpenGLBuilder::Create(shaderDesc);
+        m_oglBuilder->setVerbose(true);
+
+        // Allocate & upload all the LUTs in a dedicated GPU texture.
+        // Note: The start index for the texture indices is 1 as one texture
+        //       was already created for the input image.
+        m_oglBuilder->allocateAllTextures(1);
+
+        std::ostringstream mainShader;
+        mainShader
+            << std::endl
+            << "uniform sampler2D img;" << std::endl
+            << std::endl
+            << "void main()" << std::endl
+            << "{" << std::endl
+            << "    vec4 col = texture2D(img, gl_TexCoord[0].st);" << std::endl
+            << "    gl_FragColor = " << shaderDesc->getFunctionName() << "(col);" << std::endl
+            << "}" << std::endl;
+
+        // Build the fragment shader program.
+        m_oglBuilder->buildProgram(mainShader.str().c_str(), false);
+
+        // Enable the fragment shader program, and all needed resources.
+        m_oglBuilder->useProgram();
+
+        // The image texture.
+        glUniform1i(glGetUniformLocation(m_oglBuilder->getProgramHandle(), "img"), m_glTexture);
+
+        // The LUT textures.
+        m_oglBuilder->useAllTextures();
+
+        // Enable uniforms for dynamic properties.
+        m_oglBuilder->useAllUniforms();
+
+        // Bind the frame buffer so we can render the transformed image into it.
+        m_frameBuffer->bind();
+
+        // Draw
+        glViewport(0, 0, m_width, m_height);
+
+        glEnable(GL_TEXTURE_2D);
+        glClearColor(0.1, 0.5, 1, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glColor3f(1, 1, 1);
+
+        glPushMatrix();
+        glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(-.95, -.95);
+
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(-.95, .95);
+
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(.95, .95);
+
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(.95, -.95);
+        glEnd();
+        glPopMatrix();
+
+        // Detach the frame buffer so we can continue rendering to the screen
+        m_frameBuffer->unbind();
+    }
 }
 
 uint32_t CMImage::getGlTexture()
@@ -261,5 +357,9 @@ uint32_t CMImage::getGlTexture()
         m_moveToGpu = false;
         moveToGPU_Internal();
     }
-    return m_glTexture;
+
+    if (CMS_USE_GPU)
+        return m_frameBuffer->getColorBuffer();
+    else
+        return m_glTexture;
 }

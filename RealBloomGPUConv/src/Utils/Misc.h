@@ -19,6 +19,9 @@
 #define AS_BYTES(X) reinterpret_cast<char*>(&(X))
 #define PTR_AS_BYTES(X) reinterpret_cast<char*>(X)
 
+void printErr(const std::string& source, const std::string& message);
+void printErr(const std::string& source, const std::exception& e);
+
 inline void threadJoin(std::thread* t)
 {
     if (t)

@@ -44,11 +44,14 @@ int main()
     Config::load();
     Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
 
-    // Setup a window
+    // Setup GLFW and ImGui
     if (!setupGLFW())
         return 1;
     if (!setupImGui())
         return 1;
+
+    // GLEW for loading OpenGL extensions
+    glewInit();
 
     // Color Management System
     if (!CMS::init())
