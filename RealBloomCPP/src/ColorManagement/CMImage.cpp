@@ -2,6 +2,8 @@
 
 using namespace std;
 
+std::shared_ptr<GlFrameBuffer> CMImage::s_frameBuffer = nullptr;
+
 CMImage::CMImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor)
     : m_id(id), m_name(name), m_width(width), m_height(height)
 {
@@ -17,11 +19,11 @@ CMImage::~CMImage()
     {
         delete[] m_imageData;
     }
+}
 
-    if (m_glTexture)
-    {
-        glDeleteTextures(1, &m_glTexture);
-    }
+void CMImage::cleanUp()
+{
+    s_frameBuffer = nullptr;
 }
 
 std::string CMImage::getID()
@@ -61,9 +63,6 @@ void CMImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
 
     m_imageDataSize = m_width * m_height * 4;
     m_imageData = new float[m_imageDataSize];
-
-    m_frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
-    m_frameBuffer->unbind();
 
     if (shouldLock) unlock();
 }
@@ -225,55 +224,142 @@ void CMImage::moveToGPU_Internal()
         }
     }
 
-    // OpenGL Texture
-    GLuint imageTexture = m_glTexture;
-    GLuint oldTexture = m_glTexture;
-    {
-        // Create an OpenGL texture identifier
-        if (sizeChanged)
-            glGenTextures(1, &imageTexture);
-        glBindTexture(GL_TEXTURE_2D, imageTexture);
+    // Recreate the textures if the size has changed
+    if (sizeChanged)
+        m_texture = std::make_shared<GlTexture>(m_width, m_height, GL_CLAMP, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
 
-        // Setup filtering parameters for display
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP); // This is required on WebGL for non power-of-two textures
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP); // Same
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-#endif
-
-        // Upload to GPU (use transData in CPU mode)
-        if (!CMS_USE_GPU && (transData != nullptr))
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_FLOAT, transData);
-        else
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_FLOAT, m_imageData);
-    }
+    // Upload texture data
+    if (!CMS_USE_GPU && (transData != nullptr))
+        m_texture->upload(transData);
+    else
+        m_texture->upload(m_imageData);
 
     // Clean up
     DELARR(transData);
 
-    // In CPU mode, m_glTexture will be used as the texture that ImGui needs to draw.
-    // In GPU mode, it'll be fed into the shader program which will process it.
-    m_glTexture = imageTexture;
-    if (sizeChanged)
-        glDeleteTextures(1, &oldTexture);
-
     // Color Transform (GPU)
-    if (CMS_USE_GPU)
+    if (CMS_USE_GPU && CMS::hasProcessors())
     {
-        // Bind the frame buffer so we can render the transformed image into it.
-        m_frameBuffer->bind();
+        bool failed = false;
 
-        //
+        // Frame buffer
+        if (!failed)
+        {
+            bool mustRecreate = false;
+            if (s_frameBuffer.get() == nullptr)
+            {
+                mustRecreate = true;
+            } else
+            {
+                if ((s_frameBuffer->getWidth() != m_width) || (s_frameBuffer->getHeight() != m_height))
+                    mustRecreate = true;
+                else if (s_frameBuffer->hasFailed())
+                    mustRecreate = true;
+            }
 
-        // Detach the frame buffer so we can continue rendering to the screen
-        m_frameBuffer->unbind();
+            if (mustRecreate)
+                s_frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
+
+            failed = s_frameBuffer->hasFailed() || m_texture->hasFailed();
+        }
+
+        // Bind the frame buffer so we can render the transformed image into it
+        if (!failed)
+        {
+            s_frameBuffer->bind();
+            failed = s_frameBuffer->hasFailed();
+        }
+
+        // Set the viewport
+        if (!failed)
+        {
+            s_frameBuffer->viewport();
+            failed = s_frameBuffer->hasFailed();
+        }
+
+        // Use the shader program
+        std::shared_ptr<OcioShader> shader;
+        if (!failed)
+        {
+            shader = CMS::getShader();
+            shader->useProgram();
+            failed = shader->hasFailed();
+        }
+
+        // Bind our texture to a texture unit
+        if (!failed)
+        {
+            m_texture->bind(GL_TEXTURE0);
+            failed = m_texture->hasFailed();
+        }
+
+        // Set the input texture
+        if (!failed)
+        {
+            shader->setInputTexture(0);
+            failed = shader->hasFailed();
+        }
+
+        // Set the exposure
+        if (!failed)
+        {
+            shader->setExposureMul(exposureMul);
+            failed = shader->hasFailed();
+        }
+
+        // Create Vertex Array Object
+        GLuint vao;
+        if (!failed)
+        {
+            glGenVertexArrays(1, &vao);
+            glBindVertexArray(vao);
+            failed = !checkGlErrors(__FUNCTION__, "VAO");
+        }
+
+        // Create a Vertex Buffer Object and copy the vertex data to it
+        GLfloat vertices[] = {
+            //  Position      Texcoords
+                -0.5f,  0.5f, 0.0f, 0.0f, // Top-left
+                 0.5f,  0.5f, 1.0f, 0.0f, // Top-right
+                 0.5f, -0.5f, 1.0f, 1.0f, // Bottom-right
+                 0.5f, -0.5f, 1.0f, 1.0f, // Bottom-right
+                -0.5f, -0.5f, 0.0f, 1.0f  // Bottom-left
+                - 0.5f,  0.5f, 0.0f, 0.0f, // Top-left
+        };
+        GLuint vbo;
+        if (!failed)
+        {
+            glGenBuffers(1, &vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            failed = !checkGlErrors(__FUNCTION__, "VBO");
+        }
+
+        // Draw
+        if (!failed)
+        {
+            glClearColor(0.0f, 1.0f, 0.6f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            failed = !checkGlErrors(__FUNCTION__, "Draw");
+        }
+
+        // Unbind the frame buffer so we can continue rendering to the screen
+        if (!failed)
+        {
+            s_frameBuffer->unbind();
+            failed = s_frameBuffer->hasFailed();
+        }
+
+        // Clean up
+        glDeleteBuffers(1, &vbo);
+        glDeleteVertexArrays(1, &vao);
+        checkGlErrors(__FUNCTION__, "Cleanup");
     }
 
+#if 0
     // (Junk code, will be removed)
-    if (false)
+    if (CMS_USE_GPU)
     {
         OCIO::GpuShaderDescRcPtr shaderDesc = OCIO::GpuShaderDesc::CreateShaderDesc();
         shaderDesc->setLanguage(OCIO::GPU_LANGUAGE_GLSL_4_0);
@@ -348,6 +434,7 @@ void CMImage::moveToGPU_Internal()
         // Detach the frame buffer so we can continue rendering to the screen
         m_frameBuffer->unbind();
     }
+#endif
 }
 
 uint32_t CMImage::getGlTexture()
@@ -359,7 +446,7 @@ uint32_t CMImage::getGlTexture()
     }
 
     if (CMS_USE_GPU)
-        return m_frameBuffer->getColorBuffer();
+        return s_frameBuffer->getColorBuffer();
     else
-        return m_glTexture;
+        return m_texture->getTexture();
 }

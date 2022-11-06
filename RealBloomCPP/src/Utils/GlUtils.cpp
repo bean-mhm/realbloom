@@ -1,28 +1,21 @@
 #include "GlUtils.h"
 
-bool createShader(const char* shaderName, GLenum shaderType, const char* shaderSource, GLuint& outShaderID)
+bool createShader(GLenum shaderType, const char* shaderSource, GLuint& outShaderID, std::string& outLog)
 {
     outShaderID = glCreateShader(shaderType);
     glShaderSource(outShaderID, 1, &shaderSource, NULL);
     glCompileShader(outShaderID);
-    return checkShader(shaderName, outShaderID);
+    return checkShader(outShaderID, outLog);
 }
 
-bool checkShader(const char* shaderName, GLuint shaderID)
+bool checkShader(GLuint shaderID, std::string& outLog)
 {
     GLint status;
     glGetShaderiv(shaderID, GL_COMPILE_STATUS, &status);
 
     char shaderLog[512];
-    glGetShaderInfoLog(shaderID, 512, NULL, shaderLog);
-
-    if (status == GL_TRUE)
-    {
-        printf("Shader \"%s\" was compiled successfully: \"%s\"\n", shaderName, shaderLog);
-    } else
-    {
-        printf("Shader \"%s\" could not be compiled: \"%s\"\n", shaderName, shaderLog);
-    }
+    glGetShaderInfoLog(shaderID, 511, NULL, shaderLog);
+    outLog = shaderLog;
 
     return status == GL_TRUE;
 }
@@ -47,6 +40,19 @@ bool checkGlErrors(std::string& outErrors)
     }
 
     return !hadErrors;
+}
+
+bool checkGlErrors(const std::string& source, const std::string& stage, std::string* outErrors)
+{
+    std::string errors;
+    bool status = checkGlErrors(errors);
+
+    if (outErrors != nullptr) *outErrors = errors;
+
+    if (!status)
+        printErr(source, stage, errors);
+
+    return status;
 }
 
 void GlWrapper::setError(const std::string& source, const std::string& message)

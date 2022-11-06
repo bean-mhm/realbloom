@@ -37,8 +37,9 @@ public:
     std::string getError() const;
 };
 
-bool createShader(const char* shaderName, GLenum shaderType, const char* shaderSource, GLuint& outShaderID);
-bool checkShader(const char* shaderName, GLuint shaderID);
+bool createShader(GLenum shaderType, const char* shaderSource, GLuint& outShaderID, std::string& outLog);
+bool checkShader(GLuint shaderID, std::string& outLog);
 
 // returns true if no errors are present
 bool checkGlErrors(std::string& outErrors);
+bool checkGlErrors(const std::string& source, const std::string& stage, std::string* outErrors = nullptr);

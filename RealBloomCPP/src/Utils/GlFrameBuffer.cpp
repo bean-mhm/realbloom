@@ -38,32 +38,50 @@ GlFrameBuffer::~GlFrameBuffer()
     unbind();
     glDeleteTextures(1, &(m_texColorBuffer));
     glDeleteFramebuffers(1, &(m_frameBuffer));
+    checkGlStatus(__FUNCTION__, "Cleanup");
 }
 
-bool GlFrameBuffer::bind()
+uint32_t GlFrameBuffer::getWidth() const
+{
+    return m_width;
+}
+
+uint32_t GlFrameBuffer::getHeight()
+{
+    return m_height;
+}
+
+GLuint GlFrameBuffer::getColorBuffer() const
+{
+    return m_texColorBuffer;
+}
+
+void GlFrameBuffer::bind()
 {
     if (hasFailed())
-        return false;
+        return;
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-    return checkGlStatus(__FUNCTION__, "glBindFramebuffer");
+    if (!checkGlStatus(__FUNCTION__, "glBindFramebuffer")) return;
 }
 
-bool GlFrameBuffer::unbind()
+void GlFrameBuffer::unbind()
 {
     if (hasFailed())
-        return false;
+        return;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     checkGlStatus(__FUNCTION__, "glBindFramebuffer");
 
     glDrawBuffer(GL_BACK);
     checkGlStatus(__FUNCTION__, "glDrawBuffer");
-
-    return !hasFailed();
 }
 
-GLuint GlFrameBuffer::getColorBuffer() const
+void GlFrameBuffer::viewport()
 {
-    return m_texColorBuffer;
+    if (hasFailed())
+        return;
+
+    glViewport(0, 0, m_width, m_height);
+    if (!checkGlStatus(__FUNCTION__, "glViewport")) return;
 }

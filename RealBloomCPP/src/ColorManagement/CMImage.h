@@ -13,7 +13,8 @@
 #include <GL/glew.h>
 
 #include "CMS.h"
-#include "glsl.h"
+#include "OcioShader.h"
+#include "../Utils/GlTexture.h"
 #include "../Utils/GlFrameBuffer.h"
 
 typedef std::array<float, 4> color_t;
@@ -33,12 +34,13 @@ private:
     std::mutex m_mutex;
 
     uint32_t m_oldWidth = 0, m_oldHeight = 0;
-    GLuint m_glTexture = 0;
+    std::shared_ptr<GlTexture> m_texture = nullptr;
+
+    static std::shared_ptr<GlFrameBuffer> s_frameBuffer;
 
     bool m_moveToGpu = true;
-    std::shared_ptr<GlFrameBuffer> m_frameBuffer = nullptr;
-
     void moveToGPU_Internal();
+
 public:
     CMImage(
         const std::string& id,
@@ -47,6 +49,7 @@ public:
         uint32_t height = 128,
         std::array<float, 4> fillColor = { 0, 1, 0, 1 });
     ~CMImage();
+    static void cleanUp();
 
     std::string getID();
     std::string getName();

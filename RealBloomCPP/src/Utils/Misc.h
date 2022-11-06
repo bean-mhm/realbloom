@@ -21,6 +21,7 @@
 
 void printErr(const std::string& source, const std::string& message);
 void printErr(const std::string& source, const std::exception& e);
+void printErr(const std::string& source, const std::string& stage, const std::string& message);
 
 inline void threadJoin(std::thread* t)
 {

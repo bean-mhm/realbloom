@@ -198,7 +198,9 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Utils\GlTexture.cpp" />
     <ClCompile Include="include\oiio\detail\pugixml\pugixml.cpp" />
+    <ClCompile Include="src\ColorManagement\OcioShader.cpp" />
     <ClCompile Include="src\Utils\GlFrameBuffer.cpp" />
     <ClCompile Include="src\ColorManagement\glsl.cpp" />
     <ClCompile Include="src\Async.cpp" />
@@ -227,6 +229,7 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
     <ClCompile Include="src\Utils\Wavelength.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Utils\GlTexture.h" />
     <ClInclude Include="include\inih\INIReader.h" />
     <ClInclude Include="include\ocio\OpenColorABI.h" />
     <ClInclude Include="include\ocio\OpenColorAppHelpers.h" />
@@ -294,6 +297,7 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
     <ClInclude Include="include\oiio\ustring.h" />
     <ClInclude Include="include\oiio\varyingref.h" />
     <ClInclude Include="include\oiio\version.h" />
+    <ClInclude Include="src\ColorManagement\OcioShader.h" />
     <ClInclude Include="src\Utils\GlFrameBuffer.h" />
     <ClInclude Include="src\ColorManagement\glsl.h" />
     <ClInclude Include="resource.h" />

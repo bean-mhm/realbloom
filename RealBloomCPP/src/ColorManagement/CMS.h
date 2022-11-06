@@ -3,10 +3,12 @@
 #include <iostream>
 #include <string>
 #include <filesystem>
+#include <memory>
 
 #include <OpenColorIO/OpenColorIO.h>
 namespace OCIO = OpenColorIO_v2_1;
 
+#include "OcioShader.h"
 #include "../Utils/GlUtils.h"
 #include "../Utils/Misc.h"
 
@@ -34,24 +36,28 @@ private:
 
         float exposure = 0.0f;
 
-        bool hasProcessors = false;
-        std::string errorMessage = "";
         OCIO::GroupTransformRcPtr groupTransform;
         OCIO::ConstProcessorRcPtr processor;
         OCIO::ConstCPUProcessorRcPtr cpuProcessor;
         OCIO::ConstGPUProcessorRcPtr gpuProcessor;
+
+        bool hasProcessors = false;
+        std::string errorMessage = "";
+        std::shared_ptr<OcioShader> shader = nullptr;
 
         void retrieveColorSpaces();
         void retrieveDisplays();
         void retrieveViews();
         void retrieveLooks();
     };
-    static CMVars S_VARS;
+    static CMVars* S_VARS;
 
     static void updateProcessors();
 
 public:
     static bool init();
+    static void cleanUp();
+
     static OCIO::ConstConfigRcPtr getConfig();
 
     static const std::string& getWorkingSpace();
@@ -77,4 +83,5 @@ public:
     static std::string getError();
     static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();
     static OCIO::ConstGPUProcessorRcPtr getGpuProcessor();
+    static std::shared_ptr<OcioShader> getShader();
 };

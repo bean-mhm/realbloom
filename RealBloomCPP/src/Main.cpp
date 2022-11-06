@@ -1193,6 +1193,11 @@ void applyStyle_RealBloomGray()
 
 void cleanUp()
 {
+    for (auto image : images)
+        delete image;
+    CMImage::cleanUp();
+    CMS::cleanUp();
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
