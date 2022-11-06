@@ -271,12 +271,18 @@ void CMS::updateProcessors()
     } catch (std::exception& exception)
     {
         printErr(__FUNCTION__, exception);
+        S_VARS.errorMessage = exception.what();
     }
 }
 
 bool CMS::hasProcessors()
 {
     return S_VARS.hasProcessors;
+}
+
+std::string CMS::getError()
+{
+    return S_VARS.errorMessage;
 }
 
 OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()

@@ -34,6 +34,7 @@ private:
         float exposure = 0.0f;
 
         bool hasProcessors = false;
+        std::string errorMessage = "";
         OCIO::GroupTransformRcPtr groupTransform;
         OCIO::ConstProcessorRcPtr processor;
         OCIO::ConstCPUProcessorRcPtr cpuProcessor;
@@ -72,6 +73,7 @@ public:
     static void setExposure(float newExposure);
 
     static bool hasProcessors();
+    static std::string getError();
     static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();
     static OCIO::ConstGPUProcessorRcPtr getGpuProcessor();
 };

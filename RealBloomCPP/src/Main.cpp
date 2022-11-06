@@ -593,16 +593,6 @@ void layout()
     {
         ImGui::Begin("Color Management");
 
-        IMGUI_BOLD("INFO");
-
-        // Working Space
-        static std::string workingSpace = CMS::getWorkingSpace();
-        static std::string workingSpaceDesc = CMS::getWorkingSpaceDesc();
-        ImGui::TextWrapped("Working Space: %s", workingSpace.c_str());
-        if (ImGui::IsItemHovered() && !workingSpaceDesc.empty())
-            ImGui::SetTooltip(workingSpaceDesc.c_str());
-        ImGui::NewLine();
-
         IMGUI_BOLD("VIEW");
 
         // Exposure
@@ -653,6 +643,20 @@ void layout()
             for (CMImage* image : images)
                 image->moveToGPU();
         }
+
+        IMGUI_DIV;
+        IMGUI_BOLD("INFO");
+
+        // Working Space
+        static std::string workingSpace = CMS::getWorkingSpace();
+        static std::string workingSpaceDesc = CMS::getWorkingSpaceDesc();
+        ImGui::TextWrapped("Working Space: %s", workingSpace.c_str());
+        if (ImGui::IsItemHovered() && !workingSpaceDesc.empty())
+            ImGui::SetTooltip(workingSpaceDesc.c_str());
+
+        // CMS error
+        if (!CMS::hasProcessors())
+            imGuiText(CMS::getError(), true, false);
 
         ImGui::NewLine();
         ImGui::End();

@@ -63,9 +63,7 @@ namespace RealBloom
                 float dispColor[3];
                 std::copy(m_params.color, m_params.color + 3, dispColor);
 
-                // Convert to linear space
-                for (uint32_t i = 0; i < 3; i++)
-                    dispColor[i] = srgbToLinear(dispColor[i]);
+                // TODO: Convert dispColor to scene-linear space
 
                 double wavelength = 0;
                 double wlR = 0, wlG = 0, wlB = 0;
