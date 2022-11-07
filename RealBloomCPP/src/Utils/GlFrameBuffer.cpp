@@ -4,10 +4,10 @@ GlFrameBuffer::GlFrameBuffer(uint32_t width, uint32_t height)
     : m_width(width), m_height(height)
 {
     glGenFramebuffers(1, &m_frameBuffer);
-    if (!checkGlStatus(__FUNCTION__, "glGenFramebuffers")) return;
+    checkGlStatus(__FUNCTION__, "glGenFramebuffers");
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-    if (!checkGlStatus(__FUNCTION__, "glBindFramebuffer")) return;
+    checkGlStatus(__FUNCTION__, "glBindFramebuffer");
 
     // Make a color buffer for our frame buffer (render target)
     glGenTextures(1, &m_texColorBuffer);
@@ -17,20 +17,19 @@ GlFrameBuffer::GlFrameBuffer(uint32_t width, uint32_t height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, m_width, m_height, 0, GL_RGBA, GL_FLOAT, NULL);
-    if (!checkGlStatus(__FUNCTION__, "Color Buffer")) return;
+    checkGlStatus(__FUNCTION__, "Color Buffer");
 
     // Assign the color buffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texColorBuffer, 0);
-    if (!checkGlStatus(__FUNCTION__, "glFramebufferTexture2D")) return;
+    checkGlStatus(__FUNCTION__, "glFramebufferTexture2D");
 
     GLenum fbStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (!checkGlStatus(__FUNCTION__, "glCheckFramebufferStatus")) return;
+    checkGlStatus(__FUNCTION__, "glCheckFramebufferStatus");
 
     if (fbStatus != GL_FRAMEBUFFER_COMPLETE)
-    {
-        setError(__FUNCTION__, stringFormat("Framebuffer was not ready. Status: %s", toHex(fbStatus)));
-        return;
-    }
+        throw std::exception(
+            formatErr(__FUNCTION__, stringFormat("Frame buffer was not ready. Status: %s", toHex(fbStatus))).c_str()
+        );
 }
 
 GlFrameBuffer::~GlFrameBuffer()
@@ -46,7 +45,7 @@ uint32_t GlFrameBuffer::getWidth() const
     return m_width;
 }
 
-uint32_t GlFrameBuffer::getHeight()
+uint32_t GlFrameBuffer::getHeight() const
 {
     return m_height;
 }
@@ -58,18 +57,12 @@ GLuint GlFrameBuffer::getColorBuffer() const
 
 void GlFrameBuffer::bind()
 {
-    if (hasFailed())
-        return;
-
     glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-    if (!checkGlStatus(__FUNCTION__, "glBindFramebuffer")) return;
+    checkGlStatus(__FUNCTION__, "glBindFramebuffer");
 }
 
 void GlFrameBuffer::unbind()
 {
-    if (hasFailed())
-        return;
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     checkGlStatus(__FUNCTION__, "glBindFramebuffer");
 
@@ -79,9 +72,6 @@ void GlFrameBuffer::unbind()
 
 void GlFrameBuffer::viewport()
 {
-    if (hasFailed())
-        return;
-
     glViewport(0, 0, m_width, m_height);
-    if (!checkGlStatus(__FUNCTION__, "glViewport")) return;
+    checkGlStatus(__FUNCTION__, "glViewport");
 }

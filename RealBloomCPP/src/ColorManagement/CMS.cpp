@@ -12,7 +12,7 @@ void CMS::CMVars::retrieveColorSpaces()
             colorSpaces.push_back(config->getColorSpaceNameByIndex(i));
     } catch (OCIO::Exception& exception)
     {
-        printErr(__FUNCTION__, exception);
+        printErr(__FUNCTION__, exception.what());
     }
 }
 
@@ -26,7 +26,7 @@ void CMS::CMVars::retrieveDisplays()
             displays.push_back(config->getDisplay(i));
     } catch (OCIO::Exception& exception)
     {
-        printErr(__FUNCTION__, exception);
+        printErr(__FUNCTION__, exception.what());
     }
 }
 
@@ -40,7 +40,7 @@ void CMS::CMVars::retrieveViews()
             views.push_back(config->getView(activeDisplay.c_str(), i));
     } catch (OCIO::Exception& exception)
     {
-        printErr(__FUNCTION__, exception);
+        printErr(__FUNCTION__, exception.what());
     }
 }
 
@@ -55,7 +55,7 @@ void CMS::CMVars::retrieveLooks()
             looks.push_back(config->getLookNameByIndex(i));
     } catch (OCIO::Exception& exception)
     {
-        printErr(__FUNCTION__, exception);
+        printErr(__FUNCTION__, exception.what());
     }
 }
 
@@ -83,9 +83,9 @@ bool CMS::init()
         updateProcessors();
 
         success = true;
-    } catch (OCIO::Exception& exception)
+    } catch (std::exception& exception)
     {
-        printErr(__FUNCTION__, exception);
+        printErr(__FUNCTION__, exception.what());
     }
     return success;
 }
@@ -217,17 +217,14 @@ void CMS::updateProcessors()
 
             // Recreate the OCIO shader
             S_VARS->shader = std::make_shared<OcioShader>(shaderDesc);
-
-            if (S_VARS->shader->hasFailed())
-                throw std::exception("OcioShader has failed.");
         }
 
         // Won't be called if an error occurs
         S_VARS->hasProcessors = true;
     } catch (std::exception& exception)
     {
-        printErr(__FUNCTION__, exception);
         S_VARS->errorMessage = exception.what();
+        printErr(__FUNCTION__, exception.what());
     }
 }
 

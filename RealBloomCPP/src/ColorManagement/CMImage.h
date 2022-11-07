@@ -16,6 +16,8 @@
 #include "OcioShader.h"
 #include "../Utils/GlTexture.h"
 #include "../Utils/GlFrameBuffer.h"
+#include "../Utils/GlUtils.h"
+#include "../Utils/Misc.h"
 
 typedef std::array<float, 4> color_t;
 

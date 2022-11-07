@@ -20,7 +20,8 @@ bool checkShader(GLuint shaderID, std::string& outLog)
     return status == GL_TRUE;
 }
 
-bool checkGlErrors(std::string& outErrors)
+// returns true if no errors are present
+bool getGlErrors(std::string& outErrors)
 {
     bool hadErrors = false;
     outErrors = "";
@@ -42,19 +43,24 @@ bool checkGlErrors(std::string& outErrors)
     return !hadErrors;
 }
 
-bool checkGlErrors(const std::string& source, const std::string& stage, std::string* outErrors)
+void checkGlStatus(const std::string& source, const std::string& stage)
 {
     std::string errors;
-    bool status = checkGlErrors(errors);
-
-    if (outErrors != nullptr) *outErrors = errors;
+    bool status = getGlErrors(errors);
 
     if (!status)
-        printErr(source, stage, errors);
-
-    return status;
+    {
+        throw std::exception(formatErr(source, stage, errors).c_str());
+    }
 }
 
+GlWrapper::GlWrapper()
+{}
+
+GlWrapper::~GlWrapper()
+{}
+
+#if 0
 void GlWrapper::setError(const std::string& source, const std::string& message)
 {
     m_status.error = stringFormat("[%s] %s", source.c_str(), message.c_str());
@@ -74,12 +80,6 @@ bool GlWrapper::checkGlStatus(const std::string& source, const std::string& stag
     return true;
 }
 
-GlWrapper::GlWrapper()
-{}
-
-GlWrapper::~GlWrapper()
-{}
-
 GlWrapperStatus GlWrapper::getStatus() const
 {
     return m_status;
@@ -94,3 +94,4 @@ std::string GlWrapper::getError() const
 {
     return m_status.error;
 }
+#endif

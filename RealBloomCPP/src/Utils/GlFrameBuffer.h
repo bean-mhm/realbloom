@@ -8,6 +8,7 @@
 #include <GL/glew.h>
 
 #include "GlUtils.h"
+#include "Misc.h"
 
 class GlFrameBuffer : public GlWrapper
 {
@@ -23,7 +24,7 @@ public:
     virtual ~GlFrameBuffer();
 
     uint32_t getWidth() const;
-    uint32_t getHeight();
+    uint32_t getHeight() const;
     GLuint getColorBuffer() const;
 
     void bind();

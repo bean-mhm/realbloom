@@ -220,167 +220,145 @@ void CMImage::moveToGPU_Internal()
             CMS::getCpuProcessor()->apply(img);
         } catch (std::exception& exception)
         {
-            printErr(__FUNCTION__, exception);
+            printErr(__FUNCTION__, "Color Transform (CPU)", exception.what());
         }
     }
 
-    // Recreate the texture if the size has changed or if it's in error state
-    if (sizeChanged || m_texture->hasFailed())
-        m_texture = std::make_shared<GlTexture>(m_width, m_height, GL_CLAMP, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
+    static bool lastTextureFailed = true;
 
-    // Upload texture data
-    if (!CMS_USE_GPU && (transData != nullptr))
-        m_texture->upload(transData);
-    else
-        m_texture->upload(m_imageData);
+    // Recreate the texture if the size has changed or if it's in error state
+    if (sizeChanged || lastTextureFailed)
+    {
+        lastTextureFailed = false;
+        try
+        {
+            m_texture = std::make_shared<GlTexture>(m_width, m_height, GL_CLAMP, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
+        } catch (const std::exception&)
+        {
+            lastTextureFailed = true;
+            printErr(__FUNCTION__, "Failed to create texture.");
+        }
+    }
+
+    if (!lastTextureFailed)
+    {
+        if (!CMS_USE_GPU && (transData != nullptr))
+            m_texture->upload(transData);
+        else
+            m_texture->upload(m_imageData);
+    }
 
     // Clean up
     DELARR(transData);
 
-    // Color Transform (GPU)
-    if (CMS_USE_GPU && CMS::hasProcessors())
-    {
-        bool failed = false;
+    static bool fbFailed = true;
 
-        // Frame buffer
-        if (!failed)
+    // Color Transform (GPU)
+    if (CMS_USE_GPU && CMS::hasProcessors() && !lastTextureFailed)
+    {
+        try
         {
-            bool mustRecreate = false;
-            if (s_frameBuffer.get() == nullptr)
+            // Recreate our frame buffer if needed
             {
-                mustRecreate = true;
-            } else
-            {
-                if ((s_frameBuffer->getWidth() != m_width) || (s_frameBuffer->getHeight() != m_height))
+                bool mustRecreate = false;
+                if (s_frameBuffer.get() == nullptr)
+                {
                     mustRecreate = true;
-                else if (s_frameBuffer->hasFailed())
-                    mustRecreate = true;
+                } else
+                {
+                    if ((s_frameBuffer->getWidth() != m_width) || (s_frameBuffer->getHeight() != m_height))
+                        mustRecreate = true;
+                    else if (fbFailed)
+                        mustRecreate = true;
+                }
+
+                if (mustRecreate)
+                {
+                    fbFailed = false;
+                    try
+                    {
+                        s_frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
+                    } catch (const std::exception& e)
+                    {
+                        fbFailed = true;
+                        throw e;
+                    }
+                }
             }
 
-            if (mustRecreate)
-                s_frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
-
-            failed = s_frameBuffer->hasFailed() || m_texture->hasFailed();
-        }
-
-        // Bind the frame buffer so we can render the transformed image into it
-        if (!failed)
-        {
+            // Bind the frame buffer so we can render the transformed image into it
             s_frameBuffer->bind();
-            failed = s_frameBuffer->hasFailed();
-        }
 
-        // Set the viewport
-        if (!failed)
-        {
+            // Set the viewport
             s_frameBuffer->viewport();
-            failed = s_frameBuffer->hasFailed();
-        }
 
-        // Use the shader program
-        std::shared_ptr<OcioShader> shader;
-        if (!failed)
-        {
-            shader = CMS::getShader();
+            // Use the shader program
+            std::shared_ptr<OcioShader> shader = CMS::getShader();
             shader->useProgram();
-            failed = shader->hasFailed();
-        }
 
-        // Bind our texture to a texture unit
-        if (!failed)
-        {
+            // Set the input uniforms
             m_texture->bind(GL_TEXTURE0);
-            failed = m_texture->hasFailed();
-        }
-
-        // Set the input texture
-        if (!failed)
-        {
             shader->setInputTexture(0);
-            failed = shader->hasFailed();
-        }
-
-        // Set the exposure
-        if (!failed)
-        {
             shader->setExposureMul(exposureMul);
-            failed = shader->hasFailed();
-        }
 
-        // Create Vertex Array Object
-        GLuint vao;
-        if (!failed)
-        {
-            glGenVertexArrays(1, &vao);
-            glBindVertexArray(vao);
-            failed = !checkGlErrors(__FUNCTION__, "VAO");
-        }
+            // Define vertex data
+            GLuint vao;
+            GLuint vbo;
+            {
+                GLfloat vertices[] = {
+                    //  Pos           UV
+                        -1.0f,  1.0f, 0.0f, 1.0f, // Top-left
+                         1.0f,  1.0f, 1.0f, 1.0f, // Top-right
+                         1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
+                         1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
+                        -1.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
+                        -1.0f,  1.0f, 0.0f, 1.0f  // Top-left
+                };
 
-        // Create a Vertex Buffer Object and copy the vertex data to it
-        GLfloat vertices[] = {
-            //  Position      Texcoords
-                -1.0f,  1.0f, 0.0f, 1.0f, // Top-left
-                 1.0f,  1.0f, 1.0f, 1.0f, // Top-right
-                 1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
-                 1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
-                -1.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
-                -1.0f,  1.0f, 0.0f, 1.0f, // Top-left
-        };
-        GLuint vbo;
-        if (!failed)
-        {
-            glGenBuffers(1, &vbo);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-            failed = !checkGlErrors(__FUNCTION__, "VBO");
-        }
+                // Create Vertex Array Object
+                glGenVertexArrays(1, &vao);
+                glBindVertexArray(vao);
+                checkGlStatus(__FUNCTION__, "VAO");
 
-        // Clear the buffer
-        if (!failed)
-        {
+                // Create a Vertex Buffer Object and copy the vertex data to it
+                glGenBuffers(1, &vbo);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+                checkGlStatus(__FUNCTION__, "VBO");
+            }
+
+            // Clear the buffer
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-            failed = !checkGlErrors(__FUNCTION__, "Clear");
-        }
+            checkGlStatus(__FUNCTION__, "Clear");
 
-        // Draw
-        if (!failed)
-        {
-            glBindVertexArray(vao);
-            failed = !checkGlErrors(__FUNCTION__, "glBindVertexArray(vao)");
-        }
-        if (!failed)
-        {
-            shader->enableAttribs();
-            failed = shader->hasFailed();
-        }
-        if (!failed)
-        {
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            failed = !checkGlErrors(__FUNCTION__, "glDrawArrays");
-        }
-        if (!failed)
-        {
-            shader->disableAttribs();
-            failed = shader->hasFailed();
-        }
-        if (!failed)
-        {
-            glBindVertexArray(0);
-            failed = !checkGlErrors(__FUNCTION__, "glBindVertexArray(0)");
-        }
+            // Draw
+            {
+                glBindVertexArray(vao);
+                checkGlStatus(__FUNCTION__, "glBindVertexArray(vao)");
 
-        // Unbind the frame buffer so we can continue rendering to the screen
-        if (!failed)
-        {
+                shader->enableAttribs();
+
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                checkGlStatus(__FUNCTION__, "glDrawArrays");
+
+                shader->disableAttribs();
+
+                glBindVertexArray(0);
+                checkGlStatus(__FUNCTION__, "glBindVertexArray(0)");
+            }
+
+            // Unbind the frame buffer so we can continue rendering to the screen
             s_frameBuffer->unbind();
-            failed = s_frameBuffer->hasFailed();
-        }
 
-        // Clean up
-        glDeleteBuffers(1, &vbo);
-        glDeleteVertexArrays(1, &vao);
-        checkGlErrors(__FUNCTION__, "Cleanup");
+            // Clean up
+            glDeleteBuffers(1, &vbo);
+            glDeleteVertexArrays(1, &vao);
+            checkGlStatus(__FUNCTION__, "Cleanup");
+        } catch (const std::exception&)
+        {
+            printErr(__FUNCTION__, "GPU Color Transform failed.");
+        }
     }
 
 #if 0
@@ -471,8 +449,7 @@ uint32_t CMImage::getGlTexture()
         moveToGPU_Internal();
     }
 
-    if (CMS_USE_GPU)
+    if (CMS_USE_GPU && s_frameBuffer.get())
         return s_frameBuffer->getColorBuffer();
-    else
-        return m_texture->getTexture();
+    return m_texture->getTexture();
 }
