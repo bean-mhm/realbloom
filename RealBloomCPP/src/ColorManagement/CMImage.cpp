@@ -197,7 +197,7 @@ void CMImage::moveToGPU_Internal()
     float* transData = nullptr;
 
     // Color Transform (CPU)
-    if (!CMS_USE_GPU && CMS::hasProcessors())
+    if (!CMS_USE_GPU && CMS::ok())
     {
         transData = new float[m_imageDataSize];
         std::copy(m_imageData, m_imageData + m_imageDataSize, transData);
@@ -229,10 +229,10 @@ void CMImage::moveToGPU_Internal()
     // Recreate the texture if the size has changed or if it's in error state
     if (sizeChanged || lastTextureFailed)
     {
-        lastTextureFailed = false;
         try
         {
             m_texture = std::make_shared<GlTexture>(m_width, m_height, GL_CLAMP, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
+            lastTextureFailed = false;
         } catch (const std::exception&)
         {
             lastTextureFailed = true;
@@ -254,7 +254,7 @@ void CMImage::moveToGPU_Internal()
     static bool fbFailed = true;
 
     // Color Transform (GPU)
-    if (CMS_USE_GPU && CMS::hasProcessors() && !lastTextureFailed)
+    if (CMS_USE_GPU && CMS::ok() && !lastTextureFailed)
     {
         try
         {
@@ -274,10 +274,10 @@ void CMImage::moveToGPU_Internal()
 
                 if (mustRecreate)
                 {
-                    fbFailed = false;
                     try
                     {
                         s_frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
+                        fbFailed = false;
                     } catch (const std::exception& e)
                     {
                         fbFailed = true;

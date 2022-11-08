@@ -1,6 +1,7 @@
 #include "CMS.h"
 
 CMS::CMVars* CMS::S_VARS = nullptr;
+CMS::CMState CMS::S_STATE;
 
 void CMS::CMVars::retrieveColorSpaces()
 {
@@ -61,7 +62,6 @@ void CMS::CMVars::retrieveLooks()
 
 bool CMS::init()
 {
-    bool success = false;
     try
     {
         S_VARS = new CMVars();
@@ -80,14 +80,16 @@ bool CMS::init()
         S_VARS->retrieveViews();
         S_VARS->retrieveLooks();
 
+        S_STATE.reset();
+    } catch (std::exception& e)
+    {
+        S_STATE.setError(formatErr(__FUNCTION__, e.what()));
+    }
+
+    if (ok())
         updateProcessors();
 
-        success = true;
-    } catch (std::exception& exception)
-    {
-        printErr(__FUNCTION__, exception.what());
-    }
-    return success;
+    return S_STATE.success;
 }
 
 void CMS::cleanUp()
@@ -178,7 +180,6 @@ void CMS::setExposure(float newExposure)
 
 void CMS::updateProcessors()
 {
-    S_VARS->hasProcessors = false;
     try
     {
         // Create group transform
@@ -219,35 +220,33 @@ void CMS::updateProcessors()
             S_VARS->shader = std::make_shared<OcioShader>(shaderDesc);
         }
 
-        // Won't be called if an error occurs
-        S_VARS->hasProcessors = true;
-    } catch (std::exception& exception)
+        S_STATE.reset();
+    } catch (const std::exception& e)
     {
-        S_VARS->errorMessage = exception.what();
-        printErr(__FUNCTION__, exception.what());
+        S_STATE.setError(formatErr(__FUNCTION__, e.what()));
     }
 }
 
-bool CMS::hasProcessors()
+bool CMS::ok()
 {
-    return S_VARS->hasProcessors;
+    return S_STATE.success;
 }
 
 std::string CMS::getError()
 {
-    return S_VARS->errorMessage;
+    return S_STATE.error;
 }
 
 OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()
 {
-    if (S_VARS->hasProcessors)
+    if (ok())
         return S_VARS->cpuProcessor;
     return nullptr;
 }
 
 OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
 {
-    if (S_VARS->hasProcessors)
+    if (ok())
         return S_VARS->gpuProcessor;
     return nullptr;
 }
@@ -255,4 +254,16 @@ OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
 std::shared_ptr<OcioShader> CMS::getShader()
 {
     return S_VARS->shader;
+}
+
+void CMS::CMState::setError(const std::string& message)
+{
+    success = false;
+    error = message;
+}
+
+void CMS::CMState::reset()
+{
+    S_STATE.success = true;
+    S_STATE.error = "";
 }

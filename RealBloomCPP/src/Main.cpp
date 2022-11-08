@@ -46,25 +46,16 @@ int main()
 
     // Setup GLFW and ImGui
     if (!setupGLFW())
-    {
-        system("PAUSE");
         return 1;
-    }
     if (!setupImGui())
-    {
-        system("PAUSE");
         return 1;
-    }
 
     // GLEW for loading OpenGL extensions
     glewInit();
 
     // Color Management System
     if (!CMS::init())
-    {
-        system("PAUSE");
         return 1;
-    }
 
     // Hide the console window
     ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -211,7 +202,7 @@ void layout()
     {
         ImGui::Begin("Image List");
 
-        IMGUI_BOLD("IMAGE SLOTS");
+        IMGUI_BOLD("SLOTS");
 
         ImGui::PushItemWidth(-1);
         ImGui::ListBox("##Slots", &selImageIndex, &lb1ItemGetter, nullptr, images.size(), images.size());
@@ -675,7 +666,7 @@ void layout()
             ImGui::SetTooltip(workingSpaceDesc.c_str());
 
         // CMS error
-        if (!CMS::hasProcessors())
+        if (!CMS::ok())
             imGuiText(CMS::getError(), true, false);
 
         ImGui::NewLine();

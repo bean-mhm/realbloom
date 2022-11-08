@@ -18,9 +18,18 @@ constexpr const bool CMS_USE_GPU = true;
 class CMS
 {
 private:
+    struct CMState
+    {
+        bool success = true;
+        std::string error = "";
+
+        void setError(const std::string& message);
+        void reset();
+    };
+
     struct CMVars
     {
-        OCIO::ConstConfigRcPtr config = nullptr;
+        OCIO::ConstConfigRcPtr config;
 
         std::string workingSpace = "";
         std::string workingSpaceDesc = "";
@@ -41,9 +50,7 @@ private:
         OCIO::ConstCPUProcessorRcPtr cpuProcessor;
         OCIO::ConstGPUProcessorRcPtr gpuProcessor;
 
-        bool hasProcessors = false;
-        std::string errorMessage = "";
-        std::shared_ptr<OcioShader> shader = nullptr;
+        std::shared_ptr<OcioShader> shader;
 
         void retrieveColorSpaces();
         void retrieveDisplays();
@@ -51,6 +58,7 @@ private:
         void retrieveLooks();
     };
     static CMVars* S_VARS;
+    static CMState S_STATE;
 
     static void updateProcessors();
 
@@ -79,7 +87,7 @@ public:
     static float getExposure();
     static void setExposure(float newExposure);
 
-    static bool hasProcessors();
+    static bool ok();
     static std::string getError();
     static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();
     static OCIO::ConstGPUProcessorRcPtr getGpuProcessor();
