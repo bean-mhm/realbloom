@@ -23,7 +23,7 @@ typedef std::array<float, 4> color_t;
 
 // Color Managed Image
 // Internal format is always RGBA32F
-class CMImage
+class CmImage
 {
 private:
     std::string m_id;
@@ -44,13 +44,13 @@ private:
     void moveToGPU_Internal();
 
 public:
-    CMImage(
+    CmImage(
         const std::string& id,
         const std::string& name,
         uint32_t width = 128,
         uint32_t height = 128,
         std::array<float, 4> fillColor = { 0, 0, 0, 1 });
-    ~CMImage();
+    ~CmImage();
     static void cleanUp();
 
     std::string getID();

@@ -47,13 +47,13 @@ bool lb1ItemGetter(void* data, int index, const char** outText);
 bool comboItemGetter(void* data, int index, const char** outText);
 bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth);
 
-CMImage* getImage(const std::string& id);
+CmImage* getImage(const std::string& id);
 
 bool openImageDialog(std::string& outFilename);
 bool saveImageDialog(std::string& outFilename);
 
-void loadImage(CMImage& image, int imageIndex, bool* toSetTrue, std::string& outError);
-void saveImage(CMImage& image, std::string& outError);
+void loadImage(CmImage& image, int imageIndex, bool* toSetTrue, std::string& outError);
+void saveImage(CmImage& image, std::string& outError);
 
 void imGuiDialogs();
 void renderDiffPattern();

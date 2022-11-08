@@ -79,12 +79,12 @@ namespace RealBloom
     private:
         ConvolutionState m_state;
         ConvolutionParams m_params;
-        CMImage* m_imageInput;
-        CMImage* m_imageKernel;
-        CMImage* m_imageKernelPreview;
-        CMImage* m_imageConvPreview;
-        CMImage* m_imageConvLayer;
-        CMImage* m_imageConvMix;
+        CmImage* m_imageInput;
+        CmImage* m_imageKernel;
+        CmImage* m_imageKernelPreview;
+        CmImage* m_imageConvPreview;
+        CmImage* m_imageConvLayer;
+        CmImage* m_imageConvMix;
 
         std::thread* m_thread;
         std::vector<ConvolutionThread*> m_threads;
@@ -95,12 +95,12 @@ namespace RealBloom
         Convolution();
         ConvolutionParams* getParams();
 
-        void setInputImage(CMImage* image);
-        void setKernelImage(CMImage* image);
-        void setKernelPreviewImage(CMImage* image);
-        void setConvPreviewImage(CMImage* image);
-        void setConvLayerImage(CMImage* image);
-        void setConvMixImage(CMImage* image);
+        void setInputImage(CmImage* image);
+        void setKernelImage(CmImage* image);
+        void setKernelPreviewImage(CmImage* image);
+        void setConvPreviewImage(CmImage* image);
+        void setConvLayerImage(CmImage* image);
+        void setConvMixImage(CmImage* image);
 
         void previewThreshold(size_t* outNumPixels = nullptr);
         void kernel(bool previewMode = true, float** outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);

@@ -204,8 +204,8 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
     <ClCompile Include="src\Utils\GlFrameBuffer.cpp" />
     <ClCompile Include="src\ColorManagement\glsl.cpp" />
     <ClCompile Include="src\Async.cpp" />
-    <ClCompile Include="src\ColorManagement\CMImage.cpp" />
-    <ClCompile Include="src\ColorManagement\CMImageIO.cpp" />
+    <ClCompile Include="src\ColorManagement\CmImage.cpp" />
+    <ClCompile Include="src\ColorManagement\CmImageIO.cpp" />
     <ClCompile Include="src\ColorManagement\CMS.cpp" />
     <ClCompile Include="src\Config.cpp" />
     <ClCompile Include="src\Utils\GlUtils.cpp" />
@@ -302,8 +302,8 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
     <ClInclude Include="src\ColorManagement\glsl.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\Async.h" />
-    <ClInclude Include="src\ColorManagement\CMImage.h" />
-    <ClInclude Include="src\ColorManagement\CMImageIO.h" />
+    <ClInclude Include="src\ColorManagement\CmImage.h" />
+    <ClInclude Include="src\ColorManagement\CmImageIO.h" />
     <ClInclude Include="src\ColorManagement\CMS.h" />
     <ClInclude Include="src\RealBloom\ConvolutionGPUBinary.h" />
     <ClInclude Include="src\Utils\GlUtils.h" />

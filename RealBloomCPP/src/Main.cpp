@@ -23,7 +23,7 @@ const ImVec4 colorErrorText{ 0.950f, 0.300f, 0.228f, 1.0f };
 const ImVec2 buttonSize{ -1, 27 };
 std::vector<std::string> activeComboList;
 
-std::vector<CMImage*> images;
+std::vector<CmImage*> images;
 std::vector<std::string> imageNames;
 int selImageIndex = 0;
 float imageZoom = 1.0f;
@@ -61,15 +61,15 @@ int main()
     ShowWindow(GetConsoleWindow(), SW_HIDE);
 
     // Create images to be used throughout the program
-    images.push_back(new CMImage("aperture", "Aperture Shape"));
-    images.push_back(new CMImage("diff", "Diffraction Pattern"));
-    images.push_back(new CMImage("disp", "Dispersion"));
-    images.push_back(new CMImage("cv-input", "Conv. Input"));
-    images.push_back(new CMImage("cv-kernel", "Conv. Kernel"));
-    images.push_back(new CMImage("cv-kernel-prev", "Conv. Kernel (Transformed)"));
-    images.push_back(new CMImage("cv-prev", "Conv. Preview"));
-    images.push_back(new CMImage("cv-layer", "Conv. Layer"));
-    images.push_back(new CMImage("cv-result", "Conv. Result"));
+    images.push_back(new CmImage("aperture", "Aperture Shape"));
+    images.push_back(new CmImage("diff", "Diffraction Pattern"));
+    images.push_back(new CmImage("disp", "Dispersion"));
+    images.push_back(new CmImage("cv-input", "Conv. Input"));
+    images.push_back(new CmImage("cv-kernel", "Conv. Kernel"));
+    images.push_back(new CmImage("cv-kernel-prev", "Conv. Kernel (Transformed)"));
+    images.push_back(new CmImage("cv-prev", "Conv. Preview"));
+    images.push_back(new CmImage("cv-layer", "Conv. Layer"));
+    images.push_back(new CmImage("cv-result", "Conv. Result"));
 
     for (uint32_t i = 0; i < images.size(); i++)
         imageNames.push_back(images[i]->getName());
@@ -189,7 +189,7 @@ int main()
 
 void layout()
 {
-    CMImage& selImage = *(images[selImageIndex]);
+    CmImage& selImage = *(images[selImageIndex]);
 
     static int lastSelImageIndex = selImageIndex;
     if (selImageIndex != lastSelImageIndex)
@@ -273,13 +273,13 @@ void layout()
     }
 
     // Controls
-    CMImage& imgAperture = *getImage("aperture");
-    CMImage& imgDiffPattern = *getImage("diff");
-    CMImage& imgDispersion = *getImage("disp");
-    CMImage& imgConvInput = *getImage("cv-input");
-    CMImage& imgKernel = *getImage("cv-kernel");
-    CMImage& imgConvLayer = *getImage("cv-layer");
-    CMImage& imgConvResult = *getImage("cv-result");
+    CmImage& imgAperture = *getImage("aperture");
+    CmImage& imgDiffPattern = *getImage("diff");
+    CmImage& imgDispersion = *getImage("disp");
+    CmImage& imgConvInput = *getImage("cv-input");
+    CmImage& imgKernel = *getImage("cv-kernel");
+    CmImage& imgConvLayer = *getImage("cv-layer");
+    CmImage& imgConvResult = *getImage("cv-result");
     {
         ImGui::Begin("Diffraction Pattern");
 
@@ -299,7 +299,7 @@ void layout()
         if (ImGui::Button("Compute##DP", buttonSize))
         {
             {
-                std::lock_guard<CMImage> lock(imgAperture);
+                std::lock_guard<CmImage> lock(imgAperture);
                 float* image1Buffer = imgAperture.getImageData();
 
                 RealBloom::DiffractionPatternParams* dpParams = diffPattern.getParams();
@@ -651,7 +651,7 @@ void layout()
         if (vars.cmsParamsChanged)
         {
             vars.cmsParamsChanged = false;
-            for (CMImage* image : images)
+            for (CmImage* image : images)
                 image->moveToGPU();
         }
 
@@ -756,7 +756,7 @@ bool imguiCombo(const std::string& label, const std::vector<std::string>& items,
     return result;
 }
 
-CMImage* getImage(const std::string& id)
+CmImage* getImage(const std::string& id)
 {
     for (uint32_t i = 0; i < images.size(); i++)
     {
@@ -803,7 +803,7 @@ bool saveImageDialog(std::string& outFilename)
     return false;
 }
 
-void loadImage(CMImage& image, int imageIndex, bool* toSetTrue, std::string& outError)
+void loadImage(CmImage& image, int imageIndex, bool* toSetTrue, std::string& outError)
 {
     std::string filename;
     if (openImageDialog(filename))
@@ -811,7 +811,7 @@ void loadImage(CMImage& image, int imageIndex, bool* toSetTrue, std::string& out
         dialogAction_ColorSpace = std::packaged_task<void()>(
             [&image, imageIndex, toSetTrue, filename, &outError]()
             {
-                if (CMImageIO::readImage(image, filename, dialogResult_ColorSpace, outError))
+                if (CmImageIO::readImage(image, filename, dialogResult_ColorSpace, outError))
                 {
                     selImageIndex = imageIndex;
                     if (toSetTrue != nullptr)
@@ -822,7 +822,7 @@ void loadImage(CMImage& image, int imageIndex, bool* toSetTrue, std::string& out
     }
 }
 
-void saveImage(CMImage& image, std::string& outError)
+void saveImage(CmImage& image, std::string& outError)
 {
     std::string filename;
     if (saveImageDialog(filename))
@@ -830,7 +830,7 @@ void saveImage(CMImage& image, std::string& outError)
         dialogAction_ColorSpace = std::packaged_task<void()>(
             [&image, filename, &outError]()
             {
-                CMImageIO::writeImage(image, filename, dialogResult_ColorSpace, outError);
+                CmImageIO::writeImage(image, filename, dialogResult_ColorSpace, outError);
             });
         ImGui::OpenPopup(DIALOG_COLORSPACE);
     }
@@ -866,7 +866,7 @@ void imGuiDialogs()
 
 void renderDiffPattern()
 {
-    CMImage& imgDiffPattern = *getImage("diff");
+    CmImage& imgDiffPattern = *getImage("diff");
 
     if (diffPattern.hasRawData())
     {
@@ -880,7 +880,7 @@ void renderDiffPattern()
         uint32_t width = dpParams->width;
         uint32_t height = dpParams->height;
         {
-            std::lock_guard<CMImage> lock(imgDiffPattern);
+            std::lock_guard<CmImage> lock(imgDiffPattern);
             imgDiffPattern.resize(width, height, false);
             float* image2Buffer = imgDiffPattern.getImageData();
 
@@ -1197,7 +1197,7 @@ void cleanUp()
 {
     for (auto image : images)
         delete image;
-    CMImage::cleanUp();
+    CmImage::cleanUp();
     CMS::cleanUp();
 
     ImGui_ImplOpenGL3_Shutdown();

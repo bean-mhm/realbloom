@@ -80,6 +80,37 @@ bool CMS::init()
         S_VARS->retrieveViews();
         S_VARS->retrieveLooks();
 
+        // Print the built-in transforms, and check if the XYZ role exists in the user config
+        if (false)
+        {
+            OCIO::ConstBuiltinTransformRegistryRcPtr reg = OCIO::BuiltinTransformRegistry::Get();
+            size_t numBuiltins = reg->getNumBuiltins();
+            std::cout << numBuiltins << " Built-in Transforms:\n\n";
+            for (size_t i = 0; i < numBuiltins; i++)
+            {
+                std::cout
+                    << "Name:\n  "
+                    << reg->getBuiltinStyle(i)
+                    << "\nDesc:\n  "
+                    << reg->getBuiltinDescription(i)
+                    << "\n\n";
+            }
+
+            OCIO::ConstColorSpaceRcPtr xyz = S_VARS->config->getColorSpace(OCIO::ROLE_INTERCHANGE_DISPLAY);
+            if (xyz.get())
+            {
+                std::cout
+                    << "XYZ Color Space:\n"
+                    << xyz->getName()
+                    << "\n"
+                    << xyz->getDescription()
+                    << "\n\n";
+            } else
+            {
+                std::cout << "XYZ was not found.\n\n";
+            }
+        }
+
         S_STATE.reset();
     } catch (std::exception& e)
     {
@@ -94,7 +125,7 @@ bool CMS::init()
 
 void CMS::cleanUp()
 {
-    delete S_VARS;
+    DELPTR(S_VARS);
 }
 
 OCIO::ConstConfigRcPtr CMS::getConfig()

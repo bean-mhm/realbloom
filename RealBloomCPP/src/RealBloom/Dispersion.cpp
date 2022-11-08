@@ -16,12 +16,12 @@ namespace RealBloom
         return &m_params;
     }
 
-    void Dispersion::setDiffPatternImage(CMImage* image)
+    void Dispersion::setDiffPatternImage(CmImage* image)
     {
         m_imageDP = image;
     }
 
-    void Dispersion::setDispersionImage(CMImage* image)
+    void Dispersion::setDispersionImage(CmImage* image)
     {
         m_imageDisp = image;
     }
@@ -44,7 +44,7 @@ namespace RealBloom
                 uint32_t dpBufferSize = 0;
                 {
                     // Buffer from diff pattern image
-                    std::lock_guard<CMImage> dpImageLock(*m_imageDP);
+                    std::lock_guard<CmImage> dpImageLock(*m_imageDP);
                     float* dpImageData = m_imageDP->getImageData();
                     dpWidth = m_imageDP->getWidth();
                     dpHeight = m_imageDP->getHeight();
@@ -221,7 +221,7 @@ namespace RealBloom
                         && (m_state.numStepsDone < m_state.numSteps))         // skip the last step
                     {
                         {
-                            std::lock_guard<CMImage> dispImageLock(*m_imageDisp);
+                            std::lock_guard<CmImage> dispImageLock(*m_imageDisp);
                             m_imageDisp->resize(dpWidth, dpHeight, false);
                             float* imageBuffer = m_imageDisp->getImageData();
                             std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);
@@ -294,7 +294,7 @@ namespace RealBloom
                 if (!m_state.mustCancel)
                 {
                     {
-                        std::lock_guard<CMImage> dispImageLock(*m_imageDisp);
+                        std::lock_guard<CmImage> dispImageLock(*m_imageDisp);
                         m_imageDisp->resize(dpWidth, dpHeight, false);
                         float* imageBuffer = m_imageDisp->getImageData();
                         std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);

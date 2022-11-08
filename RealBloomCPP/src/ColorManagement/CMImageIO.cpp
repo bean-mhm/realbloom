@@ -1,6 +1,6 @@
 #include "CMImageIO.h"
 
-bool CMImageIO::readImage(CMImage& target, const std::string& filename, const std::string& colorSpace, std::string& outError)
+bool CmImageIO::readImage(CmImage& target, const std::string& filename, const std::string& colorSpace, std::string& outError)
 {
     outError = "";
 
@@ -110,7 +110,7 @@ bool CMImageIO::readImage(CMImage& target, const std::string& filename, const st
 
     // Move buffer to the target image
     {
-        std::lock_guard<CMImage> lock(target);
+        std::lock_guard<CmImage> lock(target);
         target.resize(xres, yres, false);
         float* targetBuffer = target.getImageData();
         std::copy(bufferRGBA.data(), bufferRGBA.data() + bufferRGBA.size(), targetBuffer);
@@ -120,7 +120,7 @@ bool CMImageIO::readImage(CMImage& target, const std::string& filename, const st
     return true;
 }
 
-bool CMImageIO::writeImage(CMImage& source, const std::string& filename, const std::string& colorSpace, std::string& outError)
+bool CmImageIO::writeImage(CmImage& source, const std::string& filename, const std::string& colorSpace, std::string& outError)
 {
     outError = "";
 

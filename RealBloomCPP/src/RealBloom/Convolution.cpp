@@ -14,8 +14,8 @@ constexpr const char* TEXT_CANCELED_BY_USER = "Canceled by user.";
 namespace RealBloom
 {
 
-    void drawRect(CMImage* image, int rx, int ry, int rw, int rh);
-    void fillRect(CMImage* image, int rx, int ry, int rw, int rh);
+    void drawRect(CmImage* image, int rx, int ry, int rw, int rh);
+    void fillRect(CmImage* image, int rx, int ry, int rw, int rh);
 
     void Convolution::setErrorState(const std::string& error)
     {
@@ -36,32 +36,32 @@ namespace RealBloom
         return &m_params;
     }
 
-    void Convolution::setInputImage(CMImage* image)
+    void Convolution::setInputImage(CmImage* image)
     {
         m_imageInput = image;
     }
 
-    void Convolution::setKernelImage(CMImage* image)
+    void Convolution::setKernelImage(CmImage* image)
     {
         m_imageKernel = image;
     }
 
-    void Convolution::setKernelPreviewImage(CMImage* image)
+    void Convolution::setKernelPreviewImage(CmImage* image)
     {
         m_imageKernelPreview = image;
     }
 
-    void Convolution::setConvPreviewImage(CMImage* image)
+    void Convolution::setConvPreviewImage(CmImage* image)
     {
         m_imageConvPreview = image;
     }
 
-    void Convolution::setConvLayerImage(CMImage* image)
+    void Convolution::setConvLayerImage(CmImage* image)
     {
         m_imageConvLayer = image;
     }
 
-    void Convolution::setConvMixImage(CMImage* image)
+    void Convolution::setConvMixImage(CmImage* image)
     {
         m_imageConvMix = image;
     }
@@ -72,13 +72,13 @@ namespace RealBloom
         size_t numPixels = 0;
         {
             // Input image
-            std::lock_guard<CMImage> lock1(*m_imageInput);
+            std::lock_guard<CmImage> lock1(*m_imageInput);
             float* inputBuffer = m_imageInput->getImageData();
             uint32_t inputWidth = m_imageInput->getWidth();
             uint32_t inputHeight = m_imageInput->getHeight();
 
             // Convolution Preview Image
-            std::lock_guard<CMImage> lock2(*m_imageConvPreview);
+            std::lock_guard<CmImage> lock2(*m_imageConvPreview);
             m_imageConvPreview->resize(inputWidth, inputHeight, false);
             float* prevBuffer = m_imageConvPreview->getImageData();
 
@@ -119,7 +119,7 @@ namespace RealBloom
             uint32_t kernelBufferSize = 0;
             uint32_t kernelWidth = 0, kernelHeight = 0;
             {
-                std::lock_guard<CMImage> lock1(*m_imageKernel);
+                std::lock_guard<CmImage> lock1(*m_imageKernel);
                 float* srcKernelBuffer = m_imageKernel->getImageData();
                 kernelBufferSize = m_imageKernel->getImageDataSize();
                 kernelWidth = m_imageKernel->getWidth();
@@ -300,7 +300,7 @@ namespace RealBloom
 
             // Copy to kernel preview image
             {
-                std::lock_guard<CMImage> lock2(*m_imageKernelPreview);
+                std::lock_guard<CmImage> lock2(*m_imageKernelPreview);
                 m_imageKernelPreview->resize(croppedWidth, croppedHeight, false);
                 float* prevBuffer = m_imageKernelPreview->getImageData();
                 std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, prevBuffer);
@@ -340,13 +340,13 @@ namespace RealBloom
 
         {
             // Input buffer
-            std::lock_guard<CMImage> inputImageLock(*m_imageInput);
+            std::lock_guard<CmImage> inputImageLock(*m_imageInput);
             float* inputBuffer = m_imageInput->getImageData();
             uint32_t inputWidth = m_imageInput->getWidth();
             uint32_t inputHeight = m_imageInput->getHeight();
 
             // Conv Buffer
-            std::lock_guard<CMImage> convLayerImageLock(*m_imageConvLayer);
+            std::lock_guard<CmImage> convLayerImageLock(*m_imageConvLayer);
             float* convBuffer = m_imageConvLayer->getImageData();
             uint32_t convWidth = m_imageConvLayer->getWidth();
             uint32_t convHeight = m_imageConvLayer->getHeight();
@@ -354,7 +354,7 @@ namespace RealBloom
             if ((inputWidth == convWidth) && (inputHeight == convHeight))
             {
                 // Conv Mix Buffer
-                std::lock_guard<CMImage> convMixImageLock(*m_imageConvMix);
+                std::lock_guard<CmImage> convMixImageLock(*m_imageConvMix);
                 m_imageConvMix->resize(inputWidth, inputHeight, false);
                 float* convMixBuffer = m_imageConvMix->getImageData();
 
@@ -429,7 +429,7 @@ namespace RealBloom
                 uint32_t inputBufferSize = 0;
                 {
                     // Input buffer from input image
-                    std::lock_guard<CMImage> inputImageLock(*m_imageInput);
+                    std::lock_guard<CmImage> inputImageLock(*m_imageInput);
                     inputWidth = m_imageInput->getWidth();
                     inputHeight = m_imageInput->getHeight();
                     float* inputImageData = m_imageInput->getImageData();
@@ -524,7 +524,7 @@ namespace RealBloom
 
                                 // Copy progBuffer into the convolution layer
                                 {
-                                    std::lock_guard<CMImage> convLayerImageLock(*m_imageConvLayer);
+                                    std::lock_guard<CmImage> convLayerImageLock(*m_imageConvLayer);
                                     m_imageConvLayer->resize(inputWidth, inputHeight, false);
                                     float* convBuffer = m_imageConvLayer->getImageData();
 
@@ -570,7 +570,7 @@ namespace RealBloom
                 {
                     // Prepare the convolution layer
 
-                    std::lock_guard<CMImage> convLayerImageLock(*m_imageConvLayer);
+                    std::lock_guard<CmImage> convLayerImageLock(*m_imageConvLayer);
                     m_imageConvLayer->resize(inputWidth, inputHeight, false);
                     m_imageConvLayer->fill(color_t{ 0, 0, 0, 1 }, false);
                     float* convBuffer = m_imageConvLayer->getImageData();
@@ -787,7 +787,7 @@ namespace RealBloom
                                     {
                                         // Copy the stat buffer into the convolution layer
                                         {
-                                            std::lock_guard<CMImage> convLayerImageLock(*m_imageConvLayer);
+                                            std::lock_guard<CmImage> convLayerImageLock(*m_imageConvLayer);
                                             m_imageConvLayer->resize(inputWidth, inputHeight, false);
                                             float* convBuffer = m_imageConvLayer->getImageData();
                                             std::copy(cgBinStat.buffer, cgBinStat.buffer + cgBinStat.bufferSize, convBuffer);
@@ -887,7 +887,7 @@ namespace RealBloom
                         if (cgBinOutput.status == 1)
                         {
                             // Prepare the convolution layer
-                            std::lock_guard<CMImage> convLayerImageLock(*m_imageConvLayer);
+                            std::lock_guard<CmImage> convLayerImageLock(*m_imageConvLayer);
                             m_imageConvLayer->resize(inputWidth, inputHeight, false);
                             m_imageConvLayer->fill(color_t{ 0, 0, 0, 1 }, false);
                             float* convBuffer = m_imageConvLayer->getImageData();
@@ -1110,9 +1110,9 @@ namespace RealBloom
         }
     }
 
-    void drawRect(CMImage* image, int rx, int ry, int rw, int rh)
+    void drawRect(CmImage* image, int rx, int ry, int rw, int rh)
     {
-        std::lock_guard<CMImage> lock(*image);
+        std::lock_guard<CmImage> lock(*image);
         float* buffer = image->getImageData();
         uint32_t imageWidth = image->getWidth();
         uint32_t imageHeight = image->getHeight();
@@ -1163,9 +1163,9 @@ namespace RealBloom
         }
     }
 
-    void fillRect(CMImage* image, int rx, int ry, int rw, int rh)
+    void fillRect(CmImage* image, int rx, int ry, int rw, int rh)
     {
-        std::lock_guard<CMImage> lock(*image);
+        std::lock_guard<CmImage> lock(*image);
         float* buffer = image->getImageData();
         uint32_t imageWidth = image->getWidth();
         uint32_t imageHeight = image->getHeight();

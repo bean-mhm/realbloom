@@ -2,16 +2,16 @@
 
 using namespace std;
 
-std::shared_ptr<GlFrameBuffer> CMImage::s_frameBuffer = nullptr;
+std::shared_ptr<GlFrameBuffer> CmImage::s_frameBuffer = nullptr;
 
-CMImage::CMImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor)
+CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor)
     : m_id(id), m_name(name), m_width(width), m_height(height)
 {
     resize(width, height, true);
     fill(fillColor, true);
 }
 
-CMImage::~CMImage()
+CmImage::~CmImage()
 {
     lock_guard<mutex> lock(m_mutex);
 
@@ -21,22 +21,22 @@ CMImage::~CMImage()
     }
 }
 
-void CMImage::cleanUp()
+void CmImage::cleanUp()
 {
     s_frameBuffer = nullptr;
 }
 
-std::string CMImage::getID()
+std::string CmImage::getID()
 {
     return m_id;
 }
 
-std::string CMImage::getName()
+std::string CmImage::getName()
 {
     return m_name;
 }
 
-void CMImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
+void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
 {
     if (shouldLock) lock();
 
@@ -67,7 +67,7 @@ void CMImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
     if (shouldLock) unlock();
 }
 
-void CMImage::fill(color_t color, bool shouldLock)
+void CmImage::fill(color_t color, bool shouldLock)
 {
     if (shouldLock) lock();
     if (!m_imageData)
@@ -87,7 +87,7 @@ void CMImage::fill(color_t color, bool shouldLock)
     if (shouldLock) unlock();
 }
 
-void CMImage::fill(std::vector<float> buffer, bool shouldLock)
+void CmImage::fill(std::vector<float> buffer, bool shouldLock)
 {
     if (shouldLock) lock();
     if (!m_imageData)
@@ -100,7 +100,7 @@ void CMImage::fill(std::vector<float> buffer, bool shouldLock)
     if (shouldLock) unlock();
 }
 
-void CMImage::fill(float* buffer, bool shouldLock)
+void CmImage::fill(float* buffer, bool shouldLock)
 {
     if (shouldLock) lock();
     if (!m_imageData)
@@ -113,7 +113,7 @@ void CMImage::fill(float* buffer, bool shouldLock)
     if (shouldLock) unlock();
 }
 
-void CMImage::renderUV()
+void CmImage::renderUV()
 {
     lock_guard<mutex> lock(m_mutex);
 
@@ -139,42 +139,42 @@ void CMImage::renderUV()
     }
 }
 
-void CMImage::lock()
+void CmImage::lock()
 {
     m_mutex.lock();
 }
 
-void CMImage::unlock()
+void CmImage::unlock()
 {
     m_mutex.unlock();
 }
 
-uint32_t CMImage::getWidth() const
+uint32_t CmImage::getWidth() const
 {
     return m_width;
 }
 
-uint32_t CMImage::getHeight() const
+uint32_t CmImage::getHeight() const
 {
     return m_height;
 }
 
-uint32_t CMImage::getImageDataSize() const
+uint32_t CmImage::getImageDataSize() const
 {
     return m_imageDataSize;
 }
 
-float* CMImage::getImageData()
+float* CmImage::getImageData()
 {
     return m_imageData;
 }
 
-void CMImage::moveToGPU()
+void CmImage::moveToGPU()
 {
     m_moveToGpu = true;
 }
 
-void CMImage::moveToGPU_Internal()
+void CmImage::moveToGPU_Internal()
 {
     lock_guard<mutex> lock(m_mutex);
 
@@ -366,7 +366,7 @@ void CMImage::moveToGPU_Internal()
     }
 }
 
-uint32_t CMImage::getGlTexture()
+uint32_t CmImage::getGlTexture()
 {
     if (m_moveToGpu)
     {

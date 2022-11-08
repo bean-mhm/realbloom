@@ -78,10 +78,10 @@
     <ClCompile Include="include\oiio\detail\pugixml\pugixml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ColorManagement\CMImage.cpp">
+    <ClCompile Include="src\ColorManagement\CmImage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ColorManagement\CMImageIO.cpp">
+    <ClCompile Include="src\ColorManagement\CmImageIO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ColorManagement\CMS.cpp">
@@ -401,10 +401,10 @@
     <ClInclude Include="include\oiio\version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ColorManagement\CMImage.h">
+    <ClInclude Include="src\ColorManagement\CmImage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ColorManagement\CMImageIO.h">
+    <ClInclude Include="src\ColorManagement\CmImageIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ColorManagement\CMS.h">
