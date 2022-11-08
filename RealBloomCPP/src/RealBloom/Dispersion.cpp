@@ -226,7 +226,7 @@ namespace RealBloom
                             float* imageBuffer = m_imageDisp->getImageData();
                             std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);
                         }
-                        Async::schedule([this]() { m_imageDisp->moveToGPU(); });
+                        m_imageDisp->moveToGPU();
 
                         lastProgTime = std::chrono::system_clock::now();
                     }
@@ -299,9 +299,9 @@ namespace RealBloom
                         float* imageBuffer = m_imageDisp->getImageData();
                         std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);
                     }
+                    m_imageDisp->moveToGPU();
                     Async::schedule([this]()
                         {
-                            m_imageDisp->moveToGPU();
                             int* pSelImageIndex = (int*)Async::getShared("selImageIndex");
                             if (pSelImageIndex != nullptr) *pSelImageIndex = 2;
                         });

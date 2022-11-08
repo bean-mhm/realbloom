@@ -301,6 +301,10 @@ void CMImage::moveToGPU_Internal()
             shader->setInputTexture(0);
             shader->setExposureMul(exposureMul);
 
+            // Use the LUTs and uniforms associated with the shader
+            shader->useLuts();
+            shader->useUniforms();
+
             // Define vertex data
             GLuint vao;
             GLuint vbo;
@@ -360,85 +364,6 @@ void CMImage::moveToGPU_Internal()
             printErr(__FUNCTION__, "GPU Color Transform failed.");
         }
     }
-
-#if 0
-    // (Junk code, will be removed)
-    if (CMS_USE_GPU)
-    {
-        OCIO::GpuShaderDescRcPtr shaderDesc = OCIO::GpuShaderDesc::CreateShaderDesc();
-        shaderDesc->setLanguage(OCIO::GPU_LANGUAGE_GLSL_4_0);
-        shaderDesc->setFunctionName("OCIODisplay");
-        shaderDesc->setResourcePrefix("ocio_");
-
-        OCIO::ConstGPUProcessorRcPtr gpuProc = CMS::getGpuProcessor();
-        gpuProc->extractGpuShaderInfo(shaderDesc);
-
-        // Create oglBuilder using the shaderDesc.
-        OCIO::OpenGLBuilderRcPtr m_oglBuilder = OCIO::OpenGLBuilder::Create(shaderDesc);
-        m_oglBuilder->setVerbose(true);
-
-        // Allocate & upload all the LUTs in a dedicated GPU texture.
-        // Note: The start index for the texture indices is 1 as one texture
-        //       was already created for the input image.
-        m_oglBuilder->allocateAllTextures(1);
-
-        std::ostringstream mainShader;
-        mainShader
-            << std::endl
-            << "uniform sampler2D img;" << std::endl
-            << std::endl
-            << "void main()" << std::endl
-            << "{" << std::endl
-            << "    vec4 col = texture2D(img, gl_TexCoord[0].st);" << std::endl
-            << "    gl_FragColor = " << shaderDesc->getFunctionName() << "(col);" << std::endl
-            << "}" << std::endl;
-
-        // Build the fragment shader program.
-        m_oglBuilder->buildProgram(mainShader.str().c_str(), false);
-
-        // Enable the fragment shader program, and all needed resources.
-        m_oglBuilder->useProgram();
-
-        // The image texture.
-        glUniform1i(glGetUniformLocation(m_oglBuilder->getProgramHandle(), "img"), m_glTexture);
-
-        // The LUT textures.
-        m_oglBuilder->useAllTextures();
-
-        // Enable uniforms for dynamic properties.
-        m_oglBuilder->useAllUniforms();
-
-        // Bind the frame buffer so we can render the transformed image into it.
-        m_frameBuffer->bind();
-
-        // Draw
-        glViewport(0, 0, m_width, m_height);
-
-        glEnable(GL_TEXTURE_2D);
-        glClearColor(0.1, 0.5, 1, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glColor3f(1, 1, 1);
-
-        glPushMatrix();
-        glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 1.0f);
-        glVertex2f(-.95, -.95);
-
-        glTexCoord2f(0.0f, 0.0f);
-        glVertex2f(-.95, .95);
-
-        glTexCoord2f(1.0f, 0.0f);
-        glVertex2f(.95, .95);
-
-        glTexCoord2f(1.0f, 1.0f);
-        glVertex2f(.95, -.95);
-        glEnd();
-        glPopMatrix();
-
-        // Detach the frame buffer so we can continue rendering to the screen
-        m_frameBuffer->unbind();
-    }
-#endif
 }
 
 uint32_t CMImage::getGlTexture()

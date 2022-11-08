@@ -188,6 +188,7 @@ int main()
         glfwSwapBuffers(window);
     }
 
+    // Quit
     Config::save();
     convResUsageThread.join();
     conv.cancelConv();
@@ -198,6 +199,13 @@ int main()
 void layout()
 {
     CMImage& selImage = *(images[selImageIndex]);
+
+    static int lastSelImageIndex = selImageIndex;
+    if (selImageIndex != lastSelImageIndex)
+    {
+        selImage.moveToGPU();
+        lastSelImageIndex = selImageIndex;
+    }
 
     // Image Selector
     {
@@ -245,21 +253,23 @@ void layout()
         ImGui::Text("Size: %dx%d", imageWidth, imageHeight);
 
         // Zoom
-        ImGui::Text("%d%%", (int)roundf(imageZoom * 100.0f));
+        {
+            ImGui::Text("%d%%", (int)roundf(imageZoom * 100.0f));
 
-        ImGui::SameLine();
-        ImGui::PushFont(fontMono);
-        if (ImGui::SmallButton("+"))
-            imageZoom = fminf(fmaxf(imageZoom + 0.125f, 0.25f), 2.0f);
+            ImGui::SameLine();
+            ImGui::PushFont(fontMono);
+            if (ImGui::SmallButton("+"))
+                imageZoom = fminf(fmaxf(imageZoom + 0.125f, 0.25f), 2.0f);
 
-        ImGui::SameLine();
-        if (ImGui::SmallButton("-"))
-            imageZoom = fminf(fmaxf(imageZoom - 0.125f, 0.25f), 2.0f);
+            ImGui::SameLine();
+            if (ImGui::SmallButton("-"))
+                imageZoom = fminf(fmaxf(imageZoom - 0.125f, 0.25f), 2.0f);
 
-        ImGui::SameLine();
-        if (ImGui::SmallButton("R"))
-            imageZoom = 1.0f;
-        ImGui::PopFont();
+            ImGui::SameLine();
+            if (ImGui::SmallButton("R"))
+                imageZoom = 1.0f;
+            ImGui::PopFont();
+        }
 
         ImGui::Image(
             (void*)(intptr_t)selImage.getGlTexture(),
@@ -267,6 +277,7 @@ void layout()
                 (float)imageWidth * imageZoom,
                 (float)imageHeight * imageZoom
             ));
+
         ImGui::End();
     }
 

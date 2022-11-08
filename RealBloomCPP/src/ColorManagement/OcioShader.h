@@ -89,6 +89,9 @@ public:
     void setInputTexture(GLint tex);
     void setExposureMul(float exposureMul);
 
+    void useLuts();
+    void useUniforms();
+
     void enableAttribs();
     void disableAttribs();
 };

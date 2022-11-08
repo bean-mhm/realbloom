@@ -531,7 +531,7 @@ namespace RealBloom
                                     std::copy(progBuffer, progBuffer + inputBufferSize, convBuffer);
                                     delete[] progBuffer;
                                 }
-                                Async::schedule([this]() { m_imageConvLayer->moveToGPU(); });
+                                m_imageConvLayer->moveToGPU();
 
                                 lastTime = std::chrono::system_clock::now();
                             }
@@ -792,7 +792,7 @@ namespace RealBloom
                                             float* convBuffer = m_imageConvLayer->getImageData();
                                             std::copy(cgBinStat.buffer, cgBinStat.buffer + cgBinStat.bufferSize, convBuffer);
                                         }
-                                        Async::schedule([this]() { m_imageConvLayer->moveToGPU(); });
+                                        m_imageConvLayer->moveToGPU();
                                     }
 
                                     DELARR(cgBinStat.buffer);
@@ -946,9 +946,9 @@ namespace RealBloom
                 // Update the conv. layer image
                 if (!m_state.failed && !m_state.mustCancel)
                 {
+                    m_imageConvLayer->moveToGPU();
                     Async::schedule([this]()
                         {
-                            m_imageConvLayer->moveToGPU();
                             bool* pConvMixParamsChanged = (bool*)Async::getShared("convMixParamsChanged");
                             if (pConvMixParamsChanged != nullptr) *pConvMixParamsChanged = true;
                         });
