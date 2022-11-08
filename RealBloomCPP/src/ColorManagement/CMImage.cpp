@@ -451,5 +451,7 @@ uint32_t CMImage::getGlTexture()
 
     if (CMS_USE_GPU && s_frameBuffer.get())
         return s_frameBuffer->getColorBuffer();
-    return m_texture->getTexture();
+    if (m_texture.get())
+        return m_texture->getTexture();
+    return 0;
 }

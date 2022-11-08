@@ -386,17 +386,6 @@ void OcioShader::allocateTexture2D(uint32_t index, uint32_t& texId,
     }
 }
 
-bool GetGLError(std::string& error)
-{
-    const GLenum glErr = glGetError();
-    if (glErr != GL_NO_ERROR)
-    {
-        error = (const char*)gluErrorString(glErr);
-        return true;
-    }
-    return false;
-}
-
 OcioShader::Uniform::Uniform(const std::string& name, const OCIO::GpuShaderDesc::UniformData& data)
     : m_name(name), m_data(data), m_handle(0)
 {}
