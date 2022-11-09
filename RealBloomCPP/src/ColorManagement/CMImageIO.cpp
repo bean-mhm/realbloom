@@ -186,6 +186,7 @@ bool CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
 
     // Write output
     OIIO::ImageSpec spec(xres, yres, 3, OIIO::TypeDesc::FLOAT);
+    spec.attribute("oiio:ColorSpace", OIIO::TypeDesc::TypeString, colorSpace);
     if (out->open(filename, spec))
     {
         if (out->write_image(OIIO::TypeDesc::FLOAT, bufferRGB.data()))
