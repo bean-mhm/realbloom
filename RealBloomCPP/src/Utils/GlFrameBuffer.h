@@ -25,6 +25,7 @@ public:
 
     uint32_t getWidth() const;
     uint32_t getHeight() const;
+    GLuint getFrameBuffer() const;
     GLuint getColorBuffer() const;
 
     void bind();

@@ -910,7 +910,7 @@ namespace RealBloom
                             if (cgBinOutput.errorSize > 0)
                                 errorS = cgBinOutput.errorBuffer;
 
-                            setErrorState(stringFormat("RealBloomGPUConv: %s", errorS.c_str()));
+                            setErrorState(errorS);
                         }
                     }
 

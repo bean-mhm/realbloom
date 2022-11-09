@@ -24,16 +24,19 @@
     <ClCompile Include="src\Utils\GlContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils\GlUtils.cpp">
+    <ClCompile Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils\Misc.cpp">
+    <ClCompile Include="..\RealBloomCPP\src\Utils\GlUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils\RandomNumber.cpp">
+    <ClCompile Include="..\RealBloomCPP\src\Utils\Misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils\NumberHelpers.cpp">
+    <ClCompile Include="..\RealBloomCPP\src\Utils\NumberHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloomCPP\src\Utils\RandomNumber.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,19 +62,22 @@
     <ClInclude Include="src\Utils\GlContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utils\GlUtils.h">
+    <ClInclude Include="..\RealBloomCPP\src\RealBloom\ConvolutionGPUBinary.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utils\Misc.h">
+    <ClInclude Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utils\RandomNumber.h">
+    <ClInclude Include="..\RealBloomCPP\src\Utils\GlUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\RealBloom\ConvolutionGPUBinary.h">
+    <ClInclude Include="..\RealBloomCPP\src\Utils\Misc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utils\NumberHelpers.h">
+    <ClInclude Include="..\RealBloomCPP\src\Utils\NumberHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloomCPP\src\Utils\RandomNumber.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,7 +7,7 @@ std::function<void(std::string)> g_errHandler;
 
 LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-bool oglOneTimeContext(uint32_t width, uint32_t height, void* data, std::function<void(void*)> job, std::function<void(std::string)> errHandler, std::string& outError)
+bool oglOneTimeContext(uint32_t width, uint32_t height, std::function<void(void*)> job, void* data, std::function<void(std::string)> errHandler, std::string& outError)
 {
     outError = "";
 

@@ -67,13 +67,13 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
     // Create and compile the vertex shader
     if (!createShader(GL_VERTEX_SHADER, VERTEX_SOURCE, m_vertShader, shaderLog))
         throw std::exception(
-            formatErr(__FUNCTION__, stringFormat("Vertex shader compilation error: ", shaderLog.c_str())).c_str()
+            formatErr(__FUNCTION__, stringFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
         );
 
     // Create and compile the fragment shader
     if (!createShader(GL_FRAGMENT_SHADER, fragSource.str().c_str(), m_fragShader, shaderLog))
         throw std::exception(
-            formatErr(__FUNCTION__, stringFormat("Fragment shader compilation error: ", shaderLog.c_str())).c_str()
+            formatErr(__FUNCTION__, stringFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
         );
 
     // Create program

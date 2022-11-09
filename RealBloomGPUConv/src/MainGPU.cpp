@@ -317,6 +317,7 @@ int main(int argc, char* argv[])
             {
                 logAdd(LogLevel::Error, stringFormat(
                     "Chunk %d/%d (%d points) was failed.", i + 1, cgInput.numChunks, cgData.numPoints));
+                logAdd(LogLevel::Error, cgData.error);
                 break;
             }
 
@@ -404,8 +405,6 @@ int main(int argc, char* argv[])
         } else
         {
             cgOutputError = cgFinalError;
-            logAdd(LogLevel::Error, "GPU Convolution: " + cgOutputError);
-
             cgOutput.status = 0;
             cgOutput.bufferSize = 0;
             cgOutput.buffer = nullptr;

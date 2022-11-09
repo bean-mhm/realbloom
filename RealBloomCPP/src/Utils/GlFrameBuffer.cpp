@@ -50,6 +50,11 @@ uint32_t GlFrameBuffer::getHeight() const
     return m_height;
 }
 
+GLuint GlFrameBuffer::getFrameBuffer() const
+{
+    return m_frameBuffer;
+}
+
 GLuint GlFrameBuffer::getColorBuffer() const
 {
     return m_texColorBuffer;
