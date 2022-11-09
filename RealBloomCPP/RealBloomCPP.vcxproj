@@ -198,6 +198,7 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ColorManagement\CMF.cpp" />
     <ClCompile Include="src\Utils\GlTexture.cpp" />
     <ClCompile Include="include\oiio\detail\pugixml\pugixml.cpp" />
     <ClCompile Include="src\ColorManagement\OcioShader.cpp" />
@@ -228,6 +229,8 @@ XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y</Command>
     <ClCompile Include="src\Utils\Wavelength.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\rapidcsv\rapidcsv.h" />
+    <ClInclude Include="src\ColorManagement\CMF.h" />
     <ClInclude Include="src\Utils\GlTexture.h" />
     <ClInclude Include="include\inih\INIReader.h" />
     <ClInclude Include="include\ocio\OpenColorABI.h" />
