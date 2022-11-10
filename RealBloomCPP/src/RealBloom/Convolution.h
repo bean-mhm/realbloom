@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include <format>
 #include <mutex>
 #include <thread>
 #include <chrono>

@@ -67,7 +67,7 @@ void checkGlStatus(const std::string& source, const std::string& stage)
 
     if (!status)
     {
-        throw std::exception(formatErr(source, stage, errors).c_str());
+        throw std::exception(printErr(source, stage, errors).c_str());
     }
 }
 
@@ -76,39 +76,3 @@ GlWrapper::GlWrapper()
 
 GlWrapper::~GlWrapper()
 {}
-
-#if 0
-void GlWrapper::setError(const std::string& source, const std::string& message)
-{
-    m_status.error = stringFormat("[%s] %s", source.c_str(), message.c_str());
-    m_status.failed = true;
-
-    std::cerr << m_status.error << "\n";
-}
-
-bool GlWrapper::checkGlStatus(const std::string& source, const std::string& stage)
-{
-    std::string errorList = "";
-    if (!checkGlErrors(errorList))
-    {
-        setError(source, stringFormat("%s: %s", stage.c_str(), errorList.c_str()));
-        return false;
-    }
-    return true;
-}
-
-GlWrapperStatus GlWrapper::getStatus() const
-{
-    return m_status;
-}
-
-bool GlWrapper::hasFailed() const
-{
-    return m_status.failed;
-}
-
-std::string GlWrapper::getError() const
-{
-    return m_status.error;
-}
-#endif

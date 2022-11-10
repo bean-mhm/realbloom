@@ -1,30 +1,19 @@
 #include "Misc.h"
 
-std::string formatErr(const std::string& source, const std::string& stage, const std::string& message, bool print)
+std::string printErr(const std::string& source, const std::string& stage, const std::string& message)
 {
     std::string s = stringFormat("[%s] %s: %s", source.c_str(), stage.c_str(), message.c_str());
-    if (print)
-        std::cerr << s << "\n";
+    std::cerr << s << "\n";
     return s;
 }
 
-std::string formatErr(const std::string& source, const std::string& message, bool print)
+std::string printErr(const std::string& source, const std::string& message)
 {
     std::string s = stringFormat("[%s] %s", source.c_str(), message.c_str());
-    if (print)
-        std::cerr << s << "\n";
+    std::cerr << s << "\n";
     return s;
 }
 
-void printErr(const std::string& source, const std::string& stage, const std::string& message)
-{
-    formatErr(source, stage, message, true);
-}
-
-void printErr(const std::string& source, const std::string& message)
-{
-    formatErr(source, message, true);
-}
 
 std::string stringFromDuration(float seconds)
 {

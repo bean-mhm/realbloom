@@ -28,7 +28,7 @@ GlFrameBuffer::GlFrameBuffer(uint32_t width, uint32_t height)
 
     if (fbStatus != GL_FRAMEBUFFER_COMPLETE)
         throw std::exception(
-            formatErr(__FUNCTION__, stringFormat("Frame buffer was not ready. Status: %s", toHex(fbStatus))).c_str()
+            printErr(__FUNCTION__, stringFormat("Frame buffer was not ready. Status: %s", toHex(fbStatus))).c_str()
         );
 }
 

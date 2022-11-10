@@ -67,13 +67,13 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
     // Create and compile the vertex shader
     if (!createShader(GL_VERTEX_SHADER, VERTEX_SOURCE, m_vertShader, shaderLog))
         throw std::exception(
-            formatErr(__FUNCTION__, stringFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
+            printErr(__FUNCTION__, stringFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
         );
 
     // Create and compile the fragment shader
     if (!createShader(GL_FRAGMENT_SHADER, fragSource.str().c_str(), m_fragShader, shaderLog))
         throw std::exception(
-            formatErr(__FUNCTION__, stringFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
+            printErr(__FUNCTION__, stringFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
         );
 
     // Create program
@@ -107,7 +107,7 @@ OcioShader::~OcioShader()
     {
         const TextureId& data = m_textureIds[idx];
         glDeleteTextures(1, &data.m_uid);
-        checkGlStatus(__FUNCTION__, stringFormat("glDeleteTextures (idx: %ul)", idx));
+        checkGlStatus(__FUNCTION__, stringFormat("glDeleteTextures (idx: %u)", idx));
     }
     m_textureIds.clear();
 
@@ -155,7 +155,7 @@ void OcioShader::prepareLuts()
             || edgelen == 0)
         {
             throw OCIO::Exception(
-                formatErr(__FUNCTION__, stringFormat("The texture data is corrupted (3D LUTs, idx: %ul)", idx)).c_str()
+                printErr(__FUNCTION__, stringFormat("The texture data is corrupted (3D LUTs, idx: %u)", idx)).c_str()
             );
         }
 
@@ -164,7 +164,7 @@ void OcioShader::prepareLuts()
         if (!values)
         {
             throw OCIO::Exception(
-                formatErr(__FUNCTION__, stringFormat("The texture values are missing (3D LUTs, idx: %ul)", idx)).c_str()
+                printErr(__FUNCTION__, stringFormat("The texture values are missing (3D LUTs, idx: %u)", idx)).c_str()
             );
         }
 
@@ -200,7 +200,7 @@ void OcioShader::prepareLuts()
             || width == 0)
         {
             throw OCIO::Exception(
-                formatErr(__FUNCTION__, stringFormat("The texture data is corrupted (1D LUTs, idx: %ul)", idx)).c_str()
+                printErr(__FUNCTION__, stringFormat("The texture data is corrupted (1D LUTs, idx: %u)", idx)).c_str()
             );
         }
 
@@ -209,7 +209,7 @@ void OcioShader::prepareLuts()
         if (!values)
         {
             throw OCIO::Exception(
-                formatErr(__FUNCTION__, stringFormat("The texture values are missing (1D LUTs, idx: %ul)", idx)).c_str()
+                printErr(__FUNCTION__, stringFormat("The texture values are missing (1D LUTs, idx: %u)", idx)).c_str()
             );
         }
 
@@ -236,16 +236,16 @@ void OcioShader::useLuts()
 
         GLenum texUnit = (GLenum)(GL_TEXTURE0 + m_lutStartIndex + idx);
         glActiveTexture(texUnit);
-        checkGlStatus(__FUNCTION__, stringFormat("glActiveTexture(%ul) (idx: %ul)", texUnit, idx));
+        checkGlStatus(__FUNCTION__, stringFormat("glActiveTexture(%u) (idx: %u)", texUnit, idx));
 
         glBindTexture(data.m_type, data.m_uid);
-        checkGlStatus(__FUNCTION__, stringFormat("glBindTexture(%ul, %ul) (idx: %ul)", data.m_type, data.m_uid, idx));
+        checkGlStatus(__FUNCTION__, stringFormat("glBindTexture(%u, %u) (idx: %u)", data.m_type, data.m_uid, idx));
 
         GLint loc = glGetUniformLocation(m_program, data.m_samplerName.c_str());
-        checkGlStatus(__FUNCTION__, stringFormat("glGetUniformLocation(%s) (idx: %ul)", data.m_samplerName.c_str(), idx));
+        checkGlStatus(__FUNCTION__, stringFormat("glGetUniformLocation(%s) (idx: %u)", data.m_samplerName.c_str(), idx));
 
         glUniform1i(loc, GLint(m_lutStartIndex + idx));
-        checkGlStatus(__FUNCTION__, stringFormat("glUniform1i(%d, %d) (idx: %ul)", loc, GLint(m_lutStartIndex + idx), idx));
+        checkGlStatus(__FUNCTION__, stringFormat("glUniform1i(%d, %d) (idx: %u)", loc, GLint(m_lutStartIndex + idx), idx));
     }
 }
 
@@ -259,7 +259,7 @@ void OcioShader::prepareUniforms()
         if (data.m_type == OCIO::UNIFORM_UNKNOWN)
         {
             throw OCIO::Exception(
-                formatErr(__FUNCTION__, stringFormat("Unknown uniform type (idx: %ul)", idx)).c_str()
+                printErr(__FUNCTION__, stringFormat("Unknown uniform type (idx: %u)", idx)).c_str()
             );
         }
         // Transfer uniform.
@@ -344,23 +344,23 @@ void OcioShader::allocateTexture3D(uint32_t index, uint32_t& texId,
 {
     if (values == 0x0)
         throw OCIO::Exception(
-            formatErr(__FUNCTION__, stringFormat("Missing texture data (idx: %ul)", index)).c_str()
+            printErr(__FUNCTION__, stringFormat("Missing texture data (idx: %u)", index)).c_str()
         );
 
     glGenTextures(1, &texId);
-    checkGlStatus(__FUNCTION__, stringFormat("glGenTextures (idx: %ul)", index));
+    checkGlStatus(__FUNCTION__, stringFormat("glGenTextures (idx: %u)", index));
 
     glActiveTexture(GL_TEXTURE0 + index);
-    checkGlStatus(__FUNCTION__, stringFormat("glActiveTexture (idx: %ul)", index));
+    checkGlStatus(__FUNCTION__, stringFormat("glActiveTexture (idx: %u)", index));
 
     glBindTexture(GL_TEXTURE_3D, texId);
-    checkGlStatus(__FUNCTION__, stringFormat("glBindTexture (idx: %ul)", index));
+    checkGlStatus(__FUNCTION__, stringFormat("glBindTexture (idx: %u)", index));
 
     setTextureParameters(GL_TEXTURE_3D, interpolation);
-    checkGlStatus(__FUNCTION__, stringFormat("setTextureParameters (idx: %ul)", index));
+    checkGlStatus(__FUNCTION__, stringFormat("setTextureParameters (idx: %u)", index));
 
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, edgelen, edgelen, edgelen, 0, GL_RGB, GL_FLOAT, values);
-    checkGlStatus(__FUNCTION__, stringFormat("glTexImage3D (idx: %ul)", index));
+    checkGlStatus(__FUNCTION__, stringFormat("glTexImage3D (idx: %u)", index));
 }
 
 void OcioShader::allocateTexture2D(uint32_t index, uint32_t& texId,
@@ -370,7 +370,7 @@ void OcioShader::allocateTexture2D(uint32_t index, uint32_t& texId,
 {
     if (values == nullptr)
         throw OCIO::Exception(
-            formatErr(__FUNCTION__, stringFormat("Missing texture data (idx: %ul)", index)).c_str()
+            printErr(__FUNCTION__, stringFormat("Missing texture data (idx: %u)", index)).c_str()
         );
 
     GLint internalformat = GL_RGB32F;
@@ -383,30 +383,30 @@ void OcioShader::allocateTexture2D(uint32_t index, uint32_t& texId,
     }
 
     glGenTextures(1, &texId);
-    checkGlStatus(__FUNCTION__, stringFormat("glGenTextures (idx: %ul)", index));
+    checkGlStatus(__FUNCTION__, stringFormat("glGenTextures (idx: %u)", index));
 
     glActiveTexture(GL_TEXTURE0 + index);
-    checkGlStatus(__FUNCTION__, stringFormat("glActiveTexture (idx: %ul)", index));
+    checkGlStatus(__FUNCTION__, stringFormat("glActiveTexture (idx: %u)", index));
 
     if (height > 1)
     {
         glBindTexture(GL_TEXTURE_2D, texId);
-        checkGlStatus(__FUNCTION__, stringFormat("glBindTexture (idx: %ul)", index));
+        checkGlStatus(__FUNCTION__, stringFormat("glBindTexture (idx: %u)", index));
 
         setTextureParameters(GL_TEXTURE_2D, interpolation);
-        checkGlStatus(__FUNCTION__, stringFormat("setTextureParameters (idx: %ul)", index));
+        checkGlStatus(__FUNCTION__, stringFormat("setTextureParameters (idx: %u)", index));
 
         glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height, 0, format, GL_FLOAT, values);
-        checkGlStatus(__FUNCTION__, stringFormat("glTexImage2D (idx: %ul)", index));
+        checkGlStatus(__FUNCTION__, stringFormat("glTexImage2D (idx: %u)", index));
     } else
     {
         glBindTexture(GL_TEXTURE_1D, texId);
-        checkGlStatus(__FUNCTION__, stringFormat("glBindTexture (idx: %ul)", index));
+        checkGlStatus(__FUNCTION__, stringFormat("glBindTexture (idx: %u)", index));
 
         setTextureParameters(GL_TEXTURE_1D, interpolation);
 
         glTexImage1D(GL_TEXTURE_1D, 0, internalformat, width, 0, format, GL_FLOAT, values);
-        checkGlStatus(__FUNCTION__, stringFormat("glTexImage1D (idx: %ul)", index));
+        checkGlStatus(__FUNCTION__, stringFormat("glTexImage1D (idx: %u)", index));
     }
 }
 
@@ -444,7 +444,7 @@ void OcioShader::Uniform::use()
             (GLint*)m_data.m_vectorInt.m_getVector());
     } else
         throw OCIO::Exception(
-            formatErr(__FUNCTION__, stringFormat("Uniform %s is not linked to any value.", m_name.c_str())).c_str()
+            printErr(__FUNCTION__, stringFormat("Uniform %s is not linked to any value.", m_name.c_str())).c_str()
         );
     checkGlStatus(__FUNCTION__, stringFormat("\"%s\"", m_name.c_str()));
 }

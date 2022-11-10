@@ -19,23 +19,12 @@
 #define AS_BYTES(X) reinterpret_cast<char*>(&(X))
 #define PTR_AS_BYTES(X) reinterpret_cast<char*>(X)
 
-std::string formatErr(
-    const std::string& source,
-    const std::string& stage,
-    const std::string& message,
-    bool print = true);
-
-std::string formatErr(
-    const std::string& source,
-    const std::string& message,
-    bool print = true);
-
-void printErr(
+std::string printErr(
     const std::string& source,
     const std::string& stage,
     const std::string& message);
 
-void printErr(
+std::string printErr(
     const std::string& source,
     const std::string& message);
 

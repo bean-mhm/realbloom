@@ -114,7 +114,7 @@ bool CMS::init()
         S_STATE.reset();
     } catch (std::exception& e)
     {
-        S_STATE.setError(formatErr(__FUNCTION__, e.what()));
+        S_STATE.setError(printErr(__FUNCTION__, e.what()));
     }
 
     if (ok())
@@ -254,7 +254,7 @@ void CMS::updateProcessors()
         S_STATE.reset();
     } catch (const std::exception& e)
     {
-        S_STATE.setError(formatErr(__FUNCTION__, e.what()));
+        S_STATE.setError(printErr(__FUNCTION__, e.what()));
     }
 }
 

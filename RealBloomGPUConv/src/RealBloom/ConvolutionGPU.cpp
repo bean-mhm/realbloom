@@ -157,17 +157,17 @@ namespace RealBloom
 
         if (!createShader(GL_VERTEX_SHADER, vertexSource, m_vertexShader, shaderLog))
             throw std::exception(
-                formatErr(__FUNCTION__, stringFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
+                printErr(__FUNCTION__, stringFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
         if (!createShader(GL_GEOMETRY_SHADER, geometrySource, m_geometryShader, shaderLog))
             throw std::exception(
-                formatErr(__FUNCTION__, stringFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
+                printErr(__FUNCTION__, stringFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
         if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, m_fragmentShader, shaderLog))
             throw std::exception(
-                formatErr(__FUNCTION__, stringFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
+                printErr(__FUNCTION__, stringFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
         // Link the vertex and fragment shader into a shader program
@@ -454,7 +454,7 @@ namespace RealBloom
             data->done = true;
         } catch (const std::exception& e)
         {
-            data->setError(formatErr(__FUNCTION__, e.what()));
+            data->setError(printErr(__FUNCTION__, e.what()));
         }
 
         // Clean up
