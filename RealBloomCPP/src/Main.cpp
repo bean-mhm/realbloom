@@ -614,9 +614,6 @@ void layout()
 
         {
 
-            static int selCmfTable = 0;
-            static bool cmfLoaded = false;
-
             // Get available CMF Tables
             std::vector<CmfTableInfo> cmfTables = CMF::getAvailableTables();
 
@@ -625,12 +622,17 @@ void layout()
             for (const auto& tbl : cmfTables)
                 cmfTableNames.push_back(tbl.name);
 
-            // Load the first available table by default
-            if (!cmfLoaded)
+            // Get the active table index
+            int selCmfTable = 0;
+            if (CMF::hasTable())
             {
-                cmfLoaded = true;
-                if (cmfTables.size() > 0)
-                    CMF::setActiveTable(cmfTables[0]);
+                CmfTableInfo activeTable = CMF::getActiveTableInfo();
+                for (size_t i = 0; i < cmfTables.size(); i++)
+                    if ((cmfTables[i].name == activeTable.name) && (cmfTables[i].path == activeTable.path))
+                    {
+                        selCmfTable = i;
+                        break;
+                    }
             }
 
             // CMF Table

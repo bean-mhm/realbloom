@@ -87,7 +87,7 @@ namespace RealBloom
                     // CMF table
                     std::shared_ptr<CmfTable> table = CMF::getActiveTable();
                     if (table.get() == nullptr)
-                        throw std::exception("An active CMF table was not found.");
+                        throw std::exception("An active CMF table is needed.");
 
                     // Diff pattern Buffer
                     std::vector<float> dpBuffer;

@@ -193,6 +193,23 @@ bool CMF::init()
         S_STATE.setError(printErr(__FUNCTION__, e.what()));
     }
 
+    // Load the default table if it is found
+    if (ok())
+    {
+        for (const auto& tbl : S_VARS->tables)
+        {
+            if (tbl.name == CMF_DEFAULT_TABLE)
+            {
+                setActiveTable(tbl);
+                break;
+            }
+        }
+
+        // If the default wasn't found, load the first one available
+        if ((!CMF::hasTable()) && (S_VARS->tables.size() > 0))
+            setActiveTable(S_VARS->tables[0]);
+    }
+
     return S_STATE.ok();
 }
 
