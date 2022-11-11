@@ -340,8 +340,8 @@ void layout()
         if (vars.dpParamsChanged)
         {
             vars.dpParamsChanged = false;
-            renderDiffPattern();
             selImageIndex = 1;
+            renderDiffPattern();
         }
 
         ImGui::SliderFloat("Amount##Disp", &(vars.ds_dispersionAmount), 0, 1);
@@ -366,8 +366,7 @@ void layout()
         }
 
         std::string dispStats = dispersion.getStats();
-        if (!dispStats.empty())
-            ImGui::Text(dispStats.c_str());
+        imGuiText(dispStats, dispersion.hasFailed(), false);
 
         ImGui::NewLine();
         imGuiDialogs();
@@ -635,9 +634,11 @@ void layout()
             }
 
             // CMF Table
+            static bool tableChanged = false;
             if (imguiCombo("CMF##CMF", cmfTableNames, &selCmfTable, false))
             {
                 CMF::setActiveTable(cmfTables[selCmfTable]);
+                tableChanged = true;
             }
 
             // CMF Details
@@ -648,6 +649,14 @@ void layout()
             // CMF Error
             if (!CMF::ok())
                 imGuiText(CMF::getError(), true, false);
+
+            // CMF Preview
+            if (ImGui::Button("Preview##CMF", buttonSize) || tableChanged)
+            {
+                tableChanged = false;
+                selImageIndex = 2;
+                dispersion.previewCmf();
+            }
 
         }
 

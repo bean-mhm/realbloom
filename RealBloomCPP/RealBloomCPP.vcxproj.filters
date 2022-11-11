@@ -99,9 +99,6 @@
     <ClCompile Include="src\ColorManagement\CMF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils\Wavelength.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RealBloom\DiffractionPattern.h">
@@ -423,9 +420,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\rapidcsv\rapidcsv.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Utils\Wavelength.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

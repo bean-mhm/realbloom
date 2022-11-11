@@ -5,9 +5,9 @@
 
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/Bilinear.h"
-#include "../Utils/Wavelength.h"
 
 #include "../ColorManagement/CmImage.h"
+#include "../ColorManagement/CMF.h"
 #include "../Utils/Misc.h"
 #include "../Async.h"
 
@@ -28,6 +28,8 @@ namespace RealBloom
         uint32_t numStepsDone = 0;
         bool working = false;
         bool mustCancel = false;
+        bool failed = false;
+        std::string error = "";
     };
 
     class Dispersion
@@ -45,12 +47,14 @@ namespace RealBloom
         void setDiffPatternImage(CmImage* image);
         void setDispersionImage(CmImage* image);
 
+        void previewCmf();
+
         void compute();
         void cancel();
 
-        bool isWorking();
-
-        std::string getStats();
+        bool isWorking() const;
+        bool hasFailed() const;
+        std::string getStats() const;
     };
 
 }

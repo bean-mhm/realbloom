@@ -128,6 +128,27 @@ std::array<float, 3> CmfTable::sample(float wavelength) const
     return { smpX, smpY, smpZ };
 }
 
+void CmfTable::sample(size_t numSamples, std::vector<float>& outSamples) const
+{
+    outSamples.clear();
+    outSamples.reserve(numSamples * 3);
+
+    float range = getRange();
+    float pos, wl;
+    std::array<float, 3> smp;
+
+    for (size_t i = 0; i < numSamples; i++)
+    {
+        pos = float(i) / (float)(numSamples - 1);
+        wl = m_start + (pos * range);
+
+        smp = sample(wl);
+        outSamples.push_back(smp[0]);
+        outSamples.push_back(smp[1]);
+        outSamples.push_back(smp[2]);
+    }
+}
+
 CmfTableInfo::CmfTableInfo(const std::string& name, const std::string& path)
     : name(name), path(path)
 {}
