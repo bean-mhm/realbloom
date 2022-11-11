@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/platform.h>
+#include <oiio/oiioversion.h>
+#include <oiio/platform.h>
 
 #include <atomic>
 #define OIIO_USE_STDATOMIC 1

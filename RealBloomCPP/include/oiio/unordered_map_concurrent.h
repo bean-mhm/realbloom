@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <OpenImageIO/dassert.h>
-#include <OpenImageIO/hash.h>
-#include <OpenImageIO/thread.h>
+#include <oiio/dassert.h>
+#include <oiio/hash.h>
+#include <oiio/thread.h>
 
 OIIO_NAMESPACE_BEGIN
 

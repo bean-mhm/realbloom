@@ -13,12 +13,12 @@
 #include <functional>
 #include <iostream>
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/function_view.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/platform.h>
-#include <OpenImageIO/span.h>
-#include <OpenImageIO/strutil.h>
+#include <oiio/export.h>
+#include <oiio/function_view.h>
+#include <oiio/oiioversion.h>
+#include <oiio/platform.h>
+#include <oiio/span.h>
+#include <oiio/strutil.h>
 
 #ifdef _WIN32
 //# include <windows.h>  // Already done by platform.h
@@ -270,4 +270,4 @@ OIIO_NAMESPACE_END
 
 // DEPRECATED(1.8): for back compatibility with old inclusion of some
 // functions that used to be here but are now in benchmark.h, include it.
-#include <OpenImageIO/benchmark.h>
+#include <oiio/benchmark.h>

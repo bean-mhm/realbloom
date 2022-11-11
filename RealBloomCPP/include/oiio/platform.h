@@ -55,8 +55,8 @@
 #    include <intrin.h>
 #endif
 
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/export.h>
 
 // Detect which C++ standard we're using, and handy macros.
 // See https://en.cppreference.com/w/cpp/compiler_support

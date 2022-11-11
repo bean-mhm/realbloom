@@ -31,11 +31,11 @@
 #include <algorithm>
 #include <cstring>
 
-#include <OpenImageIO/Imath.h>
-#include <OpenImageIO/dassert.h>
-#include <OpenImageIO/platform.h>
+#include <oiio/Imath.h>
+#include <oiio/dassert.h>
+#include <oiio/platform.h>
 
-#include <OpenImageIO/detail/fmt.h>
+#include <oiio/detail/fmt.h>
 
 
 //////////////////////////////////////////////////////////////////////////

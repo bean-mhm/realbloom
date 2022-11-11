@@ -20,10 +20,10 @@
 #    include <malloc.h>  // for alloca
 #endif
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/platform.h>
-#include <OpenImageIO/string_view.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/platform.h>
+#include <oiio/string_view.h>
 
 // Allow client software to know if this version has Sysutil::stacktrace().
 #define OIIO_HAS_STACKTRACE 1

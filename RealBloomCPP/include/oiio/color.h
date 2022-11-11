@@ -6,11 +6,11 @@
 
 #include <memory>
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/fmath.h>
-#include <OpenImageIO/imageio.h>
-#include <OpenImageIO/typedesc.h>
-#include <OpenImageIO/ustring.h>
+#include <oiio/export.h>
+#include <oiio/fmath.h>
+#include <oiio/imageio.h>
+#include <oiio/typedesc.h>
+#include <oiio/ustring.h>
 
 
 OIIO_NAMESPACE_BEGIN

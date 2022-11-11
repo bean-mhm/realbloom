@@ -26,11 +26,11 @@
 #include <string>
 #include <vector>
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/span.h>
-#include <OpenImageIO/strutil.h>
-#include <OpenImageIO/string_view.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/span.h>
+#include <oiio/strutil.h>
+#include <oiio/string_view.h>
 
 #if defined(_WIN32) && defined(__GLIBCXX__)
 #    define OIIO_FILESYSTEM_USE_STDIO_FILEBUF 1

@@ -20,7 +20,7 @@ extern "C" {
 #include "tiff.h"
 }
 
-#include <OpenImageIO/imageio.h>
+#include <oiio/imageio.h>
 
 
 #ifdef TIFF_VERSION_BIG

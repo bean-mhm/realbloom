@@ -8,7 +8,7 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
     OIIO::ImageInput::unique_ptr inp = OIIO::ImageInput::open(filename);
     if (!inp)
     {
-        outError = stringFormat("Couldn't open input file \"%s\".", filename.c_str());
+        outError = formatStr("Couldn't open input file \"%s\".", filename.c_str());
         return false;
     }
 
@@ -20,7 +20,7 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
 
     if ((channels != 1) && (channels != 3) && (channels != 4))
     {
-        outError = stringFormat("Image must have 1, 3, or 4 color channels. (%d)", channels);
+        outError = formatStr("Image must have 1, 3, or 4 color channels. (%d)", channels);
         inp->close();
         return false;
     }
@@ -32,7 +32,7 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
     // Read into the buffer
     if (!inp->read_image(0, 0, 0, -1, OIIO::TypeDesc::FLOAT, buffer.data()))
     {
-        outError = stringFormat("Couldn't read image from file \"%s\".", filename.c_str());
+        outError = formatStr("Couldn't read image from file \"%s\".", filename.c_str());
         inp->close();
         return false;
     }
@@ -103,7 +103,7 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
             cpuProc->apply(img);
         } catch (OCIO::Exception& exception)
         {
-            outError = stringFormat("OpenColorIO Error: %s", exception.what());
+            outError = formatStr("OpenColorIO Error: %s", exception.what());
             return false;
         }
     }
@@ -172,7 +172,7 @@ bool CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
         cpuProc->apply(img);
     } catch (OCIO::Exception& exception)
     {
-        outError = stringFormat("OpenColorIO Error: %s", exception.what());
+        outError = formatStr("OpenColorIO Error: %s", exception.what());
         return false;
     }
 
@@ -193,13 +193,13 @@ bool CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
             out->close();
         else
         {
-            outError = stringFormat("Couldn't write image to file \"%s\".", filename.c_str());
+            outError = formatStr("Couldn't write image to file \"%s\".", filename.c_str());
             out->close();
             return false;
         }
     } else
     {
-        outError = stringFormat("Couldn't open output file \"%s\".", filename.c_str());
+        outError = formatStr("Couldn't open output file \"%s\".", filename.c_str());
         return false;
     }
 

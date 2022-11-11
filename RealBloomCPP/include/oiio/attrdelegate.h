@@ -8,10 +8,10 @@
 #include <memory>
 #include <vector>
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/string_view.h>
-#include <OpenImageIO/typedesc.h>
-#include <OpenImageIO/ustring.h>
+#include <oiio/export.h>
+#include <oiio/string_view.h>
+#include <oiio/typedesc.h>
+#include <oiio/ustring.h>
 
 
 OIIO_NAMESPACE_BEGIN

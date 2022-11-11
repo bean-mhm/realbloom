@@ -14,8 +14,8 @@
 #include <thread>
 #include <vector>
 
-#include <OpenImageIO/strutil.h>
-#include <OpenImageIO/thread.h>
+#include <oiio/strutil.h>
+#include <oiio/thread.h>
 
 
 OIIO_NAMESPACE_BEGIN

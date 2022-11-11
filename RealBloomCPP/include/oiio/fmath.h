@@ -37,12 +37,12 @@
 #include <typeinfo>
 #include <type_traits>
 
-#include <OpenImageIO/Imath.h>
-#include <OpenImageIO/span.h>
-#include <OpenImageIO/dassert.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/platform.h>
-#include <OpenImageIO/simd.h>
+#include <oiio/Imath.h>
+#include <oiio/span.h>
+#include <oiio/dassert.h>
+#include <oiio/oiioversion.h>
+#include <oiio/platform.h>
+#include <oiio/simd.h>
 
 
 OIIO_NAMESPACE_BEGIN

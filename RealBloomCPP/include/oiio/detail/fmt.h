@@ -5,8 +5,8 @@
 #pragma once
 #define OIIO_FMT_H
 
-#include <OpenImageIO/platform.h>
-#include <OpenImageIO/type_traits.h>
+#include <oiio/platform.h>
+#include <oiio/type_traits.h>
 
 // We want the header-only implemention of fmt
 #ifndef FMT_HEADER_ONLY
@@ -38,9 +38,9 @@ OIIO_PRAGMA_WARNING_PUSH
 #    pragma GCC diagnostic ignored "-Wtautological-constant-compare"
 #endif
 
-#include <OpenImageIO/detail/fmt/format.h>
-#include <OpenImageIO/detail/fmt/ostream.h>
-#include <OpenImageIO/detail/fmt/printf.h>
+#include <oiio/detail/fmt/format.h>
+#include <oiio/detail/fmt/ostream.h>
+#include <oiio/detail/fmt/printf.h>
 
 OIIO_PRAGMA_WARNING_POP
 

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <OpenImageIO/export.h>
+#include <oiio/export.h>
 
-#include <OpenImageIO/c-typedesc.h>
+#include <oiio/c-typedesc.h>
 
 #ifdef __cplusplus
 extern "C" {

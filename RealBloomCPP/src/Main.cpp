@@ -40,6 +40,10 @@ std::string dialogResult_ColorSpace;
 
 int main()
 {
+    // Set Locale
+    if (!std::setlocale(LC_ALL, Config::S_APP_LOCALE))
+        std::cout << "Couldn't set locale to \"" << Config::S_APP_LOCALE << "\".\n";
+
     // Load config
     Config::load();
     Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
@@ -56,6 +60,9 @@ int main()
     // Color Management System
     if (!CMS::init())
         return 1;
+
+    // Color Matching Functions
+    CMF::init();
 
     // Hide the console window
     ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -604,70 +611,119 @@ void layout()
     {
         ImGui::Begin("Color Management");
 
+        IMGUI_BOLD("COLOR MATCHING");
+
+        {
+
+            static int selCmfTable = 0;
+            static bool cmfLoaded = false;
+
+            // Get available CMF Tables
+            std::vector<CmfTableInfo> cmfTables = CMF::getAvailableTables();
+
+            // Convert to a string vector
+            std::vector<std::string> cmfTableNames;
+            for (const auto& tbl : cmfTables)
+                cmfTableNames.push_back(tbl.name);
+
+            // Load the first available table by default
+            if (!cmfLoaded)
+            {
+                cmfLoaded = true;
+                if (cmfTables.size() > 0)
+                    CMF::setActiveTable(cmfTables[0]);
+            }
+
+            // CMF Table
+            if (imguiCombo("CMF##CMF", cmfTableNames, &selCmfTable, false))
+            {
+                CMF::setActiveTable(cmfTables[selCmfTable]);
+            }
+
+            // CMF Details
+            std::string cmfTableDetails = CMF::getActiveTableDetails();
+            if (ImGui::IsItemHovered() && CMF::hasTable() && !cmfTableDetails.empty())
+                ImGui::SetTooltip(cmfTableDetails.c_str());
+
+            // CMF Error
+            if (!CMF::ok())
+                imGuiText(CMF::getError(), true, false);
+
+        }
+
+        IMGUI_DIV;
         IMGUI_BOLD("VIEW");
 
-        // Exposure
-        if (ImGui::SliderFloat("Exposure##CMS", &(vars.cms_exposure), -10, 10))
         {
-            CMS::setExposure(vars.cms_exposure);
-            vars.cmsParamsChanged = true;
-        }
 
-        static int selDisplay = 0;
-        static int selView = 0;
-        static int selLook = 0;
+            // Exposure
+            if (ImGui::SliderFloat("Exposure##CMS", &(vars.cms_exposure), -10, 10))
+            {
+                CMS::setExposure(vars.cms_exposure);
+                vars.cmsParamsChanged = true;
+            }
 
-        // Display
-        std::vector<std::string> displays = CMS::getAvailableDisplays();
-        if (imguiCombo("Display##CMS", displays, &selDisplay, false))
-        {
-            CMS::setActiveDisplay(displays[selDisplay]);
-            vars.cmsParamsChanged = true;
+            static int selDisplay = 0;
+            static int selView = 0;
+            static int selLook = 0;
 
-            // Update selView
+            // Display
+            std::vector<std::string> displays = CMS::getAvailableDisplays();
+            if (imguiCombo("Display##CMS", displays, &selDisplay, false))
+            {
+                CMS::setActiveDisplay(displays[selDisplay]);
+                vars.cmsParamsChanged = true;
+
+                // Update selView
+                std::vector<std::string> views = CMS::getAvailableViews();
+                std::string activeView = CMS::getActiveView();
+                ptrdiff_t activeViewIndex = std::distance(views.begin(), std::find(views.begin(), views.end(), activeView));
+                if (activeViewIndex < views.size())
+                    selView = activeViewIndex;
+            }
+
+            // View
             std::vector<std::string> views = CMS::getAvailableViews();
-            std::string activeView = CMS::getActiveView();
-            ptrdiff_t activeViewIndex = std::distance(views.begin(), std::find(views.begin(), views.end(), activeView));
-            if (activeViewIndex < views.size())
-                selView = activeViewIndex;
-        }
+            if (imguiCombo("View##CMS", views, &selView, false))
+            {
+                CMS::setActiveView(views[selView]);
+                vars.cmsParamsChanged = true;
+            }
 
-        // View
-        std::vector<std::string> views = CMS::getAvailableViews();
-        if (imguiCombo("View##CMS", views, &selView, false))
-        {
-            CMS::setActiveView(views[selView]);
-            vars.cmsParamsChanged = true;
-        }
+            // Look
+            std::vector<std::string> looks = CMS::getAvailableLooks();
+            if (imguiCombo("Look##CMS", looks, &selLook, false))
+            {
+                CMS::setActiveLook(looks[selLook]);
+                vars.cmsParamsChanged = true;
+            }
 
-        // Look
-        std::vector<std::string> looks = CMS::getAvailableLooks();
-        if (imguiCombo("Look##CMS", looks, &selLook, false))
-        {
-            CMS::setActiveLook(looks[selLook]);
-            vars.cmsParamsChanged = true;
-        }
+            if (vars.cmsParamsChanged)
+            {
+                vars.cmsParamsChanged = false;
+                for (CmImage* image : images)
+                    image->moveToGPU();
+            }
 
-        if (vars.cmsParamsChanged)
-        {
-            vars.cmsParamsChanged = false;
-            for (CmImage* image : images)
-                image->moveToGPU();
         }
 
         IMGUI_DIV;
         IMGUI_BOLD("INFO");
 
-        // Working Space
-        static std::string workingSpace = CMS::getWorkingSpace();
-        static std::string workingSpaceDesc = CMS::getWorkingSpaceDesc();
-        ImGui::TextWrapped("Working Space: %s", workingSpace.c_str());
-        if (ImGui::IsItemHovered() && !workingSpaceDesc.empty())
-            ImGui::SetTooltip(workingSpaceDesc.c_str());
+        {
 
-        // CMS error
-        if (!CMS::ok())
-            imGuiText(CMS::getError(), true, false);
+            // Working Space
+            static std::string workingSpace = CMS::getWorkingSpace();
+            static std::string workingSpaceDesc = CMS::getWorkingSpaceDesc();
+            ImGui::TextWrapped("Working Space: %s", workingSpace.c_str());
+            if (ImGui::IsItemHovered() && !workingSpaceDesc.empty())
+                ImGui::SetTooltip(workingSpaceDesc.c_str());
+
+            // CMS Error
+            if (!CMS::ok())
+                imGuiText(CMS::getError(), true, false);
+
+        }
 
         ImGui::NewLine();
         ImGui::End();
@@ -686,7 +742,7 @@ void layout()
         }
 
         // UI Renderer
-        static std::string uiRenderer = stringFormat("UI Renderer:\n%s", (const char*)glGetString(GL_RENDERER));
+        static std::string uiRenderer = formatStr("UI Renderer:\n%s", (const char*)glGetString(GL_RENDERER));
 
         // FPS
         ImGui::TextWrapped(
@@ -1198,6 +1254,7 @@ void cleanUp()
     for (auto image : images)
         delete image;
     CmImage::cleanUp();
+    CMF::cleanUp();
     CMS::cleanUp();
 
     ImGui_ImplOpenGL3_Shutdown();

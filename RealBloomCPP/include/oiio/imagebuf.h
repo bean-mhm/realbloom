@@ -12,9 +12,9 @@
 #    pragma warning(disable : 4251)
 #endif
 
-#include <OpenImageIO/dassert.h>
-#include <OpenImageIO/fmath.h>
-#include <OpenImageIO/imageio.h>
+#include <oiio/dassert.h>
+#include <oiio/fmath.h>
+#include <oiio/imageio.h>
 
 #include <limits>
 #include <memory>

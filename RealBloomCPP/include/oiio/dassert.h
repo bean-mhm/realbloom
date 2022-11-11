@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <OpenImageIO/platform.h>
+#include <oiio/platform.h>
 
 
 /// OIIO_ABORT_IF_DEBUG is a call to abort() for debug builds, but does

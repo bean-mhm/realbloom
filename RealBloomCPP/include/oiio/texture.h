@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include <OpenImageIO/imageio.h>
-#include <OpenImageIO/simd.h>
-#include <OpenImageIO/ustring.h>
-#include <OpenImageIO/varyingref.h>
+#include <oiio/imageio.h>
+#include <oiio/simd.h>
+#include <oiio/ustring.h>
+#include <oiio/varyingref.h>
 
 
 // Define symbols that let client applications determine if newly added

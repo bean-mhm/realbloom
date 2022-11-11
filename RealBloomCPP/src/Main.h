@@ -15,6 +15,8 @@
 #include <functional>
 #include <algorithm>
 #include <stdint.h>
+#include <locale>
+#include <clocale>
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC
@@ -29,6 +31,7 @@
 #include "Async.h"
 
 #include "ColorManagement/CMS.h"
+#include "ColorManagement/CMF.h"
 #include "ColorManagement/CMImage.h"
 #include "ColorManagement/CMImageIO.h"
 

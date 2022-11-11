@@ -12,22 +12,13 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "../Utils/GlUtils.h"
 #include "../Utils/Misc.h"
 
-constexpr const char* OCIO_CONFIG_PATH = "./ocio/config.ocio";
+constexpr const char* CMS_CONFIG_PATH = "./ocio/config.ocio";
 constexpr const bool CMS_USE_GPU = true;
 
 class CMS
 {
 private:
-    struct CMState
-    {
-        bool success = true;
-        std::string error = "";
-
-        void setError(const std::string& message);
-        void reset();
-    };
-
-    struct CMVars
+    struct CmVars
     {
         OCIO::ConstConfigRcPtr config;
 
@@ -57,12 +48,16 @@ private:
         void retrieveViews();
         void retrieveLooks();
     };
-    static CMVars* S_VARS;
-    static CMState S_STATE;
+    static CmVars* S_VARS;
+    static SimpleState S_STATE;
 
     static void updateProcessors();
 
 public:
+    CMS() = delete;
+    CMS(const CMS&) = delete;
+    CMS& operator= (const CMS&) = delete;
+
     static bool init();
     static void cleanUp();
 
@@ -89,6 +84,7 @@ public:
 
     static bool ok();
     static std::string getError();
+
     static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();
     static OCIO::ConstGPUProcessorRcPtr getGpuProcessor();
     static std::shared_ptr<OcioShader> getShader();

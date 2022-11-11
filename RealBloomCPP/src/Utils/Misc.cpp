@@ -2,24 +2,23 @@
 
 std::string printErr(const std::string& source, const std::string& stage, const std::string& message)
 {
-    std::string s = stringFormat("[%s] %s: %s", source.c_str(), stage.c_str(), message.c_str());
+    std::string s = formatStr("[%s] %s: %s", source.c_str(), stage.c_str(), message.c_str());
     std::cerr << s << "\n";
     return s;
 }
 
 std::string printErr(const std::string& source, const std::string& message)
 {
-    std::string s = stringFormat("[%s] %s", source.c_str(), message.c_str());
+    std::string s = formatStr("[%s] %s", source.c_str(), message.c_str());
     std::cerr << s << "\n";
     return s;
 }
-
 
 std::string stringFromDuration(float seconds)
 {
     if (seconds < 60.0f)
     {
-        return stringFormat("%.1fs", seconds);
+        return formatStr("%.1fs", seconds);
     } else
     {
         uint32_t intSec = (int)floorf(seconds);
@@ -30,10 +29,10 @@ std::string stringFromDuration(float seconds)
 
         if (intHr > 0)
         {
-            return stringFormat("%dh %dm %ds", intHr, intMin, intSec);
+            return formatStr("%dh %dm %ds", intHr, intMin, intSec);
         } else
         {
-            return stringFormat("%dm %ds", intMin, intSec);
+            return formatStr("%dm %ds", intMin, intSec);
         }
     }
 }
@@ -46,7 +45,7 @@ std::string stringFromDuration2(float seconds)
     uint32_t intMin = (intSec / 60) % 60;
     intSec %= 60;
 
-    return stringFormat("%02d:%02d:%02d", intHr, intMin, intSec);
+    return formatStr("%02d:%02d:%02d", intHr, intMin, intSec);
 }
 
 std::string stringFromSize(uint64_t sizeBytes)
@@ -63,9 +62,9 @@ std::string stringFromSize(uint64_t sizeBytes)
 
     uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)sizeBytes) / log(1024.0))));
     if (mag == 0)
-        return stringFormat("%lu %s", sizeBytes, suffixes[mag]);
+        return formatStr("%lu %s", sizeBytes, suffixes[mag]);
     else
-        return stringFormat("%.1f %s", (double)sizeBytes / powers[mag], suffixes[mag]);
+        return formatStr("%.1f %s", (double)sizeBytes / powers[mag], suffixes[mag]);
 }
 
 std::string stringFromBigNumber(uint64_t bigNumber)
@@ -82,9 +81,9 @@ std::string stringFromBigNumber(uint64_t bigNumber)
 
     uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bigNumber) / log(1000.0))));
     if (mag == 0)
-        return stringFormat("%lu", bigNumber);
+        return formatStr("%lu", bigNumber);
     else
-        return stringFormat("%.1f%s", (double)bigNumber / powers[mag], suffixes[mag]);
+        return formatStr("%.1f%s", (double)bigNumber / powers[mag], suffixes[mag]);
 }
 
 uint32_t getElapsedMs(std::chrono::system_clock::time_point startTime)
@@ -159,4 +158,26 @@ void getTempDirectory(std::string& outDir)
 void openURL(std::string url)
 {
     ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
+
+void SimpleState::setError(const std::string& message)
+{
+    m_ok = false;
+    m_error = message;
+}
+
+void SimpleState::setOk()
+{
+    m_ok = true;
+    m_error = "";
+}
+
+bool SimpleState::ok() const
+{
+    return m_ok;
+}
+
+std::string SimpleState::getError() const
+{
+    return m_error;
 }

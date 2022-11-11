@@ -1,12 +1,11 @@
 #include "CMF.h"
 
-std::shared_ptr<CmfTable> CmfTable::load(const std::string& filename)
+#pragma region CmfTable
+
+CmfTable::CmfTable(const std::string& filename)
 {
     try
     {
-        // Make a CMF table
-        std::shared_ptr<CmfTable> table = std::make_shared<CmfTable>();
-
         // Read the CSV file
         rapidcsv::Document doc(filename, rapidcsv::LabelParams(-1, -1));
 
@@ -20,51 +19,74 @@ std::shared_ptr<CmfTable> CmfTable::load(const std::string& filename)
         // a CMF table with less than 10 entries for
         if (wavelengths.size() < 10)
             throw std::exception(
-                stringFormat("At least 10 entries are needed! (%u)", wavelengths.size()).c_str()
+                formatStr("At least 10 entries are needed! (%u)", wavelengths.size()).c_str()
             );
 
-        table->m_count = wavelengths.size();
-        table->m_start = wavelengths[0];
-        table->m_end = wavelengths[wavelengths.size() - 1];
-        table->m_step = wavelengths[1] - wavelengths[0];
+        m_count = wavelengths.size();
+        m_start = wavelengths[0];
+        m_end = wavelengths[wavelengths.size() - 1];
+        m_step = wavelengths[1] - wavelengths[0];
 
         // start + (step * (count - 1)) == end
-        if (fabsf((table->m_start + (table->m_step * (float)(table->m_count - 1))) - table->m_end) >= table->m_step)
-            throw std::exception(stringFormat(
+        if (fabsf((m_start + (m_step * (float)(m_count - 1))) - m_end) >= m_step)
+            throw std::exception(formatStr(
                 "Wavelength entries must be equally distanced from each other. "
                 "(%u, %.3f, %.3f, %.3f)",
-                table->m_count,
-                table->m_start,
-                table->m_end,
-                table->m_step
+                m_count,
+                m_start,
+                m_end,
+                m_step
             ).c_str());
 
         // Get XYZ values
-        table->m_valuesX = doc.GetColumn<float>(1);
-        table->m_valuesY = doc.GetColumn<float>(2);
-        table->m_valuesZ = doc.GetColumn<float>(3);
+        m_valuesX = doc.GetColumn<float>(1);
+        m_valuesY = doc.GetColumn<float>(2);
+        m_valuesZ = doc.GetColumn<float>(3);
 
         // Check if they all have the same number of entries
         // Pretty long conditions in this function, eh
-        if (!((table->m_valuesX.size() == table->m_count) &&
-            (table->m_valuesY.size() == table->m_count) &&
-            (table->m_valuesZ.size() == table->m_count)))
+        if (!((m_valuesX.size() == m_count) &&
+            (m_valuesY.size() == m_count) &&
+            (m_valuesZ.size() == m_count)))
         {
-            throw std::exception(stringFormat(
+            throw std::exception(formatStr(
                 "The first 4 columns must have the same number of entries. "
                 "(%u, %u, %u, %u)",
-                table->m_count,
-                table->m_valuesX.size(),
-                table->m_valuesY.size(),
-                table->m_valuesZ.size()
+                m_count,
+                m_valuesX.size(),
+                m_valuesY.size(),
+                m_valuesZ.size()
             ).c_str());
         }
-
-        return table;
     } catch (const std::exception& e)
     {
         throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
     }
+}
+
+size_t CmfTable::getCount() const
+{
+    return m_count;
+}
+
+float CmfTable::getStart() const
+{
+    return m_start;
+}
+
+float CmfTable::getEnd() const
+{
+    return m_end;
+}
+
+float CmfTable::getRange() const
+{
+    return (m_end - m_start);
+}
+
+float CmfTable::getStep() const
+{
+    return m_step;
 }
 
 inline float lerp(float a, float b, float t)
@@ -105,3 +127,121 @@ std::array<float, 3> CmfTable::sample(float wavelength) const
 
     return { smpX, smpY, smpZ };
 }
+
+CmfTableInfo::CmfTableInfo(const std::string& name, const std::string& path)
+    : name(name), path(path)
+{}
+
+#pragma endregion
+
+#pragma region CMF
+
+CMF::CmfVars* CMF::S_VARS = nullptr;
+SimpleState CMF::S_STATE;
+
+void CMF::retrieveTables()
+{
+    S_VARS->tables.clear();
+
+    if (!(std::filesystem::exists(CMF_DIR) && std::filesystem::is_directory(CMF_DIR)))
+        throw std::exception(formatStr("\"%s\" was not found.", CMF_DIR).c_str());
+
+    for (const auto& entry : std::filesystem::directory_iterator(CMF_DIR))
+    {
+        if (!entry.is_directory())
+        {
+            if (lowercase(entry.path().extension().string()) == ".csv")
+            {
+                std::string tableName = entry.path().filename().replace_extension().string();
+                std::string tablePath = std::filesystem::absolute(entry.path()).string();
+                S_VARS->tables.push_back(CmfTableInfo(tableName, tablePath));
+            }
+        }
+    }
+}
+
+bool CMF::init()
+{
+    S_VARS = new CmfVars();
+    try
+    {
+        retrieveTables();
+        S_STATE.setOk();
+    } catch (const std::exception& e)
+    {
+        S_STATE.setError(printErr(__FUNCTION__, e.what()));
+    }
+
+    return S_STATE.ok();
+}
+
+void CMF::cleanUp()
+{
+    DELPTR(S_VARS);
+}
+
+const std::vector<CmfTableInfo>& CMF::getAvailableTables()
+{
+    return S_VARS->tables;
+}
+
+std::shared_ptr<CmfTable> CMF::getActiveTable()
+{
+    return S_VARS->activeTable;
+}
+
+CmfTableInfo CMF::getActiveTableInfo()
+{
+    return S_VARS->activeTableInfo;
+}
+
+std::string CMF::getActiveTableDetails()
+{
+    return S_VARS->activeTableDetails;
+}
+
+void CMF::setActiveTable(const CmfTableInfo& tableInfo)
+{
+    S_VARS->activeTable = nullptr;
+    try
+    {
+        if (!tableInfo.path.empty())
+        {
+            S_VARS->activeTable = std::make_shared<CmfTable>(tableInfo.path);
+            S_VARS->activeTableInfo = tableInfo;
+
+            S_VARS->activeTableDetails = formatStr(
+                "%s\n"
+                "Count: %u\n"
+                "Range: %.3f - %.3f\n"
+                "Step: %.3f",
+                S_VARS->activeTableInfo.name.c_str(),
+                S_VARS->activeTable->getCount(),
+                S_VARS->activeTable->getStart(),
+                S_VARS->activeTable->getEnd(),
+                S_VARS->activeTable->getStep()
+            );
+        }
+        S_STATE.setOk();
+    } catch (const std::exception& e)
+    {
+        S_STATE.setError(e.what());
+    }
+}
+
+bool CMF::hasTable()
+{
+    return (S_VARS->activeTable.get() != nullptr);
+}
+
+bool CMF::ok()
+{
+    return S_STATE.ok();
+}
+
+std::string CMF::getError()
+{
+    return S_STATE.getError();
+}
+
+#pragma endregion

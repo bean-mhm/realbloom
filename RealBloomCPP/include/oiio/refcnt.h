@@ -14,8 +14,8 @@
 
 #include <memory>
 
-#include <OpenImageIO/atomic.h>
-#include <OpenImageIO/dassert.h>
+#include <oiio/atomic.h>
+#include <oiio/dassert.h>
 
 
 OIIO_NAMESPACE_BEGIN

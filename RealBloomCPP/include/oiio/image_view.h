@@ -27,8 +27,8 @@ typedef __int64 int64_t;
 #    endif
 #endif
 
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/strided_ptr.h>
+#include <oiio/oiioversion.h>
+#include <oiio/strided_ptr.h>
 
 
 OIIO_NAMESPACE_BEGIN

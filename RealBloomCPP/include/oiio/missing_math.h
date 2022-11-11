@@ -11,4 +11,4 @@
 
 #pragma once
 
-#include <OpenImageIO/fmath.h>
+#include <oiio/fmath.h>

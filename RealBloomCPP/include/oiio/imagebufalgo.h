@@ -14,11 +14,11 @@
 #  pragma warning (disable : 4251)
 #endif
 
-#include <OpenImageIO/imageio.h>
-#include <OpenImageIO/imagebuf.h>
-#include <OpenImageIO/fmath.h>
-#include <OpenImageIO/parallel.h>
-#include <OpenImageIO/span.h>
+#include <oiio/imageio.h>
+#include <oiio/imagebuf.h>
+#include <oiio/fmath.h>
+#include <oiio/parallel.h>
+#include <oiio/span.h>
 
 #include <limits>
 

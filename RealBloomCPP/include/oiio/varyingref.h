@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <OpenImageIO/oiioversion.h>
+#include <oiio/oiioversion.h>
 
 OIIO_NAMESPACE_BEGIN
 

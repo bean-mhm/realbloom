@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <filesystem>
+#include <algorithm>
 
 #define NOMINMAX
 #include <Windows.h>
@@ -36,18 +37,34 @@ inline void threadJoin(std::thread* t)
 }
 
 template<typename ... Args>
-std::string stringFormat(const std::string& format, Args ... args)
+std::string formatStr(const std::string& format, Args ... args)
 {
     int size_s = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
     if (size_s <= 0)
     {
         //throw std::runtime_error("Error during formatting.");
-        return "Error";
+        return "[formatStr] Error";
     }
     auto size = static_cast<size_t>(size_s);
     std::unique_ptr<char[]> buf(new char[size]);
     std::snprintf(buf.get(), size, format.c_str(), args ...);
     return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+}
+
+template <typename T>
+std::basic_string<T> lowercase(const std::basic_string<T>& s)
+{
+    std::basic_string<T> s2 = s;
+    std::transform(s2.begin(), s2.end(), s2.begin(), tolower);
+    return s2;
+}
+
+template <typename T>
+std::basic_string<T> uppercase(const std::basic_string<T>& s)
+{
+    std::basic_string<T> s2 = s;
+    std::transform(s2.begin(), s2.end(), s2.begin(), toupper);
+    return s2;
 }
 
 // Examples: "6h 9m 42s", "10.7s"
@@ -82,3 +99,17 @@ bool processIsRunning(PROCESS_INFORMATION pi);
 bool deleteFile(const std::string& filename);
 void getTempDirectory(std::string& outDir);
 void openURL(std::string url);
+
+class SimpleState
+{
+private:
+    bool m_ok = true;
+    std::string m_error = "";
+
+public:
+    void setError(const std::string& message);
+    void setOk();
+
+    bool ok() const;
+    std::string getError() const;
+};

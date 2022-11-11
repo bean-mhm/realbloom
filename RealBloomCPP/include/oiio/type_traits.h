@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/platform.h>
+#include <oiio/oiioversion.h>
+#include <oiio/platform.h>
 
 OIIO_NAMESPACE_BEGIN
 

@@ -32,7 +32,7 @@ bool checkShader(GLuint shaderID, std::string& outLog)
     glGetShaderInfoLog(shaderID, 511, NULL, shaderLog);
     checkGlStatus(__FUNCTION__, "glGetShaderInfoLog");
 
-    outLog = stringFormat("%s %s", toHex(status).c_str(), (const char*)shaderLog);
+    outLog = formatStr("%s %s", toHex(status).c_str(), (const char*)shaderLog);
 
     return status == GL_TRUE;
 }
@@ -53,7 +53,7 @@ bool getGlErrors(std::string& outErrors)
         else
             outErrors += toHex(currentErr);
 
-        outErrors += " " + stringFormat("%s", gluErrorString(currentErr));
+        outErrors += " " + formatStr("%s", gluErrorString(currentErr));
         hadErrors = true;
     }
 

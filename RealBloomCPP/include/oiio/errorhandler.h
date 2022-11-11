@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/strutil.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/strutil.h>
 
 
 OIIO_NAMESPACE_BEGIN

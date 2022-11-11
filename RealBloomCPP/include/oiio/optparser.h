@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include <OpenImageIO/strutil.h>
+#include <oiio/strutil.h>
 #include <string>
 
 OIIO_NAMESPACE_BEGIN

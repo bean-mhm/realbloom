@@ -28,14 +28,14 @@
 #include <string>
 #include <vector>
 
-#include <OpenImageIO/span.h>
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/paramlist.h>
-#include <OpenImageIO/platform.h>
-#include <OpenImageIO/strutil.h>
-#include <OpenImageIO/thread.h>
-#include <OpenImageIO/typedesc.h>
+#include <oiio/span.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/paramlist.h>
+#include <oiio/platform.h>
+#include <oiio/strutil.h>
+#include <oiio/thread.h>
+#include <oiio/typedesc.h>
 
 OIIO_NAMESPACE_BEGIN
 

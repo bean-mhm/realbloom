@@ -22,11 +22,11 @@
 #include <iostream>
 #include <limits>
 
-#include <OpenImageIO/dassert.h>
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/string_view.h>
-#include <OpenImageIO/strutil.h>
+#include <oiio/dassert.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/string_view.h>
+#include <oiio/strutil.h>
 
 // Define symbols that let client applications determine if newly added
 // features are supported.

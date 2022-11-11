@@ -20,10 +20,10 @@
 #include <utility>
 #include <vector>
 
-#include <OpenImageIO/span.h>
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/string_view.h>
+#include <oiio/span.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/string_view.h>
 
 // We should never have included fmath.h here. But we did, oops. Once we're
 // allowed to break back compatibility, remove it.

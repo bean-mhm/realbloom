@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/span.h>
-#include <OpenImageIO/string_view.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/span.h>
+#include <oiio/string_view.h>
 
 OIIO_NAMESPACE_BEGIN
 

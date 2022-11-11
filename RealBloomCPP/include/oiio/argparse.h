@@ -15,10 +15,10 @@
 #include <memory>
 #include <vector>
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/paramlist.h>
-#include <OpenImageIO/strutil.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/paramlist.h>
+#include <oiio/strutil.h>
 
 
 OIIO_NAMESPACE_BEGIN

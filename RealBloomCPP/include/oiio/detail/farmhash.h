@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <OpenImageIO/hash.h>
+#include <oiio/hash.h>
 
 #define NAMESPACE_FOR_HASH_FUNCTIONS OIIO::farmhash
 

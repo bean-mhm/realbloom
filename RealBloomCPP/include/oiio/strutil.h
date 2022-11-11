@@ -20,14 +20,14 @@
 #include <string>
 #include <vector>
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/hash.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/platform.h>
-#include <OpenImageIO/string_view.h>
+#include <oiio/export.h>
+#include <oiio/hash.h>
+#include <oiio/oiioversion.h>
+#include <oiio/platform.h>
+#include <oiio/string_view.h>
 
-#include <OpenImageIO/detail/fmt.h>
-#include <OpenImageIO/detail/farmhash.h>
+#include <oiio/detail/fmt.h>
+#include <oiio/detail/farmhash.h>
 
 // Allow client software to know if this version of OIIO has Strutil::sprintf
 #define OIIO_HAS_SPRINTF 1

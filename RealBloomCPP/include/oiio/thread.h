@@ -24,11 +24,11 @@
 #include <thread>
 #include <vector>
 
-#include <OpenImageIO/atomic.h>
-#include <OpenImageIO/dassert.h>
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/platform.h>
+#include <oiio/atomic.h>
+#include <oiio/dassert.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/platform.h>
 
 
 

@@ -9,9 +9,9 @@
 #include <cstdlib>
 #include <iostream>
 
-#include <OpenImageIO/simd.h>
-#include <OpenImageIO/strutil.h>
-#include <OpenImageIO/sysutil.h>
+#include <oiio/simd.h>
+#include <oiio/strutil.h>
+#include <oiio/sysutil.h>
 
 
 OIIO_NAMESPACE_BEGIN

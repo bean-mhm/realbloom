@@ -14,10 +14,10 @@
 
 #include <vector>
 
-#include <OpenImageIO/attrdelegate.h>
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/typedesc.h>
-#include <OpenImageIO/ustring.h>
+#include <oiio/attrdelegate.h>
+#include <oiio/export.h>
+#include <oiio/typedesc.h>
+#include <oiio/ustring.h>
 
 
 OIIO_NAMESPACE_BEGIN

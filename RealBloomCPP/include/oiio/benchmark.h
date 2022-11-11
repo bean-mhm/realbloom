@@ -9,10 +9,10 @@
 #include <iostream>
 #include <vector>
 
-#include <OpenImageIO/function_view.h>
-#include <OpenImageIO/string_view.h>
-#include <OpenImageIO/strutil.h>
-#include <OpenImageIO/timer.h>
+#include <oiio/function_view.h>
+#include <oiio/string_view.h>
+#include <oiio/strutil.h>
+#include <oiio/timer.h>
 
 
 #if (((OIIO_GNUC_VERSION && NDEBUG) || OIIO_CLANG_VERSION >= 30500 || OIIO_APPLE_CLANG_VERSION >= 70000 || defined(__INTEL_COMPILER)  || defined(__INTEL_LLVM_COMPILER)) \

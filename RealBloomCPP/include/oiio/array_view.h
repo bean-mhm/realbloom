@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <OpenImageIO/span.h>
+#include <oiio/span.h>
 
 OIIO_NAMESPACE_BEGIN
 

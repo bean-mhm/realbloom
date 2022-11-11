@@ -8,8 +8,8 @@
 
 #include <functional>
 
-#include <OpenImageIO/parallel.h>
-#include <OpenImageIO/imagebufalgo.h>
+#include <oiio/parallel.h>
+#include <oiio/imagebufalgo.h>
 
 
 

@@ -1,9 +1,9 @@
 #include "CMS.h"
 
-CMS::CMVars* CMS::S_VARS = nullptr;
-CMS::CMState CMS::S_STATE;
+CMS::CmVars* CMS::S_VARS = nullptr;
+SimpleState CMS::S_STATE;
 
-void CMS::CMVars::retrieveColorSpaces()
+void CMS::CmVars::retrieveColorSpaces()
 {
     colorSpaces.clear();
     try
@@ -17,7 +17,7 @@ void CMS::CMVars::retrieveColorSpaces()
     }
 }
 
-void CMS::CMVars::retrieveDisplays()
+void CMS::CmVars::retrieveDisplays()
 {
     displays.clear();
     try
@@ -31,7 +31,7 @@ void CMS::CMVars::retrieveDisplays()
     }
 }
 
-void CMS::CMVars::retrieveViews()
+void CMS::CmVars::retrieveViews()
 {
     views.clear();
     try
@@ -45,7 +45,7 @@ void CMS::CMVars::retrieveViews()
     }
 }
 
-void CMS::CMVars::retrieveLooks()
+void CMS::CmVars::retrieveLooks()
 {
     looks.clear();
     looks.push_back("None");
@@ -62,11 +62,10 @@ void CMS::CMVars::retrieveLooks()
 
 bool CMS::init()
 {
+    S_VARS = new CmVars();
     try
     {
-        S_VARS = new CMVars();
-
-        S_VARS->config = OCIO::Config::CreateFromFile(OCIO_CONFIG_PATH);
+        S_VARS->config = OCIO::Config::CreateFromFile(CMS_CONFIG_PATH);
 
         OCIO::ConstColorSpaceRcPtr sceneLinear = S_VARS->config->getColorSpace(OCIO::ROLE_SCENE_LINEAR);
         S_VARS->workingSpace = sceneLinear->getName();
@@ -111,7 +110,7 @@ bool CMS::init()
             }
         }
 
-        S_STATE.reset();
+        S_STATE.setOk();
     } catch (std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, e.what()));
@@ -120,7 +119,7 @@ bool CMS::init()
     if (ok())
         updateProcessors();
 
-    return S_STATE.success;
+    return S_STATE.ok();
 }
 
 void CMS::cleanUp()
@@ -251,7 +250,7 @@ void CMS::updateProcessors()
             S_VARS->shader = std::make_shared<OcioShader>(shaderDesc);
         }
 
-        S_STATE.reset();
+        S_STATE.setOk();
     } catch (const std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, e.what()));
@@ -260,12 +259,12 @@ void CMS::updateProcessors()
 
 bool CMS::ok()
 {
-    return S_STATE.success;
+    return S_STATE.ok();
 }
 
 std::string CMS::getError()
 {
-    return S_STATE.error;
+    return S_STATE.getError();
 }
 
 OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()
@@ -285,16 +284,4 @@ OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
 std::shared_ptr<OcioShader> CMS::getShader()
 {
     return S_VARS->shader;
-}
-
-void CMS::CMState::setError(const std::string& message)
-{
-    success = false;
-    error = message;
-}
-
-void CMS::CMState::reset()
-{
-    S_STATE.success = true;
-    S_STATE.error = "";
 }

@@ -15,11 +15,11 @@
 #    pragma warning(disable : 4251 4996)
 #endif
 
-#include <OpenImageIO/dassert.h>
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/string_view.h>
-#include <OpenImageIO/strutil.h>
+#include <oiio/dassert.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/string_view.h>
+#include <oiio/strutil.h>
 #include <cstring>
 #include <iostream>
 #include <string>

@@ -23,7 +23,7 @@
 #ifndef HEADER_PUGIXML_HPP
 #define HEADER_PUGIXML_HPP
 
-#include <OpenImageIO/oiioversion.h>
+#include <oiio/oiioversion.h>
 #define USING_OIIO_PUGI 1
 
 // Include stddef.h for size_t and ptrdiff_t

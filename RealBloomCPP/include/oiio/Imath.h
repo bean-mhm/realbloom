@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <OpenImageIO/detail/fmt.h>
+#include <oiio/detail/fmt.h>
 
 #ifndef OIIO_IMATH_H_INCLUDED
 #define OIIO_IMATH_H_INCLUDED 1

@@ -42,9 +42,9 @@
 #include <functional>
 #include <type_traits>
 
-#include <OpenImageIO/export.h>
-#include <OpenImageIO/oiioversion.h>
-#include <OpenImageIO/platform.h>
+#include <oiio/export.h>
+#include <oiio/oiioversion.h>
+#include <oiio/platform.h>
 
 
 OIIO_NAMESPACE_BEGIN
