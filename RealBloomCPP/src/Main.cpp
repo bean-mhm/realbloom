@@ -657,6 +657,7 @@ void layout()
             {
                 tableChanged = false;
                 selImageIndex = 2;
+                dispersion.cancel();
                 dispersion.previewCmf();
             }
 
