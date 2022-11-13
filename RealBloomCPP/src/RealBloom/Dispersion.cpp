@@ -38,9 +38,9 @@ namespace RealBloom
         std::vector<float> buffer;
         buffer.resize(pWidth * pHeight * 4);
 
-        // Get XYZ samples
+        // Get wavelength samples
         std::vector<float> samples;
-        table->sample(pWidth, samples);
+        table->sampleRGB(pWidth, samples);
 
         // Copy to buffer
         uint32_t redIndex, smpIndex;
@@ -114,9 +114,7 @@ namespace RealBloom
                     float dispColor[3];
                     std::copy(m_params.color, m_params.color + 3, dispColor);
 
-                    float wavelength = 0;
                     float wlR = 0, wlG = 0, wlB = 0;
-                    float wavelengthPos = 0; // how far along the wavelength range
                     float scale = 0;
 
                     // Scaled buffer for individual steps
@@ -139,11 +137,9 @@ namespace RealBloom
 
                     // Sample wavelengths
                     std::vector<float> cmfSamples;
-                    table->sample(dispSteps, cmfSamples);
+                    table->sampleRGB(dispSteps, cmfSamples);
                     if (cmfSamples.size() < (dispSteps * 3))
                         throw std::exception("Invalid number of samples provided by CmfTable.");
-
-                    // Convert from XYZ to RGB
 
                     // Calculate the perceived luminance for the sum of the samples
                     float luminanceSum = 0.0f, luminanceMul = 0.0f;
@@ -309,16 +305,16 @@ namespace RealBloom
                                 if (pSelImageIndex != nullptr) *pSelImageIndex = 2;
                             });
                     }
-    } catch (const std::exception& e)
-    {
-        if (!m_state.mustCancel)
-        {
-            m_state.failed = true;
-            m_state.error = e.what();
-        }
-    }
-    m_state.working = false;
-});
+                } catch (const std::exception& e)
+                {
+                    if (!m_state.mustCancel)
+                    {
+                        m_state.failed = true;
+                        m_state.error = e.what();
+                    }
+                }
+                m_state.working = false;
+            });
     }
 
     void Dispersion::cancel()

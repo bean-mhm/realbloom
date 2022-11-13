@@ -32,6 +32,7 @@
 
 #include "ColorManagement/CMS.h"
 #include "ColorManagement/CMF.h"
+#include "ColorManagement/CmXYZ.h"
 #include "ColorManagement/CMImage.h"
 #include "ColorManagement/CMImageIO.h"
 

@@ -21,6 +21,7 @@ const ImVec4 colorWarningText{ 0.940f, 0.578f, 0.282f, 1.0f };
 const ImVec4 colorErrorText{ 0.950f, 0.300f, 0.228f, 1.0f };
 
 const ImVec2 buttonSize{ -1, 27 };
+const ImVec2 dlgButtonSize{ 400, 27 };
 std::vector<std::string> activeComboList;
 
 std::vector<CmImage*> images;
@@ -37,6 +38,13 @@ std::string convResUsage = "";
 constexpr const char* DIALOG_COLORSPACE = "Color Space";
 std::packaged_task<void()> dialogAction_ColorSpace;
 std::string dialogResult_ColorSpace;
+
+constexpr const char* DIALOG_XYZ = "XYZ Conversion";
+std::packaged_task<void()> dialogAction_XYZ;
+XyzConversionMethod dialogResult_XYZ_method;
+std::string dialogResult_XYZ_userSpace;
+std::string dialogResult_XYZ_commonInternal;
+std::string dialogResult_XYZ_commonUser;
 
 int main()
 {
@@ -63,6 +71,9 @@ int main()
 
     // Color Matching Functions
     CMF::init();
+
+    // XYZ Utility
+    CmXYZ::init();
 
     // Hide the console window
     ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -653,13 +664,22 @@ void layout()
                 imGuiText(CMF::getError(), true, false);
 
             // CMF Preview
+            static std::string cmfPreviewError = "";
             if (ImGui::Button("Preview##CMF", buttonSize) || tableChanged)
             {
                 tableChanged = false;
+                cmfPreviewError = "";
                 selImageIndex = 2;
                 dispersion.cancel();
-                dispersion.previewCmf();
+                try
+                {
+                    dispersion.previewCmf();
+                } catch (const std::exception& e)
+                {
+                    cmfPreviewError = e.what();
+                }
             }
+            imGuiText(cmfPreviewError, true, false);
 
         }
 
@@ -737,7 +757,31 @@ void layout()
 
         }
 
+        // If an XYZ conversion method has not been decided, ask the user to choose one
+        {
+            static bool xyzHandled = false;
+            if (!xyzHandled)
+            {
+                xyzHandled = true;
+                if (CmXYZ::getConversionInfo().method == XyzConversionMethod::NeedInput)
+                {
+                    dialogAction_XYZ = std::packaged_task<void()>(
+                        []()
+                        {
+                            XyzConversionInfo info;
+                            info.method = dialogResult_XYZ_method;
+                            info.userSpace = dialogResult_XYZ_userSpace;
+                            info.commonInternal = dialogResult_XYZ_commonInternal;
+                            info.commonUser = dialogResult_XYZ_commonUser;
+                            CmXYZ::setConversionInfo(info);
+                        });
+                    ImGui::OpenPopup(DIALOG_XYZ);
+                }
+            }
+        }
+
         ImGui::NewLine();
+        imGuiDialogs();
         ImGui::End();
     }
 
@@ -906,29 +950,96 @@ void saveImage(CmImage& image, std::string& outError)
 
 void imGuiDialogs()
 {
-    if (ImGui::BeginPopupModal(DIALOG_COLORSPACE))
+    const std::vector<std::string>& internalSpaces = CMS::getInternalColorSpaces();
+    const std::vector<std::string>& userSpaces = CMS::getAvailableColorSpaces();
+
+    if (ImGui::BeginPopupModal(DIALOG_COLORSPACE, 0, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("Color space of the file:");
 
         static int selColorSpace = 0;
-        imguiCombo("##ColorSpace", CMS::getAvailableColorSpaces(), &selColorSpace, true);
-
+        imguiCombo("##ColorSpace", userSpaces, &selColorSpace, true);
         if (ImGui::IsItemHovered() && selColorSpace >= 0)
         {
             std::string colorSpaceDesc = CMS::getConfig()
-                ->getColorSpace(CMS::getAvailableColorSpaces()[selColorSpace].c_str())
+                ->getColorSpace(userSpaces[selColorSpace].c_str())
                 ->getDescription();
             ImGui::SetTooltip(colorSpaceDesc.c_str());
         }
 
-        if (ImGui::Button("OK", buttonSize))
+        if (ImGui::Button("OK", dlgButtonSize))
         {
-            dialogResult_ColorSpace = CMS::getAvailableColorSpaces()[selColorSpace];
+            dialogResult_ColorSpace = userSpaces[selColorSpace];
             dialogAction_ColorSpace();
             ImGui::CloseCurrentPopup();
         }
-        if (ImGui::Button("Cancel", buttonSize))
+        if (ImGui::Button("Cancel", dlgButtonSize))
             ImGui::CloseCurrentPopup();
+        ImGui::NewLine();
+    }
+
+    if (ImGui::BeginPopupModal(DIALOG_XYZ, 0, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextWrapped(
+            "We couldn't find an XYZ color space in your OCIO config. "
+            "If it contains the CIE XYZ color space, please choose it "
+            "below. Otherwise, you can choose a common color space "
+            "that exists in both the user config and our internal "
+            "config."
+        );
+        ImGui::NewLine();
+
+        static bool useCommonSpace = false;
+        static int selInternalSpace = 0;
+        static int selUserSpace = 0;
+        static int selXyzSpace = 0;
+
+        ImGui::Checkbox("Use a common space", &useCommonSpace);
+
+        if (useCommonSpace)
+        {
+            ImGui::Text("Internal config:");
+            imguiCombo("##CommonSpaceInternal", internalSpaces, &selInternalSpace, true);
+            if (ImGui::IsItemHovered() && selInternalSpace >= 0)
+            {
+                std::string desc = getColorSpaceDesc(CMS::getInternalConfig(), internalSpaces[selInternalSpace]);
+                if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
+            }
+
+            ImGui::Text("User config:");
+            imguiCombo("##CommonSpaceUser", userSpaces, &selUserSpace, true);
+            if (ImGui::IsItemHovered() && selUserSpace >= 0)
+            {
+                std::string desc = getColorSpaceDesc(CMS::getConfig(), userSpaces[selUserSpace]);
+                if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
+            }
+        } else
+        {
+            ImGui::Text("XYZ color space:");
+            imguiCombo("##XYZColorSpace", userSpaces, &selXyzSpace, true);
+            if (ImGui::IsItemHovered() && selXyzSpace >= 0)
+            {
+                std::string desc = getColorSpaceDesc(CMS::getConfig(), userSpaces[selXyzSpace]);
+                if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
+            }
+        }
+
+        if (ImGui::Button("OK", dlgButtonSize))
+        {
+            if (useCommonSpace)
+            {
+                dialogResult_XYZ_method = XyzConversionMethod::CommonSpace;
+                dialogResult_XYZ_commonInternal = internalSpaces[selInternalSpace];
+                dialogResult_XYZ_commonUser = userSpaces[selUserSpace];
+            } else
+            {
+                dialogResult_XYZ_method = XyzConversionMethod::UserConfig;
+                dialogResult_XYZ_userSpace = userSpaces[selXyzSpace];
+            }
+            dialogAction_XYZ();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::NewLine();
     }
 }
 

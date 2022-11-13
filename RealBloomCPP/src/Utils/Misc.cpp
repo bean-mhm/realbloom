@@ -14,6 +14,11 @@ std::string printErr(const std::string& source, const std::string& message)
     return s;
 }
 
+bool strContains(const std::string& source, const std::string& substring)
+{
+    return (source.find(substring) != std::string::npos);
+}
+
 std::string stringFromDuration(float seconds)
 {
     if (seconds < 60.0f)

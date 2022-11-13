@@ -9,6 +9,8 @@
 
 #include "rapidcsv/rapidcsv.h"
 
+#include "CMS.h"
+#include "CmXYZ.h"
 #include "../Utils/Misc.h"
 
 constexpr const char* CMF_DIR = "cmf";
@@ -34,6 +36,7 @@ public:
     float getStep() const;
     std::array<float, 3> sample(float wavelength) const;
     void sample(size_t numSamples, std::vector<float>& outSamples) const;
+    void sampleRGB(size_t numSamples, std::vector<float>& outSamples) const;
 
     CmfTable(const std::string& filename);
 };

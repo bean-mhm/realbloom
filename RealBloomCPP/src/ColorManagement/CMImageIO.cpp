@@ -84,6 +84,7 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
         try
         {
             OCIO::ConstConfigRcPtr config = CMS::getConfig();
+
             OCIO::PackedImageDesc img(
                 bufferRGBA.data(),
                 xres,
@@ -101,9 +102,9 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
             OCIO::ConstProcessorRcPtr proc = config->getProcessor(transform);
             OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
             cpuProc->apply(img);
-        } catch (OCIO::Exception& exception)
+        } catch (OCIO::Exception& e)
         {
-            outError = formatStr("OpenColorIO Error: %s", exception.what());
+            outError = formatStr("OpenColorIO Error: %s", e.what());
             return false;
         }
     }
@@ -170,9 +171,9 @@ bool CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
         OCIO::ConstProcessorRcPtr proc = config->getProcessor(transform);
         OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
         cpuProc->apply(img);
-    } catch (OCIO::Exception& exception)
+    } catch (OCIO::Exception& e)
     {
-        outError = formatStr("OpenColorIO Error: %s", exception.what());
+        outError = formatStr("OpenColorIO Error: %s", e.what());
         return false;
     }
 

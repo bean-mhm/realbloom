@@ -67,6 +67,8 @@ std::basic_string<T> uppercase(const std::basic_string<T>& s)
     return s2;
 }
 
+bool strContains(const std::string& source, const std::string& substring);
+
 // Examples: "6h 9m 42s", "10.7s"
 std::string stringFromDuration(float seconds);
 

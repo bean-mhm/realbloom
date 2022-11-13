@@ -21,10 +21,12 @@ private:
     struct CmVars
     {
         OCIO::ConstConfigRcPtr config;
+        OCIO::ConstConfigRcPtr internalConfig;
 
         std::string workingSpace = "";
         std::string workingSpaceDesc = "";
 
+        std::vector<std::string> internalColorSpaces;
         std::vector<std::string> colorSpaces;
         std::vector<std::string> displays;
         std::vector<std::string> views;
@@ -62,10 +64,12 @@ public:
     static void cleanUp();
 
     static OCIO::ConstConfigRcPtr getConfig();
+    static OCIO::ConstConfigRcPtr getInternalConfig();
 
     static const std::string& getWorkingSpace();
     static const std::string& getWorkingSpaceDesc();
 
+    static const std::vector<std::string>& getInternalColorSpaces();
     static const std::vector<std::string>& getAvailableColorSpaces();
     static const std::vector<std::string>& getAvailableDisplays();
     static const std::vector<std::string>& getAvailableViews();
@@ -89,3 +93,5 @@ public:
     static OCIO::ConstGPUProcessorRcPtr getGpuProcessor();
     static std::shared_ptr<OcioShader> getShader();
 };
+
+std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace);

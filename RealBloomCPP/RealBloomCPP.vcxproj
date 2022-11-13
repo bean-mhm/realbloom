@@ -202,6 +202,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
     <ClCompile Include="src\ColorManagement\CMF.cpp" />
     <ClCompile Include="src\Utils\GlTexture.cpp" />
     <ClCompile Include="include\oiio\detail\pugixml\pugixml.cpp" />
@@ -234,6 +235,8 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
   <ItemGroup>
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
     <ClInclude Include="src\ColorManagement\CMF.h" />
+    <ClInclude Include="src\ColorManagement\CmInternalConfig.h" />
+    <ClInclude Include="src\ColorManagement\CmXYZ.h" />
     <ClInclude Include="src\Utils\GlTexture.h" />
     <ClInclude Include="include\inih\INIReader.h" />
     <ClInclude Include="include\ocio\OpenColorABI.h" />

@@ -1,19 +1,31 @@
 #include "CMS.h"
+#include "CmInternalConfig.h"
 
 CMS::CmVars* CMS::S_VARS = nullptr;
 SimpleState CMS::S_STATE;
 
 void CMS::CmVars::retrieveColorSpaces()
 {
+    internalColorSpaces.clear();
+    try
+    {
+        size_t num = internalConfig->getNumColorSpaces();
+        for (size_t i = 0; i < num; i++)
+            internalColorSpaces.push_back(internalConfig->getColorSpaceNameByIndex(i));
+    } catch (OCIO::Exception& e)
+    {
+        printErr(__FUNCTION__, "Internal config", e.what());
+    }
+
     colorSpaces.clear();
     try
     {
-        size_t numColorSpaces = config->getNumColorSpaces();
-        for (size_t i = 0; i < numColorSpaces; i++)
+        size_t num = config->getNumColorSpaces();
+        for (size_t i = 0; i < num; i++)
             colorSpaces.push_back(config->getColorSpaceNameByIndex(i));
-    } catch (OCIO::Exception& exception)
+    } catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, exception.what());
+        printErr(__FUNCTION__, "User config", e.what());
     }
 }
 
@@ -22,12 +34,12 @@ void CMS::CmVars::retrieveDisplays()
     displays.clear();
     try
     {
-        size_t numDisplays = config->getNumDisplays();
-        for (size_t i = 0; i < numDisplays; i++)
+        size_t num = config->getNumDisplays();
+        for (size_t i = 0; i < num; i++)
             displays.push_back(config->getDisplay(i));
-    } catch (OCIO::Exception& exception)
+    } catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, exception.what());
+        printErr(__FUNCTION__, e.what());
     }
 }
 
@@ -36,12 +48,12 @@ void CMS::CmVars::retrieveViews()
     views.clear();
     try
     {
-        size_t numViews = config->getNumViews(activeDisplay.c_str());
-        for (size_t i = 0; i < numViews; i++)
+        size_t num = config->getNumViews(activeDisplay.c_str());
+        for (size_t i = 0; i < num; i++)
             views.push_back(config->getView(activeDisplay.c_str(), i));
-    } catch (OCIO::Exception& exception)
+    } catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, exception.what());
+        printErr(__FUNCTION__, e.what());
     }
 }
 
@@ -51,33 +63,48 @@ void CMS::CmVars::retrieveLooks()
     looks.push_back("None");
     try
     {
-        size_t numLooks = config->getNumLooks();
-        for (size_t i = 0; i < numLooks; i++)
+        size_t num = config->getNumLooks();
+        for (size_t i = 0; i < num; i++)
             looks.push_back(config->getLookNameByIndex(i));
-    } catch (OCIO::Exception& exception)
+    } catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, exception.what());
+        printErr(__FUNCTION__, e.what());
     }
 }
 
 bool CMS::init()
 {
     S_VARS = new CmVars();
+    std::string stage;
     try
     {
-        S_VARS->config = OCIO::Config::CreateFromFile(CMS_CONFIG_PATH);
+        // Internal config
+        stage = "Internal config";
+        {
+            std::stringstream internalSrc;
+            internalSrc << INTERNAL_CONFIG_SRC_P1;
+            internalSrc << INTERNAL_CONFIG_SRC_P2;
+            internalSrc << INTERNAL_CONFIG_SRC_P3;
+            S_VARS->internalConfig = OCIO::Config::CreateFromStream(internalSrc);
+        }
 
-        OCIO::ConstColorSpaceRcPtr sceneLinear = S_VARS->config->getColorSpace(OCIO::ROLE_SCENE_LINEAR);
-        S_VARS->workingSpace = sceneLinear->getName();
-        S_VARS->workingSpaceDesc = sceneLinear->getDescription();
+        // User config
+        stage = "User config";
+        {
+            S_VARS->config = OCIO::Config::CreateFromFile(CMS_CONFIG_PATH);
 
-        S_VARS->activeDisplay = S_VARS->config->getDefaultDisplay();
-        S_VARS->activeView = S_VARS->config->getDefaultView(S_VARS->activeDisplay.c_str());
+            OCIO::ConstColorSpaceRcPtr sceneLinear = S_VARS->config->getColorSpace(OCIO::ROLE_SCENE_LINEAR);
+            S_VARS->workingSpace = sceneLinear->getName();
+            S_VARS->workingSpaceDesc = sceneLinear->getDescription();
 
-        S_VARS->retrieveColorSpaces();
-        S_VARS->retrieveDisplays();
-        S_VARS->retrieveViews();
-        S_VARS->retrieveLooks();
+            S_VARS->activeDisplay = S_VARS->config->getDefaultDisplay();
+            S_VARS->activeView = S_VARS->config->getDefaultView(S_VARS->activeDisplay.c_str());
+
+            S_VARS->retrieveColorSpaces();
+            S_VARS->retrieveDisplays();
+            S_VARS->retrieveViews();
+            S_VARS->retrieveLooks();
+        }
 
         // Print the built-in transforms, and check if the XYZ role exists in the user config
         if (false)
@@ -113,7 +140,7 @@ bool CMS::init()
         S_STATE.setOk();
     } catch (std::exception& e)
     {
-        S_STATE.setError(printErr(__FUNCTION__, e.what()));
+        S_STATE.setError(printErr(__FUNCTION__, stage, e.what()));
     }
 
     if (ok())
@@ -132,6 +159,11 @@ OCIO::ConstConfigRcPtr CMS::getConfig()
     return S_VARS->config;
 }
 
+OCIO::ConstConfigRcPtr CMS::getInternalConfig()
+{
+    return S_VARS->internalConfig;
+}
+
 const std::string& CMS::getWorkingSpace()
 {
     return S_VARS->workingSpace;
@@ -140,6 +172,11 @@ const std::string& CMS::getWorkingSpace()
 const std::string& CMS::getWorkingSpaceDesc()
 {
     return S_VARS->workingSpaceDesc;
+}
+
+const std::vector<std::string>& CMS::getInternalColorSpaces()
+{
+    return S_VARS->internalColorSpaces;
 }
 
 const std::vector<std::string>& CMS::getAvailableColorSpaces()
@@ -284,4 +321,12 @@ OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
 std::shared_ptr<OcioShader> CMS::getShader()
 {
     return S_VARS->shader;
+}
+
+std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace)
+{
+    OCIO::ConstColorSpaceRcPtr cs = config->getColorSpace(colorSpace.c_str());
+    if (cs.get() == nullptr)
+        return "";
+    return cs->getDescription();
 }

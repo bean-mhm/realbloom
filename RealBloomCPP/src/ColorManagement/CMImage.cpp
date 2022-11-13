@@ -218,9 +218,9 @@ void CmImage::moveToGPU_Internal()
                 m_width * 4 * 4);  // width * 4 channels * 4 bytes (till the next row)
 
             CMS::getCpuProcessor()->apply(img);
-        } catch (std::exception& exception)
+        } catch (std::exception& e)
         {
-            printErr(__FUNCTION__, "Color Transform (CPU)", exception.what());
+            printErr(__FUNCTION__, "Color Transform (CPU)", e.what());
         }
     }
 

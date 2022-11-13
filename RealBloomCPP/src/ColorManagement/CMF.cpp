@@ -149,6 +149,74 @@ void CmfTable::sample(size_t numSamples, std::vector<float>& outSamples) const
     }
 }
 
+void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) const
+{
+    sample(numSamples, outSamples);
+
+    std::string stage;
+    try
+    {
+        stage = "init";
+
+        XyzConversionInfo info = CmXYZ::getConversionInfo();
+        OCIO::ConstConfigRcPtr userConfig = CMS::getConfig();
+        OCIO::ConstConfigRcPtr internalConfig = CMS::getInternalConfig();
+
+        OCIO::PackedImageDesc img(
+            outSamples.data(),
+            numSamples,
+            1,
+            OCIO::ChannelOrdering::CHANNEL_ORDERING_RGB,
+            OCIO::BitDepth::BIT_DEPTH_F32,
+            4,                    // 4 bytes to go to the next color channel
+            3 * 4,                // 3 color channels * 4 bytes per channel (till the next pixel)
+            numSamples * 3 * 4);  // width * 3 channels * 4 bytes (till the next row)
+
+        if (info.method == XyzConversionMethod::UserConfig)
+        {
+            // Transform: XYZ -> Working Space (user config)
+            stage = "Transform (Method: UserConfig)";
+            {
+                OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
+                transform->setSrc(info.userSpace.c_str());
+                transform->setDst(OCIO::ROLE_SCENE_LINEAR);
+
+                OCIO::ConstProcessorRcPtr proc = userConfig->getProcessor(transform);
+                OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
+                cpuProc->apply(img);
+            }
+        } else if (info.method == XyzConversionMethod::CommonSpace)
+        {
+            // Transform 1: XYZ -> Common Space (internal config)
+            stage = "Transform 1 (Method: CommonSpace)";
+            {
+                OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
+                transform->setSrc(OCIO::ROLE_INTERCHANGE_DISPLAY);
+                transform->setDst(info.commonInternal.c_str());
+
+                OCIO::ConstProcessorRcPtr proc = internalConfig->getProcessor(transform);
+                OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
+                cpuProc->apply(img);
+            }
+
+            // Transform 2: Common Space -> Working Space (user config)
+            stage = "Transform 2 (Method: CommonSpace)";
+            {
+                OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
+                transform->setSrc(info.commonUser.c_str());
+                transform->setDst(OCIO::ROLE_SCENE_LINEAR);
+
+                OCIO::ConstProcessorRcPtr proc = userConfig->getProcessor(transform);
+                OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
+                cpuProc->apply(img);
+            }
+        }
+    } catch (std::exception& e)
+    {
+        throw std::exception(printErr(__FUNCTION__, stage, e.what()).c_str());
+    }
+}
+
 CmfTableInfo::CmfTableInfo(const std::string& name, const std::string& path)
     : name(name), path(path)
 {}
