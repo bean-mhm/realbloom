@@ -162,6 +162,9 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
         OCIO::ConstConfigRcPtr userConfig = CMS::getConfig();
         OCIO::ConstConfigRcPtr internalConfig = CMS::getInternalConfig();
 
+        if (info.method == XyzConversionMethod::None)
+            throw std::exception("An XYZ conversion method was not specified.");
+
         OCIO::PackedImageDesc img(
             outSamples.data(),
             numSamples,
@@ -175,7 +178,7 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
         if (info.method == XyzConversionMethod::UserConfig)
         {
             // Transform: XYZ -> Working Space (user config)
-            stage = "Transform (Method: UserConfig)";
+            stage = "Transform (UserConfig)";
             {
                 OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
                 transform->setSrc(info.userSpace.c_str());
@@ -188,10 +191,10 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
         } else if (info.method == XyzConversionMethod::CommonSpace)
         {
             // Transform 1: XYZ -> Common Space (internal config)
-            stage = "Transform 1 (Method: CommonSpace)";
+            stage = "Transform 1 (CommonSpace)";
             {
                 OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
-                transform->setSrc(OCIO::ROLE_INTERCHANGE_DISPLAY);
+                transform->setSrc(CMS::getInternalXyzSpace().c_str());
                 transform->setDst(info.commonInternal.c_str());
 
                 OCIO::ConstProcessorRcPtr proc = internalConfig->getProcessor(transform);
@@ -200,7 +203,7 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
             }
 
             // Transform 2: Common Space -> Working Space (user config)
-            stage = "Transform 2 (Method: CommonSpace)";
+            stage = "Transform 2 (CommonSpace)";
             {
                 OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
                 transform->setSrc(info.commonUser.c_str());

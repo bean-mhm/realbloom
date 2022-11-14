@@ -12,6 +12,8 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "../Utils/GlUtils.h"
 #include "../Utils/Misc.h"
 
+constexpr const char* CMS_INTERNAL_CONFIG_PATH = "./assets/internal/ocio/config.ocio";
+constexpr const char* CMS_INTERNAL_XYZ_IE = "Linear CIE-XYZ I-E";
 constexpr const char* CMS_CONFIG_PATH = "./ocio/config.ocio";
 constexpr const bool CMS_USE_GPU = true;
 
@@ -23,6 +25,7 @@ private:
         OCIO::ConstConfigRcPtr config;
         OCIO::ConstConfigRcPtr internalConfig;
 
+        std::string internalXyzSpace = "";
         std::string workingSpace = "";
         std::string workingSpaceDesc = "";
 
@@ -63,9 +66,10 @@ public:
     static bool init();
     static void cleanUp();
 
-    static OCIO::ConstConfigRcPtr getConfig();
     static OCIO::ConstConfigRcPtr getInternalConfig();
+    static OCIO::ConstConfigRcPtr getConfig();
 
+    static const std::string& getInternalXyzSpace();
     static const std::string& getWorkingSpace();
     static const std::string& getWorkingSpaceDesc();
 

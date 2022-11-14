@@ -235,7 +235,6 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
   <ItemGroup>
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
     <ClInclude Include="src\ColorManagement\CMF.h" />
-    <ClInclude Include="src\ColorManagement\CmInternalConfig.h" />
     <ClInclude Include="src\ColorManagement\CmXYZ.h" />
     <ClInclude Include="src\Utils\GlTexture.h" />
     <ClInclude Include="include\inih\INIReader.h" />

@@ -63,6 +63,9 @@ void imGuiDialogs();
 void renderDiffPattern();
 void updateConvParams();
 
+inline ImVec2 btnSize();
+inline ImVec2 dlgBtnSize();
+
 bool setupGLFW();
 bool setupImGui();
 void applyStyle_RealBloom();

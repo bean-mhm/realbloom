@@ -13,19 +13,17 @@ namespace OCIO = OpenColorIO_v2_1;
 
 enum class XyzConversionMethod
 {
-    // The user config has an XYZ color space
-    UserConfig,
+    // A method couldn't be automatically decided,
+    // and we need the user to choose one.
+    None = 0,
 
-    // The user config doesn't have an XYZ space,
-    // so we convert from XYZ to a common space
-    // in the internal and user configs, then to
-    // the working space
-    CommonSpace,
+    // Use an XYZ color space in the user config
+    UserConfig = 1,
 
-    // A method couldn't be automatically chosen,
-    // and we need the user to choose either an
-    // XYZ color space or a common space
-    NeedInput
+    // Convert from XYZ to a common space in the
+    // internal and user configs, then to the
+    // working space
+    CommonSpace = 2
 };
 
 struct XyzConversionInfo
@@ -48,6 +46,7 @@ public:
     CmXYZ& operator= (const CmXYZ&) = delete;
 
     static bool init();
+
     static XyzConversionInfo getConversionInfo();
     static void setConversionInfo(const XyzConversionInfo& conversionInfo);
 

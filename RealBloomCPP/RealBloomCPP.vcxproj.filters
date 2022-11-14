@@ -428,9 +428,6 @@
     <ClInclude Include="src\ColorManagement\CmXYZ.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ColorManagement\CmInternalConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="libs\glfw3\glfw3.dll" />

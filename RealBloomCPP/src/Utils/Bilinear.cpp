@@ -22,13 +22,13 @@ namespace Bilinear
         outResult.bottomLeftPos[0] = outResult.topLeftPos[0];
         outResult.bottomLeftPos[1] = outResult.bottomRightPos[1];
 
-        float alongX = getT(px - 0.5f, outResult.topLeftPos[0]);
-        float alongY = getT(py - 0.5f, outResult.topLeftPos[1]);
+        outResult.util_alongX = getT(px - 0.5f, outResult.topLeftPos[0]);
+        outResult.util_alongY = getT(py - 0.5f, outResult.topLeftPos[1]);
 
-        outResult.topLeftWeight = (1 - alongX) * (1 - alongY);
-        outResult.topRightWeight = (alongX) * (1 - alongY);
-        outResult.bottomLeftWeight = (1 - alongX) * (alongY);
-        outResult.bottomRightWeight = (alongX) * (alongY);
+        outResult.topLeftWeight = (1 - outResult.util_alongX) * (1 - outResult.util_alongY);
+        outResult.topRightWeight = (outResult.util_alongX) * (1 - outResult.util_alongY);
+        outResult.bottomLeftWeight = (1 - outResult.util_alongX) * (outResult.util_alongY);
+        outResult.bottomRightWeight = (outResult.util_alongX) * (outResult.util_alongY);
     }
 
 }

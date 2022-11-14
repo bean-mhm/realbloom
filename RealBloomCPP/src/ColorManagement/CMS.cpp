@@ -1,5 +1,4 @@
 #include "CMS.h"
-#include "CmInternalConfig.h"
 
 CMS::CmVars* CMS::S_VARS = nullptr;
 SimpleState CMS::S_STATE;
@@ -81,11 +80,8 @@ bool CMS::init()
         // Internal config
         stage = "Internal config";
         {
-            std::stringstream internalSrc;
-            internalSrc << INTERNAL_CONFIG_SRC_P1;
-            internalSrc << INTERNAL_CONFIG_SRC_P2;
-            internalSrc << INTERNAL_CONFIG_SRC_P3;
-            S_VARS->internalConfig = OCIO::Config::CreateFromStream(internalSrc);
+            S_VARS->internalConfig = OCIO::Config::CreateFromFile(CMS_INTERNAL_CONFIG_PATH);
+            S_VARS->internalXyzSpace = CMS_INTERNAL_XYZ_IE;
         }
 
         // User config
@@ -99,43 +95,12 @@ bool CMS::init()
 
             S_VARS->activeDisplay = S_VARS->config->getDefaultDisplay();
             S_VARS->activeView = S_VARS->config->getDefaultView(S_VARS->activeDisplay.c_str());
-
-            S_VARS->retrieveColorSpaces();
-            S_VARS->retrieveDisplays();
-            S_VARS->retrieveViews();
-            S_VARS->retrieveLooks();
         }
 
-        // Print the built-in transforms, and check if the XYZ role exists in the user config
-        if (false)
-        {
-            OCIO::ConstBuiltinTransformRegistryRcPtr reg = OCIO::BuiltinTransformRegistry::Get();
-            size_t numBuiltins = reg->getNumBuiltins();
-            std::cout << numBuiltins << " Built-in Transforms:\n\n";
-            for (size_t i = 0; i < numBuiltins; i++)
-            {
-                std::cout
-                    << "Name:\n  "
-                    << reg->getBuiltinStyle(i)
-                    << "\nDesc:\n  "
-                    << reg->getBuiltinDescription(i)
-                    << "\n\n";
-            }
-
-            OCIO::ConstColorSpaceRcPtr xyz = S_VARS->config->getColorSpace(OCIO::ROLE_INTERCHANGE_DISPLAY);
-            if (xyz.get())
-            {
-                std::cout
-                    << "XYZ Color Space:\n"
-                    << xyz->getName()
-                    << "\n"
-                    << xyz->getDescription()
-                    << "\n\n";
-            } else
-            {
-                std::cout << "XYZ was not found.\n\n";
-            }
-        }
+        S_VARS->retrieveColorSpaces();
+        S_VARS->retrieveDisplays();
+        S_VARS->retrieveViews();
+        S_VARS->retrieveLooks();
 
         S_STATE.setOk();
     } catch (std::exception& e)
@@ -154,14 +119,19 @@ void CMS::cleanUp()
     DELPTR(S_VARS);
 }
 
+OCIO::ConstConfigRcPtr CMS::getInternalConfig()
+{
+    return S_VARS->internalConfig;
+}
+
 OCIO::ConstConfigRcPtr CMS::getConfig()
 {
     return S_VARS->config;
 }
 
-OCIO::ConstConfigRcPtr CMS::getInternalConfig()
+const std::string& CMS::getInternalXyzSpace()
 {
-    return S_VARS->internalConfig;
+    return S_VARS->internalXyzSpace;
 }
 
 const std::string& CMS::getWorkingSpace()
