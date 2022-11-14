@@ -1,1 +1,0 @@
-This folder contains the internal config for RealBloom, you can change the user config in "[Program Directory]/ocio".
