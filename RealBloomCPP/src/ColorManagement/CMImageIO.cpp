@@ -1,5 +1,63 @@
 #include "CMImageIO.h"
 
+bool CmImageIO::readImageColorSpace(const std::string& filename, std::string& outColorSpace)
+{
+    outColorSpace = "";
+
+    std::filesystem::path path(filename);
+    std::string extension = lowercase(path.extension().string());
+
+    OCIO::ConstConfigRcPtr config = CMS::getConfig();
+    const std::vector<std::string>& userSpaces = CMS::getAvailableColorSpaces();
+
+    // return sRGB for PNG and JPEG formats
+    if ((extension == ".png") || (extension == ".jpg"))
+    {
+        for (const auto& space : userSpaces)
+        {
+            if (space.starts_with("sRGB "))
+            {
+                outColorSpace = space;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    try
+    {
+        // Open the file
+        OIIO::ImageInput::unique_ptr inp = OIIO::ImageInput::open(filename);
+        if (!inp)
+            return false;
+
+        // Read the color space
+        const OIIO::ImageSpec& spec = inp->spec();
+        std::string attribColorSpace = spec.get_string_attribute("colorspace", "");
+        std::string attribOiioSpace = spec.get_string_attribute("oiio:ColorSpace", "");
+        inp->close();
+
+        OCIO::ConstColorSpaceRcPtr colorSpace = config->getColorSpace(attribColorSpace.c_str());
+        OCIO::ConstColorSpaceRcPtr oiioSpace = config->getColorSpace(attribOiioSpace.c_str());
+
+        // If the color space exists in the user config, return it
+        if (colorSpace.get() != nullptr)
+        {
+            outColorSpace = attribColorSpace;
+            return true;
+        } else if (oiioSpace.get() != nullptr)
+        {
+            outColorSpace = attribOiioSpace;
+            return true;
+        }
+    } catch (const std::exception& e)
+    {
+        printErr(__FUNCTION__, e.what());
+    }
+
+    return false;
+}
+
 bool CmImageIO::readImage(CmImage& target, const std::string& filename, const std::string& colorSpace, std::string& outError)
 {
     outError = "";
@@ -188,6 +246,7 @@ bool CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
     // Write output
     OIIO::ImageSpec spec(xres, yres, 3, OIIO::TypeDesc::FLOAT);
     spec.attribute("oiio:ColorSpace", OIIO::TypeDesc::TypeString, colorSpace);
+    spec.attribute("colorspace", OIIO::TypeDesc::TypeString, colorSpace);
     if (out->open(filename, spec))
     {
         if (out->write_image(OIIO::TypeDesc::FLOAT, bufferRGB.data()))
