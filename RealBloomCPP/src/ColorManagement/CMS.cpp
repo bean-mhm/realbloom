@@ -222,13 +222,6 @@ void CMS::updateProcessors()
         // Create group transform
         S_VARS->groupTransform = OCIO::GroupTransform::Create();
 
-        // Add display view transform
-        OCIO::DisplayViewTransformRcPtr displayViewTransform = OCIO::DisplayViewTransform::Create();
-        displayViewTransform->setSrc(OCIO::ROLE_SCENE_LINEAR);
-        displayViewTransform->setDisplay(S_VARS->activeDisplay.c_str());
-        displayViewTransform->setView(S_VARS->activeView.c_str());
-        S_VARS->groupTransform->appendTransform(displayViewTransform);
-
         // Add look transform
         std::string lookName = S_VARS->activeLook;
         if ((!lookName.empty()) && (lookName != "None"))
@@ -236,6 +229,13 @@ void CMS::updateProcessors()
             OCIO::ConstLookRcPtr look = S_VARS->config->getLook(lookName.c_str());
             S_VARS->groupTransform->appendTransform(look->getTransform()->createEditableCopy());
         }
+
+        // Add display view transform
+        OCIO::DisplayViewTransformRcPtr displayViewTransform = OCIO::DisplayViewTransform::Create();
+        displayViewTransform->setSrc(OCIO::ROLE_SCENE_LINEAR);
+        displayViewTransform->setDisplay(S_VARS->activeDisplay.c_str());
+        displayViewTransform->setView(S_VARS->activeView.c_str());
+        S_VARS->groupTransform->appendTransform(displayViewTransform);
 
         // Get processors
         S_VARS->processor = S_VARS->config->getProcessor(S_VARS->groupTransform);
