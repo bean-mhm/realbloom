@@ -202,6 +202,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\CLI.cpp" />
     <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
     <ClCompile Include="src\ColorManagement\CMF.cpp" />
     <ClCompile Include="src\Utils\CliParser.cpp" />
@@ -235,6 +236,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
+    <ClInclude Include="src\CLI.h" />
     <ClInclude Include="src\ColorManagement\CMF.h" />
     <ClInclude Include="src\ColorManagement\CmXYZ.h" />
     <ClInclude Include="src\Utils\CliParser.h" />

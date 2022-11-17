@@ -217,6 +217,10 @@ void CMS::setExposure(float newExposure)
 
 void CMS::updateProcessors()
 {
+    // View transforms aren't needed in CLI mode
+    if (CLI::hasCommands())
+        return;
+
     try
     {
         // Create group transform

@@ -6,7 +6,7 @@ constexpr const char* cfgFilename = "config.ini";
 
 // Const
 const char* Config::S_APP_TITLE = "RealBloom";
-const char* Config::S_APP_VERSION = "0.3.0-alpha";
+const char* Config::S_APP_VERSION = "0.4.0-alpha";
 const char* Config::S_APP_LOCALE = "en_US.UTF-8";
 
 const uint32_t Config::S_WINDOW_WIDTH = 1440;

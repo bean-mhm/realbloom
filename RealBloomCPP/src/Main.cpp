@@ -9,7 +9,7 @@ ImGui::PopFont();
 // GUI
 const char* glslVersion = "#version 130";
 GLFWwindow* window = nullptr;
-ImGuiIO* io;
+ImGuiIO* io = nullptr;
 bool appRunning = true;
 
 // Fonts
@@ -49,7 +49,7 @@ std::string dlgParam_colorSpace_readSpace = "";
 std::packaged_task<void()> dialogAction_colorSpace;
 std::string dialogResult_colorSpace = "";
 
-int main()
+int main(int argc, char** argv)
 {
     // Set Locale
     if (!std::setlocale(LC_ALL, Config::S_APP_LOCALE))
@@ -59,14 +59,21 @@ int main()
     Config::load();
     Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
 
-    // Setup GLFW and ImGui
-    if (!setupGLFW())
-        return 1;
-    if (!setupImGui())
-        return 1;
+    // CLI
+    CLI::init(argc, argv);
 
-    // GLEW for loading OpenGL extensions
-    glewInit();
+    // No GUI if there is command line input
+    if (!CLI::hasCommands())
+    {
+        // Setup GLFW and ImGui
+        if (!setupGLFW())
+            return 1;
+        if (!setupImGui())
+            return 1;
+
+        // GLEW for loading OpenGL extensions
+        glewInit();
+    }
 
     // Color Management System
     if (!CMS::init())
@@ -78,38 +85,42 @@ int main()
     // XYZ Utility
     CmXYZ::init();
 
-    // Hide the console window
-    ShowWindow(GetConsoleWindow(), SW_HIDE);
+    // GUI-specific
+    if (!CLI::hasCommands())
+    {
+        // Hide the console window
+        ShowWindow(GetConsoleWindow(), SW_HIDE);
 
-    // Create images to be used throughout the program
-    images.push_back(new CmImage("aperture", "Aperture Shape"));
-    images.push_back(new CmImage("diff", "Diffraction Pattern"));
-    images.push_back(new CmImage("disp", "Dispersion"));
-    images.push_back(new CmImage("cv-input", "Conv. Input"));
-    images.push_back(new CmImage("cv-kernel", "Conv. Kernel"));
-    images.push_back(new CmImage("cv-kernel-prev", "Conv. Kernel (Transformed)"));
-    images.push_back(new CmImage("cv-prev", "Conv. Preview"));
-    images.push_back(new CmImage("cv-layer", "Conv. Layer"));
-    images.push_back(new CmImage("cv-result", "Conv. Result"));
+        // Create images to be used throughout the program
+        images.push_back(new CmImage("aperture", "Aperture Shape"));
+        images.push_back(new CmImage("diff", "Diffraction Pattern"));
+        images.push_back(new CmImage("disp", "Dispersion"));
+        images.push_back(new CmImage("cv-input", "Conv. Input"));
+        images.push_back(new CmImage("cv-kernel", "Conv. Kernel"));
+        images.push_back(new CmImage("cv-kernel-prev", "Conv. Kernel (Transformed)"));
+        images.push_back(new CmImage("cv-prev", "Conv. Preview"));
+        images.push_back(new CmImage("cv-layer", "Conv. Layer"));
+        images.push_back(new CmImage("cv-result", "Conv. Result"));
 
-    for (uint32_t i = 0; i < images.size(); i++)
-        imageNames.push_back(images[i]->getName());
+        for (uint32_t i = 0; i < images.size(); i++)
+            imageNames.push_back(images[i]->getName());
 
-    // Set up images for convolution
-    conv.setInputImage(getImage("cv-input"));
-    conv.setKernelImage(getImage("cv-kernel"));
-    conv.setKernelPreviewImage(getImage("cv-kernel-prev"));
-    conv.setConvPreviewImage(getImage("cv-prev"));
-    conv.setConvLayerImage(getImage("cv-layer"));
-    conv.setConvMixImage(getImage("cv-result"));
+        // Set up images for convolution
+        conv.setInputImage(getImage("cv-input"));
+        conv.setKernelImage(getImage("cv-kernel"));
+        conv.setKernelPreviewImage(getImage("cv-kernel-prev"));
+        conv.setConvPreviewImage(getImage("cv-prev"));
+        conv.setConvLayerImage(getImage("cv-layer"));
+        conv.setConvMixImage(getImage("cv-result"));
 
-    // Set up images for dispersion
-    dispersion.setDiffPatternImage(getImage("diff"));
-    dispersion.setDispersionImage(getImage("disp"));
+        // Set up images for dispersion
+        dispersion.setDiffPatternImage(getImage("diff"));
+        dispersion.setDispersionImage(getImage("disp"));
 
-    // Will be shared with Convolution and Dispersion
-    Async::putShared("convMixParamsChanged", &(vars.convMixParamsChanged));
-    Async::putShared("selImageIndex", &selImageIndex);
+        // Will be shared with Convolution and Dispersion
+        Async::putShared("convMixParamsChanged", &(vars.convMixParamsChanged));
+        Async::putShared("selImageIndex", &selImageIndex);
+    }
 
     // To kill child processes when the parent dies
     // https://stackoverflow.com/a/53214/18049911
@@ -123,86 +134,98 @@ int main()
     }
 
     // Update resource usage info for convolution
-    std::thread convResUsageThread([]()
-        {
-            auto lastTime = std::chrono::system_clock::now();
-            while (appRunning)
+    std::shared_ptr<std::thread> convResUsageThread = nullptr;
+    if (!CLI::hasCommands())
+    {
+        convResUsageThread = std::make_shared<std::thread>([]()
             {
-                if (getElapsedMs(lastTime) > 1000)
+                auto lastTime = std::chrono::system_clock::now();
+                while (appRunning)
                 {
-                    updateConvParams();
-                    convResUsage = conv.getResourceInfo();
-                    lastTime = std::chrono::system_clock::now();
+                    if (getElapsedMs(lastTime) > 1000)
+                    {
+                        updateConvParams();
+                        convResUsage = conv.getResourceInfo();
+                        lastTime = std::chrono::system_clock::now();
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            }
-        });
+            });
+    }
 
     // Main loop
-    appRunning = !glfwWindowShouldClose(window);
-    while (appRunning)
+    if (!CLI::hasCommands())
     {
         appRunning = !glfwWindowShouldClose(window);
-
-        // Poll and handle events (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-        glfwPollEvents();
-
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        ImGui::DockSpaceOverViewport();
-
-        // Process our queued tasks
+        while (appRunning)
         {
-            std::unique_lock<std::mutex> lock(Async::s_tasksMutex);
-            while (!Async::s_tasks.empty())
+            appRunning = !glfwWindowShouldClose(window);
+
+            // Poll and handle events (inputs, window resize, etc.)
+            // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
+            // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
+            // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
+            // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
+            glfwPollEvents();
+
+            // Start the Dear ImGui frame
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            ImGui::DockSpaceOverViewport();
+
+            // Process our queued tasks
             {
-                auto task(std::move(Async::s_tasks.front()));
-                Async::s_tasks.pop_front();
+                std::unique_lock<std::mutex> lock(Async::s_tasksMutex);
+                while (!Async::s_tasks.empty())
+                {
+                    auto task(std::move(Async::s_tasks.front()));
+                    Async::s_tasks.pop_front();
 
-                // unlock during the task
-                lock.unlock();
-                task();
-                lock.lock();
+                    // unlock during the task
+                    lock.unlock();
+                    task();
+                    lock.lock();
+                }
             }
+
+            // UI Layout
+            ImGui::PushFont(fontRoboto);
+            layout();
+            ImGui::PopFont();
+
+            // Rendering
+            ImGui::Render();
+            int display_w, display_h;
+            glfwGetFramebufferSize(window, &display_w, &display_h);
+            glViewport(0, 0, display_w, display_h);
+            glClearColor(bgColor.x * bgColor.w, bgColor.y * bgColor.w, bgColor.z * bgColor.w, bgColor.w);
+            glClear(GL_COLOR_BUFFER_BIT);
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+            // Update and Render additional Platform Windows
+            // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
+            //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
+            if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+            {
+                GLFWwindow* backup_current_context = glfwGetCurrentContext();
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+                glfwMakeContextCurrent(backup_current_context);
+            }
+
+            glfwSwapBuffers(window);
         }
-
-        // UI Layout
-        ImGui::PushFont(fontRoboto);
-        layout();
-        ImGui::PopFont();
-
-        // Rendering
-        ImGui::Render();
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(bgColor.x * bgColor.w, bgColor.y * bgColor.w, bgColor.z * bgColor.w, bgColor.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // Update and Render additional Platform Windows
-        // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
-        //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly)
-        if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            GLFWwindow* backup_current_context = glfwGetCurrentContext();
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backup_current_context);
-        }
-
-        glfwSwapBuffers(window);
     }
+
+    // Process the command line input
+    if (CLI::hasCommands())
+        CLI::proceed();
 
     // Quit
     Config::save();
-    convResUsageThread.join();
+    if (!CLI::hasCommands())
+        convResUsageThread->join();
     conv.cancelConv();
     cleanUp();
     return 0;
@@ -1383,16 +1406,24 @@ void applyStyle_RealBloomGray()
 
 void cleanUp()
 {
-    for (auto image : images)
-        delete image;
+    if (!CLI::hasCommands())
+    {
+        for (auto image : images) delete image;
+    }
+
     CmImage::cleanUp();
     CMF::cleanUp();
     CMS::cleanUp();
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    if (!CLI::hasCommands())
+    {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
+        glfwDestroyWindow(window);
+        glfwTerminate();
+    }
+
+    CLI::cleanUp();
 }

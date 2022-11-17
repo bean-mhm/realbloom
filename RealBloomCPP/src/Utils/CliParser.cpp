@@ -79,9 +79,9 @@ const std::string& CliParser::get(size_t index) const
 
 const std::string& CliParser::get(const std::string& argument, const std::string& argumentShort) const
 {
-    if (exists(argument))
-        return get(argument);
-    return get(argumentShort);
+    if (exists(argumentShort))
+        return get(argumentShort);
+    return get(argument);
 }
 
 bool CliParser::first(const std::string& command) const

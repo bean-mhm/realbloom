@@ -404,6 +404,7 @@ namespace RealBloom
         if (numChunks > CONV_MAX_CHUNKS) numChunks = CONV_MAX_CHUNKS;
 
         uint32_t chunkSleep = m_params.device.chunkSleep;
+        if (chunkSleep > CONV_MAX_SLEEP) chunkSleep = CONV_MAX_SLEEP;
 
         // Reset state
         m_state.working = true;

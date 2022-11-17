@@ -43,6 +43,8 @@
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
+#include "CLI.h"
+
 void layout();
 
 void imGuiText(const std::string& text, bool isError, bool newLine);
