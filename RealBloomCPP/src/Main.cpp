@@ -871,7 +871,7 @@ void layout()
             if (selMethod == (int)XyzConversionMethod::UserConfig)
             {
                 // XYZ space
-                if (imguiCombo("XYZ space##XC", userSpaces, &selUserSpace, false))
+                if (imguiCombo("XYZ I-E##XC", userSpaces, &selUserSpace, false))
                     xcParamsChanged = true;
                 if (ImGui::IsItemHovered() && selUserSpace >= 0)
                 {
