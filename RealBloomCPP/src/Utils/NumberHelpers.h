@@ -81,11 +81,19 @@ inline void blendAddRGB(float* colorA, uint32_t indexA, float* colorB, uint32_t 
     colorA[indexA + 2] += colorB[indexB + 2] * t;
 }
 
+inline float applyExposure(float v)
+{
+    return powf(2.0f, v);
+}
+
+inline double applyExposure(double v)
+{
+    return pow(2.0, v);
+}
+
 uint8_t doubleTo8bit(double v);
 float srgbToLinear_DEPRECATED(float x);
 float linearToSrgb_DEPRECATED(float x);
 float contrastCurve(float v, float contrast);
 double contrastCurve(double v, double contrast);
-float intensityCurve(float v);
-double intensityCurve(double v);
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY);

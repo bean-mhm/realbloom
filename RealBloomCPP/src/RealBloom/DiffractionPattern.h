@@ -16,7 +16,7 @@ namespace RealBloom
         uint32_t width = 0;
         uint32_t height = 0;
         double contrast = 0;
-        double multiplier = 1;
+        double exposure = 0;
         bool grayscale = false;
     };
 

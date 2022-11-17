@@ -369,7 +369,7 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("DISPERSION");
 
-        if (ImGui::SliderFloat("Intensity##Disp", &(vars.dp_multiplier), 0, 5))
+        if (ImGui::SliderFloat("Exposure##Disp", &(vars.dp_exposure), -10, 10))
             vars.dpParamsChanged = true;
         if (ImGui::SliderFloat("Contrast##Disp", &(vars.dp_contrast), -1, 1))
             vars.dpParamsChanged = true;
@@ -430,7 +430,7 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("KERNEL");
 
-        if (ImGui::SliderFloat("Intensity##Kernel", &(vars.cv_kernelIntensity), 0, 5))
+        if (ImGui::SliderFloat("Exposure##Kernel", &(vars.cv_kernelExposure), -10, 10))
             vars.convParamsChanged = true;
 
         if (ImGui::SliderFloat("Contrast##Kernel", &(vars.cv_kernelContrast), -1, 1))
@@ -619,22 +619,24 @@ void layout()
 
         if (vars.cm_additive)
         {
-            if (ImGui::SliderFloat("Input##Conv", &(vars.cm_inputMix), 0, 2))
+            if (ImGui::SliderFloat("Input##Conv", &(vars.cm_inputMix), 0, 1))
                 vars.convMixParamsChanged = true;
-            if (ImGui::SliderFloat("Conv.##Conv", &(vars.cm_convMix), 0, 5))
+            if (ImGui::SliderFloat("Conv.##Conv", &(vars.cm_convMix), 0, 1))
+                vars.convMixParamsChanged = true;
+            if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
                 vars.convMixParamsChanged = true;
         } else
         {
             if (ImGui::SliderFloat("Mix##Conv", &(vars.cm_mix), 0, 1))
                 vars.convMixParamsChanged = true;
-            if (ImGui::SliderFloat("Intensity##Conv", &(vars.cm_convIntensity), 0, 5))
+            if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
                 vars.convMixParamsChanged = true;
         }
 
         if (vars.convMixParamsChanged)
         {
             vars.convMixParamsChanged = false;
-            conv.mixConv(vars.cm_additive, vars.cm_inputMix, vars.cm_convMix, vars.cm_mix, vars.cm_convIntensity);
+            conv.mixConv(vars.cm_additive, vars.cm_inputMix, vars.cm_convMix, vars.cm_mix, vars.cm_convExposure);
             selImageIndex = 8;
         }
 
@@ -1164,7 +1166,7 @@ void renderDiffPattern()
     {
         RealBloom::DiffractionPatternParams* dpParams = diffPattern.getParams();
         dpParams->contrast = vars.dp_contrast;
-        dpParams->multiplier = vars.dp_multiplier;
+        dpParams->exposure = vars.dp_exposure;
 
         std::vector<float> buffer;
         diffPattern.getRgbaOutput(buffer);
@@ -1203,7 +1205,7 @@ void updateConvParams()
     convParams->kernelCenterY = vars.cv_kernelCenter[1];
     convParams->kernelPreviewCenter = vars.cv_kernelPreviewCenter;
     convParams->kernelContrast = vars.cv_kernelContrast;
-    convParams->kernelIntensity = vars.cv_kernelIntensity;
+    convParams->kernelExposure = vars.cv_kernelExposure;
     convParams->convThreshold = vars.cv_convThreshold;
     convParams->convKnee = vars.cv_convKnee;
 }
@@ -1215,7 +1217,7 @@ ImVec2 btnSize()
 
 ImVec2 dlgBtnSize()
 {
-    return { 400.0f, 27.0f * Config::UI_SCALE };
+    return { 300.0f, 27.0f * Config::UI_SCALE };
 }
 
 static void glfw_error_callback(int error, const char* description)

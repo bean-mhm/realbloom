@@ -194,7 +194,7 @@ namespace RealBloom
         uint32_t width = m_params.width;
         uint32_t height = m_params.height;
         double contrast = m_params.contrast;
-        double multiplier = intensityCurve(fmax(m_params.multiplier, 0.0));
+        double multiplier = applyExposure(m_params.exposure);
         bool grayscale = m_params.grayscale;
 
         double logOfMaxMag;

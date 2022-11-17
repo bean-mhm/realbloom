@@ -61,34 +61,6 @@ double contrastCurve(double v, double contrast)
     return (contrast >= 0.0) ? pow(v, c) : pow(v, 1.0 / c);
 }
 
-float intensityCurve(float v)
-{
-    if (v <= 0.0f)
-        return 0.0f;
-
-    if (v == 1.0f)
-        return 1.0f;
-
-    if (v < 1.0f)
-        return v * v;
-
-    return powf(10.0f, v - 1.0f);
-}
-
-double intensityCurve(double v)
-{
-    if (v <= 0.0)
-        return 0.0;
-
-    if (v == 1.0)
-        return 1.0;
-
-    if (v < 1.0)
-        return v * v;
-
-    return pow(10.0, v - 1.0);
-}
-
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY)
 {
     float s = sinf(angle * DEG_TO_RAD);

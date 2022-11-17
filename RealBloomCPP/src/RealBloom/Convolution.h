@@ -50,7 +50,7 @@ namespace RealBloom
         float kernelCenterY = 0.5f;
         bool  kernelPreviewCenter = true;
         float kernelContrast = 0.0f;
-        float kernelIntensity = 1.0f;
+        float kernelExposure = 0.0f;
         float convThreshold = 0.5f;
         float convKnee = 0.2f;
     };
@@ -103,7 +103,7 @@ namespace RealBloom
 
         void previewThreshold(size_t* outNumPixels = nullptr);
         void kernel(bool previewMode = true, float** outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
-        void mixConv(bool additive, float inputMix, float convMix, float mix, float convIntensity);
+        void mixConv(bool additive, float inputMix, float convMix, float mix, float convExposure);
 
         void convolve();
         void cancelConv();

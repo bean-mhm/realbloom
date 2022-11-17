@@ -140,7 +140,7 @@ namespace RealBloom
             float rotation = m_params.kernelRotation;
 
             float kernelContrast = m_params.kernelContrast;
-            float kernelMultiplier = intensityCurve(fmaxf(0.0f, m_params.kernelIntensity));
+            float kernelMultiplier = applyExposure(m_params.kernelExposure);
 
             uint32_t scaledWidth, scaledHeight;
             scaledWidth = (uint32_t)floorf(scaleW * (float)kernelWidth);
@@ -326,11 +326,10 @@ namespace RealBloom
         m_imageKernelPreview->moveToGPU();
     }
 
-    void Convolution::mixConv(bool additive, float inputMix, float convMix, float mix, float convIntensity)
+    void Convolution::mixConv(bool additive, float inputMix, float convMix, float mix, float convExposure)
     {
         inputMix = fmaxf(inputMix, 0.0f);
         convMix = fmaxf(convMix, 0.0f);
-        convIntensity = fmaxf(convIntensity, 0.0f);
         if (!additive)
         {
             mix = fminf(fmaxf(mix, 0.0f), 1.0f);
@@ -358,12 +357,7 @@ namespace RealBloom
                 m_imageConvMix->resize(inputWidth, inputHeight, false);
                 float* convMixBuffer = m_imageConvMix->getImageData();
 
-                float multiplier;
-                if (additive)
-                    multiplier = intensityCurve(convMix);
-                else
-                    multiplier = convMix * intensityCurve(convIntensity);
-
+                float multiplier = convMix * applyExposure(convExposure);
                 uint32_t redIndex;
                 for (uint32_t y = 0; y < inputHeight; y++)
                 {
@@ -383,7 +377,6 @@ namespace RealBloom
                 }
             }
         }
-
         m_imageConvMix->moveToGPU();
     }
 

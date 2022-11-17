@@ -78,7 +78,7 @@ struct UiVars
     // Diffraction Pattern
     bool dp_grayscale = false;
     float dp_contrast = 0.0f;
-    float dp_multiplier = 2.0f;
+    float dp_exposure = 0.0f;
     bool dpParamsChanged = false;
 
     // Dispersion
@@ -95,7 +95,7 @@ struct UiVars
     float cv_kernelCenter[2] = { 0.5f, 0.5f };
     bool cv_kernelPreviewCenter = false;
     float cv_kernelContrast = 0.0f;
-    float cv_kernelIntensity = 1.0f;
+    float cv_kernelExposure = 0.0f;
     bool convParamsChanged = false;
 
     // Convolution Threshold
@@ -117,7 +117,7 @@ struct UiVars
     float cm_inputMix = 1.0f;       // for additive blending
     float cm_convMix = 0.2f;        // for additive blending
     float cm_mix = 0.1f;            // for normal blending
-    float cm_convIntensity = 1.0f;  // for normal blending
+    float cm_convExposure = 0.0f;
     bool convMixParamsChanged = false;
 
     // Color Management

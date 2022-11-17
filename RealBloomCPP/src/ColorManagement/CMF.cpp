@@ -214,6 +214,26 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
                 cpuProc->apply(img);
             }
         }
+
+        // Eliminate negative values
+        {
+            float minV;
+            size_t redIndex;
+            for (size_t i = 0; i < numSamples; i++)
+            {
+                redIndex = i * 3;
+
+                minV = fminf(fminf(outSamples[redIndex], outSamples[redIndex + 1]), outSamples[redIndex + 2]);
+                if (minV < 0.0f)
+                {
+                    outSamples[redIndex + 0] -= minV;
+                    outSamples[redIndex + 1] -= minV;
+                    outSamples[redIndex + 2] -= minV;
+                }
+            }
+        }
+        for (auto& v : outSamples)
+            v = fmaxf(v, 0.0f);
     } catch (std::exception& e)
     {
         throw std::exception(printErr(__FUNCTION__, stage, e.what()).c_str());
