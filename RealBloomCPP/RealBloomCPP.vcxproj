@@ -204,6 +204,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
   <ItemGroup>
     <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
     <ClCompile Include="src\ColorManagement\CMF.cpp" />
+    <ClCompile Include="src\Utils\CliParser.cpp" />
     <ClCompile Include="src\Utils\GlTexture.cpp" />
     <ClCompile Include="include\oiio\detail\pugixml\pugixml.cpp" />
     <ClCompile Include="src\ColorManagement\OcioShader.cpp" />
@@ -236,6 +237,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
     <ClInclude Include="src\ColorManagement\CMF.h" />
     <ClInclude Include="src\ColorManagement\CmXYZ.h" />
+    <ClInclude Include="src\Utils\CliParser.h" />
     <ClInclude Include="src\Utils\GlTexture.h" />
     <ClInclude Include="include\inih\INIReader.h" />
     <ClInclude Include="include\ocio\OpenColorABI.h" />

@@ -68,7 +68,6 @@ inline ImVec2 dlgBtnSize();
 
 bool setupGLFW();
 bool setupImGui();
-void applyStyle_RealBloom();
 void applyStyle_RealBloomGray();
 void cleanUp();
 
