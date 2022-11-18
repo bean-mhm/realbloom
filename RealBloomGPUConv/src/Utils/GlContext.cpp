@@ -27,7 +27,7 @@ bool oglOneTimeContext(uint32_t width, uint32_t height, std::function<void(void*
 
     if (!RegisterClass(&wc))
     {
-        outError = "RegisterClass failed: " + toHex(GetLastError());
+        outError = "RegisterClass failed: " + toHexStr(GetLastError());
         return false;
     }
 

@@ -42,7 +42,7 @@ void Config::save()
         std::cout << "Failed to write config to \"" << cfgFilename << "\".\n";
     } else
     {
-        string s = formatStr(
+        string s = strFormat(
             "[Interface]\nScale=%f\n",
             UI_SCALE);
 

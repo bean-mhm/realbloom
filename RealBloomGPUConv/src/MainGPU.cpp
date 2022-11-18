@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
     } else
     {
         std::cout << "Further information will be written into \"" << logFilename << "\".\n";
-        logAdd(LogLevel::Info, formatStr("%s v%s", APP_TITLE, APP_VERSION));
+        logAdd(LogLevel::Info, strFormat("%s v%s", APP_TITLE, APP_VERSION));
     }
 
     // Log filenames
@@ -311,11 +311,11 @@ int main(int argc, char* argv[])
 
             if (cgFinalSuccess)
             {
-                logAdd(LogLevel::Info, formatStr(
+                logAdd(LogLevel::Info, strFormat(
                     "Chunk %d/%d (%d points) was successful.", i + 1, cgInput.numChunks, cgData.numPoints));
             } else
             {
-                logAdd(LogLevel::Error, formatStr(
+                logAdd(LogLevel::Error, strFormat(
                     "Chunk %d/%d (%d points) was failed.", i + 1, cgInput.numChunks, cgData.numPoints));
                 logAdd(LogLevel::Error, cgData.error);
                 break;
@@ -335,7 +335,7 @@ int main(int argc, char* argv[])
 
                 HANDLE hMutex = openMutex(statMutexName);
                 if (hMutex == NULL)
-                    logAdd(LogLevel::Warning, formatStr("Mutex \"%s\" could not be opened.", statMutexName.c_str()));
+                    logAdd(LogLevel::Warning, strFormat("Mutex \"%s\" could not be opened.", statMutexName.c_str()));
 
                 waitForMutex(hMutex);
 
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
                 statFile.open(statFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
                 if (!statFile.is_open())
                 {
-                    logAdd(LogLevel::Error, formatStr("Stat file \"%s\" could not be created/opened.", statFilename.c_str()));
+                    logAdd(LogLevel::Error, strFormat("Stat file \"%s\" could not be created/opened.", statFilename.c_str()));
                 } else
                 {
                     {
@@ -373,7 +373,7 @@ int main(int argc, char* argv[])
             // Sleep
             if ((cgInput.chunkSleep > 0) && (i < (cgInput.numChunks - 1)))
             {
-                logAdd(LogLevel::Info, formatStr("Sleeping for %u ms...", cgInput.chunkSleep));
+                logAdd(LogLevel::Info, strFormat("Sleeping for %u ms...", cgInput.chunkSleep));
 
                 auto t1 = std::chrono::system_clock::now();
                 while (getElapsedMs(t1) < cgInput.chunkSleep)
@@ -381,7 +381,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        logAdd(LogLevel::Info, formatStr(
+        logAdd(LogLevel::Info, strFormat(
             "GPU Convolution is done. Renderer: \"%s\"",
             renderer.c_str())
         );

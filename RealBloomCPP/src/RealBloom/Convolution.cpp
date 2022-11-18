@@ -603,7 +603,7 @@ namespace RealBloom
                     uint32_t randomNumber = (uint32_t)RandomNumber::nextInt();
 
                     // Filenames
-                    std::string cgInpFilename = formatStr(
+                    std::string cgInpFilename = strFormat(
                         "%sgpuconv%u",
                         tempDir.c_str(),
                         randomNumber);
@@ -619,7 +619,7 @@ namespace RealBloom
                     }
                     HANDLE cgStatMutex = createMutex(cgStatMutexName);
                     if (cgStatMutex == NULL)
-                        setErrorState(formatStr("Mutex \"%s\" could not be created.", cgStatMutexName.c_str()));
+                        setErrorState(strFormat("Mutex \"%s\" could not be created.", cgStatMutexName.c_str()));
 
                     // Create the input file
                     std::ofstream cgInpFile;
@@ -628,7 +628,7 @@ namespace RealBloom
                         cgInpFile.open(cgInpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
                         if (!cgInpFile.is_open())
                         {
-                            setErrorState(formatStr("File \"%s\" could not be created/opened.", cgInpFilename.c_str()));
+                            setErrorState(strFormat("File \"%s\" could not be created/opened.", cgInpFilename.c_str()));
                         }
                     }
 
@@ -678,7 +678,7 @@ namespace RealBloom
                     ZeroMemory(&cgProcessInfo, sizeof(cgProcessInfo));
 
                     bool cgHasHandles = false;
-                    std::string cgCommandLine = formatStr("RealBloomGPUConv.exe \"%s\"", cgInpFilename.c_str());
+                    std::string cgCommandLine = strFormat("RealBloomGPUConv.exe \"%s\"", cgInpFilename.c_str());
                     if (!m_state.failed)
                     {
                         if (CreateProcessA(
@@ -701,7 +701,7 @@ namespace RealBloom
                                 AssignProcessToJobObject(hJobObject, cgProcessInfo.hProcess);
                         } else
                         {
-                            setErrorState(formatStr("CreateProcess failed (%d).", GetLastError()));
+                            setErrorState(strFormat("CreateProcess failed (%d).", GetLastError()));
                         }
                     }
 
@@ -809,7 +809,7 @@ namespace RealBloom
                     {
                         cgOutFile.open(cgOutFilename, std::ifstream::in | std::ifstream::binary);
                         if (!cgOutFile.is_open() || cgOutFile.fail())
-                            setErrorState(formatStr("Output file \"%s\" could not be opened.", cgOutFilename.c_str()));
+                            setErrorState(strFormat("Output file \"%s\" could not be opened.", cgOutFilename.c_str()));
                         else
                             cgOutFile.seekg(std::ifstream::beg);
                     }
@@ -870,7 +870,7 @@ namespace RealBloom
                                     "crashed. Try using more chunks, as the GPU might not be able to handle the "
                                     "current amount of data at once.");
                             else
-                                setErrorState(formatStr(
+                                setErrorState(strFormat(
                                     "Could not retrieve data from the output file, failed at \"%s\".", parseStage.c_str()));
                     }
 
@@ -895,7 +895,7 @@ namespace RealBloom
                                 }
                             } else
                             {
-                                setErrorState(formatStr(
+                                setErrorState(strFormat(
                                     "Output buffer size (%u) does not match the input size (%u).", cgBinOutput.bufferSize, convBufferSize));
                             }
                         } else
@@ -1024,26 +1024,26 @@ namespace RealBloom
 
                 float progress = (numPixels > 0) ? (float)numDone / (float)numPixels : 1.0f;
                 float remainingSec = (elapsedSec * (float)(numPixels - numDone)) / fmaxf((float)(numDone), EPSILON);
-                outTime = formatStr(
+                outTime = strFormat(
                     "%.1f%%%% (%u/%u)\n%s / %s",
                     progress * 100.0f,
                     numDone,
                     numPixels,
-                    stringFromDuration2(elapsedSec).c_str(),
-                    stringFromDuration2(remainingSec).c_str());
+                    strFromElapsed(elapsedSec).c_str(),
+                    strFromElapsed(remainingSec).c_str());
             } else
             {
-                outTime = formatStr(
+                outTime = strFormat(
                     "%u/%u chunks\n%s",
                     m_state.numChunksDone,
                     m_state.device.numChunks,
-                    stringFromDuration2(elapsedSec));
+                    strFromElapsed(elapsedSec));
             }
         } else if (m_state.hasTimestamps && !m_state.mustCancel)
         {
             std::chrono::milliseconds elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(m_state.timeEnd - m_state.timeStart);
             float elapsedSec = (float)elapsedMs.count() / 1000.0f;
-            outTime = formatStr("Done (%s)", stringFromDuration(elapsedSec).c_str());
+            outTime = strFormat("Done (%s)", strFromDuration(elapsedSec).c_str());
         }
     }
 
@@ -1088,19 +1088,19 @@ namespace RealBloom
 
         if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
         {
-            return formatStr(
+            return strFormat(
                 "Total Pixels: %s\nPixels/Thread: %s\nEst. Memory: %s",
-                stringFromBigNumber(numPixels).c_str(),
-                stringFromBigNumber(numPixelsPerBlock).c_str(),
-                stringFromSize(ramUsage).c_str());
+                strFromBigNumber(numPixels).c_str(),
+                strFromBigNumber(numPixelsPerBlock).c_str(),
+                strFromSize(ramUsage).c_str());
         } else
         {
-            return formatStr(
+            return strFormat(
                 "Total Pixels: %s\nPixels/Chunk: %s\nEst. Memory: %s\nEst. VRAM: %s",
-                stringFromBigNumber(numPixels).c_str(),
-                stringFromBigNumber(numPixelsPerBlock).c_str(),
-                stringFromSize(ramUsage).c_str(),
-                stringFromSize(vramUsage).c_str());
+                strFromBigNumber(numPixels).c_str(),
+                strFromBigNumber(numPixelsPerBlock).c_str(),
+                strFromSize(ramUsage).c_str(),
+                strFromSize(vramUsage).c_str());
         }
     }
 

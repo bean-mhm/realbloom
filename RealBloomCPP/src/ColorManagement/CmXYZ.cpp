@@ -23,7 +23,7 @@ bool CmXYZ::init()
         {
             for (const auto& xyzName : xyzNames)
             {
-                if (lowercase(space) == lowercase(xyzName))
+                if (strLowercase(space) == strLowercase(xyzName))
                 {
                     S_INFO.method = XyzConversionMethod::UserConfig;
                     S_INFO.userSpace = space;

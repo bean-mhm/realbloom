@@ -347,7 +347,7 @@ namespace RealBloom
     std::string Dispersion::getStats() const
     {
         if (m_state.working && !m_state.mustCancel)
-            return formatStr("%u/%u steps", m_state.numStepsDone, m_state.numSteps);
+            return strFormat("%u/%u steps", m_state.numStepsDone, m_state.numSteps);
 
         if (m_state.failed)
             return m_state.error;

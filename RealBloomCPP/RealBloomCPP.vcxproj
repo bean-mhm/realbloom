@@ -233,6 +233,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\Utils\NumberHelpers.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\RealBloom\DiffractionPattern.cpp" />
+    <ClCompile Include="src\Utils\StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
@@ -345,6 +346,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\Main.h" />
     <ClInclude Include="src\RealBloom\DiffractionPattern.h" />
     <ClInclude Include="src\Utils\Misc.h" />
+    <ClInclude Include="src\Utils\StringUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="imgui.ini">

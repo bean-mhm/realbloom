@@ -5,7 +5,7 @@ bool CmImageIO::readImageColorSpace(const std::string& filename, std::string& ou
     outColorSpace = "";
 
     std::filesystem::path path(filename);
-    std::string extension = lowercase(path.extension().string());
+    std::string extension = strLowercase(path.extension().string());
 
     OCIO::ConstConfigRcPtr config = CMS::getConfig();
     const std::vector<std::string>& userSpaces = CMS::getAvailableColorSpaces();
@@ -66,7 +66,7 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
     OIIO::ImageInput::unique_ptr inp = OIIO::ImageInput::open(filename);
     if (!inp)
     {
-        outError = formatStr("Couldn't open input file \"%s\".", filename.c_str());
+        outError = strFormat("Couldn't open input file \"%s\".", filename.c_str());
         return false;
     }
 
@@ -78,7 +78,7 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
 
     if ((channels != 1) && (channels != 3) && (channels != 4))
     {
-        outError = formatStr("Image must have 1, 3, or 4 color channels. (%d)", channels);
+        outError = strFormat("Image must have 1, 3, or 4 color channels. (%d)", channels);
         inp->close();
         return false;
     }
@@ -90,7 +90,7 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
     // Read into the buffer
     if (!inp->read_image(0, 0, 0, -1, OIIO::TypeDesc::FLOAT, buffer.data()))
     {
-        outError = formatStr("Couldn't read image from file \"%s\".", filename.c_str());
+        outError = strFormat("Couldn't read image from file \"%s\".", filename.c_str());
         inp->close();
         return false;
     }
@@ -162,7 +162,7 @@ bool CmImageIO::readImage(CmImage& target, const std::string& filename, const st
             cpuProc->apply(img);
         } catch (OCIO::Exception& e)
         {
-            outError = formatStr("OpenColorIO Error: %s", e.what());
+            outError = strFormat("OpenColorIO Error: %s", e.what());
             return false;
         }
     }
@@ -231,7 +231,7 @@ bool CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
         cpuProc->apply(img);
     } catch (OCIO::Exception& e)
     {
-        outError = formatStr("OpenColorIO Error: %s", e.what());
+        outError = strFormat("OpenColorIO Error: %s", e.what());
         return false;
     }
 
@@ -253,13 +253,13 @@ bool CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
             out->close();
         else
         {
-            outError = formatStr("Couldn't write image to file \"%s\".", filename.c_str());
+            outError = strFormat("Couldn't write image to file \"%s\".", filename.c_str());
             out->close();
             return false;
         }
     } else
     {
-        outError = formatStr("Couldn't open output file \"%s\".", filename.c_str());
+        outError = strFormat("Couldn't open output file \"%s\".", filename.c_str());
         return false;
     }
 

@@ -945,7 +945,7 @@ void layout()
         }
 
         // UI Renderer
-        static std::string uiRenderer = formatStr("UI Renderer:\n%s", (const char*)glGetString(GL_RENDERER));
+        static std::string uiRenderer = strFormat("UI Renderer:\n%s", (const char*)glGetString(GL_RENDERER));
 
         // FPS
         ImGui::TextWrapped(

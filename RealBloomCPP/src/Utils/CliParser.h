@@ -19,13 +19,15 @@ public:
     size_t num() const;
 
     bool exists(const std::string& argument) const;
-    bool exists(const std::string& argument, const std::string& argumentShort) const;
-    bool anyExists(const std::vector<std::string>& arguments) const;
+    bool exists(const std::vector<std::string>& aliases) const;
 
-    bool hasValue(const std::string& argument, const std::string& argumentShort) const;
+    bool hasValue(const std::string& argument) const;
+    bool hasValue(const std::vector<std::string>& aliases) const;
+
     const std::string& get(const std::string& argument) const;
-    const std::string& get(const std::string& argument, const std::string& argumentShort) const;
+    const std::string& get(const std::vector<std::string>& aliases) const;
     const std::string& get(size_t index) const;
 
     bool first(const std::string& command) const;
+    bool first(const std::vector<std::string>& commands) const;
 };

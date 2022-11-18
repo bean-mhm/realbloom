@@ -11,6 +11,8 @@
 #include <filesystem>
 #include <algorithm>
 
+#include "StringUtils.h"
+
 #define NOMINMAX
 #include <Windows.h>
 
@@ -34,58 +36,6 @@ inline void threadJoin(std::thread* t)
     if (t)
         if (t->joinable())
             t->join();
-}
-
-template<typename ... Args>
-std::string formatStr(const std::string& format, Args ... args)
-{
-    int size_s = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
-    if (size_s <= 0)
-    {
-        //throw std::runtime_error("Error during formatting.");
-        return "[formatStr] Error";
-    }
-    auto size = static_cast<size_t>(size_s);
-    std::unique_ptr<char[]> buf(new char[size]);
-    std::snprintf(buf.get(), size, format.c_str(), args ...);
-    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
-}
-
-template <typename T>
-std::basic_string<T> lowercase(const std::basic_string<T>& s)
-{
-    std::basic_string<T> s2 = s;
-    std::transform(s2.begin(), s2.end(), s2.begin(), tolower);
-    return s2;
-}
-
-template <typename T>
-std::basic_string<T> uppercase(const std::basic_string<T>& s)
-{
-    std::basic_string<T> s2 = s;
-    std::transform(s2.begin(), s2.end(), s2.begin(), toupper);
-    return s2;
-}
-
-bool strContains(const std::string& source, const std::string& substring);
-
-// Examples: "6h 9m 42s", "10.7s"
-std::string stringFromDuration(float seconds);
-
-// Examples: "06:09:42", "00:00:10"
-std::string stringFromDuration2(float seconds);
-
-std::string stringFromSize(uint64_t sizeBytes);
-std::string stringFromBigNumber(uint64_t bigNumber);
-
-template< typename T >
-std::string toHex(T i)
-{
-    std::stringstream stream;
-    stream << "0x"
-        << std::setfill('0') << std::setw(sizeof(T) * 2)
-        << std::hex << i;
-    return stream.str();
 }
 
 uint32_t getElapsedMs(std::chrono::system_clock::time_point startTime);

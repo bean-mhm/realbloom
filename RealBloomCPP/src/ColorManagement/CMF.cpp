@@ -19,7 +19,7 @@ CmfTable::CmfTable(const std::string& filename)
         // a CMF table with less than 10 entries for
         if (wavelengths.size() < 10)
             throw std::exception(
-                formatStr("At least 10 entries are needed! (%u)", wavelengths.size()).c_str()
+                strFormat("At least 10 entries are needed! (%u)", wavelengths.size()).c_str()
             );
 
         m_count = wavelengths.size();
@@ -29,7 +29,7 @@ CmfTable::CmfTable(const std::string& filename)
 
         // start + (step * (count - 1)) == end
         if (fabsf((m_start + (m_step * (float)(m_count - 1))) - m_end) >= m_step)
-            throw std::exception(formatStr(
+            throw std::exception(strFormat(
                 "Wavelength entries must be equally distanced from each other. "
                 "(%u, %.3f, %.3f, %.3f)",
                 m_count,
@@ -49,7 +49,7 @@ CmfTable::CmfTable(const std::string& filename)
             (m_valuesY.size() == m_count) &&
             (m_valuesZ.size() == m_count)))
         {
-            throw std::exception(formatStr(
+            throw std::exception(strFormat(
                 "The first 4 columns must have the same number of entries. "
                 "(%u, %u, %u, %u)",
                 m_count,
@@ -89,7 +89,7 @@ float CmfTable::getStep() const
     return m_step;
 }
 
-inline float lerp(float a, float b, float t)
+inline float lerp2(float a, float b, float t)
 {
     return a + ((b - a) * t);
 }
@@ -121,9 +121,9 @@ std::array<float, 3> CmfTable::sample(float wavelength) const
         return { m_valuesX[m_count - 1], m_valuesY[m_count - 1], m_valuesZ[m_count - 1] };
 
     // Sample linearly from idx to idx+1
-    float smpX = lerp(m_valuesX[idx], m_valuesX[idx + 1], offset);
-    float smpY = lerp(m_valuesY[idx], m_valuesY[idx + 1], offset);
-    float smpZ = lerp(m_valuesZ[idx], m_valuesZ[idx + 1], offset);
+    float smpX = lerp2(m_valuesX[idx], m_valuesX[idx + 1], offset);
+    float smpY = lerp2(m_valuesY[idx], m_valuesY[idx + 1], offset);
+    float smpZ = lerp2(m_valuesZ[idx], m_valuesZ[idx + 1], offset);
 
     return { smpX, smpY, smpZ };
 }
@@ -256,13 +256,13 @@ void CMF::retrieveTables()
     S_VARS->tables.clear();
 
     if (!(std::filesystem::exists(CMF_DIR) && std::filesystem::is_directory(CMF_DIR)))
-        throw std::exception(formatStr("\"%s\" was not found.", CMF_DIR).c_str());
+        throw std::exception(strFormat("\"%s\" was not found.", CMF_DIR).c_str());
 
     for (const auto& entry : std::filesystem::directory_iterator(CMF_DIR))
     {
         if (!entry.is_directory())
         {
-            if (lowercase(entry.path().extension().string()) == ".csv")
+            if (strLowercase(entry.path().extension().string()) == ".csv")
             {
                 std::string tableName = entry.path().filename().replace_extension().string();
                 std::string tablePath = std::filesystem::absolute(entry.path()).string();
@@ -339,7 +339,7 @@ void CMF::setActiveTable(const CmfTableInfo& tableInfo)
             S_VARS->activeTable = std::make_shared<CmfTable>(tableInfo.path);
             S_VARS->activeTableInfo = tableInfo;
 
-            S_VARS->activeTableDetails = formatStr(
+            S_VARS->activeTableDetails = strFormat(
                 "%s\n"
                 "Count: %u\n"
                 "Range: %.3f - %.3f\n"

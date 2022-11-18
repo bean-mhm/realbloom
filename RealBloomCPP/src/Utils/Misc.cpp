@@ -2,93 +2,16 @@
 
 std::string printErr(const std::string& source, const std::string& stage, const std::string& message)
 {
-    std::string s = formatStr("[%s] %s: %s", source.c_str(), stage.c_str(), message.c_str());
+    std::string s = strFormat("[%s] %s: %s", source.c_str(), stage.c_str(), message.c_str());
     std::cerr << s << "\n";
     return s;
 }
 
 std::string printErr(const std::string& source, const std::string& message)
 {
-    std::string s = formatStr("[%s] %s", source.c_str(), message.c_str());
+    std::string s = strFormat("[%s] %s", source.c_str(), message.c_str());
     std::cerr << s << "\n";
     return s;
-}
-
-bool strContains(const std::string& source, const std::string& substring)
-{
-    return (source.find(substring) != std::string::npos);
-}
-
-std::string stringFromDuration(float seconds)
-{
-    if (seconds < 60.0f)
-    {
-        return formatStr("%.1fs", seconds);
-    } else
-    {
-        uint32_t intSec = (int)floorf(seconds);
-
-        uint32_t intHr = intSec / 3600;
-        uint32_t intMin = (intSec / 60) % 60;
-        intSec %= 60;
-
-        if (intHr > 0)
-        {
-            return formatStr("%dh %dm %ds", intHr, intMin, intSec);
-        } else
-        {
-            return formatStr("%dm %ds", intMin, intSec);
-        }
-    }
-}
-
-std::string stringFromDuration2(float seconds)
-{
-    uint32_t intSec = (int)floorf(seconds);
-
-    uint32_t intHr = intSec / 3600;
-    uint32_t intMin = (intSec / 60) % 60;
-    intSec %= 60;
-
-    return formatStr("%02d:%02d:%02d", intHr, intMin, intSec);
-}
-
-std::string stringFromSize(uint64_t sizeBytes)
-{
-    static const char* suffixes[]{ "bytes", "KB", "MB", "GB", "TB" };
-    static double powers[]
-    {
-        pow(1024, 0), // 1 byte
-        pow(1024, 1), // 1 KB
-        pow(1024, 2), // 1 MB
-        pow(1024, 3), // 1 GB
-        pow(1024, 4)  // 1 TB
-    };
-
-    uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)sizeBytes) / log(1024.0))));
-    if (mag == 0)
-        return formatStr("%lu %s", sizeBytes, suffixes[mag]);
-    else
-        return formatStr("%.1f %s", (double)sizeBytes / powers[mag], suffixes[mag]);
-}
-
-std::string stringFromBigNumber(uint64_t bigNumber)
-{
-    static const char* suffixes[]{ "", "K", "M", "B", "T" };
-    static double powers[]
-    {
-        pow(1000, 0), // 1
-        pow(1000, 1), // 1K
-        pow(1000, 2), // 1M
-        pow(1000, 3), // 1B
-        pow(1000, 4)  // 1T
-    };
-
-    uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bigNumber) / log(1000.0))));
-    if (mag == 0)
-        return formatStr("%lu", bigNumber);
-    else
-        return formatStr("%.1f%s", (double)bigNumber / powers[mag], suffixes[mag]);
 }
 
 uint32_t getElapsedMs(std::chrono::system_clock::time_point startTime)

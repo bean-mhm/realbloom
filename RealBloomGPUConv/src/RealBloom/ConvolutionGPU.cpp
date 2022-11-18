@@ -111,11 +111,11 @@ namespace RealBloom
             this,
             [&](std::string err)
             {
-                m_data->setError(formatStr("OpenGL Initialization Error: \"%s\"", err.c_str()));
+                m_data->setError(strFormat("OpenGL Initialization Error: \"%s\"", err.c_str()));
             },
             err2))
         {
-            m_data->setError(formatStr("OpenGL Initialization Error: \"%s\"", err2.c_str()));
+            m_data->setError(strFormat("OpenGL Initialization Error: \"%s\"", err2.c_str()));
         }
     }
 
@@ -157,17 +157,17 @@ namespace RealBloom
 
         if (!createShader(GL_VERTEX_SHADER, vertexSource, m_vertexShader, shaderLog))
             throw std::exception(
-                printErr(__FUNCTION__, formatStr("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
+                printErr(__FUNCTION__, strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
         if (!createShader(GL_GEOMETRY_SHADER, geometrySource, m_geometryShader, shaderLog))
             throw std::exception(
-                printErr(__FUNCTION__, formatStr("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
+                printErr(__FUNCTION__, strFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
         if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, m_fragmentShader, shaderLog))
             throw std::exception(
-                printErr(__FUNCTION__, formatStr("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
+                printErr(__FUNCTION__, strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
         // Link the vertex and fragment shader into a shader program
