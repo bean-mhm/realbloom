@@ -51,19 +51,20 @@ namespace RealBloom
             m_rawB.resize(width * height);
         }
 
-        // FFTW
-        fftw_plan planR, planG, planB;
-        fftw_complex* inR = nullptr, * inG = nullptr, * inB = nullptr;
-        fftw_complex* outR = nullptr, * outG = nullptr, * outB = nullptr;
-
         // Allocate arrays for FFTW
+        fftw_complex* inR = nullptr;
+        fftw_complex* inG = nullptr;
+        fftw_complex* inB = nullptr;
+        fftw_complex* outR = nullptr;
+        fftw_complex* outG = nullptr;
+        fftw_complex* outB = nullptr;
         inR = new fftw_complex[width * height];
         outR = new fftw_complex[width * height];
         if (!grayscale)
         {
             inG = new fftw_complex[width * height];
-            inB = new fftw_complex[width * height];
             outG = new fftw_complex[width * height];
+            inB = new fftw_complex[width * height];
             outB = new fftw_complex[width * height];
         }
 
@@ -104,14 +105,16 @@ namespace RealBloom
         }
 
         // Plan and execute Forward FFT
-        planR = fftw_plan_dft_2d(width, width, inR, outR, FFTW_FORWARD, FFTW_MEASURE);
+        fftw_plan planR, planG, planB;
+
+        planR = fftw_plan_dft_2d(width, height, inR, outR, FFTW_FORWARD, FFTW_MEASURE);
         fftw_execute(planR);
 
         if (!grayscale)
         {
-            planG = fftw_plan_dft_2d(width, width, inG, outG, FFTW_FORWARD, FFTW_MEASURE);
-            planB = fftw_plan_dft_2d(width, width, inB, outB, FFTW_FORWARD, FFTW_MEASURE);
+            planG = fftw_plan_dft_2d(width, height, inG, outG, FFTW_FORWARD, FFTW_MEASURE);
             fftw_execute(planG);
+            planB = fftw_plan_dft_2d(width, height, inB, outB, FFTW_FORWARD, FFTW_MEASURE);
             fftw_execute(planB);
         }
 
@@ -130,21 +133,21 @@ namespace RealBloom
             for (uint32_t x = 0; x < width; x++)
             {
                 // Fix the coordinates
-                if (x < ((uint32_t)width / 2))
-                    transX = (((uint32_t)width / 2) - 1) - x;
+                if (x < (width / 2))
+                    transX = ((width / 2) - 1) - x;
                 else
-                    transX = ((uint32_t)width - 1) - (x - ((uint32_t)width / 2));
+                    transX = (width - 1) - (x - (width / 2));
 
-                if (y < ((uint32_t)width / 2))
-                    transY = (((uint32_t)width / 2) - 1) - y;
+                if (y < (height / 2))
+                    transY = ((height / 2) - 1) - y;
                 else
                 {
-                    transY = ((uint32_t)width - 1) - (y - ((uint32_t)width / 2));
+                    transY = (height - 1) - (y - (height / 2));
                 }
 
                 // Calculate the indices
-                indexTrans = transY * (uint32_t)width + transX;
                 indexOrig = y * width + x;
+                indexTrans = transY * width + transX;
 
                 // Save the results while finding the maximum magnitudes
                 {
