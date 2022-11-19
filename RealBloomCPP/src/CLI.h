@@ -9,6 +9,8 @@
 
 #include "Utils/CliParser.h"
 
+typedef std::unordered_map<std::string, std::string> StringMap;
+
 struct CliArgument
 {
     std::vector<std::string> aliases;
@@ -22,7 +24,7 @@ struct CliCommand
     std::string desc;
     std::string example;
     std::vector<CliArgument> arguments;
-    std::function<void(const CliCommand&, const CliParser&, const std::unordered_map<std::string, std::string>&)> action;
+    std::function<void(const CliCommand&, const CliParser&, const StringMap&, bool)> action;
 };
 
 class CLI

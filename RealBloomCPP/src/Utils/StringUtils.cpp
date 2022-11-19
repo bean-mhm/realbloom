@@ -30,6 +30,39 @@ std::string strRightPadding(const std::string& s, size_t length)
 }
 
 
+std::string strWordWrap(const std::string& s, size_t length, size_t leftPadding)
+{
+    std::istringstream i(s);
+    std::ostringstream o("");
+    size_t lineLnegth = 0;
+    std::string word;
+    while (i >> word)
+    {
+        if ((lineLnegth + word.size()) > length)
+        {
+            o << '\n';
+            for (size_t i = 0; i < leftPadding; i++)
+                o << ' ';
+            lineLnegth = 0;
+        }
+        if (word.size() > length)
+        {
+            o << word.substr(0, length - 1) << "-\n";
+            for (size_t i = 0; i < leftPadding; i++)
+                o << ' ';
+            o << word.substr(length - 1) << ' ';
+            lineLnegth = (word.size() - length + 1) + 1;
+        } else
+        {
+            o << word << ' ';
+            lineLnegth += word.size() + 1;
+        }
+    }
+    std::string result = o.str();
+    result = result.substr(0, result.size() - 1);
+    return result;
+}
+
 std::string strFromDuration(float seconds)
 {
     if (seconds < 60.0f)

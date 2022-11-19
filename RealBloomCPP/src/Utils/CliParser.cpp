@@ -50,7 +50,7 @@ const std::string& CliParser::get(const std::string& argument) const
 {
     std::vector<std::string>::const_iterator itr;
     itr = std::find(this->m_tokens.begin(), this->m_tokens.end(), argument);
-    if (itr != this->m_tokens.end() && ++itr != this->m_tokens.end())
+    if ((itr != this->m_tokens.end()) && (++itr != this->m_tokens.end()))
         return *itr;
     throw std::exception(std::string("Argument \"" + argument + "\" doesn't have a value.").c_str());
 }
