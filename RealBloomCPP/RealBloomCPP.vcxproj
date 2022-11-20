@@ -205,6 +205,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\CLI.cpp" />
     <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
     <ClCompile Include="src\ColorManagement\CMF.cpp" />
+    <ClCompile Include="src\RealBloom\ConvolutionFFT.cpp" />
     <ClCompile Include="src\Utils\ConsoleColors.cpp" />
     <ClCompile Include="src\Utils\CliParser.cpp" />
     <ClCompile Include="src\Utils\GlTexture.cpp" />
@@ -241,6 +242,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\CLI.h" />
     <ClInclude Include="src\ColorManagement\CMF.h" />
     <ClInclude Include="src\ColorManagement\CmXYZ.h" />
+    <ClInclude Include="src\RealBloom\ConvolutionFFT.h" />
     <ClInclude Include="src\Utils\ConsoleColors.h" />
     <ClInclude Include="src\Utils\CliParser.h" />
     <ClInclude Include="src\Utils\GlTexture.h" />

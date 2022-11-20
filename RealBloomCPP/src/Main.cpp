@@ -506,10 +506,13 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("CONVOLUTION");
 
-        const char* const deviceTypeItems[]{ "CPU", "GPU" };
-        ImGui::Combo("Device##Conv", &(vars.cv_deviceType), deviceTypeItems, 2);
+        const char* const deviceTypeItems[]{ "CPU (FFT)", "CPU", "GPU" };
+        ImGui::Combo("Device##Conv", &(vars.cv_deviceType), deviceTypeItems, 3);
 
-        if (vars.cv_deviceType == 0)
+        if (vars.cv_deviceType == (int)RealBloom::ConvolutionDeviceType::FFT)
+        {
+            // No parameters yet
+        } else if (vars.cv_deviceType == (int)RealBloom::ConvolutionDeviceType::CPU)
         {
             // Threads
             ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, vars.cv_maxThreads);
@@ -528,7 +531,7 @@ void layout()
                         "by the hardware is not recommended.");
                 ImGui::PopStyleColor();
             }
-        } else
+        } else if (vars.cv_deviceType == (int)RealBloom::ConvolutionDeviceType::GPU)
         {
             // Chunks
             if (ImGui::InputInt("Chunks##Conv", &(vars.cv_numChunks)))
@@ -1191,8 +1194,7 @@ void renderDiffPattern()
 void updateConvParams()
 {
     RealBloom::ConvolutionParams* convParams = conv.getParams();
-    convParams->device.deviceType =
-        (vars.cv_deviceType == 0) ? RealBloom::ConvolutionDeviceType::CPU : RealBloom::ConvolutionDeviceType::GPU;
+    convParams->device.deviceType = (RealBloom::ConvolutionDeviceType)(vars.cv_deviceType);
     convParams->device.numThreads = vars.cv_numThreads;
     convParams->device.numChunks = vars.cv_numChunks;
     convParams->device.chunkSleep = vars.cv_chunkSleep;

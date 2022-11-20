@@ -12,11 +12,7 @@ namespace RealBloom
         m_params(convParams),
         m_inputBuffer(inputBuffer), m_inputWidth(inputWidth), m_inputHeight(inputHeight),
         m_kernelBuffer(kernelBuffer), m_kernelWidth(kernelWidth), m_kernelHeight(kernelHeight)
-    {
-        m_state.numPixels = 1;
-        m_state.numDone = 0;
-        m_state.state = ConvolutionThreadState::None;
-    }
+    {}
 
     void ConvolutionThread::start()
     {
@@ -95,6 +91,23 @@ namespace RealBloom
                         inpColor[0] *= mul;
                         inpColor[1] *= mul;
                         inpColor[2] *= mul;
+
+                        // (Disabled, seems to have no effect)
+                        // Check if we will stay inside the image boundaries
+                        // Disable bounds checking when guaranteed to stay in bounds
+
+                        /*bool willStayInside;
+                        {
+                            int rectX1 = ix - kernelCenterX;
+                            int rectY1 = iy - kernelCenterY;
+                            int rectX2 = (int)m_kernelWidth - 1 - kernelCenterX + ix;
+                            int rectY2 = (int)m_kernelHeight - 1 - kernelCenterY + iy;
+
+                            willStayInside = ((rectX1 >= 0) &&
+                                (rectY1 >= 0) &&
+                                (rectX2 < m_inputWidth) &&
+                                (rectY2 < m_inputHeight));
+                        }*/
 
                         for (int ky = 0; ky < (int)m_kernelHeight; ky++)
                         {
@@ -185,9 +198,9 @@ namespace RealBloom
         m_mustStop = true;
     }
 
-    std::vector<float>* ConvolutionThread::getBuffer()
+    std::vector<float>& ConvolutionThread::getBuffer()
     {
-        return &m_outputBuffer;
+        return m_outputBuffer;
     }
 
     std::shared_ptr<std::thread> ConvolutionThread::getThread()

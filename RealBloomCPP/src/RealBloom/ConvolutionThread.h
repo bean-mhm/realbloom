@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <stdint.h>
 #include <atomic>
 #include <thread>
@@ -21,9 +22,9 @@ namespace RealBloom
 
     struct ConvolutionThreadStats
     {
-        ConvolutionThreadState state;
-        uint32_t numPixels;
-        uint32_t numDone;
+        ConvolutionThreadState state = ConvolutionThreadState::None;
+        uint32_t numPixels = 1;
+        uint32_t numDone = 0;
     };
 
     class ConvolutionThread
@@ -57,7 +58,7 @@ namespace RealBloom
         void start();
         void stop();
 
-        std::vector<float>* getBuffer();
+        std::vector<float>& getBuffer();
         std::shared_ptr<std::thread> getThread();
         void setThread(std::shared_ptr<std::thread> thread);
 

@@ -26,13 +26,14 @@ namespace RealBloom
 
     enum class ConvolutionDeviceType
     {
-        CPU,
-        GPU
+        FFT = 0,
+        CPU = 1,
+        GPU = 2
     };
 
     struct ConvolutionDevice
     {
-        ConvolutionDeviceType deviceType = ConvolutionDeviceType::CPU;
+        ConvolutionDeviceType deviceType = ConvolutionDeviceType::FFT;
         uint32_t numThreads = 1;
         uint32_t numChunks = 1;
         uint32_t chunkSleep = 0;

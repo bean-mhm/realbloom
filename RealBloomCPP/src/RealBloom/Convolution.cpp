@@ -1,7 +1,6 @@
 #include "Convolution.h"
 #include "ConvolutionThread.h"
-
-#include <Windows.h>
+#include "ConvolutionFFT.h"
 
 constexpr uint32_t CONV_WAIT_TIMESTEP = 50;
 constexpr uint32_t CONV_PROG_TIMESTEP = 1000;
@@ -435,7 +434,19 @@ namespace RealBloom
                 }
 
                 ConvolutionGPUBinaryInput cgBinInput;
-                if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
+                if (m_params.device.deviceType == ConvolutionDeviceType::FFT)
+                {
+                    // FFT
+                    ConvolutionFFT fftConv(
+                        m_params, inputBuffer, inputWidth, inputHeight,
+                        kernelBuffer, kernelWidth, kernelHeight
+                    );
+                    fftConv.pad();
+                    fftConv.inputFFT();
+                    fftConv.kernelFFT();
+                    fftConv.multiply();
+                    fftConv.iFFT();
+                } else if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
                 {
                     // Create and prepare threads
                     for (uint32_t i = 0; i < numThreads; i++)
@@ -443,13 +454,14 @@ namespace RealBloom
                         ConvolutionThread* ct = new ConvolutionThread(
                             numThreads, i, m_params,
                             inputBuffer, inputWidth, inputHeight,
-                            kernelBuffer, kernelWidth, kernelHeight);
+                            kernelBuffer, kernelWidth, kernelHeight
+                        );
 
-                        std::vector<float>* threadBuffer = ct->getBuffer();
-                        threadBuffer->resize(inputBufferSize);
+                        std::vector<float>& threadBuffer = ct->getBuffer();
+                        threadBuffer.resize(inputBufferSize);
                         for (uint32_t j = 0; j < inputBufferSize; j++)
-                            if (j % 4 == 3) (*threadBuffer)[j] = 1.0f;
-                            else (*threadBuffer)[j] = 0.0f;
+                            if (j % 4 == 3) threadBuffer[j] = 1.0f;
+                            else threadBuffer[j] = 0.0f;
 
                         m_threads.push_back(ct);
                     }
@@ -501,7 +513,7 @@ namespace RealBloom
                                 {
                                     if (m_threads[i])
                                     {
-                                        std::vector<float> currentBuffer = *(m_threads[i]->getBuffer());
+                                        std::vector<float>& currentBuffer = m_threads[i]->getBuffer();
                                         uint32_t redIndex;
                                         for (uint32_t y = 0; y < inputHeight; y++)
                                         {
@@ -542,7 +554,7 @@ namespace RealBloom
                     }
                     DELARR(inputBuffer);
                     DELARR(kernelBuffer);
-                } else
+                } else if (m_params.device.deviceType == ConvolutionDeviceType::GPU)
                 {
                     // Prepare input data for GPU convolution
                     cgBinInput.numChunks = numChunks;
@@ -563,7 +575,6 @@ namespace RealBloom
                 if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
                 {
                     // Prepare the convolution layer
-
                     std::lock_guard<CmImage> convLayerImageLock(*m_imageConvLayer);
                     m_imageConvLayer->resize(inputWidth, inputHeight, false);
                     m_imageConvLayer->fill(color_t{ 0, 0, 0, 1 }, false);
@@ -577,7 +588,7 @@ namespace RealBloom
 
                         if (m_threads[i])
                         {
-                            std::vector<float> threadBuffer = *(m_threads[i]->getBuffer());
+                            std::vector<float>& threadBuffer = m_threads[i]->getBuffer();
                             if (!m_state.mustCancel)
                             {
                                 uint32_t redIndex;
@@ -595,7 +606,7 @@ namespace RealBloom
                             }
                         }
                     }
-                } else
+                } else if (m_params.device.deviceType == ConvolutionDeviceType::GPU)
                 {
                     // Create input file for GPU convolution
                     std::string tempDir;
@@ -1031,7 +1042,7 @@ namespace RealBloom
                     numPixels,
                     strFromElapsed(elapsedSec).c_str(),
                     strFromElapsed(remainingSec).c_str());
-            } else
+            } else if (m_params.device.deviceType == ConvolutionDeviceType::GPU)
             {
                 outTime = strFormat(
                     "%u/%u chunks\n%s",
@@ -1068,7 +1079,7 @@ namespace RealBloom
         previewThreshold(&numPixels);
         if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
             numPixelsPerBlock = numPixels / m_params.device.numThreads;
-        else
+        else if (m_params.device.deviceType == ConvolutionDeviceType::GPU)
             numPixelsPerBlock = numPixels / m_params.device.numChunks;
 
         uint64_t inputSizeBytes = (uint64_t)inputWidth * (uint64_t)inputHeight * 4 * sizeof(float);
@@ -1076,7 +1087,7 @@ namespace RealBloom
         if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
         {
             ramUsage = inputSizeBytes + kernelSizeBytes + (inputSizeBytes * m_params.device.numThreads);
-        } else
+        } else if (m_params.device.deviceType == ConvolutionDeviceType::GPU)
         {
             // input buffer + kernel buffer + final output buffer + output buffer for chunk
             // + (numPoints * 5) + fbData (same size as input buffer)
@@ -1093,7 +1104,7 @@ namespace RealBloom
                 strFromBigNumber(numPixels).c_str(),
                 strFromBigNumber(numPixelsPerBlock).c_str(),
                 strFromSize(ramUsage).c_str());
-        } else
+        } else if (m_params.device.deviceType == ConvolutionDeviceType::GPU)
         {
             return strFormat(
                 "Total Pixels: %s\nPixels/Chunk: %s\nEst. Memory: %s\nEst. VRAM: %s",
@@ -1102,6 +1113,8 @@ namespace RealBloom
                 strFromSize(ramUsage).c_str(),
                 strFromSize(vramUsage).c_str());
         }
+
+        return "";
     }
 
     void drawRect(CmImage* image, int rx, int ry, int rw, int rh)
