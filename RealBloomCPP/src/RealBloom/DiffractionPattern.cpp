@@ -105,7 +105,7 @@ namespace RealBloom
         }
 
         // Plan and execute Forward FFT
-        fftw_plan planR, planG, planB;
+        fftw_plan planR = nullptr, planG = nullptr, planB = nullptr;
 
         planR = fftw_plan_dft_2d(width, height, inR, outR, FFTW_FORWARD, FFTW_MEASURE);
         fftw_execute(planR);
@@ -175,7 +175,6 @@ namespace RealBloom
         // Free memory
         delete[] inR;
         delete[] outR;
-
         if (!grayscale)
         {
             delete[] inG;
@@ -183,6 +182,9 @@ namespace RealBloom
             delete[] outG;
             delete[] outB;
         }
+        if (planR) fftw_destroy_plan(planR);
+        if (planG) fftw_destroy_plan(planG);
+        if (planB) fftw_destroy_plan(planB);
 
         m_hasRawData = true;
         m_success = true;
