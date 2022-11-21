@@ -15,6 +15,7 @@ namespace RealBloom
 
     void drawRect(CmImage* image, int rx, int ry, int rw, int rh);
     void fillRect(CmImage* image, int rx, int ry, int rw, int rh);
+    std::string strFromColorChannelID(uint32_t ch);
 
     void Convolution::setErrorState(const std::string& error)
     {
@@ -407,6 +408,7 @@ namespace RealBloom
         m_state.hasTimestamps = false;
         m_state.device = m_params.device;
         m_state.numChunksDone = 0;
+        m_state.fftStage = "";
 
         // Start the main thread
         m_thread = new std::thread([this, numThreads, maxThreads, numChunks, chunkSleep]()
@@ -441,11 +443,62 @@ namespace RealBloom
                         m_params, inputBuffer, inputWidth, inputHeight,
                         kernelBuffer, kernelWidth, kernelHeight
                     );
+
+                    uint32_t numStages = 14;
+                    uint32_t currStage = 0;
+
+                    currStage++;
+                    m_state.fftStage = strFormat("%u/%u Padding", currStage, numStages);
                     fftConv.pad();
-                    fftConv.inputFFT();
-                    fftConv.kernelFFT();
-                    fftConv.multiply();
-                    fftConv.iFFT();
+
+                    for (uint32_t i = 0; i < 3; i++)
+                    {
+                        currStage++;
+                        m_state.fftStage = strFormat(
+                            "%u/%u Input FFT (%s)", currStage, numStages, strFromColorChannelID(i)
+                        );
+                        fftConv.inputFFT(i);
+                    }
+
+                    for (uint32_t i = 0; i < 3; i++)
+                    {
+                        currStage++;
+                        m_state.fftStage = strFormat(
+                            "%u/%u Kernel FFT (%s)", currStage, numStages, strFromColorChannelID(i)
+                        );
+                        fftConv.kernelFFT(i);
+                    }
+
+                    for (uint32_t i = 0; i < 3; i++)
+                    {
+                        currStage++;
+                        m_state.fftStage = strFormat(
+                            "%u/%u Multiplying (%s)", currStage, numStages, strFromColorChannelID(i)
+                        );
+                        fftConv.multiply(i);
+                    }
+
+                    for (uint32_t i = 0; i < 3; i++)
+                    {
+                        currStage++;
+                        m_state.fftStage = strFormat(
+                            "%u/%u Inverse FFT (%s)", currStage, numStages, strFromColorChannelID(i)
+                        );
+                        fftConv.inverse(i);
+                    }
+
+                    currStage++;
+                    m_state.fftStage = strFormat("%u/%u Finalizing", currStage, numStages);
+                    fftConv.output();
+
+                    // Pour the result into the conv. layer
+                    {
+                        std::lock_guard<CmImage> convLayerImageLock(*m_imageConvLayer);
+                        m_imageConvLayer->resize(fftConv.getPaddedSize(), fftConv.getPaddedSize(), false);
+                        m_imageConvLayer->fill(color_t{ 0, 0, 0, 1 }, false);
+                        float* convBuffer = m_imageConvLayer->getImageData();
+                        std::copy(fftConv.getBuffer().data(), fftConv.getBuffer().data() + fftConv.getBuffer().size(), convBuffer);
+                    }
                 } else if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
                 {
                     // Create and prepare threads
@@ -993,6 +1046,8 @@ namespace RealBloom
         m_state.mustCancel = false;
         m_state.failed = false;
         m_state.hasTimestamps = false;
+        m_state.numChunksDone = 0;
+        m_state.fftStage = "";
     }
 
     bool Convolution::isWorking()
@@ -1048,6 +1103,12 @@ namespace RealBloom
                     "%u/%u chunks\n%s",
                     m_state.numChunksDone,
                     m_state.device.numChunks,
+                    strFromElapsed(elapsedSec));
+            } else if (m_params.device.deviceType == ConvolutionDeviceType::FFT)
+            {
+                outTime = strFormat(
+                    "%s\n%s",
+                    m_state.fftStage.c_str(),
                     strFromElapsed(elapsedSec));
             }
         } else if (m_state.hasTimestamps && !m_state.mustCancel)
@@ -1195,6 +1256,15 @@ namespace RealBloom
                 }
             }
         }
+    }
+
+    std::string strFromColorChannelID(uint32_t ch)
+    {
+        if (ch == 0)
+            return "R";
+        if (ch == 1)
+            return "G";
+        return "B";
     }
 
 }

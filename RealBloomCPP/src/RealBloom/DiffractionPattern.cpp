@@ -120,7 +120,7 @@ namespace RealBloom
 
         // Set up variables for saving the raw output
         uint32_t indexOrig, indexTrans = 0;
-        uint32_t transX = 0, transY = 0;
+        int transX = 0, transY = 0;
 
         m_maxMag[0] = EPSILON;
         m_maxMag[1] = EPSILON;
@@ -141,9 +141,8 @@ namespace RealBloom
                 if (y < (height / 2))
                     transY = ((height / 2) - 1) - y;
                 else
-                {
                     transY = (height - 1) - (y - (height / 2));
-                }
+                transY = height - 1 - transY;
 
                 // Calculate the indices
                 indexOrig = y * width + x;

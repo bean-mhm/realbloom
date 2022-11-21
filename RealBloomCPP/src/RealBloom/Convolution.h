@@ -70,6 +70,7 @@ namespace RealBloom
 
         ConvolutionDevice device;
         uint32_t numChunksDone = 0;
+        std::string fftStage = "";
     };
 
     class ConvolutionThread;

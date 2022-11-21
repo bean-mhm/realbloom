@@ -32,6 +32,16 @@ inline double getMagnitude(double a, double b)
     return sqrt(a * a + b * b);
 }
 
+inline float getPhase(float x, float y)
+{
+    return atan2f(y, x);
+}
+
+inline double getPhase(double x, double y)
+{
+    return atan2(y, x);
+}
+
 inline float getDistance(float x1, float y1, float x2, float y2)
 {
     return sqrtf(powf(x2 - x1, 2) + powf(y2 - y1, 2));

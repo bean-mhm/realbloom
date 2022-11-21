@@ -239,6 +239,13 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
+    <ClInclude Include="include\simple_fft\check_fft.hpp" />
+    <ClInclude Include="include\simple_fft\copy_array.hpp" />
+    <ClInclude Include="include\simple_fft\error_handling.hpp" />
+    <ClInclude Include="include\simple_fft\fft.h" />
+    <ClInclude Include="include\simple_fft\fft.hpp" />
+    <ClInclude Include="include\simple_fft\fft_impl.hpp" />
+    <ClInclude Include="include\simple_fft\fft_settings.h" />
     <ClInclude Include="src\CLI.h" />
     <ClInclude Include="src\ColorManagement\CMF.h" />
     <ClInclude Include="src\ColorManagement\CmXYZ.h" />
@@ -351,6 +358,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\RealBloom\DiffractionPattern.h" />
     <ClInclude Include="src\Utils\Misc.h" />
     <ClInclude Include="src\Utils\StringUtils.h" />
+    <ClInclude Include="src\Utils\Array2D.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="imgui.ini">
