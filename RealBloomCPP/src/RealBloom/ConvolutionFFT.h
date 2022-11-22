@@ -7,6 +7,10 @@
 #include <complex>
 #include <memory>
 
+#include <omp.h>
+#ifndef __USE_OPENMP
+#define __USE_OPENMP
+#endif
 #include "simple_fft/fft_settings.h"
 #include "simple_fft/fft.hpp"
 
