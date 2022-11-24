@@ -104,8 +104,8 @@ struct UiVars
     bool convThresholdChanged = false;
     bool convThresholdSwitchImage = false;
 
-    // Convolution Device
-    int cv_deviceType = 0;
+    // Convolution Method
+    int cv_method = 0;
     int cv_maxThreads = std::max((uint32_t)1, std::thread::hardware_concurrency());
     int cv_halfMaxThreads = std::max(1, cv_maxThreads / 2);
     int cv_numThreads = cv_halfMaxThreads;

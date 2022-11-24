@@ -24,16 +24,16 @@ namespace RealBloom
     constexpr int CONV_MAX_CHUNKS = 2048;
     constexpr int CONV_MAX_SLEEP = 5000;
 
-    enum class ConvolutionDeviceType
+    enum class ConvolutionMethod
     {
-        FFT = 0,
-        CPU = 1,
-        GPU = 2
+        FFT_CPU = 0,
+        NAIVE_CPU = 1,
+        NAIVE_GPU = 2
     };
 
-    struct ConvolutionDevice
+    struct ConvolutionMethodInfo
     {
-        ConvolutionDeviceType deviceType = ConvolutionDeviceType::FFT;
+        ConvolutionMethod method = ConvolutionMethod::FFT_CPU;
         uint32_t numThreads = 1;
         uint32_t numChunks = 1;
         uint32_t chunkSleep = 0;
@@ -41,7 +41,7 @@ namespace RealBloom
 
     struct ConvolutionParams
     {
-        ConvolutionDevice device;
+        ConvolutionMethodInfo methodInfo;
         float kernelRotation = 0.0f;
         float kernelScaleW = 1.0f;
         float kernelScaleH = 1.0f;
@@ -68,7 +68,7 @@ namespace RealBloom
         std::chrono::time_point<std::chrono::system_clock> timeEnd;
         bool hasTimestamps = false;
 
-        ConvolutionDevice device;
+        ConvolutionMethodInfo methodInfo;
         uint32_t numChunksDone = 0;
         std::string fftStage = "";
     };

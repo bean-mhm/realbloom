@@ -461,7 +461,8 @@ void layout()
                     vars.cv_kernelScale[1] = vars.cv_kernelScale[0];
                     vars.convParamsChanged = true;
                 }
-            } else
+            }
+            else
             {
                 if (ImGui::SliderFloat2("Scale##Kernel", vars.cv_kernelScale, 0.1f, 2))
                     vars.convParamsChanged = true;
@@ -486,7 +487,8 @@ void layout()
                     vars.cv_kernelCrop[1] = vars.cv_kernelCrop[0];
                     vars.convParamsChanged = true;
                 }
-            } else
+            }
+            else
             {
                 if (ImGui::SliderFloat2("Crop##Kernel", vars.cv_kernelCrop, 0.1f, 1.0f))
                     vars.convParamsChanged = true;
@@ -510,13 +512,14 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("CONVOLUTION");
 
-        const char* const deviceTypeItems[]{ "CPU (FFT)", "CPU", "GPU" };
-        ImGui::Combo("Device##Conv", &(vars.cv_deviceType), deviceTypeItems, 3);
+        const char* const convMethodItems[]{ "FFT (CPU)", "Naive (CPU)", "Naive (GPU)" };
+        ImGui::Combo("Device##Conv", &(vars.cv_method), convMethodItems, 3);
 
-        if (vars.cv_deviceType == (int)RealBloom::ConvolutionDeviceType::FFT)
+        if (vars.cv_method == (int)RealBloom::ConvolutionMethod::FFT_CPU)
         {
             // No parameters yet
-        } else if (vars.cv_deviceType == (int)RealBloom::ConvolutionDeviceType::CPU)
+        }
+        else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_CPU)
         {
             // Threads
             ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, vars.cv_maxThreads);
@@ -535,7 +538,8 @@ void layout()
                         "by the hardware is not recommended.");
                 ImGui::PopStyleColor();
             }
-        } else if (vars.cv_deviceType == (int)RealBloom::ConvolutionDeviceType::GPU)
+        }
+        else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_GPU)
         {
             // Chunks
             if (ImGui::InputInt("Chunks##Conv", &(vars.cv_numChunks)))
@@ -612,7 +616,8 @@ void layout()
                 ImGui::PushStyleColor(ImGuiCol_Text, *textColor);
                 ImGui::TextWrapped(convStatus.c_str());
                 ImGui::PopStyleColor();
-            } else
+            }
+            else
             {
                 ImGui::Text(convStatus.c_str());
             }
@@ -632,7 +637,8 @@ void layout()
                 vars.convMixParamsChanged = true;
             if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
                 vars.convMixParamsChanged = true;
-        } else
+        }
+        else
         {
             if (ImGui::SliderFloat("Mix##Conv", &(vars.cm_mix), 0, 1))
                 vars.convMixParamsChanged = true;
@@ -887,7 +893,8 @@ void layout()
                     std::string desc = getColorSpaceDesc(CMS::getConfig(), userSpaces[selUserSpace]);
                     if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
                 }
-            } else if (selMethod == (int)XyzConversionMethod::CommonSpace)
+            }
+            else if (selMethod == (int)XyzConversionMethod::CommonSpace)
             {
                 // Internal space
                 if (imguiCombo("Internal##XC", internalSpaces, &selCommonInternal, false))
@@ -987,7 +994,8 @@ void imGuiText(const std::string& text, bool isError, bool newLine)
             ImGui::PushStyleColor(ImGuiCol_Text, colorErrorText);
             ImGui::TextWrapped(text.c_str());
             ImGui::PopStyleColor();
-        } else
+        }
+        else
         {
             ImGui::TextWrapped(text.c_str());
         }
@@ -1198,10 +1206,10 @@ void renderDiffPattern()
 void updateConvParams()
 {
     RealBloom::ConvolutionParams* convParams = conv.getParams();
-    convParams->device.deviceType = (RealBloom::ConvolutionDeviceType)(vars.cv_deviceType);
-    convParams->device.numThreads = vars.cv_numThreads;
-    convParams->device.numChunks = vars.cv_numChunks;
-    convParams->device.chunkSleep = vars.cv_chunkSleep;
+    convParams->methodInfo.method = (RealBloom::ConvolutionMethod)(vars.cv_method);
+    convParams->methodInfo.numThreads = vars.cv_numThreads;
+    convParams->methodInfo.numChunks = vars.cv_numChunks;
+    convParams->methodInfo.chunkSleep = vars.cv_chunkSleep;
     convParams->kernelRotation = vars.cv_kernelRotation;
     convParams->kernelScaleW = vars.cv_kernelScale[0];
     convParams->kernelScaleH = vars.cv_kernelScale[1];
