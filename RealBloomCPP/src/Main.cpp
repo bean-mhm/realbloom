@@ -153,6 +153,10 @@ int main(int argc, char** argv)
             });
     }
 
+    std::string s;
+    CmImageIO::readImage(*getImage("cv-input"), R"(X:\Projects\0dev\RealBloomCPP\RealBloomCPP\demo\HDR Images\Colorful Sphere.tif)", "Linear BT.709 I-E", s);
+    selImageIndex = 3;
+
     // Main loop
     if (!CLI::hasCommands())
     {

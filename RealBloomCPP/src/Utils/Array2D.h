@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include "Misc.h"
+
 template <typename T>
 class Array2D
 {
@@ -17,7 +19,7 @@ public:
     size_t getNumRows() const;
     size_t getNumCols() const;
 
-    void clear();
+    void reset();
     void resize(size_t numRows, size_t numCols);
 
     T& operator()(const size_t& row, const size_t& col);
@@ -42,9 +44,9 @@ size_t Array2D<T>::getNumCols() const
 }
 
 template <typename T>
-void Array2D<T>::clear()
+void Array2D<T>::reset()
 {
-    m_vector.clear();
+    clearVector(m_vector);
 }
 
 template <typename T>

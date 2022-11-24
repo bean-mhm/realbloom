@@ -8,7 +8,7 @@ constexpr uint32_t CONV_PROG_TIMESTEP = 1000;
 constexpr uint32_t CONVGPU_FILE_TIMEOUT = 5000;
 constexpr bool CONVGPU_DELETE_TEMP = true;
 
-constexpr const char* TEXT_CANCELED_BY_USER = "Canceled by user.";
+constexpr const char* S_CANCELED_BY_USER = "Canceled by user.";
 
 namespace RealBloom
 {
@@ -251,7 +251,7 @@ namespace RealBloom
             }
 
             // No longer need the original buffer
-            kernelBuffer.clear();
+            clearVector(kernelBuffer);
 
             // Crop
             std::vector<float> croppedBuffer;
@@ -438,66 +438,75 @@ namespace RealBloom
                 ConvolutionGPUBinaryInput cgBinInput;
                 if (m_params.device.deviceType == ConvolutionDeviceType::FFT)
                 {
-                    // FFT
-                    ConvolutionFFT fftConv(
-                        m_params, inputBuffer, inputWidth, inputHeight,
-                        kernelBuffer, kernelWidth, kernelHeight
-                    );
-
-                    uint32_t numStages = 14;
-                    uint32_t currStage = 0;
-
-                    currStage++;
-                    m_state.fftStage = strFormat("%u/%u Padding", currStage, numStages);
-                    fftConv.pad();
-
-                    for (uint32_t i = 0; i < 3; i++)
+                    try
                     {
-                        currStage++;
-                        m_state.fftStage = strFormat(
-                            "%u/%u Input FFT (%s)", currStage, numStages, strFromColorChannelID(i)
+                        // FFT
+                        ConvolutionFFT fftConv(
+                            m_params, inputBuffer, inputWidth, inputHeight,
+                            kernelBuffer, kernelWidth, kernelHeight
                         );
-                        fftConv.inputFFT(i);
-                    }
 
-                    for (uint32_t i = 0; i < 3; i++)
-                    {
+                        uint32_t numStages = 14;
+                        uint32_t currStage = 0;
+
+                        // Prepare padded buffers
                         currStage++;
-                        m_state.fftStage = strFormat(
-                            "%u/%u Kernel FFT (%s)", currStage, numStages, strFromColorChannelID(i)
-                        );
-                        fftConv.kernelFFT(i);
-                    }
+                        m_state.fftStage = strFormat("%u/%u Preparing", currStage, numStages);
+                        fftConv.pad();
 
-                    for (uint32_t i = 0; i < 3; i++)
-                    {
+                        if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+
+                        // Repeat for 3 color channels
+                        for (uint32_t i = 0; i < 3; i++)
+                        {
+                            // Input FFT
+                            currStage++;
+                            m_state.fftStage = strFormat("%u/%u %s: Input FFT", currStage, numStages, strFromColorChannelID(i).c_str());
+                            fftConv.inputFFT(i);
+
+                            if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+
+                            // Kernel FFT
+                            currStage++;
+                            m_state.fftStage = strFormat("%u/%u %s: Kernel FFT", currStage, numStages, strFromColorChannelID(i).c_str());
+                            fftConv.kernelFFT(i);
+
+                            if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+
+                            // Multiply the Fourier transforms
+                            currStage++;
+                            m_state.fftStage = strFormat("%u/%u %s: Multiplying", currStage, numStages, strFromColorChannelID(i).c_str());
+                            fftConv.multiply(i);
+
+                            if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+
+                            // Inverse FFT
+                            currStage++;
+                            m_state.fftStage = strFormat("%u/%u %s: Inverse FFT", currStage, numStages, strFromColorChannelID(i).c_str());
+                            fftConv.inverse(i);
+
+                            if (m_state.mustCancel)throw std::exception(S_CANCELED_BY_USER);
+                        }
+
+                        // Get the final output
                         currStage++;
-                        m_state.fftStage = strFormat(
-                            "%u/%u Multiplying (%s)", currStage, numStages, strFromColorChannelID(i)
-                        );
-                        fftConv.multiply(i);
-                    }
+                        m_state.fftStage = strFormat("%u/%u Finalizing", currStage, numStages);
+                        fftConv.output();
 
-                    for (uint32_t i = 0; i < 3; i++)
+                        // Pour the result into the conv. layer
+                        {
+                            std::lock_guard<CmImage> convLayerImageLock(*m_imageConvLayer);
+                            m_imageConvLayer->resize(inputWidth, inputHeight, false);
+                            float* convBuffer = m_imageConvLayer->getImageData();
+                            std::copy(
+                                fftConv.getBuffer().data(),
+                                fftConv.getBuffer().data() + fftConv.getBuffer().size(),
+                                convBuffer
+                            );
+                        }
+                    } catch (const std::exception& e)
                     {
-                        currStage++;
-                        m_state.fftStage = strFormat(
-                            "%u/%u Inverse FFT (%s)", currStage, numStages, strFromColorChannelID(i)
-                        );
-                        fftConv.inverse(i);
-                    }
-
-                    currStage++;
-                    m_state.fftStage = strFormat("%u/%u Finalizing", currStage, numStages);
-                    fftConv.output();
-
-                    // Pour the result into the conv. layer
-                    {
-                        std::lock_guard<CmImage> convLayerImageLock(*m_imageConvLayer);
-                        m_imageConvLayer->resize(fftConv.getPaddedSize(), fftConv.getPaddedSize(), false);
-                        m_imageConvLayer->fill(color_t{ 0, 0, 0, 1 }, false);
-                        float* convBuffer = m_imageConvLayer->getImageData();
-                        std::copy(fftConv.getBuffer().data(), fftConv.getBuffer().data() + fftConv.getBuffer().size(), convBuffer);
+                        setErrorState(e.what());
                     }
                 } else if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
                 {
@@ -783,7 +792,7 @@ namespace RealBloom
                             } else if (m_state.mustCancel)
                             {
                                 killProcess(cgProcessInfo);
-                                setErrorState(TEXT_CANCELED_BY_USER);
+                                setErrorState(S_CANCELED_BY_USER);
                                 break;
                             }
                             std::this_thread::sleep_for(std::chrono::milliseconds(CONV_WAIT_TIMESTEP));
@@ -799,7 +808,7 @@ namespace RealBloom
                             if (m_state.mustCancel)
                             {
                                 killProcess(cgProcessInfo);
-                                setErrorState(TEXT_CANCELED_BY_USER);
+                                setErrorState(S_CANCELED_BY_USER);
                                 break;
                             }
 
@@ -1004,6 +1013,36 @@ namespace RealBloom
                 // Update the conv. layer image
                 if (!m_state.failed && !m_state.mustCancel)
                 {
+                    {
+                        std::lock_guard<CmImage> lock(*m_imageConvLayer);
+                        float* buffer = m_imageConvLayer->getImageData();
+                        uint32_t num = m_imageConvLayer->getImageDataSize();
+
+                        float minV[3] = { buffer[0], buffer[1], buffer[2] };
+                        float maxV[3] = { buffer[0], buffer[1], buffer[2] };
+                        for (size_t i = 0; i < num; i++)
+                        {
+                            if (i % 4 != 3)
+                            {
+                                if (buffer[i] > maxV[i % 4])
+                                    maxV[i % 4] = buffer[i];
+                                if (buffer[i] < minV[i % 4])
+                                    minV[i % 4] = buffer[i];
+                            }
+                        }
+
+                        std::cout << strFormat(
+                            "device type:  %u\n"
+                            "R range:      %.3f - %.3f\n"
+                            "G range:      %.3f - %.3f\n"
+                            "B range:      %.3f - %.3f\n\n",
+                            (uint32_t)m_params.device.deviceType,
+                            minV[0], maxV[0],
+                            minV[1], maxV[1],
+                            minV[2], maxV[2]
+                        );
+                    }
+
                     m_imageConvLayer->moveToGPU();
                     Async::schedule([this]()
                         {

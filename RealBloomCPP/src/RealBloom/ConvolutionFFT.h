@@ -7,12 +7,7 @@
 #include <complex>
 #include <memory>
 
-#include <omp.h>
-#ifndef __USE_OPENMP
-#define __USE_OPENMP
-#endif
-#include "simple_fft/fft_settings.h"
-#include "simple_fft/fft.hpp"
+#include "pocketfft/pocketfft_hdronly.h"
 
 #include "Convolution.h"
 #include "../Utils/Array2D.h"
@@ -23,6 +18,8 @@ namespace RealBloom
     class ConvolutionFFT
     {
     private:
+        ConvolutionParams m_params;
+
         float* m_inputBuffer;
         uint32_t m_inputWidth;
         uint32_t m_inputHeight;
@@ -31,18 +28,20 @@ namespace RealBloom
         uint32_t m_kernelWidth;
         uint32_t m_kernelHeight;
 
-        uint32_t m_paddedSize = 0;
+        uint32_t m_paddedWidth = 0;
+        uint32_t m_paddedHeight = 0;
+        uint32_t m_inputLeftPadding = 0;
+        uint32_t m_inputTopPadding = 0;
 
-        Array2D<float> m_inputPadded0[3];
-        Array2D<float> m_kernelPadded0[3];
+        Array2D<float> m_inputPadded[3];
+        Array2D<float> m_kernelPadded[3];
 
-        Array2D<std::complex<float>> m_inputFT0[3];
-        Array2D<std::complex<float>> m_kernelFT0[3];
+        Array2D<std::complex<float>> m_inputFT[3];
+        Array2D<std::complex<float>> m_kernelFT[3];
+        Array2D<std::complex<float>> m_mulFT[3];
+        Array2D<float> m_iFFT[3];
 
-        Array2D<std::complex<float>> m_mulFT0[3];
-        Array2D<std::complex<float>> m_iFFT0[3];
-
-        std::vector<float> m_outputBufferV;
+        std::vector<float> m_outputBuffer;
 
     public:
         ConvolutionFFT(
@@ -58,7 +57,6 @@ namespace RealBloom
         void inverse(uint32_t ch);
         void output();
 
-        uint32_t getPaddedSize() const;
         const std::vector<float>& getBuffer() const;
     };
 

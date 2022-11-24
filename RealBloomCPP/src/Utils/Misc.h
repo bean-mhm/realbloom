@@ -10,6 +10,7 @@
 #include <math.h>
 #include <filesystem>
 #include <algorithm>
+#include <vector>
 
 #include "StringUtils.h"
 
@@ -30,6 +31,13 @@ std::string printErr(
 std::string printErr(
     const std::string& source,
     const std::string& message);
+
+template <typename T>
+void clearVector(std::vector<T>& v)
+{
+    v.clear();
+    std::vector<T>().swap(v);
+}
 
 inline void threadJoin(std::thread* t)
 {

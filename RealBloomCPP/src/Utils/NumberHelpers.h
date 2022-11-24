@@ -47,9 +47,15 @@ inline float getDistance(float x1, float y1, float x2, float y2)
     return sqrtf(powf(x2 - x1, 2) + powf(y2 - y1, 2));
 }
 
+
 inline float lerp(float a, float b, float t)
 {
     return a + ((b - a) * t);
+}
+
+inline uint32_t upperPowerOf2(uint32_t v)
+{
+    return (uint32_t)floor(pow(2, ceil(log(v) / log(2))));
 }
 
 inline float rgbToGrayscale(float r, float g, float b)

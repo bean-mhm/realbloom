@@ -300,7 +300,7 @@ int main(int argc, char* argv[])
             {
                 cgFinalSuccess = false;
                 cgFinalError = cgData.error;
-                cgFinalBuffer.clear();
+                clearVector(cgFinalBuffer);
             }
 
             if (!hasRenderer)

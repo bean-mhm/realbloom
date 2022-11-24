@@ -133,16 +133,17 @@ namespace RealBloom
             for (uint32_t x = 0; x < width; x++)
             {
                 // Fix the coordinates
-                if (x < (width / 2))
-                    transX = ((width / 2) - 1) - x;
-                else
-                    transX = (width - 1) - (x - (width / 2));
+                {
+                    if (x < (width / 2))
+                        transX = x + (width / 2);
+                    else
+                        transX = x - (width / 2);
 
-                if (y < (height / 2))
-                    transY = ((height / 2) - 1) - y;
-                else
-                    transY = (height - 1) - (y - (height / 2));
-                transY = height - 1 - transY;
+                    if (y < (height / 2))
+                        transY = y + (height / 2);
+                    else
+                        transY = y - (height / 2);
+                }
 
                 // Calculate the indices
                 indexOrig = y * width + x;

@@ -238,14 +238,8 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\Utils\StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\pocketfft\pocketfft_hdronly.h" />
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
-    <ClInclude Include="include\simple_fft\check_fft.hpp" />
-    <ClInclude Include="include\simple_fft\copy_array.hpp" />
-    <ClInclude Include="include\simple_fft\error_handling.hpp" />
-    <ClInclude Include="include\simple_fft\fft.h" />
-    <ClInclude Include="include\simple_fft\fft.hpp" />
-    <ClInclude Include="include\simple_fft\fft_impl.hpp" />
-    <ClInclude Include="include\simple_fft\fft_settings.h" />
     <ClInclude Include="src\CLI.h" />
     <ClInclude Include="src\ColorManagement\CMF.h" />
     <ClInclude Include="src\ColorManagement\CmXYZ.h" />

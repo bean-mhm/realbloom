@@ -27,13 +27,14 @@ namespace RealBloom
         int kernelCenterX = (int)floorf(m_params.kernelCenterX * (float)m_kernelWidth);
         int kernelCenterY = (int)floorf(m_params.kernelCenterY * (float)m_kernelHeight);
         uint32_t inputPixels = m_inputWidth * m_inputHeight;
+
         // Count the number of pixels that pass the threshold
         {
             uint32_t num = 0;
 
             float v;
             float inpColor[3];
-            int redIndexInput;
+            uint32_t redIndexInput;
             for (uint32_t i = 0; i < inputPixels; i++)
             {
                 if (i % m_numThreads == m_threadIndex)
