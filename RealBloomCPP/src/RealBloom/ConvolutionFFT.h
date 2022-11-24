@@ -32,6 +32,8 @@ namespace RealBloom
         uint32_t m_paddedHeight = 0;
         uint32_t m_inputLeftPadding = 0;
         uint32_t m_inputTopPadding = 0;
+        uint32_t m_kernelLeftPadding = 0;
+        uint32_t m_kernelTopPadding = 0;
 
         Array2D<float> m_inputPadded[3];
         Array2D<float> m_kernelPadded[3];

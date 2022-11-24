@@ -153,10 +153,6 @@ int main(int argc, char** argv)
             });
     }
 
-    std::string s;
-    CmImageIO::readImage(*getImage("cv-input"), R"(X:\Projects\0dev\RealBloomCPP\RealBloomCPP\demo\HDR Images\Colorful Sphere.tif)", "Linear BT.709 I-E", s);
-    selImageIndex = 3;
-
     // Main loop
     if (!CLI::hasCommands())
     {
@@ -644,6 +640,13 @@ void layout()
                 vars.convMixParamsChanged = true;
             if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
                 vars.convMixParamsChanged = true;
+        }
+
+        if (ImGui::Button("Conv. Only##Conv", btnSize()))
+        {
+            vars.cm_additive = false;
+            vars.cm_mix = 1.0;
+            vars.convMixParamsChanged = true;
         }
 
         if (vars.convMixParamsChanged)
@@ -1226,12 +1229,12 @@ void updateConvParams()
 
 ImVec2 btnSize()
 {
-    return { -1.0f, 27.0f * Config::UI_SCALE };
+    return { -1.0f, 28.0f * Config::UI_SCALE };
 }
 
 ImVec2 dlgBtnSize()
 {
-    return { 300.0f, 27.0f * Config::UI_SCALE };
+    return { 300.0f * Config::UI_SCALE, 28.0f * Config::UI_SCALE };
 }
 
 static void glfw_error_callback(int error, const char* description)

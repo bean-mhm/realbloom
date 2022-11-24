@@ -20,7 +20,7 @@
 
 namespace RealBloom
 {
-    constexpr float CONV_MULTIPLIER = 0.001f;
+    constexpr float CONV_MULTIPLIER = 1.0 / 1024.0;
     constexpr int CONV_MAX_CHUNKS = 2048;
     constexpr int CONV_MAX_SLEEP = 5000;
 

@@ -14,37 +14,49 @@ namespace RealBloom
 
     void ConvolutionFFT::pad()
     {
-        uint32_t totalWidth = m_inputWidth + m_kernelWidth;
-        uint32_t totalHeight = m_inputHeight + m_kernelHeight;
+        // Padded size
+
+        int kernelExtraPaddingX = (int)fabsf(floorf((float)m_kernelWidth / 2.0f) - floorf(m_params.kernelCenterX * (float)m_kernelWidth)) + 1;
+        int kernelExtraPaddingY = (int)fabsf(floorf((float)m_kernelHeight / 2.0f) - floorf(m_params.kernelCenterY * (float)m_kernelHeight)) + 1;
+
+        uint32_t totalWidth = m_inputWidth + m_kernelWidth + kernelExtraPaddingX;
+        uint32_t totalHeight = m_inputHeight + m_kernelHeight + kernelExtraPaddingY;
 
         m_paddedWidth = totalWidth + 32 - (totalWidth % 32);
         m_paddedHeight = totalHeight + 32 - (totalHeight % 32);
 
-        float threshold = m_params.convThreshold;
+        // Padding amount
+
+        m_inputLeftPadding = floorf((float)(m_paddedWidth - m_inputWidth) / 2.0f);
+        m_inputTopPadding = floorf((float)(m_paddedHeight - m_inputHeight) / 2.0f);
+
+        m_kernelLeftPadding = floorf(((float)m_paddedWidth / 2.0f) - ((float)m_kernelWidth * m_params.kernelCenterX));
+        m_kernelTopPadding = floorf(((float)m_paddedHeight / 2.0f) - ((float)m_kernelHeight * m_params.kernelCenterY));
+
+        if (m_kernelWidth % 2 == 1) m_kernelLeftPadding += 1;
+        if (m_kernelHeight % 2 == 1) m_kernelTopPadding += 1;
 
         std::cout << strFormat(
             "FFT Convolution\n"
-            "Input:   %u x %u\n"
-            "Kernel:  %u x %u\n"
-            "Total:   %u x %u\n"
-            "Final:   %u x %u\n\n",
+            "Input:          %u x %u\n"
+            "Kernel:         %u x %u\n"
+            "Total:          %u x %u\n"
+            "Final:          %u x %u\n\n",
             m_inputWidth, m_inputHeight,
             m_kernelWidth, m_kernelHeight,
             totalWidth, totalHeight,
             m_paddedWidth, m_paddedHeight
         );
 
-        // Input padding
+        // Input padding + threshold
         {
-            m_inputLeftPadding = (m_paddedWidth - m_inputWidth) / 2;
-            m_inputTopPadding = (m_paddedHeight - m_inputHeight) / 2;
-
             for (uint32_t i = 0; i < 3; i++)
             {
                 m_inputPadded[i].resize(m_paddedHeight, m_paddedWidth);
                 for (auto& v : m_inputPadded[i].getVector()) v = 0;
             }
 
+            float threshold = m_params.convThreshold;
             float v, mul;
             float inpColor[3];
             int transX, transY;
@@ -77,15 +89,6 @@ namespace RealBloom
 
         // Kernel padding
         {
-            uint32_t leftPadding = (m_paddedWidth - m_kernelWidth) / 2;
-            uint32_t topPadding = (m_paddedHeight - m_kernelHeight) / 2;
-
-            int kernelCenterX = (int)floorf(m_params.kernelCenterX * (float)m_kernelWidth);
-            int kernelCenterY = (int)floorf(m_params.kernelCenterY * (float)m_kernelHeight);
-
-            //leftPadding += 10;
-            //topPadding += 10;
-
             for (uint32_t i = 0; i < 3; i++)
             {
                 m_kernelPadded[i].resize(m_paddedHeight, m_paddedWidth);
@@ -99,8 +102,8 @@ namespace RealBloom
                 for (int x = 0; x < m_kernelWidth; x++)
                 {
                     redIndex = (y * m_kernelWidth + x) * 4;
-                    transX = x + leftPadding;
-                    transY = y + topPadding;
+                    transX = x + m_kernelLeftPadding;
+                    transY = y + m_kernelTopPadding;
                     m_kernelPadded[0](transY, transX) = m_kernelBuffer[redIndex + 0];
                     m_kernelPadded[1](transY, transX) = m_kernelBuffer[redIndex + 1];
                     m_kernelPadded[2](transY, transX) = m_kernelBuffer[redIndex + 2];

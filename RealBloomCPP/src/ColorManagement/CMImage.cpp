@@ -7,7 +7,7 @@ std::shared_ptr<GlFrameBuffer> CmImage::s_frameBuffer = nullptr;
 CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor)
     : m_id(id), m_name(name), m_width(width), m_height(height)
 {
-    resize(width, height, true);
+    resize(std::max(width, 1u), std::max(height, 1u), true);
     fill(fillColor, true);
 }
 
@@ -46,7 +46,7 @@ void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
         return;
     }
 
-    if (newWidth < 2 || newHeight < 2)
+    if (newWidth < 1 || newHeight < 1)
     {
         if (shouldLock) unlock();
         return;

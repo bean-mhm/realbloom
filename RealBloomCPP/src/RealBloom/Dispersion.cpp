@@ -122,9 +122,8 @@ namespace RealBloom
                     std::vector<float> scaledBuffer;
                     scaledBuffer.resize(scaledBufferSize);
 
-                    float centerX, centerY;
-                    centerX = (float)dpWidth / 2.0f;
-                    centerY = (float)dpHeight / 2.0f;
+                    float centerX = (float)dpWidth / 2.0f;
+                    float centerY = (float)dpHeight / 2.0f;
 
                     // Create and clear the dispersion buffer
                     std::vector<float> dispBuffer;
