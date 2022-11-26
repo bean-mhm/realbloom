@@ -13,7 +13,7 @@
 
 namespace RealBloom
 {
-    constexpr int DISP_MAX_STEPS = 1024;
+    constexpr int DISP_MAX_STEPS = 2048;
 
     struct DispersionParams
     {

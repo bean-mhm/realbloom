@@ -72,7 +72,13 @@ namespace RealBloom
     {
         cancel();
 
-        m_state.numSteps = m_params.steps;
+        uint32_t dispSteps = m_params.steps;
+        if (dispSteps > DISP_MAX_STEPS) dispSteps = DISP_MAX_STEPS;
+        if (dispSteps < 1) dispSteps = 1;
+
+        m_params.steps = dispSteps;
+
+        m_state.numSteps = dispSteps;
         m_state.numStepsDone = 0;
         m_state.working = true;
         m_state.mustCancel = false;
@@ -80,7 +86,7 @@ namespace RealBloom
         m_state.error = "";
 
         // Start the thread
-        m_thread = new std::thread([this]()
+        m_thread = new std::thread([this, dispSteps]()
             {
                 try
                 {
@@ -105,10 +111,6 @@ namespace RealBloom
                         dpBuffer.resize(dpBufferSize);
                         std::copy(dpImageData, dpImageData + dpBufferSize, dpBuffer.data());
                     }
-
-                    uint32_t dispSteps = m_params.steps;
-                    if (dispSteps > DISP_MAX_STEPS) dispSteps = DISP_MAX_STEPS;
-                    if (dispSteps < 1) dispSteps = 1;
 
                     float dispAmount = fminf(fmaxf(m_params.amount, 0.0f), 1.0f);
                     float dispColor[3];
@@ -192,7 +194,8 @@ namespace RealBloom
                                     scaledBuffer[redIndexScaled + 2] = dpBuffer[redIndexDP + 2];
                                 }
                             }
-                        } else
+                        }
+                        else
                         {
                             float scaledWidth = (float)dpWidth * scale;
                             float scaledHeight = (float)dpHeight * scale;

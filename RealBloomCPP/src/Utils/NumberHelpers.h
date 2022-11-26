@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <numbers>
+#include <complex>
 
 constexpr float DEG_TO_RAD = (float)std::numbers::pi / 180.0f;
 constexpr float EPSILON = 0.000001f;
@@ -32,6 +33,12 @@ inline double getMagnitude(double a, double b)
     return sqrt(a * a + b * b);
 }
 
+template <typename T>
+inline T getMagnitude(std::complex<T> v)
+{
+    return getMagnitude(v.real(), v.imag());
+}
+
 inline float getPhase(float x, float y)
 {
     return atan2f(y, x);
@@ -56,6 +63,11 @@ inline float lerp(float a, float b, float t)
 inline uint32_t upperPowerOf2(uint32_t v)
 {
     return (uint32_t)floor(pow(2, ceil(log(v) / log(2))));
+}
+
+inline int shiftIndex(int i, int shift, int size)
+{
+    return (i + shift) % size;
 }
 
 inline float rgbToGrayscale(float r, float g, float b)

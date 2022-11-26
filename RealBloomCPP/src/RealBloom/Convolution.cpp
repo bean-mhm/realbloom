@@ -114,215 +114,225 @@ namespace RealBloom
 
     void Convolution::kernel(bool previewMode, float** outBuffer, uint32_t* outWidth, uint32_t* outHeight)
     {
+        std::vector<float> kernelBuffer;
+        uint32_t kernelBufferSize = 0;
+        uint32_t kernelWidth = 0, kernelHeight = 0;
         {
-            std::vector<float> kernelBuffer;
-            uint32_t kernelBufferSize = 0;
-            uint32_t kernelWidth = 0, kernelHeight = 0;
-            {
-                std::lock_guard<CmImage> lock1(*m_imageKernel);
-                float* srcKernelBuffer = m_imageKernel->getImageData();
-                kernelBufferSize = m_imageKernel->getImageDataSize();
-                kernelWidth = m_imageKernel->getWidth();
-                kernelHeight = m_imageKernel->getHeight();
+            std::lock_guard<CmImage> lock1(*m_imageKernel);
+            float* srcKernelBuffer = m_imageKernel->getImageData();
+            kernelBufferSize = m_imageKernel->getImageDataSize();
+            kernelWidth = m_imageKernel->getWidth();
+            kernelHeight = m_imageKernel->getHeight();
 
-                kernelBuffer.resize(kernelBufferSize);
-                std::copy(srcKernelBuffer, srcKernelBuffer + kernelBufferSize, kernelBuffer.data());
+            kernelBuffer.resize(kernelBufferSize);
+            std::copy(srcKernelBuffer, srcKernelBuffer + kernelBufferSize, kernelBuffer.data());
+        }
+
+        float centerX, centerY;
+        centerX = (float)kernelWidth / 2.0f;
+        centerY = (float)kernelHeight / 2.0f;
+
+        float scaleW = fmaxf(m_params.kernelScaleX, 0.01f);
+        float scaleH = fmaxf(m_params.kernelScaleY, 0.01f);
+        float cropW = fminf(fmaxf(m_params.kernelCropX, 0.1f), 1.0f);
+        float cropH = fminf(fmaxf(m_params.kernelCropY, 0.1f), 1.0f);
+        float rotation = m_params.kernelRotation;
+
+        float kernelContrast = m_params.kernelContrast;
+        float kernelMultiplier = applyExposure(m_params.kernelExposure);
+
+        uint32_t scaledWidth, scaledHeight;
+        scaledWidth = (uint32_t)floorf(scaleW * (float)kernelWidth);
+        scaledHeight = (uint32_t)floorf(scaleH * (float)kernelHeight);
+
+        uint32_t croppedWidth, croppedHeight;
+        croppedWidth = (uint32_t)floorf(cropW * (float)scaledWidth);
+        croppedHeight = (uint32_t)floorf(cropH * (float)scaledHeight);
+
+        float scaledCenterX, scaledCenterY;
+        scaledCenterX = (scaleW * (float)kernelWidth) / 2.0f;
+        scaledCenterY = (scaleH * (float)kernelHeight) / 2.0f;
+
+        // Normalize, apply contrast and multiplier
+        {
+            // Get the brightest value
+            float v = 0;
+            float maxV = EPSILON;
+            for (uint32_t i = 0; i < kernelBufferSize; i++)
+            {
+                v = fmaxf(0.0f, kernelBuffer[i]);
+                if ((v > maxV) && (i % 4 != 3)) // if not alpha channel
+                    maxV = v;
             }
 
-            float centerX, centerY;
-            centerX = (float)kernelWidth / 2.0f;
-            centerY = (float)kernelHeight / 2.0f;
-
-            float scaleW = fmaxf(m_params.kernelScaleW, 0.01f);
-            float scaleH = fmaxf(m_params.kernelScaleH, 0.01f);
-            float cropW = fminf(fmaxf(m_params.kernelCropW, 0.1f), 1.0f);
-            float cropH = fminf(fmaxf(m_params.kernelCropH, 0.1f), 1.0f);
-            float rotation = m_params.kernelRotation;
-
-            float kernelContrast = m_params.kernelContrast;
-            float kernelMultiplier = applyExposure(m_params.kernelExposure);
-
-            uint32_t scaledWidth, scaledHeight;
-            scaledWidth = (uint32_t)floorf(scaleW * (float)kernelWidth);
-            scaledHeight = (uint32_t)floorf(scaleH * (float)kernelHeight);
-
-            uint32_t croppedWidth, croppedHeight;
-            croppedWidth = (uint32_t)floorf(cropW * (float)scaledWidth);
-            croppedHeight = (uint32_t)floorf(cropH * (float)scaledHeight);
-
-            float scaledCenterX, scaledCenterY;
-            scaledCenterX = (scaleW * (float)kernelWidth) / 2.0f;
-            scaledCenterY = (scaleH * (float)kernelHeight) / 2.0f;
-
-            // Normalize, apply contrast and multiplier
+            float grayscale, contrastMul;
+            uint32_t redIndex;
+            for (uint32_t y = 0; y < kernelHeight; y++)
             {
-                float v = 0;
-                float maxV = EPSILON;
-                for (uint32_t i = 0; i < kernelBufferSize; i++)
+                for (uint32_t x = 0; x < kernelWidth; x++)
                 {
-                    v = fmaxf(0.0f, kernelBuffer[i]);
-                    if ((v > maxV) && (i % 4 != 3)) // if not alpha channel
-                        maxV = v;
-                }
+                    redIndex = (y * kernelWidth + x) * 4;
 
-                float grayscale, rgbMultiplier;
-                uint32_t redIndex;
-                for (uint32_t y = 0; y < kernelHeight; y++)
-                {
-                    for (uint32_t x = 0; x < kernelWidth; x++)
+                    // Normalize
+                    kernelBuffer[redIndex + 0] /= maxV;
+                    kernelBuffer[redIndex + 1] /= maxV;
+                    kernelBuffer[redIndex + 2] /= maxV;
+
+                    // Calculate contrast for the grayscale value
+                    grayscale = rgbToGrayscale(kernelBuffer[redIndex + 0], kernelBuffer[redIndex + 1], kernelBuffer[redIndex + 2]);
+                    contrastMul = (contrastCurve(grayscale, kernelContrast) / fmaxf(grayscale, EPSILON)) * kernelMultiplier;
+
+                    // Apply contrast
+                    kernelBuffer[redIndex + 0] *= contrastMul;
+                    kernelBuffer[redIndex + 1] *= contrastMul;
+                    kernelBuffer[redIndex + 2] *= contrastMul;
+
+                    // De-normalize if needed
+                    if (!m_params.kernelNormalize)
                     {
-                        redIndex = (y * kernelWidth + x) * 4;
-
-                        kernelBuffer[redIndex + 0] /= maxV;
-                        kernelBuffer[redIndex + 1] /= maxV;
-                        kernelBuffer[redIndex + 2] /= maxV;
-
-                        grayscale = rgbToGrayscale(kernelBuffer[redIndex + 0], kernelBuffer[redIndex + 1], kernelBuffer[redIndex + 2]);
-                        rgbMultiplier = (contrastCurve(grayscale, kernelContrast) / fmaxf(grayscale, EPSILON)) * kernelMultiplier;
-
-                        kernelBuffer[redIndex + 0] *= rgbMultiplier;
-                        kernelBuffer[redIndex + 1] *= rgbMultiplier;
-                        kernelBuffer[redIndex + 2] *= rgbMultiplier;
+                        kernelBuffer[redIndex + 0] *= maxV;
+                        kernelBuffer[redIndex + 1] *= maxV;
+                        kernelBuffer[redIndex + 2] *= maxV;
                     }
                 }
             }
+        }
 
-            // Scale and Rotation
-            std::vector<float> scaledBuffer;
-            uint32_t scaledBufferSize = 0;
-            if ((scaleW == 1) && (scaleH == 1) && (rotation == 0))
-            {
-                scaledBufferSize = kernelBufferSize;
-                scaledBuffer.resize(scaledBufferSize);
-                std::copy(kernelBuffer.data(), kernelBuffer.data() + kernelBufferSize, scaledBuffer.data());
-            }
-            else
-            {
-                scaledBufferSize = scaledWidth * scaledHeight * 4;
-                scaledBuffer.resize(scaledBufferSize);
+        // Scale and Rotation
+        std::vector<float> scaledBuffer;
+        uint32_t scaledBufferSize = 0;
+        if ((scaleW == 1) && (scaleH == 1) && (rotation == 0))
+        {
+            scaledBufferSize = kernelBufferSize;
+            scaledBuffer.resize(scaledBufferSize);
+            std::copy(kernelBuffer.data(), kernelBuffer.data() + kernelBufferSize, scaledBuffer.data());
+        }
+        else
+        {
+            scaledBufferSize = scaledWidth * scaledHeight * 4;
+            scaledBuffer.resize(scaledBufferSize);
 
-                uint32_t redIndexKernel, redIndexScaled;
-                float transX, transY;
-                float transX_rot = 0, transY_rot = 0;
-                float targetColor[3];
-                Bilinear::Result bil;
-                for (uint32_t y = 0; y < scaledHeight; y++)
+            uint32_t redIndexKernel, redIndexScaled;
+            float transX, transY;
+            float transX_rot = 0, transY_rot = 0;
+            float targetColor[3];
+            Bilinear::Result bil;
+            for (uint32_t y = 0; y < scaledHeight; y++)
+            {
+                for (uint32_t x = 0; x < scaledWidth; x++)
                 {
-                    for (uint32_t x = 0; x < scaledWidth; x++)
+                    transX = ((float)x + 0.5f) / scaleW;
+                    transY = ((float)y + 0.5f) / scaleH;
+                    rotatePoint(transX, transY, centerX, centerY, -rotation, transX_rot, transY_rot);
+                    Bilinear::calculate(transX_rot, transY_rot, bil);
+
+                    // CURRENT COLOR = (KERNEL[TOPLEFT] * TOPLEFTMIX) + (KERNEL[TOPRIGHT] * TOPRIGHTMIX) + ...
+
+                    targetColor[0] = 0;
+                    targetColor[1] = 0;
+                    targetColor[2] = 0;
+
+                    if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], kernelWidth, kernelHeight))
                     {
-                        transX = ((float)x + 0.5f) / scaleW;
-                        transY = ((float)y + 0.5f) / scaleH;
-                        rotatePoint(transX, transY, centerX, centerY, -rotation, transX_rot, transY_rot);
-                        Bilinear::calculate(transX_rot, transY_rot, bil);
-
-                        // CURRENT COLOR = (KERNEL[TOPLEFT] * TOPLEFTMIX) + (KERNEL[TOPRIGHT] * TOPRIGHTMIX) + ...
-
-                        targetColor[0] = 0;
-                        targetColor[1] = 0;
-                        targetColor[2] = 0;
-
-                        if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], kernelWidth, kernelHeight))
-                        {
-                            redIndexKernel = (bil.topLeftPos[1] * kernelWidth + bil.topLeftPos[0]) * 4;
-                            blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.topLeftWeight);
-                        }
-                        if (checkBounds(bil.topRightPos[0], bil.topRightPos[1], kernelWidth, kernelHeight))
-                        {
-                            redIndexKernel = (bil.topRightPos[1] * kernelWidth + bil.topRightPos[0]) * 4;
-                            blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.topRightWeight);
-                        }
-                        if (checkBounds(bil.bottomLeftPos[0], bil.bottomLeftPos[1], kernelWidth, kernelHeight))
-                        {
-                            redIndexKernel = (bil.bottomLeftPos[1] * kernelWidth + bil.bottomLeftPos[0]) * 4;
-                            blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.bottomLeftWeight);
-                        }
-                        if (checkBounds(bil.bottomRightPos[0], bil.bottomRightPos[1], kernelWidth, kernelHeight))
-                        {
-                            redIndexKernel = (bil.bottomRightPos[1] * kernelWidth + bil.bottomRightPos[0]) * 4;
-                            blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.bottomRightWeight);
-                        }
-
-                        redIndexScaled = (y * scaledWidth + x) * 4;
-                        scaledBuffer[redIndexScaled + 0] = targetColor[0];
-                        scaledBuffer[redIndexScaled + 1] = targetColor[1];
-                        scaledBuffer[redIndexScaled + 2] = targetColor[2];
-                        scaledBuffer[redIndexScaled + 3] = 1.0f;
+                        redIndexKernel = (bil.topLeftPos[1] * kernelWidth + bil.topLeftPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.topLeftWeight);
                     }
+                    if (checkBounds(bil.topRightPos[0], bil.topRightPos[1], kernelWidth, kernelHeight))
+                    {
+                        redIndexKernel = (bil.topRightPos[1] * kernelWidth + bil.topRightPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.topRightWeight);
+                    }
+                    if (checkBounds(bil.bottomLeftPos[0], bil.bottomLeftPos[1], kernelWidth, kernelHeight))
+                    {
+                        redIndexKernel = (bil.bottomLeftPos[1] * kernelWidth + bil.bottomLeftPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.bottomLeftWeight);
+                    }
+                    if (checkBounds(bil.bottomRightPos[0], bil.bottomRightPos[1], kernelWidth, kernelHeight))
+                    {
+                        redIndexKernel = (bil.bottomRightPos[1] * kernelWidth + bil.bottomRightPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.bottomRightWeight);
+                    }
+
+                    redIndexScaled = (y * scaledWidth + x) * 4;
+                    scaledBuffer[redIndexScaled + 0] = targetColor[0];
+                    scaledBuffer[redIndexScaled + 1] = targetColor[1];
+                    scaledBuffer[redIndexScaled + 2] = targetColor[2];
+                    scaledBuffer[redIndexScaled + 3] = 1.0f;
                 }
             }
+        }
 
-            // No longer need the original buffer
-            clearVector(kernelBuffer);
+        // No longer need the original buffer
+        clearVector(kernelBuffer);
 
-            // Crop
-            std::vector<float> croppedBuffer;
-            uint32_t croppedBufferSize = 0;
-            if ((cropW == 1) && (cropH == 1))
+        // Crop
+        std::vector<float> croppedBuffer;
+        uint32_t croppedBufferSize = 0;
+        if ((cropW == 1) && (cropH == 1))
+        {
+            croppedBufferSize = scaledBufferSize;
+            croppedBuffer.resize(croppedBufferSize);
+            std::copy(scaledBuffer.data(), scaledBuffer.data() + scaledBufferSize, croppedBuffer.data());
+        }
+        else
+        {
+            croppedBufferSize = croppedWidth * croppedHeight * 4;
+            croppedBuffer.resize(croppedBufferSize);
+
+            float cropMaxOffsetX = scaledWidth - croppedWidth;
+            float cropMaxOffsetY = scaledHeight - croppedHeight;
+
+            uint32_t cropStartX = (uint32_t)floorf(m_params.kernelCenterX * cropMaxOffsetX);
+            uint32_t cropStartY = (uint32_t)floorf(m_params.kernelCenterY * cropMaxOffsetY);
+
+            uint32_t redIndexCropped, redIndexScaled;
+            for (uint32_t y = 0; y < croppedHeight; y++)
             {
-                croppedBufferSize = scaledBufferSize;
-                croppedBuffer.resize(croppedBufferSize);
-                std::copy(scaledBuffer.data(), scaledBuffer.data() + scaledBufferSize, croppedBuffer.data());
-            }
-            else
-            {
-                croppedBufferSize = croppedWidth * croppedHeight * 4;
-                croppedBuffer.resize(croppedBufferSize);
-
-                float cropMaxOffsetX = scaledWidth - croppedWidth;
-                float cropMaxOffsetY = scaledHeight - croppedHeight;
-
-                uint32_t cropStartX = (uint32_t)floorf(m_params.kernelCenterX * cropMaxOffsetX);
-                uint32_t cropStartY = (uint32_t)floorf(m_params.kernelCenterY * cropMaxOffsetY);
-
-                uint32_t redIndexCropped, redIndexScaled;
-                for (uint32_t y = 0; y < croppedHeight; y++)
+                for (uint32_t x = 0; x < croppedWidth; x++)
                 {
-                    for (uint32_t x = 0; x < croppedWidth; x++)
-                    {
-                        redIndexCropped = (y * croppedWidth + x) * 4;
-                        redIndexScaled = 4 * (((y + cropStartY) * scaledWidth) + x + cropStartX);
+                    redIndexCropped = (y * croppedWidth + x) * 4;
+                    redIndexScaled = 4 * (((y + cropStartY) * scaledWidth) + x + cropStartX);
 
-                        croppedBuffer[redIndexCropped + 0] = scaledBuffer[redIndexScaled + 0];
-                        croppedBuffer[redIndexCropped + 1] = scaledBuffer[redIndexScaled + 1];
-                        croppedBuffer[redIndexCropped + 2] = scaledBuffer[redIndexScaled + 2];
-                        croppedBuffer[redIndexCropped + 3] = scaledBuffer[redIndexScaled + 3];
-                    }
+                    croppedBuffer[redIndexCropped + 0] = scaledBuffer[redIndexScaled + 0];
+                    croppedBuffer[redIndexCropped + 1] = scaledBuffer[redIndexScaled + 1];
+                    croppedBuffer[redIndexCropped + 2] = scaledBuffer[redIndexScaled + 2];
+                    croppedBuffer[redIndexCropped + 3] = scaledBuffer[redIndexScaled + 3];
                 }
             }
-            scaledBuffer.clear();
+        }
+        clearVector(scaledBuffer);
 
-            // Copy to outBuffer if it's requested by another function
-            if (!previewMode && (outBuffer != nullptr))
-            {
-                *outWidth = croppedWidth;
-                *outHeight = croppedHeight;
-                *outBuffer = new float[croppedBufferSize];
-                std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, *outBuffer);
-            }
+        // Copy to outBuffer if it's requested by another function
+        if (!previewMode && (outBuffer != nullptr))
+        {
+            *outWidth = croppedWidth;
+            *outHeight = croppedHeight;
+            *outBuffer = new float[croppedBufferSize];
+            std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, *outBuffer);
+        }
 
-            // Copy to kernel preview image
-            {
-                std::lock_guard<CmImage> lock2(*m_imageKernelPreview);
-                m_imageKernelPreview->resize(croppedWidth, croppedHeight, false);
-                float* prevBuffer = m_imageKernelPreview->getImageData();
-                std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, prevBuffer);
-            }
+        // Copy to kernel preview image
+        {
+            std::lock_guard<CmImage> lock2(*m_imageKernelPreview);
+            m_imageKernelPreview->resize(croppedWidth, croppedHeight, false);
+            float* prevBuffer = m_imageKernelPreview->getImageData();
+            std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, prevBuffer);
+        }
 
-            // Preview center point
-            if (m_params.kernelPreviewCenter)
-            {
-                int newCenterX = (int)floorf(m_params.kernelCenterX * (float)croppedWidth - 0.5f);
-                int newCenterY = (int)floorf(m_params.kernelCenterY * (float)croppedHeight - 0.5f);
-                int prevSquareSize = (int)roundf(0.15f * fminf((float)croppedWidth, (float)croppedHeight));
+        // Preview center point
+        if (m_params.kernelPreviewCenter)
+        {
+            int newCenterX = (int)floorf(m_params.kernelCenterX * (float)croppedWidth - 0.5f);
+            int newCenterY = (int)floorf(m_params.kernelCenterY * (float)croppedHeight - 0.5f);
+            int prevSquareSize = (int)roundf(0.15f * fminf((float)croppedWidth, (float)croppedHeight));
 
-                drawRect(
-                    m_imageKernelPreview,
-                    newCenterX - (prevSquareSize / 2),
-                    newCenterY - (prevSquareSize / 2),
-                    prevSquareSize, prevSquareSize);
+            drawRect(
+                m_imageKernelPreview,
+                newCenterX - (prevSquareSize / 2),
+                newCenterY - (prevSquareSize / 2),
+                prevSquareSize, prevSquareSize);
 
-                fillRect(m_imageKernelPreview, newCenterX - 2, newCenterY - 2, 4, 4);
-            }
+            fillRect(m_imageKernelPreview, newCenterX - 2, newCenterY - 2, 4, 4);
         }
 
         m_imageKernelPreview->moveToGPU();

@@ -19,10 +19,12 @@ public:
     size_t getNumRows() const;
     size_t getNumCols() const;
 
-    void reset();
     void resize(size_t numRows, size_t numCols);
+    void reset();
+    void fill(const T& value);
 
     T& operator()(const size_t& row, const size_t& col);
+    const T& operator()(const size_t& row, const size_t& col) const;
 };
 
 template <typename T>
@@ -44,12 +46,6 @@ size_t Array2D<T>::getNumCols() const
 }
 
 template <typename T>
-void Array2D<T>::reset()
-{
-    clearVector(m_vector);
-}
-
-template <typename T>
 void Array2D<T>::resize(size_t numRows, size_t numCols)
 {
     m_rows = numRows;
@@ -58,7 +54,26 @@ void Array2D<T>::resize(size_t numRows, size_t numCols)
 }
 
 template <typename T>
+void Array2D<T>::reset()
+{
+    clearVector(m_vector);
+}
+
+template <typename T>
+void Array2D<T>::fill(const T& value)
+{
+    for (auto& v : m_vector)
+        v = value;
+}
+
+template <typename T>
 T& Array2D<T>::operator()(const size_t& row, const size_t& col)
+{
+    return m_vector[row * m_cols + col];
+}
+
+template <typename T>
+const T& Array2D<T>::operator()(const size_t& row, const size_t& col) const
 {
     return m_vector[row * m_cols + col];
 }

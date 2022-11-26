@@ -226,6 +226,7 @@ int main(int argc, char** argv)
     Config::save();
     if (!CLI::hasCommands())
         convResUsageThread->join();
+    dispersion.cancel();
     conv.cancelConv();
     cleanUp();
     return 0;
@@ -347,8 +348,8 @@ void layout()
                 float* image1Buffer = imgAperture.getImageData();
 
                 RealBloom::DiffractionPatternParams* dpParams = diffPattern.getParams();
-                dpParams->width = imgAperture.getWidth();
-                dpParams->height = imgAperture.getHeight();
+                dpParams->inputWidth = imgAperture.getWidth();
+                dpParams->inputHeight = imgAperture.getHeight();
                 dpParams->grayscale = vars.dp_grayscale;
 
                 diffPattern.compute(image1Buffer);
@@ -429,6 +430,9 @@ void layout()
 
         IMGUI_DIV;
         IMGUI_BOLD("KERNEL");
+
+        if (ImGui::Checkbox("Normalize##Kernel", &(vars.cv_kernelNormalize)))
+            vars.convParamsChanged = true;
 
         if (ImGui::SliderFloat("Exposure##Kernel", &(vars.cv_kernelExposure), -10, 10))
             vars.convParamsChanged = true;
@@ -1180,7 +1184,7 @@ void renderDiffPattern()
 {
     CmImage& imgDiffPattern = *getImage("diff");
 
-    if (diffPattern.hasRawData())
+    if (diffPattern.hasFftData())
     {
         RealBloom::DiffractionPatternParams* dpParams = diffPattern.getParams();
         dpParams->contrast = vars.dp_contrast;
@@ -1189,8 +1193,8 @@ void renderDiffPattern()
         std::vector<float> buffer;
         diffPattern.getRgbaOutput(buffer);
 
-        uint32_t width = dpParams->width;
-        uint32_t height = dpParams->height;
+        uint32_t width = diffPattern.getOutputWidth();
+        uint32_t height = diffPattern.getOutputHeight();
         {
             std::lock_guard<CmImage> lock(imgDiffPattern);
             imgDiffPattern.resize(width, height, false);
@@ -1213,16 +1217,17 @@ void updateConvParams()
     convParams->methodInfo.numThreads = vars.cv_numThreads;
     convParams->methodInfo.numChunks = vars.cv_numChunks;
     convParams->methodInfo.chunkSleep = vars.cv_chunkSleep;
+    convParams->kernelNormalize = vars.cv_kernelNormalize;
+    convParams->kernelExposure = vars.cv_kernelExposure;
+    convParams->kernelContrast = vars.cv_kernelContrast;
     convParams->kernelRotation = vars.cv_kernelRotation;
-    convParams->kernelScaleW = vars.cv_kernelScale[0];
-    convParams->kernelScaleH = vars.cv_kernelScale[1];
-    convParams->kernelCropW = vars.cv_kernelCrop[0];
-    convParams->kernelCropH = vars.cv_kernelCrop[1];
+    convParams->kernelScaleX = vars.cv_kernelScale[0];
+    convParams->kernelScaleY = vars.cv_kernelScale[1];
+    convParams->kernelCropX = vars.cv_kernelCrop[0];
+    convParams->kernelCropY = vars.cv_kernelCrop[1];
+    convParams->kernelPreviewCenter = vars.cv_kernelPreviewCenter;
     convParams->kernelCenterX = vars.cv_kernelCenter[0];
     convParams->kernelCenterY = vars.cv_kernelCenter[1];
-    convParams->kernelPreviewCenter = vars.cv_kernelPreviewCenter;
-    convParams->kernelContrast = vars.cv_kernelContrast;
-    convParams->kernelExposure = vars.cv_kernelExposure;
     convParams->convThreshold = vars.cv_convThreshold;
     convParams->convKnee = vars.cv_convKnee;
 }

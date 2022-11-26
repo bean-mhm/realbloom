@@ -39,11 +39,34 @@ float contrastCurve(float v, float contrast)
     if (contrast == 0.0f)
         return v;
 
+    v = fminf(fmaxf(v, 0.0f), 1.0f);
+
+    contrast *= 4.0f;
+    float c =
+        (contrast >= 0.0f) ?
+        (contrast + 1.0f) :
+        (1.0f / (1.0f - contrast));
+
+    if (v > 0.5f)
+        return powf((1.0f - v), c) * (powf(2.0f, c) / (-2.0f)) + 1.0f;
+    else
+        return powf(v, c) * (powf(2.0f, c) / 2.0f);
+
+#if 0
+    // Old implementation
+
+    if (v == 0.0f)
+        return 0.0f;
+
+    if (contrast == 0.0f)
+        return v;
+
     contrast *= 3.0f;
     v = fmaxf(v, 0.0f);
 
     float c = (4.0f / 5.0f) * fabsf(contrast) + 1.0f;
     return (contrast >= 0.0f) ? powf(v, c) : powf(v, 1.0f / c);
+#endif
 }
 
 double contrastCurve(double v, double contrast)
@@ -54,11 +77,18 @@ double contrastCurve(double v, double contrast)
     if (contrast == 0.0)
         return v;
 
-    contrast *= 3.0;
-    v = fmax(v, 0.0);
+    v = fmin(fmax(v, 0.0), 1.0);
 
-    double c = (4.0 / 5.0) * fabs(contrast) + 1.0;
-    return (contrast >= 0.0) ? pow(v, c) : pow(v, 1.0 / c);
+    contrast *= 4.0;
+    double c =
+        (contrast >= 0.0) ?
+        (contrast + 1.0) :
+        (1.0 / (1.0 - contrast));
+
+    if (v > 0.5)
+        return pow((1.0 - v), c) * (pow(2.0, c) / (-2.0)) + 1.0;
+    else
+        return pow(v, c) * (pow(2.0, c) / 2.0);
 }
 
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY)

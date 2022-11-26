@@ -122,9 +122,6 @@
     <ClInclude Include="src\RealBloom\DiffractionPattern.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\fftw\fftw3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\GLFW\glfw3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -469,9 +466,6 @@
     <None Include="libs\glfw3\glfw3.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libs\fftw\libfftw3-3.lib" />
-    <Library Include="libs\fftw\libfftw3f-3.lib" />
-    <Library Include="libs\fftw\libfftw3l-3.lib" />
     <Library Include="libs\glfw3\glfw3.lib" />
     <Library Include="libs\glfw3\glfw3_mt.lib" />
     <Library Include="libs\glfw3\glfw3dll.lib" />
@@ -482,9 +476,6 @@
     <Library Include="libs\oiio\OpenImageIO.lib" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="libs\fftw\libfftw3-3.dll" />
-    <CopyFileToFolders Include="libs\fftw\libfftw3f-3.dll" />
-    <CopyFileToFolders Include="libs\fftw\libfftw3l-3.dll" />
     <CopyFileToFolders Include="imgui.ini" />
     <CopyFileToFolders Include="config.ini" />
   </ItemGroup>
