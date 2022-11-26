@@ -153,6 +153,13 @@ namespace RealBloom
         scaledCenterX = (scaleW * (float)kernelWidth) / 2.0f;
         scaledCenterY = (scaleH * (float)kernelHeight) / 2.0f;
 
+        if (!previewMode && (outBuffer == nullptr))
+        {
+            *outWidth = croppedWidth;
+            *outHeight = croppedHeight;
+            return;
+        }
+
         // Normalize, apply contrast and multiplier
         {
             // Get the brightest value
@@ -1184,13 +1191,11 @@ namespace RealBloom
 
     std::string Convolution::getResourceInfo()
     {
-        // Kernel Buffer
-        float* kernelBuffer = nullptr;
+        // Kernel Size
         uint32_t kernelWidth = 0, kernelHeight = 0;
-        kernel(false, &kernelBuffer, &kernelWidth, &kernelHeight);
-        delete[] kernelBuffer;
+        kernel(false, nullptr, &kernelWidth, &kernelHeight);
 
-        // Input Buffer
+        // Input Size
         uint32_t inputWidth = m_imageInput->getWidth();
         uint32_t inputHeight = m_imageInput->getHeight();
 
@@ -1200,15 +1205,33 @@ namespace RealBloom
         uint64_t ramUsage = 0;
         uint64_t vramUsage = 0;
 
-        previewThreshold(&numPixels);
+        // Number of pixels that pass the threshold
+        if ((m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU) || (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU))
+            previewThreshold(&numPixels);
+
+        // Number of pixels per thread/chunk
         if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
             numPixelsPerBlock = numPixels / m_params.methodInfo.numThreads;
         else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
             numPixelsPerBlock = numPixels / m_params.methodInfo.numChunks;
 
+        // Input and kernel size in bytes
         uint64_t inputSizeBytes = (uint64_t)inputWidth * (uint64_t)inputHeight * 4 * sizeof(float);
         uint64_t kernelSizeBytes = (uint64_t)kernelWidth * (uint64_t)kernelHeight * 4 * sizeof(float);
-        if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
+
+        // Calculate memory usage for different methods
+        if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
+        {
+            uint32_t paddedWidth, paddedHeight;
+            ConvolutionFFT::calcPadding(
+                inputWidth, inputHeight,
+                kernelWidth, kernelHeight,
+                m_params.kernelCenterX, m_params.kernelCenterY,
+                paddedWidth, paddedHeight);
+
+            ramUsage = inputSizeBytes + kernelSizeBytes + ((uint64_t)paddedWidth * (uint64_t)paddedHeight * 10 * sizeof(float));
+        }
+        else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
         {
             ramUsage = inputSizeBytes + kernelSizeBytes + (inputSizeBytes * m_params.methodInfo.numThreads);
         }
@@ -1222,7 +1245,14 @@ namespace RealBloom
             vramUsage = (numPixelsPerBlock * 5 * sizeof(float)) + kernelSizeBytes + inputSizeBytes;
         }
 
-        if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
+        // Format output
+        if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
+        {
+            return strFormat(
+                "Est. Memory: %s",
+                strFromSize(ramUsage).c_str());
+        }
+        else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
         {
             return strFormat(
                 "Total Pixels: %s\nPixels/Thread: %s\nEst. Memory: %s",

@@ -142,7 +142,7 @@ int main(int argc, char** argv)
                 auto lastTime = std::chrono::system_clock::now();
                 while (appRunning)
                 {
-                    if (getElapsedMs(lastTime) > 1000)
+                    if (getElapsedMs(lastTime) > 500)
                     {
                         updateConvParams();
                         convResUsage = conv.getResourceInfo();

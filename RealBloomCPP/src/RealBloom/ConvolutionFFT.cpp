@@ -16,14 +16,12 @@ namespace RealBloom
     {
         // Padded size
 
-        int kernelExtraPaddingX = (int)fabsf(floorf((float)m_kernelWidth / 2.0f) - floorf(m_params.kernelCenterX * (float)m_kernelWidth)) + 1;
-        int kernelExtraPaddingY = (int)fabsf(floorf((float)m_kernelHeight / 2.0f) - floorf(m_params.kernelCenterY * (float)m_kernelHeight)) + 1;
-
-        uint32_t totalWidth = m_inputWidth + m_kernelWidth + kernelExtraPaddingX;
-        uint32_t totalHeight = m_inputHeight + m_kernelHeight + kernelExtraPaddingY;
-
-        m_paddedWidth = totalWidth + 32 - (totalWidth % 32);
-        m_paddedHeight = totalHeight + 32 - (totalHeight % 32);
+        calcPadding(
+            m_inputWidth, m_inputHeight,
+            m_kernelWidth, m_kernelHeight,
+            m_params.kernelCenterX, m_params.kernelCenterY,
+            m_paddedWidth, m_paddedHeight
+        );
 
         // Padding amount
 
@@ -40,11 +38,9 @@ namespace RealBloom
             "FFT Convolution\n"
             "Input:          %u x %u\n"
             "Kernel:         %u x %u\n"
-            "Total:          %u x %u\n"
-            "Final:          %u x %u\n\n",
+            "Padded:         %u x %u\n\n",
             m_inputWidth, m_inputHeight,
             m_kernelWidth, m_kernelHeight,
-            totalWidth, totalHeight,
             m_paddedWidth, m_paddedHeight
         );
 
@@ -235,6 +231,18 @@ namespace RealBloom
     const std::vector<float>& ConvolutionFFT::getBuffer() const
     {
         return m_outputBuffer;
+    }
+
+    void ConvolutionFFT::calcPadding(uint32_t inputWidth, uint32_t inputHeight, uint32_t kernelWidth, uint32_t kernelHeight, float kernelCenterX, float kernelCenterY, uint32_t& outPaddedWidth, uint32_t& outPaddedHeight)
+    {
+        int kernelExtraPaddingX = (int)fabsf(floorf((float)kernelWidth / 2.0f) - floorf(kernelCenterX * (float)kernelWidth)) + 1;
+        int kernelExtraPaddingY = (int)fabsf(floorf((float)kernelHeight / 2.0f) - floorf(kernelCenterY * (float)kernelHeight)) + 1;
+
+        uint32_t totalWidth = inputWidth + kernelWidth + kernelExtraPaddingX;
+        uint32_t totalHeight = inputHeight + kernelHeight + kernelExtraPaddingY;
+
+        outPaddedWidth = totalWidth + 32 - (totalWidth % 32);
+        outPaddedHeight = totalHeight + 32 - (totalHeight % 32);
     }
 
 }
