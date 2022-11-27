@@ -37,13 +37,16 @@ namespace RealBloom
     private:
         DispersionState m_state;
         DispersionParams m_params;
+
         CmImage* m_imageDP = nullptr;
         CmImage* m_imageDisp = nullptr;
+
         std::thread* m_thread = nullptr;
 
     public:
         Dispersion();
         DispersionParams* getParams();
+
         void setDiffPatternImage(CmImage* image);
         void setDispersionImage(CmImage* image);
 

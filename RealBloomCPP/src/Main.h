@@ -62,7 +62,7 @@ void loadImage(CmImage& image, int imageIndex, bool* toSetTrue, std::string& out
 void saveImage(CmImage& image, std::string& outError);
 
 void imGuiDialogs();
-void renderDiffPattern();
+void updateDiffPatternParams();
 void updateConvParams();
 
 inline ImVec2 btnSize();

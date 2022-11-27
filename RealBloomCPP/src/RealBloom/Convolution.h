@@ -81,14 +81,15 @@ namespace RealBloom
     private:
         ConvolutionState m_state;
         ConvolutionParams m_params;
-        CmImage* m_imageInput;
-        CmImage* m_imageKernel;
-        CmImage* m_imageKernelPreview;
-        CmImage* m_imageConvPreview;
-        CmImage* m_imageConvLayer;
-        CmImage* m_imageConvMix;
 
-        std::thread* m_thread;
+        CmImage* m_imageInput = nullptr;
+        CmImage* m_imageKernel = nullptr;
+        CmImage* m_imageKernelPreview = nullptr;
+        CmImage* m_imageConvPreview = nullptr;
+        CmImage* m_imageConvLayer = nullptr;
+        CmImage* m_imageConvMix = nullptr;
+
+        std::thread* m_thread = nullptr;
         std::vector<ConvolutionThread*> m_threads;
 
         void setErrorState(const std::string& error);

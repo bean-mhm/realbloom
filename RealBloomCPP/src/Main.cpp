@@ -105,6 +105,14 @@ int main(int argc, char** argv)
         for (uint32_t i = 0; i < images.size(); i++)
             imageNames.push_back(images[i]->getName());
 
+        // Set up images for diffraction pattern
+        diffPattern.setApertureImage(getImage("aperture"));
+        diffPattern.setDiffPatternImage(getImage("diff"));
+
+        // Set up images for dispersion
+        dispersion.setDiffPatternImage(getImage("diff"));
+        dispersion.setDispersionImage(getImage("disp"));
+
         // Set up images for convolution
         conv.setInputImage(getImage("cv-input"));
         conv.setKernelImage(getImage("cv-kernel"));
@@ -112,10 +120,6 @@ int main(int argc, char** argv)
         conv.setConvPreviewImage(getImage("cv-prev"));
         conv.setConvLayerImage(getImage("cv-layer"));
         conv.setConvMixImage(getImage("cv-result"));
-
-        // Set up images for dispersion
-        dispersion.setDiffPatternImage(getImage("diff"));
-        dispersion.setDispersionImage(getImage("disp"));
 
         // Will be shared with Convolution and Dispersion
         Async::putShared("convMixParamsChanged", &(vars.convMixParamsChanged));
@@ -341,26 +345,13 @@ void layout()
         IMGUI_BOLD("DIFFRACTION");
 
         ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
+
         if (ImGui::Button("Compute##DP", btnSize()))
         {
-            {
-                std::lock_guard<CmImage> lock(imgAperture);
-                float* image1Buffer = imgAperture.getImageData();
-
-                RealBloom::DiffractionPatternParams* dpParams = diffPattern.getParams();
-                dpParams->inputWidth = imgAperture.getWidth();
-                dpParams->inputHeight = imgAperture.getHeight();
-                dpParams->grayscale = vars.dp_grayscale;
-
-                diffPattern.compute(image1Buffer);
-            }
-
-            if (diffPattern.success())
-            {
-                renderDiffPattern();
-                selImageIndex = 1;
-            }
+            updateDiffPatternParams();
+            diffPattern.compute();
         }
+
         if (!diffPattern.success())
         {
             std::string dpError = diffPattern.getError();
@@ -378,8 +369,8 @@ void layout()
         if (vars.dpParamsChanged)
         {
             vars.dpParamsChanged = false;
-            selImageIndex = 1;
-            renderDiffPattern();
+            updateDiffPatternParams();
+            diffPattern.render();
         }
 
         ImGui::SliderFloat("Amount##Disp", &(vars.ds_dispersionAmount), 0, 1);
@@ -1180,34 +1171,12 @@ void imGuiDialogs()
     }
 }
 
-void renderDiffPattern()
+void updateDiffPatternParams()
 {
-    CmImage& imgDiffPattern = *getImage("diff");
-
-    if (diffPattern.hasFftData())
-    {
-        RealBloom::DiffractionPatternParams* dpParams = diffPattern.getParams();
-        dpParams->contrast = vars.dp_contrast;
-        dpParams->exposure = vars.dp_exposure;
-
-        std::vector<float> buffer;
-        diffPattern.getRgbaOutput(buffer);
-
-        uint32_t width = diffPattern.getOutputWidth();
-        uint32_t height = diffPattern.getOutputHeight();
-        {
-            std::lock_guard<CmImage> lock(imgDiffPattern);
-            imgDiffPattern.resize(width, height, false);
-            float* image2Buffer = imgDiffPattern.getImageData();
-
-            uint32_t imageSize = width * height * 4;
-            for (uint32_t i = 0; i < imageSize; i++)
-            {
-                image2Buffer[i] = buffer[i];
-            }
-        }
-        imgDiffPattern.moveToGPU();
-    }
+    RealBloom::DiffractionPatternParams* dpParams = diffPattern.getParams();
+    dpParams->contrast = vars.dp_contrast;
+    dpParams->exposure = vars.dp_exposure;
+    dpParams->grayscale = vars.dp_grayscale;
 }
 
 void updateConvParams()
