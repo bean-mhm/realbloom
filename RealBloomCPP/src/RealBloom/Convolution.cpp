@@ -1055,16 +1055,20 @@ namespace RealBloom
                             }
                         }
 
-                        std::cout << strFormat(
-                            "device type:  %u\n"
-                            "R range:      %.3f - %.3f\n"
-                            "G range:      %.3f - %.3f\n"
-                            "B range:      %.3f - %.3f\n\n",
-                            (uint32_t)m_params.methodInfo.method,
-                            minV[0], maxV[0],
-                            minV[1], maxV[1],
-                            minV[2], maxV[2]
-                        );
+                        // Print details about the output
+                        if (0)
+                        {
+                            std::cout << strFormat(
+                                "device type:  %u\n"
+                                "R range:      %.3f - %.3f\n"
+                                "G range:      %.3f - %.3f\n"
+                                "B range:      %.3f - %.3f\n\n",
+                                (uint32_t)m_params.methodInfo.method,
+                                minV[0], maxV[0],
+                                minV[1], maxV[1],
+                                minV[2], maxV[2]
+                            );
+                        }
                     }
 
                     m_imageConvLayer->moveToGPU();

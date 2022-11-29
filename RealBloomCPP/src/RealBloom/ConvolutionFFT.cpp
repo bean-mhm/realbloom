@@ -34,15 +34,19 @@ namespace RealBloom
         if (m_kernelWidth % 2 == 1) m_kernelLeftPadding += 1;
         if (m_kernelHeight % 2 == 1) m_kernelTopPadding += 1;
 
-        std::cout << strFormat(
-            "FFT Convolution\n"
-            "Input:          %u x %u\n"
-            "Kernel:         %u x %u\n"
-            "Padded:         %u x %u\n\n",
-            m_inputWidth, m_inputHeight,
-            m_kernelWidth, m_kernelHeight,
-            m_paddedWidth, m_paddedHeight
-        );
+        // Print the dimensions
+        if (0)
+        {
+            std::cout << strFormat(
+                "FFT Convolution\n"
+                "Input:          %u x %u\n"
+                "Kernel:         %u x %u\n"
+                "Padded:         %u x %u\n\n",
+                m_inputWidth, m_inputHeight,
+                m_kernelWidth, m_kernelHeight,
+                m_paddedWidth, m_paddedHeight
+            );
+        }
 
         // Input padding + threshold
         {
