@@ -373,16 +373,19 @@ void layout()
             diffPattern.render();
         }
 
-        ImGui::SliderFloat("Amount##Disp", &(vars.ds_dispersionAmount), 0, 1);
-        ImGui::SliderInt("Steps##Disp", &(vars.ds_dispersionSteps), 32, 1024);
-        ImGui::ColorEdit3("Color##Disp", vars.ds_dispersionCol, ImGuiColorEditFlags_NoInputs);
+        ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024);
+        ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1);
+        ImGui::ColorEdit3("Color##Disp", vars.ds_col, ImGuiColorEditFlags_NoInputs);
+        ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, vars.maxThreads);
 
         if (ImGui::Button("Apply##Disp", btnSize()))
         {
-            RealBloom::DispersionParams* dispersionParams = dispersion.getParams();
-            dispersionParams->amount = vars.ds_dispersionAmount;
-            dispersionParams->steps = vars.ds_dispersionSteps;
-            std::copy(vars.ds_dispersionCol, vars.ds_dispersionCol + 3, dispersionParams->color);
+            RealBloom::DispersionParams* dispParams = dispersion.getParams();
+            dispParams->steps = vars.ds_steps;
+            dispParams->amount = vars.ds_amount;
+            dispParams->color = std::array<float, 3>{ vars.ds_col[0], vars.ds_col[1], vars.ds_col[2] };
+
+            dispersion.setNumThreads(vars.ds_numThreads);
 
             selImageIndex = 2;
             dispersion.compute();
@@ -513,13 +516,13 @@ void layout()
         else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_CPU)
         {
             // Threads
-            ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, vars.cv_maxThreads);
+            ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, vars.maxThreads);
 
             // Warning Text
-            if (vars.cv_numThreads > vars.cv_halfMaxThreads)
+            if (vars.cv_numThreads > vars.halfMaxThreads)
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, colorWarningText);
-                if (vars.cv_numThreads == vars.cv_maxThreads)
+                if (vars.cv_numThreads == vars.maxThreads)
                     ImGui::TextWrapped(
                         "Maximizing the number of threads might result in slowdowns and "
                         "potential crashes.");

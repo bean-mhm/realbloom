@@ -6,13 +6,13 @@
 #include <thread>
 #include <memory>
 
-#include "Convolution.h"
+#include "Dispersion.h"
 #include "../Utils/NumberHelpers.h"
 
 namespace RealBloom
 {
 
-    enum class ConvolutionThreadState
+    enum class DispersionThreadState
     {
         None,
         Initializing,
@@ -20,40 +20,39 @@ namespace RealBloom
         Done,
     };
 
-    struct ConvolutionThreadStats
+    struct DispersionThreadStats
     {
-        ConvolutionThreadState state = ConvolutionThreadState::None;
-        uint32_t numPixels = 1;
+        DispersionThreadState state = DispersionThreadState::None;
+        uint32_t numSteps = 1;
         uint32_t numDone = 0;
     };
 
-    class ConvolutionThread
+    class DispersionThread
     {
     private:
         uint32_t m_numThreads;
         uint32_t m_threadIndex;
         std::shared_ptr<std::thread> m_thread;
 
-        ConvolutionThreadStats m_state;
-        std::atomic_bool m_mustStop = false;
+        DispersionThreadStats m_state;
+        std::atomic_bool m_mustStop;
 
-        ConvolutionParams m_params;
+        DispersionParams m_params;
 
         float* m_inputBuffer;
         uint32_t m_inputWidth;
         uint32_t m_inputHeight;
 
-        float* m_kernelBuffer;
-        uint32_t m_kernelWidth;
-        uint32_t m_kernelHeight;
+        float* m_cmfSamples;
+        float m_cmfLuminanceMul;
 
         std::vector<float> m_outputBuffer;
 
     public:
-        ConvolutionThread(
-            uint32_t numThreads, uint32_t threadIndex, const ConvolutionParams& params,
+        DispersionThread(
+            uint32_t numThreads, uint32_t threadIndex, const DispersionParams& params,
             float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
-            float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight);
+            float* cmfSamples, float cmfLuminanceMul);
 
         void start();
         void stop();
@@ -62,7 +61,7 @@ namespace RealBloom
         std::shared_ptr<std::thread> getThread();
         void setThread(std::shared_ptr<std::thread> thread);
 
-        ConvolutionThreadStats* getStats();
+        DispersionThreadStats* getStats();
     };
 
 }

@@ -1,15 +1,13 @@
 #include "Dispersion.h"
+#include "DispersionThread.h"
 
 namespace RealBloom
 {
 
-    constexpr uint32_t DISP_PROG_TIMESTEP = 33;
-    constexpr uint32_t DISP_PROG_INTERVAL = 4;
+    constexpr uint32_t DISP_WAIT_TIMESTEP = 33;
 
     Dispersion::Dispersion()
-    {
-        //
-    }
+    {}
 
     DispersionParams* Dispersion::getParams()
     {
@@ -24,6 +22,11 @@ namespace RealBloom
     void Dispersion::setDispersionImage(CmImage* image)
     {
         m_imageDisp = image;
+    }
+
+    void Dispersion::setNumThreads(uint32_t numThreads)
+    {
+        m_numThreads = numThreads;
     }
 
     void Dispersion::previewCmf()
@@ -78,15 +81,22 @@ namespace RealBloom
 
         m_params.steps = dispSteps;
 
-        m_state.numSteps = dispSteps;
-        m_state.numStepsDone = 0;
         m_state.working = true;
         m_state.mustCancel = false;
         m_state.failed = false;
         m_state.error = "";
+        m_state.timeStart = std::chrono::system_clock::now();
+        m_state.hasTimestamps = false;
+        m_state.numSteps = dispSteps;
+
+        // Clamp the number of threads
+        uint32_t maxThreads = std::thread::hardware_concurrency();
+        uint32_t numThreads = m_numThreads;
+        if (numThreads > maxThreads) numThreads = maxThreads;
+        if (numThreads < 1) numThreads = 1;
 
         // Start the thread
-        m_thread = new std::thread([this, dispSteps]()
+        m_thread = new std::thread([this, dispSteps, numThreads]()
             {
                 try
                 {
@@ -95,46 +105,22 @@ namespace RealBloom
                     if (table.get() == nullptr)
                         throw std::exception("An active CMF table is needed.");
 
-                    // Diff pattern Buffer
-                    std::vector<float> dpBuffer;
-                    uint32_t dpWidth = 0, dpHeight = 0;
-                    uint32_t dpBufferSize = 0;
+                    // Input buffer
+                    std::vector<float> inputBuffer;
+                    uint32_t inputWidth = 0, inputHeight = 0;
+                    uint32_t inputBufferSize = 0;
                     {
                         // Buffer from diff pattern image
                         std::lock_guard<CmImage> lock(*m_imageDP);
                         float* dpImageData = m_imageDP->getImageData();
-                        dpWidth = m_imageDP->getWidth();
-                        dpHeight = m_imageDP->getHeight();
+                        inputWidth = m_imageDP->getWidth();
+                        inputHeight = m_imageDP->getHeight();
 
                         // Copy the buffer so the image doesn't stay locked throughout the process
-                        dpBufferSize = m_imageDP->getImageDataSize();
-                        dpBuffer.resize(dpBufferSize);
-                        std::copy(dpImageData, dpImageData + dpBufferSize, dpBuffer.data());
+                        inputBufferSize = m_imageDP->getImageDataSize();
+                        inputBuffer.resize(inputBufferSize);
+                        std::copy(dpImageData, dpImageData + inputBufferSize, inputBuffer.data());
                     }
-
-                    float dispAmount = fminf(fmaxf(m_params.amount, 0.0f), 1.0f);
-                    float dispColor[3];
-                    std::copy(m_params.color, m_params.color + 3, dispColor);
-
-                    float wlR = 0, wlG = 0, wlB = 0;
-                    float scale = 0;
-
-                    // Scaled buffer for individual steps
-                    uint32_t scaledBufferSize = dpWidth * dpHeight * 3;
-                    std::vector<float> scaledBuffer;
-                    scaledBuffer.resize(scaledBufferSize);
-
-                    float centerX = (float)dpWidth / 2.0f;
-                    float centerY = (float)dpHeight / 2.0f;
-
-                    // Create and clear the dispersion buffer
-                    std::vector<float> dispBuffer;
-                    dispBuffer.resize(dpBufferSize);
-                    for (uint32_t i = 0; i < dpBufferSize; i++)
-                        if (i % 4 == 3)
-                            dispBuffer[i] = 1.0f;
-                        else
-                            dispBuffer[i] = 0.0f;
 
                     // Sample wavelengths
                     std::vector<float> cmfSamples;
@@ -158,155 +144,161 @@ namespace RealBloom
                         luminanceMul = 1.0f / luminanceSum;
                     }
 
-                    // Apply Dispersion
-                    auto lastProgTime = std::chrono::system_clock::now();
-                    uint32_t smpIndex;
-                    for (uint32_t i = 1; i <= dispSteps; i++)
+                    // Create and prepare threads
+                    for (uint32_t i = 0; i < numThreads; i++)
                     {
-                        scale = 1.0f - (dispAmount * (1.0f - (i / (float)dispSteps)));
-                        scale = fmaxf(EPSILON, scale);
+                        DispersionThread* ct = new DispersionThread(
+                            numThreads, i, m_params,
+                            inputBuffer.data(), inputWidth, inputHeight,
+                            cmfSamples.data(), luminanceMul
+                        );
 
-                        float scaledArea = scale * scale;
-                        float scaledMul = 1.0f / scaledArea;
+                        std::vector<float>& threadBuffer = ct->getBuffer();
+                        threadBuffer.resize(inputBufferSize);
+                        for (uint32_t j = 0; j < inputBufferSize; j++)
+                            if (j % 4 == 3) threadBuffer[j] = 1.0f;
+                            else threadBuffer[j] = 0.0f;
 
-                        smpIndex = (i - 1) * 3;
-                        wlR = cmfSamples[smpIndex + 0] * luminanceMul * scaledMul * dispColor[0];
-                        wlG = cmfSamples[smpIndex + 1] * luminanceMul * scaledMul * dispColor[1];
-                        wlB = cmfSamples[smpIndex + 2] * luminanceMul * scaledMul * dispColor[2];
+                        m_threads.push_back(ct);
+                    }
 
-                        // Clear scaledBuffer
-                        for (uint32_t i = 0; i < scaledBufferSize; i++)
-                            scaledBuffer[i] = 0;
-
-                        // Scale
-                        if (areEqual(scale, 1))
-                        {
-                            uint32_t redIndexDP, redIndexScaled;
-                            for (uint32_t y = 0; y < dpHeight; y++)
+                    // Start the threads
+                    for (uint32_t i = 0; i < numThreads; i++)
+                    {
+                        DispersionThread* ct = m_threads[i];
+                        std::shared_ptr<std::thread> t = std::make_shared<std::thread>([ct]()
                             {
-                                for (uint32_t x = 0; x < dpWidth; x++)
-                                {
-                                    redIndexDP = (y * dpWidth + x) * 4;
-                                    redIndexScaled = (y * dpWidth + x) * 3;
+                                ct->start();
+                            });
+                        ct->setThread(t);
+                    }
 
-                                    scaledBuffer[redIndexScaled + 0] = dpBuffer[redIndexDP + 0];
-                                    scaledBuffer[redIndexScaled + 1] = dpBuffer[redIndexDP + 1];
-                                    scaledBuffer[redIndexScaled + 2] = dpBuffer[redIndexDP + 2];
+                    // Wait for the threads
+                    {
+                        uint32_t lastNumDone = 0;
+                        while (true)
+                        {
+                            uint32_t numThreadsDone = 0;
+                            DispersionThread* ct;
+                            DispersionThreadStats* stats;
+                            for (uint32_t i = 0; i < numThreads; i++)
+                            {
+                                if (m_threads[i])
+                                {
+                                    ct = m_threads[i];
+                                    stats = ct->getStats();
+                                    if (stats->state == DispersionThreadState::Done)
+                                        numThreadsDone++;
                                 }
                             }
-                        }
-                        else
-                        {
-                            float scaledWidth = (float)dpWidth * scale;
-                            float scaledHeight = (float)dpHeight * scale;
-                            float scaledRectX1, scaledRectY1, scaledRectX2, scaledRectY2;
-                            uint32_t iScaledRectX1, iScaledRectY1, iScaledRectX2, iScaledRectY2;
 
-                            scaledRectX1 = centerX - (scaledWidth / 2.0f);
-                            scaledRectY1 = centerY - (scaledHeight / 2.0f);
-                            scaledRectX2 = centerX + (scaledWidth / 2.0f);
-                            scaledRectY2 = centerY + (scaledHeight / 2.0f);
+                            // Keep in mind that the threads will be "Done" when mustCancel is true
+                            if (numThreadsDone >= numThreads)
+                                break;
 
-                            iScaledRectX1 = (uint32_t)floorf(scaledRectX1 - 0.5f);
-                            iScaledRectY1 = (uint32_t)floorf(scaledRectY1 - 0.5f);
-                            iScaledRectX2 = (uint32_t)ceilf(scaledRectX2 - 0.5f);
-                            iScaledRectY2 = (uint32_t)ceilf(scaledRectY2 - 0.5f);
+                            uint32_t numDone = getNumDone();
 
-                            float transX = 0, transY = 0;
-                            int redIndexBuffer, redIndexScaled = 0;
-                            Bilinear::Result bil;
-                            for (uint32_t y = iScaledRectY1; y <= iScaledRectY2; y++)
+                            // Take a snapshot of the current progress
+                            if ((!m_state.mustCancel) && (numThreadsDone < numThreads) && ((numDone - lastNumDone) >= numThreads))
                             {
-                                for (uint32_t x = iScaledRectX1; x <= iScaledRectX2; x++)
+                                std::vector<float> progBuffer;
+                                progBuffer.resize(inputBufferSize);
+                                for (uint32_t i = 0; i < inputBufferSize; i++)
+                                    if (i % 4 == 3) progBuffer[i] = 1.0f;
+                                    else progBuffer[i] = 0.0f;
+
+                                for (uint32_t i = 0; i < numThreads; i++)
                                 {
-                                    redIndexScaled = (y * dpWidth + x) * 3;
-                                    transX = (((float)x + 0.5f - centerX) / scale) + centerX;
-                                    transY = (((float)y + 0.5f - centerY) / scale) + centerY;
-                                    Bilinear::calculate(transX, transY, bil);
-
-                                    if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], dpWidth, dpHeight))
+                                    if (m_threads[i])
                                     {
-                                        redIndexBuffer = (bil.topLeftPos[1] * dpWidth + bil.topLeftPos[0]) * 4;
-                                        blendAddRGB(scaledBuffer.data(), redIndexScaled, dpBuffer.data(), redIndexBuffer, bil.topLeftWeight);
-                                    }
-
-                                    if (checkBounds(bil.topRightPos[0], bil.topRightPos[1], dpWidth, dpHeight))
-                                    {
-                                        redIndexBuffer = (bil.topRightPos[1] * dpWidth + bil.topRightPos[0]) * 4;
-                                        blendAddRGB(scaledBuffer.data(), redIndexScaled, dpBuffer.data(), redIndexBuffer, bil.topRightWeight);
-                                    }
-
-                                    if (checkBounds(bil.bottomLeftPos[0], bil.bottomLeftPos[1], dpWidth, dpHeight))
-                                    {
-                                        redIndexBuffer = (bil.bottomLeftPos[1] * dpWidth + bil.bottomLeftPos[0]) * 4;
-                                        blendAddRGB(scaledBuffer.data(), redIndexScaled, dpBuffer.data(), redIndexBuffer, bil.bottomLeftWeight);
-                                    }
-
-                                    if (checkBounds(bil.bottomRightPos[0], bil.bottomRightPos[1], dpWidth, dpHeight))
-                                    {
-                                        redIndexBuffer = (bil.bottomRightPos[1] * dpWidth + bil.bottomRightPos[0]) * 4;
-                                        blendAddRGB(scaledBuffer.data(), redIndexScaled, dpBuffer.data(), redIndexBuffer, bil.bottomRightWeight);
+                                        std::vector<float>& currentBuffer = m_threads[i]->getBuffer();
+                                        uint32_t redIndex;
+                                        for (uint32_t y = 0; y < inputHeight; y++)
+                                        {
+                                            for (uint32_t x = 0; x < inputWidth; x++)
+                                            {
+                                                redIndex = (y * inputWidth + x) * 4;
+                                                progBuffer[redIndex + 0] += currentBuffer[redIndex + 0];
+                                                progBuffer[redIndex + 1] += currentBuffer[redIndex + 1];
+                                                progBuffer[redIndex + 2] += currentBuffer[redIndex + 2];
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                        }
 
-                        // Colorize and add to dispBuffer
-                        {
-                            uint32_t redIndexBuffer, redIndexScaled;
-                            for (uint32_t y = 0; y < dpHeight; y++)
-                            {
-                                for (uint32_t x = 0; x < dpWidth; x++)
+                                // Copy progBuffer into the dispersion image
                                 {
-                                    redIndexScaled = (y * dpWidth + x) * 3;
-                                    redIndexBuffer = (y * dpWidth + x) * 4;
+                                    std::lock_guard<CmImage> lock(*m_imageDisp);
+                                    m_imageDisp->resize(inputWidth, inputHeight, false);
+                                    float* dispBuffer = m_imageDisp->getImageData();
 
-                                    dispBuffer[redIndexBuffer + 0] += scaledBuffer[redIndexScaled + 0] * wlR;
-                                    dispBuffer[redIndexBuffer + 1] += scaledBuffer[redIndexScaled + 1] * wlG;
-                                    dispBuffer[redIndexBuffer + 2] += scaledBuffer[redIndexScaled + 2] * wlB;
+                                    std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, dispBuffer);
                                 }
+                                m_imageDisp->moveToGPU();
+
+                                lastNumDone = numDone;
                             }
+
+                            std::this_thread::sleep_for(std::chrono::milliseconds(DISP_WAIT_TIMESTEP));
                         }
+                    }
 
-                        if (m_state.mustCancel)
-                            throw std::exception();
-
-                        // Update the progress
-                        m_state.numStepsDone = i;
-                        if ((i % DISP_PROG_INTERVAL == 0) &&                      // update every x steps
-                            (getElapsedMs(lastProgTime) > DISP_PROG_TIMESTEP) &&  // update every x ms
-                            (m_state.numStepsDone < m_state.numSteps))         // skip the last step
-                        {
-                            {
-                                std::lock_guard<CmImage> lock(*m_imageDisp);
-                                m_imageDisp->resize(dpWidth, dpHeight, false);
-                                float* imageBuffer = m_imageDisp->getImageData();
-                                std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);
-                            }
-                            m_imageDisp->moveToGPU();
-
-                            lastProgTime = std::chrono::system_clock::now();
-                        }
+                    // Join the threads
+                    for (uint32_t i = 0; i < numThreads; i++)
+                    {
+                        if (m_threads[i])
+                            threadJoin(m_threads[i]->getThread().get());
                     }
 
                     if (m_state.mustCancel)
                         throw std::exception();
 
-                    // Update the dispersion image
+                    // Add the buffers from each thread
                     {
+                        std::lock_guard<CmImage> lock(*m_imageDisp);
+                        m_imageDisp->resize(inputWidth, inputHeight, false);
+                        m_imageDisp->fill(color_t{ 0, 0, 0, 1 }, false);
+                        float* dispBuffer = m_imageDisp->getImageData();
+
+                        for (uint32_t i = 0; i < numThreads; i++)
                         {
-                            std::lock_guard<CmImage> lock(*m_imageDisp);
-                            m_imageDisp->resize(dpWidth, dpHeight, false);
-                            float* imageBuffer = m_imageDisp->getImageData();
-                            std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);
-                        }
-                        m_imageDisp->moveToGPU();
-                        Async::schedule([this]()
+                            if (m_state.mustCancel)
+                                break;
+
+                            if (m_threads[i])
                             {
-                                int* pSelImageIndex = (int*)Async::getShared("selImageIndex");
-                                if (pSelImageIndex != nullptr) *pSelImageIndex = 2;
-                            });
+                                std::vector<float>& threadBuffer = m_threads[i]->getBuffer();
+                                if (!m_state.mustCancel)
+                                {
+                                    uint32_t redIndex;
+                                    for (uint32_t y = 0; y < inputHeight; y++)
+                                    {
+                                        if (m_state.mustCancel)
+                                            break;
+
+                                        for (uint32_t x = 0; x < inputWidth; x++)
+                                        {
+                                            redIndex = (y * inputWidth + x) * 4;
+                                            dispBuffer[redIndex + 0] += threadBuffer[redIndex + 0];
+                                            dispBuffer[redIndex + 1] += threadBuffer[redIndex + 1];
+                                            dispBuffer[redIndex + 2] += threadBuffer[redIndex + 2];
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
+
+                    // Update the dispersion image
+                    m_imageDisp->moveToGPU();
+                    Async::schedule([this]()
+                        {
+                            int* pSelImageIndex = (int*)Async::getShared("selImageIndex");
+                            if (pSelImageIndex != nullptr) *pSelImageIndex = 2;
+                        });
+
+                    m_state.timeEnd = std::chrono::system_clock::now();
+                    m_state.hasTimestamps = true;
                 } catch (const std::exception& e)
                 {
                     if (!m_state.mustCancel)
@@ -315,6 +307,12 @@ namespace RealBloom
                         m_state.error = e.what();
                     }
                 }
+
+                // Clean up
+                for (uint32_t i = 0; i < numThreads; i++)
+                    DELPTR(m_threads[i]);
+                m_threads.clear();
+
                 m_state.working = false;
             });
     }
@@ -325,6 +323,17 @@ namespace RealBloom
         {
             m_state.mustCancel = true;
 
+            // Tell the sub-threads to stop
+            DispersionThread* ct;
+            for (uint32_t i = 0; i < m_threads.size(); i++)
+            {
+                ct = m_threads[i];
+                if (ct)
+                {
+                    ct->stop();
+                }
+            }
+
             // Wait for the thread
             threadJoin(m_thread);
             DELPTR(m_thread);
@@ -333,7 +342,7 @@ namespace RealBloom
         m_state.working = false;
         m_state.mustCancel = false;
         m_state.failed = false;
-        m_state.error = "";
+        m_state.hasTimestamps = false;
     }
 
     bool Dispersion::isWorking() const
@@ -346,13 +355,55 @@ namespace RealBloom
         return m_state.failed;
     }
 
+    uint32_t Dispersion::getNumDone() const
+    {
+        if (!(m_state.working && !m_state.failed && !m_state.mustCancel))
+            return 0;
+
+        uint32_t numDone = 0;
+        for (uint32_t i = 0; i < m_threads.size(); i++)
+        {
+            if (m_threads[i])
+            {
+                DispersionThreadStats* stats = m_threads[i]->getStats();
+                if (stats->state == DispersionThreadState::Working || stats->state == DispersionThreadState::Done)
+                {
+                    numDone += stats->numDone;
+                }
+            }
+        }
+        return numDone;
+    }
+
     std::string Dispersion::getStats() const
     {
-        if (m_state.working && !m_state.mustCancel)
-            return strFormat("%u/%u steps", m_state.numStepsDone, m_state.numSteps);
+        if (m_state.mustCancel)
+            return "";
 
         if (m_state.failed)
             return m_state.error;
+
+        if (m_state.working)
+        {
+            float elapsedSec = (float)getElapsedMs(m_state.timeStart) / 1000.0f;
+
+            uint32_t numSteps = m_state.numSteps;
+            uint32_t numDone = getNumDone();
+
+            float remainingSec = (elapsedSec * (float)(numSteps - numDone)) / fmaxf((float)(numDone), EPSILON);
+            return strFormat(
+                "%u/%u steps\n%s / %s",
+                numDone,
+                numSteps,
+                strFromElapsed(elapsedSec).c_str(),
+                strFromElapsed(remainingSec).c_str());
+        }
+        else if (m_state.hasTimestamps)
+        {
+            std::chrono::milliseconds elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(m_state.timeEnd - m_state.timeStart);
+            float elapsedSec = (float)elapsedMs.count() / 1000.0f;
+            return strFormat("Done (%s)", strFromDuration(elapsedSec).c_str());
+        }
 
         return "";
     }

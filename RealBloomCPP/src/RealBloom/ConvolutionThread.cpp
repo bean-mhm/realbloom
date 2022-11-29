@@ -5,11 +5,11 @@ namespace RealBloom
 {
 
     ConvolutionThread::ConvolutionThread(
-        uint32_t numThreads, uint32_t threadIndex, ConvolutionParams& convParams,
+        uint32_t numThreads, uint32_t threadIndex, const ConvolutionParams& params,
         float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
         float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight)
-        : m_numThreads(numThreads), m_threadIndex(threadIndex), m_state(), m_mustStop(false),
-        m_params(convParams),
+        : m_numThreads(numThreads), m_threadIndex(threadIndex),
+        m_params(params),
         m_inputBuffer(inputBuffer), m_inputWidth(inputWidth), m_inputHeight(inputHeight),
         m_kernelBuffer(kernelBuffer), m_kernelWidth(kernelWidth), m_kernelHeight(kernelHeight)
     {}
@@ -149,45 +149,45 @@ namespace RealBloom
                     break;
                 }
 
-                if (i % m_numThreads == m_threadIndex)
+                if (i % m_numThreads != m_threadIndex)
+                    continue;
+
+                redIndexInput = i * 4;
+                inpColor[0] = m_inputBuffer[redIndexInput + 0];
+                inpColor[1] = m_inputBuffer[redIndexInput + 1];
+                inpColor[2] = m_inputBuffer[redIndexInput + 2];
+
+                v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
+                if (v > threshold)
                 {
-                    redIndexInput = i * 4;
-                    inpColor[0] = m_inputBuffer[redIndexInput + 0];
-                    inpColor[1] = m_inputBuffer[redIndexInput + 1];
-                    inpColor[2] = m_inputBuffer[redIndexInput + 2];
+                    // Smooth Transition
+                    mul = softThreshold(v, threshold, m_params.convKnee);
+                    inpColor[0] *= mul;
+                    inpColor[1] *= mul;
+                    inpColor[2] *= mul;
 
-                    v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
-                    if (v > threshold)
+                    ix = i % m_inputWidth;
+                    iy = (i - ix) / m_inputWidth;
+                    for (int ky = 0; ky < (int)m_kernelHeight; ky++)
                     {
-                        // Smooth Transition
-                        mul = softThreshold(v, threshold, m_params.convKnee);
-                        inpColor[0] *= mul;
-                        inpColor[1] *= mul;
-                        inpColor[2] *= mul;
-
-                        ix = i % m_inputWidth;
-                        iy = (i - ix) / m_inputWidth;
-                        for (int ky = 0; ky < (int)m_kernelHeight; ky++)
+                        for (int kx = 0; kx < (int)m_kernelWidth; kx++)
                         {
-                            for (int kx = 0; kx < (int)m_kernelWidth; kx++)
+                            cx = (kx - kernelCenterX) + ix;
+                            cy = (ky - kernelCenterY) + iy;
+                            if (checkBounds(cx, cy, m_inputWidth, m_inputHeight))
                             {
-                                cx = (kx - kernelCenterX) + ix;
-                                cy = (ky - kernelCenterY) + iy;
-                                if (checkBounds(cx, cy, m_inputWidth, m_inputHeight))
-                                {
-                                    redIndexKernel = (ky * m_kernelWidth + kx) * 4;
+                                redIndexKernel = (ky * m_kernelWidth + kx) * 4;
 
-                                    convColor[0] = m_kernelBuffer[redIndexKernel + 0] * inpColor[0];
-                                    convColor[1] = m_kernelBuffer[redIndexKernel + 1] * inpColor[1];
-                                    convColor[2] = m_kernelBuffer[redIndexKernel + 2] * inpColor[2];
+                                convColor[0] = m_kernelBuffer[redIndexKernel + 0] * inpColor[0];
+                                convColor[1] = m_kernelBuffer[redIndexKernel + 1] * inpColor[1];
+                                convColor[2] = m_kernelBuffer[redIndexKernel + 2] * inpColor[2];
 
-                                    redIndexConv = (cy * m_inputWidth + cx) * 4;
-                                    blendAddRGB(m_outputBuffer.data(), redIndexConv, convColor, 0, 1);
-                                }
+                                redIndexConv = (cy * m_inputWidth + cx) * 4;
+                                blendAddRGB(m_outputBuffer.data(), redIndexConv, convColor, 0, 1);
                             }
                         }
-                        m_state.numDone += 1;
                     }
+                    m_state.numDone++;
                 }
             }
         }

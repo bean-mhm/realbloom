@@ -2,16 +2,16 @@
 #include "ConvolutionThread.h"
 #include "ConvolutionFFT.h"
 
-constexpr uint32_t CONV_WAIT_TIMESTEP = 50;
-constexpr uint32_t CONV_PROG_TIMESTEP = 1000;
-
-constexpr uint32_t CONVGPU_FILE_TIMEOUT = 5000;
-constexpr bool CONVGPU_DELETE_TEMP = true;
-
-constexpr const char* S_CANCELED_BY_USER = "Canceled by user.";
-
 namespace RealBloom
 {
+
+    constexpr uint32_t CONV_WAIT_TIMESTEP = 50;
+    constexpr uint32_t CONV_PROG_TIMESTEP = 1000;
+
+    constexpr uint32_t CONVGPU_FILE_TIMEOUT = 5000;
+    constexpr bool CONVGPU_DELETE_TEMP = true;
+
+    constexpr const char* S_CANCELED_BY_USER = "Canceled by user.";
 
     void drawRect(CmImage* image, int rx, int ry, int rw, int rh);
     void fillRect(CmImage* image, int rx, int ry, int rw, int rh);
@@ -399,7 +399,7 @@ namespace RealBloom
         // If there's already a convolution process going on
         cancelConv();
 
-        // Clamp the number of threads so it's not negative or some crazy number
+        // Clamp the number of threads
         uint32_t maxThreads = std::thread::hardware_concurrency();
         uint32_t numThreads = m_params.methodInfo.numThreads;
         if (numThreads > maxThreads) numThreads = maxThreads;
@@ -556,11 +556,10 @@ namespace RealBloom
 
                     // Wait for the threads
                     {
-                        uint32_t numThreadsDone;
                         std::chrono::time_point<std::chrono::system_clock> lastTime = std::chrono::system_clock::now();
                         while (true)
                         {
-                            numThreadsDone = 0;
+                            uint32_t numThreadsDone = 0;
                             ConvolutionThread* ct;
                             ConvolutionThreadStats* stats;
                             for (uint32_t i = 0; i < numThreads; i++)
@@ -578,10 +577,11 @@ namespace RealBloom
                             if (numThreadsDone >= numThreads)
                                 break;
 
-                            // Take a snapshot of the current progress and put it into conv result
+                            // Take a snapshot of the current progress
                             if ((!m_state.mustCancel) && (getElapsedMs(lastTime) > CONV_PROG_TIMESTEP) && (numThreadsDone < numThreads))
                             {
-                                float* progBuffer = new float[inputBufferSize];
+                                std::vector<float> progBuffer;
+                                progBuffer.resize(inputBufferSize);
                                 for (uint32_t i = 0; i < inputBufferSize; i++)
                                     if (i % 4 == 3) progBuffer[i] = 1.0f;
                                     else progBuffer[i] = 0.0f;
@@ -611,8 +611,7 @@ namespace RealBloom
                                     m_imageConvLayer->resize(inputWidth, inputHeight, false);
                                     float* convBuffer = m_imageConvLayer->getImageData();
 
-                                    std::copy(progBuffer, progBuffer + inputBufferSize, convBuffer);
-                                    delete[] progBuffer;
+                                    std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, convBuffer);
                                 }
                                 m_imageConvLayer->moveToGPU();
 
@@ -629,6 +628,7 @@ namespace RealBloom
                         if (m_threads[i])
                             threadJoin(m_threads[i]->getThread().get());
                     }
+
                     DELARR(inputBuffer);
                     DELARR(kernelBuffer);
                 }
@@ -678,7 +678,9 @@ namespace RealBloom
                                     for (uint32_t x = 0; x < inputWidth; x++)
                                     {
                                         redIndex = (y * inputWidth + x) * 4;
-                                        blendAddRGB(convBuffer, redIndex, threadBuffer.data(), redIndex, CONV_MULTIPLIER);
+                                        convBuffer[redIndex + 0] += threadBuffer[redIndex + 0] * CONV_MULTIPLIER;
+                                        convBuffer[redIndex + 1] += threadBuffer[redIndex + 1] * CONV_MULTIPLIER;
+                                        convBuffer[redIndex + 2] += threadBuffer[redIndex + 2] * CONV_MULTIPLIER;
                                     }
                                 }
                             }
@@ -1122,7 +1124,6 @@ namespace RealBloom
         outStatus = "";
         outStatType = 0;
 
-        uint32_t numThreads = m_threads.size();
         if (m_state.failed && !m_state.mustCancel)
         {
             outStatus = m_state.error;
@@ -1133,15 +1134,15 @@ namespace RealBloom
             float elapsedSec = (float)getElapsedMs(m_state.timeStart) / 1000.0f;
             if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
             {
+                uint32_t numThreads = m_threads.size();
                 uint32_t numPixels = 0;
                 uint32_t numDone = 0;
 
-                ConvolutionThreadStats* stats = nullptr;
                 for (uint32_t i = 0; i < numThreads; i++)
                 {
                     if (m_threads[i])
                     {
-                        stats = m_threads[i]->getStats();
+                        ConvolutionThreadStats* stats = m_threads[i]->getStats();
                         if (stats->state == ConvolutionThreadState::Working || stats->state == ConvolutionThreadState::Done)
                         {
                             numPixels += stats->numPixels;

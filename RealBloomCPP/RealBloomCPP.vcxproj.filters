@@ -117,6 +117,9 @@
     <ClCompile Include="src\RealBloom\ConvolutionFFT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\RealBloom\DispersionThread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RealBloom\DiffractionPattern.h">
@@ -459,6 +462,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\pocketfft\pocketfft_hdronly.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RealBloom\DispersionThread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
