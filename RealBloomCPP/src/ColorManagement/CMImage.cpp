@@ -16,9 +16,7 @@ CmImage::~CmImage()
     lock_guard<mutex> lock(m_mutex);
 
     if (m_imageData)
-    {
         delete[] m_imageData;
-    }
 }
 
 void CmImage::cleanUp()

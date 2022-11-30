@@ -21,6 +21,8 @@ namespace RealBloom
 
     struct DispersionParams
     {
+        float exposure = 0.0f;
+        float contrast = 0.0f;
         uint32_t steps = 32;
         float amount = 0.0f;
         std::array<float, 3> color{ 0.0f, 0.0f, 0.0f };
@@ -49,8 +51,10 @@ namespace RealBloom
         DispersionState m_state;
         DispersionParams m_params;
 
-        CmImage* m_imageDP = nullptr;
-        CmImage* m_imageDisp = nullptr;
+        CmImage* m_imgInput = nullptr;
+        CmImage* m_imgDisp = nullptr;
+
+        CmImage m_imgInputSrc;
 
         uint32_t m_numThreads = 1;
         std::thread* m_thread = nullptr;
@@ -60,13 +64,14 @@ namespace RealBloom
         Dispersion();
         DispersionParams* getParams();
 
-        void setDiffPatternImage(CmImage* image);
-        void setDispersionImage(CmImage* image);
+        void setImgInput(CmImage* image);
+        void setImgDisp(CmImage* image);
+        CmImage* getImgInputSrc();
 
         void setNumThreads(uint32_t numThreads);
 
         void previewCmf();
-
+        void previewInput(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
         void compute();
         void cancel();
 

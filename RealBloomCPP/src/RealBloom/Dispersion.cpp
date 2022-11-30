@@ -6,7 +6,7 @@ namespace RealBloom
 
     constexpr uint32_t DISP_WAIT_TIMESTEP = 33;
 
-    Dispersion::Dispersion()
+    Dispersion::Dispersion() : m_imgInputSrc("", "")
     {}
 
     DispersionParams* Dispersion::getParams()
@@ -14,14 +14,19 @@ namespace RealBloom
         return &m_params;
     }
 
-    void Dispersion::setDiffPatternImage(CmImage* image)
+    void Dispersion::setImgInput(CmImage* image)
     {
-        m_imageDP = image;
+        m_imgInput = image;
     }
 
-    void Dispersion::setDispersionImage(CmImage* image)
+    void Dispersion::setImgDisp(CmImage* image)
     {
-        m_imageDisp = image;
+        m_imgDisp = image;
+    }
+
+    CmImage* Dispersion::getImgInputSrc()
+    {
+        return &m_imgInputSrc;
     }
 
     void Dispersion::setNumThreads(uint32_t numThreads)
@@ -63,12 +68,87 @@ namespace RealBloom
 
         // Copy to image
         {
-            std::lock_guard<CmImage> lock(*m_imageDisp);
-            m_imageDisp->resize(pWidth, pHeight, false);
-            float* imageBuffer = m_imageDisp->getImageData();
+            std::lock_guard<CmImage> lock(*m_imgDisp);
+            m_imgDisp->resize(pWidth, pHeight, false);
+            float* imageBuffer = m_imgDisp->getImageData();
             std::copy(buffer.data(), buffer.data() + buffer.size(), imageBuffer);
         }
-        m_imageDisp->moveToGPU();
+        m_imgDisp->moveToGPU();
+    }
+
+    void Dispersion::previewInput(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
+    {
+        std::vector<float> inputBuffer;
+        uint32_t inputBufferSize = 0;
+        uint32_t inputWidth = 0, inputHeight = 0;
+        {
+            std::lock_guard<CmImage> lock(m_imgInputSrc);
+            float* inputSrcBuffer = m_imgInputSrc.getImageData();
+            inputBufferSize = m_imgInputSrc.getImageDataSize();
+            inputWidth = m_imgInputSrc.getWidth();
+            inputHeight = m_imgInputSrc.getHeight();
+
+            inputBuffer.resize(inputBufferSize);
+            std::copy(inputSrcBuffer, inputSrcBuffer + inputBufferSize, inputBuffer.data());
+        }
+
+        float expMul = applyExposure(m_params.exposure);
+        float contrast = m_params.contrast;
+
+        // Apply contrast and exposure
+        {
+            // Get the brightest value
+            float v = 0;
+            float maxV = EPSILON;
+            for (uint32_t i = 0; i < inputBufferSize; i++)
+            {
+                v = fmaxf(0.0f, inputBuffer[i]);
+                if ((v > maxV) && (i % 4 != 3))
+                    maxV = v;
+            }
+
+            uint32_t redIndex;
+            for (uint32_t y = 0; y < inputHeight; y++)
+            {
+                for (uint32_t x = 0; x < inputWidth; x++)
+                {
+                    redIndex = (y * inputWidth + x) * 4;
+
+                    // Normalize
+                    inputBuffer[redIndex + 0] /= maxV;
+                    inputBuffer[redIndex + 1] /= maxV;
+                    inputBuffer[redIndex + 2] /= maxV;
+
+                    // Calculate contrast for the grayscale value
+                    float grayscale = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
+                    float mul = expMul * maxV * (contrastCurve(grayscale, contrast) / fmaxf(grayscale, EPSILON));
+
+                    // Apply contrast and de-normalize
+                    inputBuffer[redIndex + 0] *= mul;
+                    inputBuffer[redIndex + 1] *= mul;
+                    inputBuffer[redIndex + 2] *= mul;
+                }
+            }
+        }
+
+        // Copy to outBuffer if it's requested by another function
+        if (!previewMode && (outBuffer != nullptr))
+        {
+            *outWidth = inputWidth;
+            *outHeight = inputHeight;
+            outBuffer->resize(inputBufferSize);
+            *outBuffer = inputBuffer;
+        }
+
+        // Copy to input image
+        {
+            std::lock_guard<CmImage> lock(*m_imgInput);
+            m_imgInput->resize(inputWidth, inputHeight, false);
+            float* prevBuffer = m_imgInput->getImageData();
+            std::copy(inputBuffer.data(), inputBuffer.data() + inputBufferSize, prevBuffer);
+        }
+
+        m_imgInput->moveToGPU();
     }
 
     void Dispersion::compute()
@@ -105,22 +185,11 @@ namespace RealBloom
                     if (table.get() == nullptr)
                         throw std::exception("An active CMF table is needed.");
 
-                    // Input buffer
+                    // Input Buffer
                     std::vector<float> inputBuffer;
                     uint32_t inputWidth = 0, inputHeight = 0;
-                    uint32_t inputBufferSize = 0;
-                    {
-                        // Buffer from diff pattern image
-                        std::lock_guard<CmImage> lock(*m_imageDP);
-                        float* dpImageData = m_imageDP->getImageData();
-                        inputWidth = m_imageDP->getWidth();
-                        inputHeight = m_imageDP->getHeight();
-
-                        // Copy the buffer so the image doesn't stay locked throughout the process
-                        inputBufferSize = m_imageDP->getImageDataSize();
-                        inputBuffer.resize(inputBufferSize);
-                        std::copy(dpImageData, dpImageData + inputBufferSize, inputBuffer.data());
-                    }
+                    previewInput(false, &inputBuffer, &inputWidth, &inputHeight);
+                    uint32_t inputBufferSize = inputWidth * inputHeight * 4;
 
                     // Sample wavelengths
                     std::vector<float> cmfSamples;
@@ -228,13 +297,12 @@ namespace RealBloom
 
                                 // Copy progBuffer into the dispersion image
                                 {
-                                    std::lock_guard<CmImage> lock(*m_imageDisp);
-                                    m_imageDisp->resize(inputWidth, inputHeight, false);
-                                    float* dispBuffer = m_imageDisp->getImageData();
-
+                                    std::lock_guard<CmImage> lock(*m_imgDisp);
+                                    m_imgDisp->resize(inputWidth, inputHeight, false);
+                                    float* dispBuffer = m_imgDisp->getImageData();
                                     std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, dispBuffer);
                                 }
-                                m_imageDisp->moveToGPU();
+                                m_imgDisp->moveToGPU();
 
                                 lastNumDone = numDone;
                             }
@@ -255,10 +323,10 @@ namespace RealBloom
 
                     // Add the buffers from each thread
                     {
-                        std::lock_guard<CmImage> lock(*m_imageDisp);
-                        m_imageDisp->resize(inputWidth, inputHeight, false);
-                        m_imageDisp->fill(color_t{ 0, 0, 0, 1 }, false);
-                        float* dispBuffer = m_imageDisp->getImageData();
+                        std::lock_guard<CmImage> lock(*m_imgDisp);
+                        m_imgDisp->resize(inputWidth, inputHeight, false);
+                        m_imgDisp->fill(color_t{ 0, 0, 0, 1 }, false);
+                        float* dispBuffer = m_imgDisp->getImageData();
 
                         for (uint32_t i = 0; i < numThreads; i++)
                         {
@@ -290,11 +358,11 @@ namespace RealBloom
                     }
 
                     // Update the dispersion image
-                    m_imageDisp->moveToGPU();
+                    m_imgDisp->moveToGPU();
                     Async::schedule([this]()
                         {
-                            int* pSelImageIndex = (int*)Async::getShared("selImageIndex");
-                            if (pSelImageIndex != nullptr) *pSelImageIndex = 2;
+                            std::string* pSelImageID = (std::string*)Async::getShared("selImageID");
+                            if (pSelImageID != nullptr) *pSelImageID = m_imgDisp->getID();
                         });
 
                     m_state.timeEnd = std::chrono::system_clock::now();

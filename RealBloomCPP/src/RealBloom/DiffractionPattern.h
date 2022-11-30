@@ -17,8 +17,6 @@ namespace RealBloom
 {
     struct DiffractionPatternParams
     {
-        double contrast = 0;
-        double exposure = 0;
         bool grayscale = false;
     };
 
@@ -27,12 +25,8 @@ namespace RealBloom
     private:
         DiffractionPatternParams m_params;
 
-        CmImage* m_imageAperture = nullptr;
-        CmImage* m_imageDiffPattern = nullptr;
-
-        Array2D<double> m_fftMag[3];
-        double m_maxMag[3]{ EPSILON, EPSILON, EPSILON };
-        bool m_hasFftData = false;
+        CmImage* m_imgAperture = nullptr;
+        CmImage* m_imgDiffPattern = nullptr;
 
         bool m_success = false;
         std::string m_error = "";
@@ -41,13 +35,11 @@ namespace RealBloom
         DiffractionPattern();
         DiffractionPatternParams* getParams();
 
-        void setApertureImage(CmImage* image);
-        void setDiffPatternImage(CmImage* image);
+        void setImgAperture(CmImage* image);
+        void setImgDiffPattern(CmImage* image);
 
         void compute();
-        void render();
 
-        bool hasFftData() const;
         bool success() const;
         std::string getError() const;
     };

@@ -53,16 +53,18 @@ bool lb1ItemGetter(void* data, int index, const char** outText);
 bool comboItemGetter(void* data, int index, const char** outText);
 bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth);
 
-CmImage* getImage(const std::string& id);
+void addImage(const std::string& id, const std::string& name);
+CmImage* getImageByID(const std::string& id);
 
 bool openImageDialog(std::string& outFilename);
 bool saveImageDialog(std::string& outFilename);
 
-void loadImage(CmImage& image, int imageIndex, bool* toSetTrue, std::string& outError);
+void loadImage(CmImage& image, std::function<void()> onLoad, std::string& outError);
 void saveImage(CmImage& image, std::string& outError);
 
 void imGuiDialogs();
-void updateDiffPatternParams();
+void updateDiffParams();
+void updateDispParams();
 void updateConvParams();
 
 inline ImVec2 btnSize();
@@ -80,15 +82,15 @@ struct UiVars
 
     // Diffraction Pattern
     bool dp_grayscale = false;
-    float dp_contrast = 0.0f;
-    float dp_exposure = 0.0f;
-    bool dpParamsChanged = false;
 
     // Dispersion
+    float ds_exposure = 0.0f;
+    float ds_contrast = 0.0f;
     float ds_amount = 0.4f;
     int ds_steps = 32;
     float ds_col[3]{ 1.0f, 1.0f, 1.0f };
     int ds_numThreads = halfMaxThreads;
+    bool dispParamsChanged = false;
 
     // Convolution Kernel
     bool cv_kernelNormalize = true;

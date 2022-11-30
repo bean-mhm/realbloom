@@ -27,14 +27,17 @@ const ImVec4 colorErrorText{ 0.950f, 0.300f, 0.228f, 1.0f };
 std::vector<std::string> activeComboList;
 
 // Image slots
-std::vector<CmImage*> images;
+std::vector<std::shared_ptr<CmImage>> images;
+
 std::vector<std::string> imageNames;
 int selImageIndex = 0;
+std::string selImageID = "";
+
 float imageZoom = 1.0f;
 
 // RealBloom modules
-RealBloom::DiffractionPattern diffPattern;
-RealBloom::Dispersion dispersion;
+RealBloom::DiffractionPattern diff;
+RealBloom::Dispersion disp;
 RealBloom::Convolution conv;
 
 // Variables used in controls and sliders
@@ -92,38 +95,33 @@ int main(int argc, char** argv)
         ShowWindow(GetConsoleWindow(), SW_HIDE);
 
         // Create images to be used throughout the program
-        images.push_back(new CmImage("aperture", "Aperture Shape"));
-        images.push_back(new CmImage("diff", "Diffraction Pattern"));
-        images.push_back(new CmImage("disp", "Dispersion"));
-        images.push_back(new CmImage("cv-input", "Conv. Input"));
-        images.push_back(new CmImage("cv-kernel", "Conv. Kernel"));
-        images.push_back(new CmImage("cv-kernel-prev", "Conv. Kernel (Transformed)"));
-        images.push_back(new CmImage("cv-prev", "Conv. Preview"));
-        images.push_back(new CmImage("cv-layer", "Conv. Layer"));
-        images.push_back(new CmImage("cv-result", "Conv. Result"));
-
-        for (uint32_t i = 0; i < images.size(); i++)
-            imageNames.push_back(images[i]->getName());
+        addImage("aperture", "Aperture");
+        addImage("disp-input", "Dispersion Input");
+        addImage("disp-result", "Dispersion Result");
+        addImage("cv-input", "Conv. Input");
+        addImage("cv-kernel", "Conv. Kernel");
+        addImage("cv-prev", "Conv. Preview");
+        addImage("cv-layer", "Conv. Layer");
+        addImage("cv-result", "Conv. Result");
 
         // Set up images for diffraction pattern
-        diffPattern.setApertureImage(getImage("aperture"));
-        diffPattern.setDiffPatternImage(getImage("diff"));
+        diff.setImgAperture(getImageByID("aperture"));
+        diff.setImgDiffPattern(disp.getImgInputSrc());
 
         // Set up images for dispersion
-        dispersion.setDiffPatternImage(getImage("diff"));
-        dispersion.setDispersionImage(getImage("disp"));
+        disp.setImgInput(getImageByID("disp-input"));
+        disp.setImgDisp(getImageByID("disp-result"));
 
         // Set up images for convolution
-        conv.setInputImage(getImage("cv-input"));
-        conv.setKernelImage(getImage("cv-kernel"));
-        conv.setKernelPreviewImage(getImage("cv-kernel-prev"));
-        conv.setConvPreviewImage(getImage("cv-prev"));
-        conv.setConvLayerImage(getImage("cv-layer"));
-        conv.setConvMixImage(getImage("cv-result"));
+        conv.setImgInput(getImageByID("cv-input"));
+        conv.setImgKernel(getImageByID("cv-kernel"));
+        conv.setImgConvPreview(getImageByID("cv-prev"));
+        conv.setImgConvLayer(getImageByID("cv-layer"));
+        conv.setImgConvMix(getImageByID("cv-result"));
 
         // Will be shared with Convolution and Dispersion
         Async::putShared("convMixParamsChanged", &(vars.convMixParamsChanged));
-        Async::putShared("selImageIndex", &selImageIndex);
+        Async::putShared("selImageID", &selImageID);
     }
 
     // To kill child processes when the parent dies
@@ -230,7 +228,7 @@ int main(int argc, char** argv)
     Config::save();
     if (!CLI::hasCommands())
         convResUsageThread->join();
-    dispersion.cancel();
+    disp.cancel();
     conv.cancelConv();
     cleanUp();
     return 0;
@@ -238,6 +236,21 @@ int main(int argc, char** argv)
 
 void layout()
 {
+    // Selected image
+
+    if (!selImageID.empty())
+    {
+        for (size_t i = 0; i < images.size(); i++)
+        {
+            if (images[i]->getID() == selImageID)
+            {
+                selImageIndex = i;
+                break;
+            }
+        }
+        selImageID = "";
+    }
+
     CmImage& selImage = *(images[selImageIndex]);
 
     static int lastSelImageIndex = selImageIndex;
@@ -258,12 +271,12 @@ void layout()
         ImGui::PopItemWidth();
 
         // For comparing conv. input and result
-        if (selImageIndex == 3 || selImageIndex == 8)
+        if ((selImage.getID() == "cv-input") || (selImage.getID() == "cv-result"))
         {
             if (ImGui::Button("Compare", btnSize()))
             {
-                if (selImageIndex == 3) selImageIndex = 8;
-                else selImageIndex = 3;
+                if (selImage.getID() == "cv-input") selImageID = "cv-result";
+                else selImageID = "cv-input";
             }
         }
 
@@ -322,23 +335,20 @@ void layout()
     }
 
     // Controls
-    CmImage& imgAperture = *getImage("aperture");
-    CmImage& imgDiffPattern = *getImage("diff");
-    CmImage& imgDispersion = *getImage("disp");
-    CmImage& imgConvInput = *getImage("cv-input");
-    CmImage& imgKernel = *getImage("cv-kernel");
-    CmImage& imgConvLayer = *getImage("cv-layer");
-    CmImage& imgConvResult = *getImage("cv-result");
+    CmImage& imgAperture = *getImageByID("aperture");
+    CmImage& imgConvInput = *getImageByID("cv-input");
+    CmImage& imgConvKernel = *getImageByID("cv-kernel");
+    CmImage& imgConvLayer = *getImageByID("cv-layer");
     {
         ImGui::Begin("Diffraction Pattern");
 
         IMGUI_BOLD("APERTURE");
 
         {
-            static std::string loadResult;
+            static std::string loadError;
             if (ImGui::Button("Browse Aperture##DP", btnSize()))
-                loadImage(imgAperture, 0, nullptr, loadResult);
-            imGuiText(loadResult, true, false);
+                loadImage(imgAperture, []() {}, loadError);
+            imGuiText(loadError, true, false);
         }
 
         IMGUI_DIV;
@@ -348,29 +358,41 @@ void layout()
 
         if (ImGui::Button("Compute##DP", btnSize()))
         {
-            updateDiffPatternParams();
-            diffPattern.compute();
+            updateDiffParams();
+            diff.compute();
+            vars.dispParamsChanged = true;
         }
 
-        if (!diffPattern.success())
+        if (!diff.success())
         {
-            std::string dpError = diffPattern.getError();
+            std::string dpError = diff.getError();
             imGuiText(dpError, true, false);
         }
 
         IMGUI_DIV;
         IMGUI_BOLD("DISPERSION");
 
-        if (ImGui::SliderFloat("Exposure##Disp", &(vars.dp_exposure), -10, 10))
-            vars.dpParamsChanged = true;
-        if (ImGui::SliderFloat("Contrast##Disp", &(vars.dp_contrast), -1, 1))
-            vars.dpParamsChanged = true;
-
-        if (vars.dpParamsChanged)
         {
-            vars.dpParamsChanged = false;
-            updateDiffPatternParams();
-            diffPattern.render();
+            static std::string loadError;
+            if (ImGui::Button("Browse Input##Disp", btnSize()))
+            {
+                CmImage* inputSrc = disp.getImgInputSrc();
+                loadImage(*inputSrc, []() { vars.dispParamsChanged = true; }, loadError);
+            }
+            imGuiText(loadError, true, false);
+        }
+
+        if (ImGui::SliderFloat("Exposure##Disp", &(vars.ds_exposure), -10, 10))
+            vars.dispParamsChanged = true;
+        if (ImGui::SliderFloat("Contrast##Disp", &(vars.ds_contrast), -1, 1))
+            vars.dispParamsChanged = true;
+
+        if (vars.dispParamsChanged)
+        {
+            vars.dispParamsChanged = false;
+            updateDispParams();
+            disp.previewInput();
+            selImageID = "disp-input";
         }
 
         ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024);
@@ -380,25 +402,19 @@ void layout()
 
         if (ImGui::Button("Apply##Disp", btnSize()))
         {
-            RealBloom::DispersionParams* dispParams = dispersion.getParams();
-            dispParams->steps = vars.ds_steps;
-            dispParams->amount = vars.ds_amount;
-            dispParams->color = std::array<float, 3>{ vars.ds_col[0], vars.ds_col[1], vars.ds_col[2] };
-
-            dispersion.setNumThreads(vars.ds_numThreads);
-
-            selImageIndex = 2;
-            dispersion.compute();
+            selImageID = "disp-result";
+            updateDispParams();
+            disp.compute();
         }
 
-        if (dispersion.isWorking())
+        if (disp.isWorking())
         {
             if (ImGui::Button("Cancel##Disp", btnSize()))
-                dispersion.cancel();
+                disp.cancel();
         }
 
-        std::string dispStats = dispersion.getStats();
-        imGuiText(dispStats, dispersion.hasFailed(), false);
+        std::string dispStats = disp.getStats();
+        imGuiText(dispStats, disp.hasFailed(), false);
 
         ImGui::NewLine();
         imGuiDialogs();
@@ -409,17 +425,20 @@ void layout()
         IMGUI_BOLD("INPUT");
 
         {
-            static std::string loadResult;
+            static std::string loadError;
             if (ImGui::Button("Browse Input##Conv", btnSize()))
-                loadImage(imgConvInput, 3, nullptr, loadResult);
-            imGuiText(loadResult, true, false);
+                loadImage(imgConvInput, []() {}, loadError);
+            imGuiText(loadError, true, false);
         }
 
         {
-            static std::string loadResult;
+            static std::string loadError;
             if (ImGui::Button("Browse Kernel##Conv", btnSize()))
-                loadImage(imgKernel, 4, &(vars.convParamsChanged), loadResult);
-            imGuiText(loadResult, true, false);
+            {
+                CmImage* kernelSrc = conv.getImgKernelSrc();
+                loadImage(*kernelSrc, []() { vars.convParamsChanged = true; }, loadError);
+            }
+            imGuiText(loadError, true, false);
         }
 
         IMGUI_DIV;
@@ -500,7 +519,7 @@ void layout()
             vars.convParamsChanged = false;
             updateConvParams();
             conv.kernel();
-            selImageIndex = 5;
+            selImageID = "cv-kernel";
         }
 
         IMGUI_DIV;
@@ -562,7 +581,7 @@ void layout()
             conv.previewThreshold();
             if (vars.convThresholdSwitchImage)
             {
-                selImageIndex = 6;
+                selImageID = "cv-prev";
                 vars.convThresholdSwitchImage = false;
             }
             vars.convThresholdChanged = false;
@@ -573,7 +592,7 @@ void layout()
             imgConvLayer.resize(imgConvInput.getWidth(), imgConvInput.getHeight(), true);
             imgConvLayer.fill(color_t{ 0, 0, 0, 1 }, true);
             imgConvLayer.moveToGPU();
-            selImageIndex = 7;
+            selImageID = "cv-layer";
 
             updateConvParams();
             conv.convolve();
@@ -640,10 +659,11 @@ void layout()
                 vars.convMixParamsChanged = true;
         }
 
-        if (ImGui::Button("Conv. Only##Conv", btnSize()))
+        if (ImGui::Button("Show Conv. Layer##Conv", btnSize()))
         {
             vars.cm_additive = false;
-            vars.cm_mix = 1.0;
+            vars.cm_mix = 1.0f;
+            vars.cm_convExposure = 0.0f;
             vars.convMixParamsChanged = true;
         }
 
@@ -651,7 +671,7 @@ void layout()
         {
             vars.convMixParamsChanged = false;
             conv.mixConv(vars.cm_additive, vars.cm_inputMix, vars.cm_convMix, vars.cm_mix, vars.cm_convExposure);
-            selImageIndex = 8;
+            selImageID = "cv-result";
         }
 
         ImGui::NewLine();
@@ -740,8 +760,8 @@ void layout()
             if (vars.cmsParamsChanged)
             {
                 vars.cmsParamsChanged = false;
-                for (CmImage* image : images)
-                    image->moveToGPU();
+                for (auto& img : images)
+                    img->moveToGPU();
             }
 
         }
@@ -813,11 +833,12 @@ void layout()
             {
                 tableChanged = false;
                 cmfPreviewError = "";
-                selImageIndex = 2;
-                dispersion.cancel();
+                selImageID = "disp-result";
+
+                disp.cancel();
                 try
                 {
-                    dispersion.previewCmf();
+                    disp.previewCmf();
                 } catch (const std::exception& e)
                 {
                     cmfPreviewError = e.what();
@@ -1031,13 +1052,18 @@ bool imguiCombo(const std::string& label, const std::vector<std::string>& items,
     return result;
 }
 
-CmImage* getImage(const std::string& id)
+void addImage(const std::string& id, const std::string& name)
 {
-    for (uint32_t i = 0; i < images.size(); i++)
-    {
-        if (images[i]->getID() == id)
-            return images[i];
-    }
+    std::shared_ptr<CmImage> img = std::make_shared<CmImage>(id, name);
+    images.push_back(img);
+    imageNames.push_back(name);
+}
+
+CmImage* getImageByID(const std::string& id)
+{
+    for (auto& img : images)
+        if (img->getID() == id)
+            return img.get();
     return nullptr;
 }
 
@@ -1078,19 +1104,18 @@ bool saveImageDialog(std::string& outFilename)
     return false;
 }
 
-void loadImage(CmImage& image, int imageIndex, bool* toSetTrue, std::string& outError)
+void loadImage(CmImage& image, std::function<void()> onLoad, std::string& outError)
 {
     std::string filename;
     if (openImageDialog(filename))
     {
         dialogAction_colorSpace = std::packaged_task<void()>(
-            [&image, imageIndex, toSetTrue, filename, &outError]()
+            [&image, onLoad, filename, &outError]()
             {
                 if (CmImageIO::readImage(image, filename, dialogResult_colorSpace, outError))
                 {
-                    selImageIndex = imageIndex;
-                    if (toSetTrue != nullptr)
-                        *toSetTrue = true;
+                    selImageID = image.getID();
+                    onLoad();
                 }
             });
 
@@ -1174,12 +1199,21 @@ void imGuiDialogs()
     }
 }
 
-void updateDiffPatternParams()
+void updateDiffParams()
 {
-    RealBloom::DiffractionPatternParams* dpParams = diffPattern.getParams();
-    dpParams->contrast = vars.dp_contrast;
-    dpParams->exposure = vars.dp_exposure;
+    RealBloom::DiffractionPatternParams* dpParams = diff.getParams();
     dpParams->grayscale = vars.dp_grayscale;
+}
+
+void updateDispParams()
+{
+    RealBloom::DispersionParams* dispParams = disp.getParams();
+    dispParams->exposure = vars.ds_exposure;
+    dispParams->contrast = vars.ds_contrast;
+    dispParams->steps = vars.ds_steps;
+    dispParams->amount = vars.ds_amount;
+    dispParams->color = std::array<float, 3>{ vars.ds_col[0], vars.ds_col[1], vars.ds_col[2] };
+    disp.setNumThreads(vars.ds_numThreads);
 }
 
 void updateConvParams()
@@ -1403,9 +1437,7 @@ void applyStyle_RealBloomGray()
 void cleanUp()
 {
     if (!CLI::hasCommands())
-    {
-        for (auto image : images) delete image;
-    }
+        clearVector(images);
 
     CmImage::cleanUp();
     CMF::cleanUp();

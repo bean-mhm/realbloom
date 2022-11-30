@@ -42,7 +42,7 @@ namespace RealBloom
     struct ConvolutionParams
     {
         ConvolutionMethodInfo methodInfo;
-        bool kernelNormalize = true;
+        bool  kernelNormalize = true;
         float kernelExposure = 0.0f;
         float kernelContrast = 0.0f;
         float kernelRotation = 0.0f;
@@ -82,12 +82,13 @@ namespace RealBloom
         ConvolutionState m_state;
         ConvolutionParams m_params;
 
-        CmImage* m_imageInput = nullptr;
-        CmImage* m_imageKernel = nullptr;
-        CmImage* m_imageKernelPreview = nullptr;
-        CmImage* m_imageConvPreview = nullptr;
-        CmImage* m_imageConvLayer = nullptr;
-        CmImage* m_imageConvMix = nullptr;
+        CmImage* m_imgInput = nullptr;
+        CmImage* m_imgKernel = nullptr;
+        CmImage* m_imgConvPreview = nullptr;
+        CmImage* m_imgConvLayer = nullptr;
+        CmImage* m_imgConvMix = nullptr;
+
+        CmImage m_imgKernelSrc;
 
         std::thread* m_thread = nullptr;
         std::vector<ConvolutionThread*> m_threads;
@@ -98,17 +99,16 @@ namespace RealBloom
         Convolution();
         ConvolutionParams* getParams();
 
-        void setInputImage(CmImage* image);
-        void setKernelImage(CmImage* image);
-        void setKernelPreviewImage(CmImage* image);
-        void setConvPreviewImage(CmImage* image);
-        void setConvLayerImage(CmImage* image);
-        void setConvMixImage(CmImage* image);
+        void setImgInput(CmImage* image);
+        void setImgKernel(CmImage* image);
+        void setImgConvPreview(CmImage* image);
+        void setImgConvLayer(CmImage* image);
+        void setImgConvMix(CmImage* image);
+        CmImage* getImgKernelSrc();
 
         void previewThreshold(size_t* outNumPixels = nullptr);
-        void kernel(bool previewMode = true, float** outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
+        void kernel(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
         void mixConv(bool additive, float inputMix, float convMix, float mix, float convExposure);
-
         void convolve();
         void cancelConv();
 
