@@ -34,7 +34,21 @@ bool CliParser::hasValue(const std::string& argument) const
     itr = std::find(this->m_tokens.begin(), this->m_tokens.end(), argument);
 
     if ((itr != this->m_tokens.end()) && (++itr != this->m_tokens.end()))
-        return true;
+    {
+        if (!(itr->empty()))
+        {
+            if (itr->starts_with("-"))
+            {
+                if (itr->size() > 1)
+                    if (isdigit(itr->c_str()[1]) || (itr[1] == "."))
+                        return true;
+            }
+            else
+            {
+                return true;
+            }
+        }
+    }
     return false;
 }
 
@@ -48,18 +62,24 @@ bool CliParser::hasValue(const std::vector<std::string>& aliases) const
 /// @author iain
 const std::string& CliParser::get(const std::string& argument) const
 {
+    if (!hasValue(argument))
+        throw std::exception(std::string("Argument \"" + argument + "\" doesn't have a value.").c_str());
+
     std::vector<std::string>::const_iterator itr;
     itr = std::find(this->m_tokens.begin(), this->m_tokens.end(), argument);
     if ((itr != this->m_tokens.end()) && (++itr != this->m_tokens.end()))
         return *itr;
-    throw std::exception(std::string("Argument \"" + argument + "\" doesn't have a value.").c_str());
+    return "";
 }
 
 const std::string& CliParser::get(const std::vector<std::string>& aliases) const
 {
+    if (!hasValue(aliases))
+        throw std::exception(std::string("Argument \"" + aliases[0] + "\" doesn't have a value.").c_str());
+
     for (const auto& alias : aliases)
         if (hasValue(alias)) return get(alias);
-    throw std::exception(std::string("Argument \"" + aliases[0] + "\" doesn't have a value.").c_str());
+    return "";
 }
 
 const std::string& CliParser::get(size_t index) const

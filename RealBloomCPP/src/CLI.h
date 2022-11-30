@@ -15,6 +15,7 @@ struct CliArgument
 {
     std::vector<std::string> aliases;
     std::string desc;
+    std::string defaultValue;
     bool required;
 };
 

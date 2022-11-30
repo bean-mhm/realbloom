@@ -25,6 +25,7 @@ std::vector<CliCommand> g_commands;
 void cmdVersion(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
 void cmdHelp(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
 void cmdDiff(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
+void cmdDisp(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
 void cmdConv(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
 void cmdCmfDetails(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
 void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
@@ -36,25 +37,29 @@ void printArguments(CliCommand& command)
     {
         std::string s_aliases = strList(arg.aliases, ", ");
 
+        std::string desc;
+        if (arg.defaultValue.empty()) desc = arg.desc;
+        else desc = arg.desc + consoleColor(CLR_SEC) + " [def: " + arg.defaultValue + "]" + consoleColor();
+
         if (arg.required)
             std::cout
             << "  "
             << consoleColor(CLR_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
             << consoleColor(CLR_ERR) << "* " << consoleColor()
-            << strWordWrap(arg.desc, 52, 28)
-            << "\n";
+            << strWordWrap(desc, 52, 28)
+            << consoleColor() << "\n";
         else
             std::cout
             << "  "
             << consoleColor(CLR_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
-            << strWordWrap(arg.desc, 54, 26)
-            << "\n";
+            << strWordWrap(desc, 54, 26)
+            << consoleColor() << "\n";
     }
 }
 
 void printVersion()
 {
-    std::cout << consoleColor(CLR_PRI) << Config::S_APP_VERSION << consoleColor() << "\n";
+    std::cout << Config::S_APP_VERSION << "\n";
 }
 
 void printHelp(const std::string& cmdName = "")
@@ -80,7 +85,8 @@ void printHelp(const std::string& cmdName = "")
         std::cout
             << "\n"
             << "Type help <command> to see how to use a specific command.\n";
-    } else
+    }
+    else
     {
         // Find the command
         CliCommand* cmdPtr = nullptr;
@@ -112,7 +118,8 @@ void printHelp(const std::string& cmdName = "")
                     << consoleColor(CLR_PRI) << "Arguments:\n" << consoleColor();
                 printArguments(*cmdPtr);
             }
-        } else
+        }
+        else
         {
             std::cout << "This command doesn't exist.\n";
         }
@@ -141,59 +148,101 @@ void CLI::init(int& argc, char** argv)
 
         g_commands.push_back(CliCommand{
             "diff",
-            "Generate diffraction pattern and optionally apply dispersion",
-            "diff -i aperture.png -a sRGB -o output.exr -b Linear "
-            "-e 1.0 -c 0.1 -d 0.4 -s 128 -t 1.0,0.8,1.0 -f \"CIE 1931 2-deg.csv\" -x \"XYZ I-E\"",
+            "Generate diffraction pattern",
+            "diff -i aperture.png -a sRGB -o output.exr -b Linear",
             {
-                {{"--input", "-i"}, "Input filename", true},
-                {{"--input-space", "-a"}, "Input color space", true},
-                {{"--output", "-o"}, "Output filename", true},
-                {{"--output-space", "-b"}, "Output color space", true},
-                {{"--exposure", "-e"}, "Diffraction pattern exposure", true},
-                {{"--contrast", "-c"}, "Diffraction pattern contrast", true},
-                {{"--no-disp", "-n"}, "Disable dispersion", false},
-                {{"--disp-amount", "-d"}, "Amount of dispersion", false},
-                {{"--disp-steps", "-s"}, "Number of wavelengths to sample for dispersion", false},
-                {{"--disp-color", "-t"}, "Dispersion color", false},
-                {{"--cmf", "-f"}, "CMF table filename", false},
-                {{"--xyz-space", "-x"}, "XYZ I-E color space", false},
-                {{"--common-space", "-y"}, "Use CommonSpace for XYZ conversions", false},
-                {{"--common-user", "-u"}, "Common color space in the user config", false},
-                {{"--common-internal", "-w"}, "Common color space in the internal config", false}
+                {{"--input", "-i"}, "Input filename", "", true},
+                {{"--input-space", "-a"}, "Input color space", "", true},
+                {{"--output", "-o"}, "Output filename", "", true},
+                {{"--output-space", "-b"}, "Output color space", "", true},
+                {{"--grayscale", "-g"}, "Grayscale", "", false}
             },
             cmdDiff }
         );
 
         g_commands.push_back(CliCommand{
+            "disp",
+            "Apply dispersion",
+            "disp -i aperture.png -a sRGB -o output.exr -b Linear "
+            "-s 128 -d 0.4",
+            {
+                {{"--input", "-i"}, "Input filename", "", true},
+                {{"--input-space", "-a"}, "Input color space", "", true},
+                {{"--output", "-o"}, "Output filename", "", true},
+                {{"--output-space", "-b"}, "Output color space", "", true},
+                {{"--exposure", "-e"}, "Exposure", "0", false},
+                {{"--contrast", "-c"}, "Contrast", "0", false},
+                {{"--steps", "-s"}, "Number of wavelengths to sample", "", true},
+                {{"--amount", "-d"}, "Amount of dispersion", "", true},
+                {{"--color", "-t"}, "Dispersion color", "1,1,1", false},
+                {{"--cmf", "-f"}, "CMF table filename", "", false},
+                {{"--xyz-space", "-x"}, "XYZ I-E color space", "", false},
+                {{"--xyz-user", "-u"}, "Common XYZ color space in the user config", "", false},
+                {{"--xyz-internal", "-w"}, "Common XYZ color space in the internal config", "", false}
+            },
+            cmdDisp }
+        );
+
+        g_commands.push_back(CliCommand{
             "conv",
             "Perform convolution",
-            "conv",
+            "conv -i input.exr -a Linear -k kernel.exr -b Linear -o conv.exr -c Linear",
             {
-                {{"--input", "-i"}, "Input filename", true},
-                {{"--input-space", "-a"}, "Input color space", true},
-                {{"--kernel", "-k"}, "Kernel filename", true},
-                {{"--kernel-space", "-b"}, "Kernel color space", true},
-                {{"--layer", "-l"}, "Conv. Layer filename", false},
-                {{"--layer-space", "-c"}, "Conv. Layer color space", false},
-                {{"--output", "-o"}, "Conv. Result filename", false},
-                {{"--output-space", "-d"}, "Conv. Result color space", false},
-                {{"--knl-exposure"}, "Kernel exposure", false},
-                {{"--knl-contrast"}, "Kernel contrast", false},
-                {{"--knl-rotation"}, "Kernel rotation", false},
-                {{"--knl-scale"}, "Kernel scale", false},
-                {{"--knl-crop"}, "Kernel crop", false},
-                {{"--knl-center"}, "Kernel center", false},
-                {{"--device"}, "Device (CPU|GPU)", true},
-                {{"--threads"}, "CPU threads", false},
-                {{"--chunks"}, "GPU chunks", false},
-                {{"--threshold"}, "Threshold", true},
-                {{"--knee"}, "Threshold knee", true},
-                {{"--input-mix"}, "Input mix (additive blending)", false},
-                {{"--conv-mix"}, "Conv. Layer mix (additive blending)", false},
-                {{"--mix"}, "Blend between input and conv. layer (normal blending)", false},
-                {{"--conv-exposure"}, "Conv. Layer exposure", false}
+                {{"--input", "-i"}, "Input filename", "", true},
+                {{"--input-space", "-a"}, "Input color space", "", true},
+                {{"--kernel", "-k"}, "Kernel filename", "", true},
+                {{"--kernel-space", "-b"}, "Kernel color space", "", true},
+                {{"--output", "-o"}, "Output filename", "", true},
+                {{"--output-space", "-c"}, "Output color space", "", true},
+                {{"--knl-exposure"}, "Kernel exposure", "0", false},
+                {{"--knl-contrast"}, "Kernel contrast", "0", false},
+                {{"--knl-rotation"}, "Kernel rotation", "0", false},
+                {{"--knl-scale"}, "Kernel scale", "1", false},
+                {{"--knl-crop"}, "Kernel crop", "1", false},
+                {{"--knl-center"}, "Kernel center", "0.5,0.5", false},
+                {{"--threshold"}, "Threshold", "0", false},
+                {{"--knee"}, "Threshold knee", "0", false},
+                {{"--input-mix"}, "Input mix (additive blending)", "", false},
+                {{"--conv-mix"}, "Output mix (additive blending)", "", false},
+                {{"--mix"}, "Blend between input and output (normal blending)", "1", false},
+                {{"--conv-exposure"}, "Conv. output exposure", "0", false}
             },
             cmdConv }
+        );
+
+        g_commands.push_back(CliCommand{
+            "cmf-details",
+            "Print CMF table details",
+            "cmf-details -f \"CIE 1931 2-deg.csv\"",
+            {
+                {{"--cmf", "-f"}, "CMF table filename", "", true}
+            },
+            cmdCmfDetails }
+        );
+
+        g_commands.push_back(CliCommand{
+            "cmf-preview",
+            "Preview CMF",
+            "cmf-preview -f \"CIE 1931 2-deg.csv\" -o cmf.exr -a Linear",
+            {
+                {{"--cmf", "-f"}, "CMF table filename", "", true},
+                {{"--output", "-o"}, "Output filename", "", true},
+                {{"--output-space", "-a"}, "Output color space", "", true},
+                {{"--xyz-space", "-x"}, "XYZ I-E color space", "", false},
+                {{"--xyz-user", "-u"}, "Common XYZ color space in the user config", "", false},
+                {{"--xyz-internal", "-w"}, "Common XYZ color space in the internal config", "", false}
+            },
+            cmdCmfPreview }
+        );
+
+        g_commands.push_back(CliCommand{
+            "colorspaces",
+            "Print the available color spaces",
+            "colorspaces [--internal]",
+            {
+                {{"--internal", "-i"}, "Use the internal config", "", false}
+            },
+            cmdColorspaces }
         );
     }
 
@@ -230,18 +279,32 @@ void CLI::proceed()
             {
                 StringMap args;
                 for (const auto& arg : cmd.arguments)
+                {
                     if (arg.required)
                     {
                         args[arg.aliases[0]] = parser.get(arg.aliases);
-                    } else
+                    }
+                    else
                     {
                         if (parser.hasValue(arg.aliases))
                             args[arg.aliases[0]] = parser.get(arg.aliases);
                         else if (parser.exists(arg.aliases))
                             args[arg.aliases[0]] = "";
                     }
-                    bool verbose = parser.exists(std::vector<std::string>{ "--verbose", "-v" });
-                    cmd.action(cmd, parser, args, verbose);
+                }
+
+                bool verbose = parser.exists(std::vector<std::string>{ "--verbose", "-v" });
+
+                // Print the argument map
+                if (0)
+                {
+                    std::cout << "Arguments:\n";
+                    for (const auto& value : args)
+                        std::cout << strFormat("\"%s\": \"%s\"\n", value.first.c_str(), value.second.c_str());
+                    std::cout << "\n";
+                }
+
+                cmd.action(cmd, parser, args, verbose);
             } catch (const std::exception& e)
             {
                 std::cerr << consoleColor(CONSOLE_RED) << e.what() << consoleColor() << "\n\n";
@@ -267,6 +330,11 @@ void cmdHelp(const CliCommand& cmd, const CliParser& parser, const StringMap& ar
 void cmdDiff(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
 {
     std::cout << "Test\n";
+}
+
+void cmdDisp(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
+{
+    //
 }
 
 void cmdConv(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
