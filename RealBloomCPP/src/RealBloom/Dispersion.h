@@ -66,6 +66,7 @@ namespace RealBloom
 
         void setImgInput(CmImage* image);
         void setImgDisp(CmImage* image);
+
         CmImage* getImgInputSrc();
 
         void setNumThreads(uint32_t numThreads);

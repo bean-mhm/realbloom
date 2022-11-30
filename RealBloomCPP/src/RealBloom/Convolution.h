@@ -85,10 +85,10 @@ namespace RealBloom
         CmImage* m_imgInput = nullptr;
         CmImage* m_imgKernel = nullptr;
         CmImage* m_imgConvPreview = nullptr;
-        CmImage* m_imgConvLayer = nullptr;
         CmImage* m_imgConvMix = nullptr;
 
         CmImage m_imgKernelSrc;
+        CmImage m_imgOutput;
 
         std::thread* m_thread = nullptr;
         std::vector<ConvolutionThread*> m_threads;
@@ -102,8 +102,8 @@ namespace RealBloom
         void setImgInput(CmImage* image);
         void setImgKernel(CmImage* image);
         void setImgConvPreview(CmImage* image);
-        void setImgConvLayer(CmImage* image);
         void setImgConvMix(CmImage* image);
+
         CmImage* getImgKernelSrc();
 
         void previewThreshold(size_t* outNumPixels = nullptr);

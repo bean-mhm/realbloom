@@ -23,7 +23,7 @@ namespace RealBloom
         m_state.failed = true;
     }
 
-    Convolution::Convolution() : m_imgKernelSrc("", "")
+    Convolution::Convolution() : m_imgKernelSrc("", ""), m_imgOutput("", "")
     {}
 
     ConvolutionParams* Convolution::getParams()
@@ -44,11 +44,6 @@ namespace RealBloom
     void Convolution::setImgConvPreview(CmImage* image)
     {
         m_imgConvPreview = image;
-    }
-
-    void Convolution::setImgConvLayer(CmImage* image)
-    {
-        m_imgConvLayer = image;
     }
 
     void Convolution::setImgConvMix(CmImage* image)
@@ -353,16 +348,16 @@ namespace RealBloom
 
         {
             // Input buffer
-            std::lock_guard<CmImage> inputImageLock(*m_imgInput);
+            std::lock_guard<CmImage> lock1(*m_imgInput);
             float* inputBuffer = m_imgInput->getImageData();
             uint32_t inputWidth = m_imgInput->getWidth();
             uint32_t inputHeight = m_imgInput->getHeight();
 
             // Conv Buffer
-            std::lock_guard<CmImage> convLayerImageLock(*m_imgConvLayer);
-            float* convBuffer = m_imgConvLayer->getImageData();
-            uint32_t convWidth = m_imgConvLayer->getWidth();
-            uint32_t convHeight = m_imgConvLayer->getHeight();
+            std::lock_guard<CmImage> lock2(m_imgOutput);
+            float* convBuffer = m_imgOutput.getImageData();
+            uint32_t convWidth = m_imgOutput.getWidth();
+            uint32_t convHeight = m_imgOutput.getHeight();
 
             if ((inputWidth == convWidth) && (inputHeight == convHeight))
             {
@@ -507,11 +502,11 @@ namespace RealBloom
                         m_state.fftStage = strFormat("%u/%u Finalizing", currStage, numStages);
                         fftConv.output();
 
-                        // Pour the result into the conv. layer
+                        // Update the output image
                         {
-                            std::lock_guard<CmImage> lock(*m_imgConvLayer);
-                            m_imgConvLayer->resize(inputWidth, inputHeight, false);
-                            float* convBuffer = m_imgConvLayer->getImageData();
+                            std::lock_guard<CmImage> lock(m_imgOutput);
+                            m_imgOutput.resize(inputWidth, inputHeight, false);
+                            float* convBuffer = m_imgOutput.getImageData();
                             std::copy(
                                 fftConv.getBuffer().data(),
                                 fftConv.getBuffer().data() + fftConv.getBuffer().size(),
@@ -605,15 +600,15 @@ namespace RealBloom
                                     }
                                 }
 
-                                // Copy progBuffer into the convolution layer
+                                // Copy progBuffer into conv. mix
                                 {
-                                    std::lock_guard<CmImage> lock(*m_imgConvLayer);
-                                    m_imgConvLayer->resize(inputWidth, inputHeight, false);
-                                    float* convBuffer = m_imgConvLayer->getImageData();
+                                    std::lock_guard<CmImage> lock(*m_imgConvMix);
+                                    m_imgConvMix->resize(inputWidth, inputHeight, false);
+                                    float* convBuffer = m_imgConvMix->getImageData();
 
                                     std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, convBuffer);
                                 }
-                                m_imgConvLayer->moveToGPU();
+                                m_imgConvMix->moveToGPU();
 
                                 lastTime = std::chrono::system_clock::now();
                             }
@@ -652,11 +647,10 @@ namespace RealBloom
 
                 if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
                 {
-                    // Prepare the convolution layer
-                    std::lock_guard<CmImage> lock(*m_imgConvLayer);
-                    m_imgConvLayer->resize(inputWidth, inputHeight, false);
-                    m_imgConvLayer->fill(color_t{ 0, 0, 0, 1 }, false);
-                    float* convBuffer = m_imgConvLayer->getImageData();
+                    // Prepare the output buffer
+                    std::lock_guard<CmImage> lock(m_imgOutput);
+                    m_imgOutput.resize(inputWidth, inputHeight, false);
+                    float* convBuffer = m_imgOutput.getImageData();
 
                     // Add the buffers from each thread
                     for (uint32_t i = 0; i < numThreads; i++)
@@ -681,6 +675,7 @@ namespace RealBloom
                                         convBuffer[redIndex + 0] += threadBuffer[redIndex + 0] * CONV_MULTIPLIER;
                                         convBuffer[redIndex + 1] += threadBuffer[redIndex + 1] * CONV_MULTIPLIER;
                                         convBuffer[redIndex + 2] += threadBuffer[redIndex + 2] * CONV_MULTIPLIER;
+                                        convBuffer[redIndex + 3] += 1.0f;
                                     }
                                 }
                             }
@@ -833,7 +828,7 @@ namespace RealBloom
                                 break;
                             }
 
-                            // Read stat file and update conv layer
+                            // Read stat file
                             if (!(m_state.mustCancel) && std::filesystem::exists(cgStatFilename) && (getElapsedMs(t1) > CONV_PROG_TIMESTEP))
                             {
                                 ConvolutionGPUBinaryStat cgBinStat;
@@ -841,7 +836,7 @@ namespace RealBloom
 
                                 // Open and read the stat file, check if numChunksDone has increased,
                                 // and if it has, then read the rest of the file and the buffer, and
-                                // show it using the conv layer image.
+                                // show it through conv. mix
                                 std::ifstream cgStatFile;
                                 cgStatFile.open(cgStatFilename, std::ifstream::in | std::ifstream::binary);
                                 bool statParseFailed = false;
@@ -874,14 +869,14 @@ namespace RealBloom
 
                                     if (!statParseFailed && (cgBinStat.bufferSize > 0) && (cgBinStat.buffer != nullptr))
                                     {
-                                        // Copy the stat buffer into the convolution layer
+                                        // Copy the stat buffer into conv. mix
                                         {
-                                            std::lock_guard<CmImage> lock(*m_imgConvLayer);
-                                            m_imgConvLayer->resize(inputWidth, inputHeight, false);
-                                            float* convBuffer = m_imgConvLayer->getImageData();
+                                            std::lock_guard<CmImage> lock(*m_imgConvMix);
+                                            m_imgConvMix->resize(inputWidth, inputHeight, false);
+                                            float* convBuffer = m_imgConvMix->getImageData();
                                             std::copy(cgBinStat.buffer, cgBinStat.buffer + cgBinStat.bufferSize, convBuffer);
                                         }
-                                        m_imgConvLayer->moveToGPU();
+                                        m_imgConvMix->moveToGPU();
                                     }
 
                                     DELARR(cgBinStat.buffer);
@@ -969,18 +964,17 @@ namespace RealBloom
                                     "Could not retrieve data from the output file, failed at \"%s\".", parseStage.c_str()));
                     }
 
-                    // If successful, copy the output buffer to our conv. layer,
+                    // If successful, update the output image
                     // otherwise set error
                     if (!m_state.failed)
                     {
                         if (cgBinOutput.status == 1)
                         {
-                            // Prepare the convolution layer
-                            std::lock_guard<CmImage> lock(*m_imgConvLayer);
-                            m_imgConvLayer->resize(inputWidth, inputHeight, false);
-                            m_imgConvLayer->fill(color_t{ 0, 0, 0, 1 }, false);
-                            float* convBuffer = m_imgConvLayer->getImageData();
-                            uint32_t convBufferSize = m_imgConvLayer->getImageDataSize();
+                            // Prepare the output buffer
+                            std::lock_guard<CmImage> lock(m_imgOutput);
+                            m_imgOutput.resize(inputWidth, inputHeight, false);
+                            float* convBuffer = m_imgOutput.getImageData();
+                            uint32_t convBufferSize = m_imgOutput.getImageDataSize();
 
                             if (convBufferSize == cgBinOutput.bufferSize)
                             {
@@ -1034,44 +1028,9 @@ namespace RealBloom
                 clearVector(inputBuffer);
                 clearVector(kernelBuffer);
 
-                // Update the conv. layer image
+                // Update convMixParamsChanged
                 if (!m_state.failed && !m_state.mustCancel)
                 {
-                    {
-                        std::lock_guard<CmImage> lock(*m_imgConvLayer);
-                        float* buffer = m_imgConvLayer->getImageData();
-                        uint32_t num = m_imgConvLayer->getImageDataSize();
-
-                        float minV[3] = { buffer[0], buffer[1], buffer[2] };
-                        float maxV[3] = { buffer[0], buffer[1], buffer[2] };
-                        for (size_t i = 0; i < num; i++)
-                        {
-                            if (i % 4 != 3)
-                            {
-                                if (buffer[i] > maxV[i % 4])
-                                    maxV[i % 4] = buffer[i];
-                                if (buffer[i] < minV[i % 4])
-                                    minV[i % 4] = buffer[i];
-                            }
-                        }
-
-                        // Print details about the output
-                        if (0)
-                        {
-                            std::cout << strFormat(
-                                "device type:  %u\n"
-                                "R range:      %.3f - %.3f\n"
-                                "G range:      %.3f - %.3f\n"
-                                "B range:      %.3f - %.3f\n\n",
-                                (uint32_t)m_params.methodInfo.method,
-                                minV[0], maxV[0],
-                                minV[1], maxV[1],
-                                minV[2], maxV[2]
-                            );
-                        }
-                    }
-
-                    m_imgConvLayer->moveToGPU();
                     Async::schedule([this]()
                         {
                             bool* pConvMixParamsChanged = (bool*)Async::getShared("convMixParamsChanged");

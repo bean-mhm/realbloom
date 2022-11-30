@@ -101,7 +101,6 @@ int main(int argc, char** argv)
         addImage("cv-input", "Conv. Input");
         addImage("cv-kernel", "Conv. Kernel");
         addImage("cv-prev", "Conv. Preview");
-        addImage("cv-layer", "Conv. Layer");
         addImage("cv-result", "Conv. Result");
 
         // Set up images for diffraction pattern
@@ -116,7 +115,6 @@ int main(int argc, char** argv)
         conv.setImgInput(getImageByID("cv-input"));
         conv.setImgKernel(getImageByID("cv-kernel"));
         conv.setImgConvPreview(getImageByID("cv-prev"));
-        conv.setImgConvLayer(getImageByID("cv-layer"));
         conv.setImgConvMix(getImageByID("cv-result"));
 
         // Will be shared with Convolution and Dispersion
@@ -336,9 +334,11 @@ void layout()
 
     // Controls
     CmImage& imgAperture = *getImageByID("aperture");
+    CmImage& imgDispInput = *getImageByID("disp-input");
+    CmImage& imgDispResult = *getImageByID("disp-result");
     CmImage& imgConvInput = *getImageByID("cv-input");
     CmImage& imgConvKernel = *getImageByID("cv-kernel");
-    CmImage& imgConvLayer = *getImageByID("cv-layer");
+    CmImage& imgConvResult = *getImageByID("cv-result");
     {
         ImGui::Begin("Diffraction Pattern");
 
@@ -402,7 +402,11 @@ void layout()
 
         if (ImGui::Button("Apply##Disp", btnSize()))
         {
+            imgDispResult.resize(imgDispInput.getWidth(), imgDispInput.getHeight(), true);
+            imgDispResult.fill(color_t{ 0, 0, 0, 1 }, true);
+            imgDispResult.moveToGPU();
             selImageID = "disp-result";
+
             updateDispParams();
             disp.compute();
         }
@@ -589,10 +593,10 @@ void layout()
 
         if (ImGui::Button("Convolve##Conv", btnSize()))
         {
-            imgConvLayer.resize(imgConvInput.getWidth(), imgConvInput.getHeight(), true);
-            imgConvLayer.fill(color_t{ 0, 0, 0, 1 }, true);
-            imgConvLayer.moveToGPU();
-            selImageID = "cv-layer";
+            imgConvResult.resize(imgConvInput.getWidth(), imgConvInput.getHeight(), true);
+            imgConvResult.fill(color_t{ 0, 0, 0, 1 }, true);
+            imgConvResult.moveToGPU();
+            selImageID = "cv-result";
 
             updateConvParams();
             conv.convolve();
