@@ -6,7 +6,7 @@ namespace RealBloom
 
     constexpr uint32_t DISP_WAIT_TIMESTEP = 33;
 
-    Dispersion::Dispersion() : m_imgInputSrc("", "", 1, 1)
+    Dispersion::Dispersion() : m_imgInputSrc("", "")
     {}
 
     DispersionParams* Dispersion::getParams()
