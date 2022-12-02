@@ -192,3 +192,27 @@ std::array<float, 3> strToRGB(const std::string& s)
     std::array<float, 4> rgba = strToRGBA(s);
     return { rgba[0], rgba[1], rgba[2] };
 }
+
+std::array<float, 2> strToXY(const std::string& s)
+{
+    try
+    {
+        if (s.empty())
+            throw std::exception("empty string");
+
+        std::vector<std::string> elements = strSplit(s, ',');
+        if (elements.size() == 1)
+        {
+            float v = std::stof(elements[0]);
+            return { v, v };
+        }
+        else if (elements.size() == 2)
+        {
+            return { std::stof(elements[0]), std::stof(elements[1]) };
+        }
+        throw std::exception("invalid input");
+    } catch (const std::exception& e)
+    {
+        throw std::exception(strFormat("Failed to parse XY from string: %s", e.what()).c_str());
+    }
+}

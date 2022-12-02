@@ -67,6 +67,7 @@ std::string strFromBigNumber(uint64_t bigNumber);
 
 std::array<float, 4> strToRGBA(const std::string& s);
 std::array<float, 3> strToRGB(const std::string& s);
+std::array<float, 2> strToXY(const std::string& s);
 
 template< typename T >
 std::string toHexStr(T i)

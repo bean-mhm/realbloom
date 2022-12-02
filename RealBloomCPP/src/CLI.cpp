@@ -218,7 +218,7 @@ void CLI::init(int& argc, char** argv)
 
         g_commands.push_back(CliCommand{
             "conv",
-            "Perform convolution",
+            "Perform convolution (FFT)",
             "conv -i input.exr -a Linear -k kernel.exr -b Linear -o conv.exr -c Linear",
             {
                 {{"--input", "-i"}, "Input filename", "", true},
@@ -227,18 +227,19 @@ void CLI::init(int& argc, char** argv)
                 {{"--kernel-space", "-b"}, "Kernel color space", "", true},
                 {{"--output", "-o"}, "Output filename", "", true},
                 {{"--output-space", "-c"}, "Output color space", "", true},
-                {{"--knl-exposure"}, "Kernel exposure", "0", false},
-                {{"--knl-contrast"}, "Kernel contrast", "0", false},
-                {{"--knl-rotation"}, "Kernel rotation", "0", false},
-                {{"--knl-scale"}, "Kernel scale", "1", false},
-                {{"--knl-crop"}, "Kernel crop", "1", false},
-                {{"--knl-center"}, "Kernel center", "0.5,0.5", false},
-                {{"--threshold"}, "Threshold", "0", false},
-                {{"--knee"}, "Threshold knee", "0", false},
-                {{"--input-mix"}, "Input mix (additive blending)", "", false},
-                {{"--conv-mix"}, "Output mix (additive blending)", "", false},
-                {{"--mix"}, "Blend between input and output (normal blending)", "1", false},
-                {{"--conv-exposure"}, "Conv. output exposure", "0", false}
+                {{"--kernel-denorm", "-d"}, "Disable kernel normalization", "", false},
+                {{"--kernel-exposure", "-e"}, "Kernel exposure", "0", false},
+                {{"--kernel-contrast", "-f"}, "Kernel contrast", "0", false},
+                {{"--kernel-rotation", "-r"}, "Kernel rotation", "0", false},
+                {{"--kernel-scale", "-s"}, "Kernel scale", "1", false},
+                {{"--kernel-crop", "-q"}, "Kernel crop", "1", false},
+                {{"--kernel-center", "-u"}, "Kernel center", "0.5,0.5", false},
+                {{"--threshold", "-t"}, "Threshold", "0", false},
+                {{"--knee", "-w"}, "Threshold knee", "0", false},
+                {{"--input-mix", "-x"}, "Input mix (additive blending)", "", false},
+                {{"--conv-mix", "-y"}, "Output mix (additive blending)", "", false},
+                {{"--mix", "-m"}, "Blend between input and output (normal blending)", "1", false},
+                {{"--conv-exposure", "-z"}, "Conv. output exposure", "0", false}
             },
             cmdConv }
         );
@@ -501,7 +502,145 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
 
 void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
-    //
+    // Arguments
+
+    std::string inpFilename = args["--input"];
+    std::string inpColorspace = processColorSpaceName(args["--input-space"]);
+
+    std::string knlFilename = args["--kernel"];
+    std::string knlColorspace = processColorSpaceName(args["--kernel-space"]);
+
+    std::string outFilename = args["--output"];
+    std::string outColorspace = processColorSpaceName(args["--output-space"]);
+
+    bool kernelNormalize = (args.count("--kernel-denorm") == 0);
+
+    float kernelExposure = 0;
+    if (args.count("--kernel-exposure") > 0)
+        kernelExposure = std::stof(args["--kernel-exposure"]);
+
+    float kernelContrast = 0;
+    if (args.count("--kernel-contrast") > 0)
+        kernelContrast = std::stof(args["--kernel-contrast"]);
+
+    float kernelRotation = 0;
+    if (args.count("--kernel-rotation") > 0)
+        kernelRotation = std::stof(args["--kernel-rotation"]);
+
+    std::array<float, 2> kernelScale{ 1, 1 };
+    if (args.count("--kernel-scale") > 0)
+        kernelScale = strToXY(args["--kernel-scale"]);
+
+    std::array<float, 2> kernelCrop{ 1, 1 };
+    if (args.count("--kernel-crop") > 0)
+        kernelCrop = strToXY(args["--kernel-crop"]);
+
+    std::array<float, 2> kernelCenter{ 0.5f, 0.5f };
+    if (args.count("--kernel-center") > 0)
+        kernelCenter = strToXY(args["--kernel-center"]);
+
+    float threshold = 0;
+    if (args.count("--threshold") > 0)
+        threshold = std::stof(args["--threshold"]);
+
+    float knee = 0;
+    if (args.count("--knee") > 0)
+        knee = std::stof(args["--knee"]);
+
+    bool additive = false;
+    float mix = 1.0f;
+    float inputMix = 1.0f;
+    float convMix = 0.2f;
+
+    if (args.count("--mix") > 0)
+    {
+        mix = std::stof(args["--mix"]);
+    }
+    else if ((args.count("--input-mix") > 0) && (args.count("--conv-mix") > 0))
+    {
+        additive = true;
+        inputMix = std::stof(args["--input-mix"]);
+        convMix = std::stof(args["--conv-mix"]);
+    }
+
+    float convExposure = 0;
+    if (args.count("--conv-exposure") > 0)
+        convExposure = std::stof(args["--conv-exposure"]);
+
+    // Images
+
+    CmImage imgInput("", "", 1, 1);
+    CmImage imgKernel("", "", 1, 1);
+    CmImage imgConvPreview("", "", 1, 1);
+    CmImage imgConvMix("", "", 1, 1);
+
+    // Convolution
+
+    RealBloom::Convolution conv;
+    conv.setImgInput(&imgInput);
+    conv.setImgKernel(&imgKernel);
+    conv.setImgConvPreview(&imgConvPreview);
+    conv.setImgConvMix(&imgConvMix);
+
+    // Read input images
+
+    if (verbose)
+        std::cout << "Reading the input image...\n";
+    CmImageIO::readImage(imgInput, inpFilename, inpColorspace);
+
+    if (verbose)
+        std::cout << "Reading the kernel image...\n";
+    CmImageIO::readImage(*(conv.getImgKernelSrc()), knlFilename, knlColorspace);
+
+    // Parameters
+
+    RealBloom::ConvolutionParams* params = conv.getParams();
+
+    RealBloom::ConvolutionMethodInfo methodInfo;
+    methodInfo.method = RealBloom::ConvolutionMethod::FFT_CPU;
+    params->methodInfo = methodInfo;
+
+    params->kernelNormalize = kernelNormalize;
+    params->kernelExposure = kernelExposure;
+    params->kernelContrast = kernelContrast;
+    params->kernelRotation = kernelRotation;
+    params->kernelScaleX = kernelScale[0];
+    params->kernelScaleY = kernelScale[1];
+    params->kernelCropX = kernelCrop[0];
+    params->kernelCropY = kernelCrop[1];
+    params->kernelPreviewCenter = false;
+    params->kernelCenterX = kernelCenter[0];
+    params->kernelCenterY = kernelCenter[1];
+    params->convThreshold = threshold;
+    params->convKnee = knee;
+
+    // Compute
+    if (verbose)
+        std::cout << "Processing...\n";
+    conv.convolve();
+
+    // Wait
+    while (conv.isWorking())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
+    }
+
+    // Print error
+    if (conv.hasFailed())
+        throw std::exception(conv.getError().c_str());
+
+    // Blending
+    if (verbose)
+        std::cout << "Blending...\n";
+    conv.mixConv(additive, inputMix, convMix, mix, convExposure);
+
+    // Write output image
+    if (verbose)
+        std::cout << "Writing the output image...\n";
+    CmImageIO::writeImage(imgConvMix, outFilename, outColorspace);
+
+    if (verbose)
+        std::cout << "Done.\n";
 }
 
 void cmdCmfDetails(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)

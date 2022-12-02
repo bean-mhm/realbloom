@@ -1076,9 +1076,19 @@ namespace RealBloom
         m_state.fftStage = "";
     }
 
-    bool Convolution::isWorking()
+    bool Convolution::isWorking() const
     {
         return m_state.working;
+    }
+
+    bool Convolution::hasFailed() const
+    {
+        return m_state.failed;
+    }
+
+    std::string Convolution::getError() const
+    {
+        return m_state.error;
     }
 
     void Convolution::getConvStats(std::string& outTime, std::string& outStatus, uint32_t& outStatType)

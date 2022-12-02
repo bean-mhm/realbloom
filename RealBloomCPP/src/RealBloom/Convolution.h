@@ -112,7 +112,9 @@ namespace RealBloom
         void convolve();
         void cancelConv();
 
-        bool isWorking();
+        bool isWorking() const;
+        bool hasFailed() const;
+        std::string getError() const;
 
         // outStatType: 0 = normal, 1 = info, 2 = warning, 3 = error
         void getConvStats(std::string& outTime, std::string& outStatus, uint32_t& outStatType);
