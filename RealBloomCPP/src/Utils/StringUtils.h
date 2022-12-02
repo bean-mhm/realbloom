@@ -5,13 +5,56 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <array>
 #include <algorithm>
+#include <cctype>
+#include <locale>
 #include <stdint.h>
+
+inline void strTrimLeftInPlace(std::string& s)
+{
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch)
+        {
+            return !std::isspace(ch);
+        }));
+}
+
+inline void strTrimRightInPlace(std::string& s)
+{
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch)
+        {
+            return !std::isspace(ch);
+        }).base(), s.end());
+}
+
+inline void strTrimInPlace(std::string& s)
+{
+    strTrimRightInPlace(s);
+    strTrimLeftInPlace(s);
+}
+
+inline std::string strTrimLeft(std::string s)
+{
+    strTrimLeftInPlace(s);
+    return s;
+}
+
+inline std::string strTrimRight(std::string s)
+{
+    strTrimRightInPlace(s);
+    return s;
+}
+
+inline std::string strTrim(std::string s)
+{
+    strTrimInPlace(s);
+    return s;
+}
 
 bool strContains(const std::string& source, const std::string& substring);
 std::string strList(const std::vector<std::string>& list, const std::string& separator);
 std::string strRightPadding(const std::string& s, size_t length);
-std::string strWordWrap(const std::string& s, size_t length, size_t leftPadding = 0);
+std::string strWordWrap(const std::string& s, size_t lineLength, size_t leftPadding = 0);
 
 // Examples: "6h 9m 42s", "10.7s"
 std::string strFromDuration(float seconds);
@@ -21,6 +64,9 @@ std::string strFromElapsed(float seconds);
 
 std::string strFromSize(uint64_t sizeBytes);
 std::string strFromBigNumber(uint64_t bigNumber);
+
+std::array<float, 4> strToRGBA(const std::string& s);
+std::array<float, 3> strToRGB(const std::string& s);
 
 template< typename T >
 std::string toHexStr(T i)

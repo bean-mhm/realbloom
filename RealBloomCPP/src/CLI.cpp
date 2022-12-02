@@ -1,5 +1,8 @@
 #include "CLI.h"
 
+#include <OpenColorIO/OpenColorIO.h>
+namespace OCIO = OpenColorIO_v2_1;
+
 #include "ColorManagement/CMS.h"
 #include "ColorManagement/CMF.h"
 #include "ColorManagement/CmXYZ.h"
@@ -14,22 +17,24 @@
 #include "Utils/ConsoleColors.h"
 #include "Config.h"
 
-constexpr int CLR_PRI = CONSOLE_YELLOW;
-constexpr int CLR_SEC = CONSOLE_CYAN;
-constexpr int CLR_ERR = CONSOLE_RED;
+constexpr int COL_PRI = CONSOLE_YELLOW;
+constexpr int COL_SEC = CONSOLE_CYAN;
+constexpr int COL_ERR = CONSOLE_RED;
+constexpr uint32_t CLI_LINE_LENGTH = 80;
+constexpr uint32_t CLI_WAIT_TIMESTEP = 10;
 
 CLI::CliVars* CLI::S_VARS = nullptr;
 std::vector<CliCommand> g_commands;
 
 // Command actions
-void cmdVersion(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
-void cmdHelp(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
-void cmdDiff(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
-void cmdDisp(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
-void cmdConv(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
-void cmdCmfDetails(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
-void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
-void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose);
+void cmdVersion(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdHelp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdDiff(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdCmfDetails(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
 
 void printArguments(CliCommand& command)
 {
@@ -39,20 +44,20 @@ void printArguments(CliCommand& command)
 
         std::string desc;
         if (arg.defaultValue.empty()) desc = arg.desc;
-        else desc = arg.desc + consoleColor(CLR_SEC) + " [def: " + arg.defaultValue + "]" + consoleColor();
+        else desc = arg.desc + consoleColor(COL_SEC) + " [def: " + arg.defaultValue + "]" + consoleColor();
 
         if (arg.required)
             std::cout
             << "  "
-            << consoleColor(CLR_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
-            << consoleColor(CLR_ERR) << "* " << consoleColor()
-            << strWordWrap(desc, 52, 28)
+            << consoleColor(COL_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
+            << consoleColor(COL_ERR) << "* " << consoleColor()
+            << strWordWrap(desc, CLI_LINE_LENGTH, 28)
             << consoleColor() << "\n";
         else
             std::cout
             << "  "
-            << consoleColor(CLR_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
-            << strWordWrap(desc, 54, 26)
+            << consoleColor(COL_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
+            << strWordWrap(desc, CLI_LINE_LENGTH, 26)
             << consoleColor() << "\n";
     }
 }
@@ -69,7 +74,7 @@ void printHelp(const std::string& cmdName = "")
     {
         // Header
         std::cout
-            << consoleColor(CLR_PRI)
+            << consoleColor(COL_PRI)
             << Config::S_APP_TITLE << " v" << Config::S_APP_VERSION << "\n"
             << "Usage:\n"
             << consoleColor();
@@ -78,13 +83,14 @@ void printHelp(const std::string& cmdName = "")
         for (const auto& cmd : g_commands)
             std::cout
             << "  "
-            << consoleColor(CLR_SEC) << strRightPadding(cmd.name, 16) << consoleColor()
-            << strWordWrap(cmd.desc, 62, 18) << "\n";
+            << consoleColor(COL_SEC) << strRightPadding(cmd.name, 16) << consoleColor()
+            << strWordWrap(cmd.desc, CLI_LINE_LENGTH, 18) << "\n";
 
         // Footer
         std::cout
             << "\n"
-            << "Type help <command> to see how to use a specific command.\n";
+            << "Use " << consoleColor(COL_PRI) << "help <command>" << consoleColor()
+            << " to see how to use a specific command.\n";
     }
     else
     {
@@ -101,21 +107,21 @@ void printHelp(const std::string& cmdName = "")
         if (cmdPtr)
         {
             std::cout
-                << consoleColor(CLR_PRI) << strRightPadding("Command:", 18) << consoleColor()
+                << consoleColor(COL_PRI) << strRightPadding("Command:", 18) << consoleColor()
                 << cmdPtr->name << "\n"
-                << consoleColor(CLR_PRI) << strRightPadding("Description:", 18) << consoleColor()
-                << strWordWrap(cmdPtr->desc, 62, 18) << "\n";
+                << consoleColor(COL_PRI) << strRightPadding("Description:", 18) << consoleColor()
+                << strWordWrap(cmdPtr->desc, CLI_LINE_LENGTH, 18) << "\n";
 
             if (!(cmdPtr->example.empty()))
                 std::cout
-                << consoleColor(CLR_PRI) << strRightPadding("Example:", 18) << consoleColor()
-                << strWordWrap(cmdPtr->example, 62, 18) << "\n";
+                << consoleColor(COL_PRI) << strRightPadding("Example:", 18) << consoleColor()
+                << strWordWrap(cmdPtr->example, CLI_LINE_LENGTH, 18) << "\n";
 
             if (cmdPtr->arguments.size() > 0)
             {
                 std::cout
                     << "\n"
-                    << consoleColor(CLR_PRI) << "Arguments:\n" << consoleColor();
+                    << consoleColor(COL_PRI) << "Arguments:\n" << consoleColor();
                 printArguments(*cmdPtr);
             }
         }
@@ -123,6 +129,32 @@ void printHelp(const std::string& cmdName = "")
         {
             std::cout << "This command doesn't exist.\n";
         }
+    }
+}
+
+std::string processColorSpaceName(const std::string& s)
+{
+    if ((strLowercase(s) == "working") || (strLowercase(s) == "w"))
+        return OCIO::ROLE_SCENE_LINEAR;
+    return s;
+}
+
+void handleXyzArgs(StringMap& args)
+{
+    if (args.count("--user-space") > 0)
+    {
+        XyzConversionInfo info;
+        info.method = XyzConversionMethod::UserConfig;
+        info.userSpace = args["--user-space"];
+        CmXYZ::setConversionInfo(info);
+    }
+    else if ((args.count("--common-internal") > 0) && (args.count("--common-user") > 0))
+    {
+        XyzConversionInfo info;
+        info.method = XyzConversionMethod::CommonSpace;
+        info.commonInternal = args["--common-internal"];
+        info.commonUser = args["--common-user"];
+        CmXYZ::setConversionInfo(info);
     }
 }
 
@@ -174,11 +206,12 @@ void CLI::init(int& argc, char** argv)
                 {{"--amount", "-d"}, "Amount of dispersion", "", true},
                 {{"--exposure", "-e"}, "Exposure", "0", false},
                 {{"--contrast", "-c"}, "Contrast", "0", false},
-                {{"--color", "-t"}, "Dispersion color", "1,1,1", false},
+                {{"--color", "-m"}, "Dispersion color", "1,1,1", false},
+                {{"--threads", "-t"}, "Number of threads to use", "", false},
                 {{"--cmf", "-f"}, "CMF table filename", "", false},
-                {{"--xyz-space", "-x"}, "XYZ I-E color space", "", false},
-                {{"--xyz-user", "-u"}, "Common XYZ color space in the user config", "", false},
-                {{"--xyz-internal", "-w"}, "Common XYZ color space in the internal config", "", false}
+                {{"--user-space", "-x"}, "XYZ I-E color space in the user config", "", false},
+                {{"--common-internal", "-w"}, "Common XYZ color space in the internal config", "", false},
+                {{"--common-user", "-u"}, "Common XYZ color space in the user config", "", false}
             },
             cmdDisp }
         );
@@ -228,9 +261,9 @@ void CLI::init(int& argc, char** argv)
                 {{"--cmf", "-f"}, "CMF table filename", "", true},
                 {{"--output", "-o"}, "Output filename", "", true},
                 {{"--output-space", "-a"}, "Output color space", "", true},
-                {{"--xyz-space", "-x"}, "XYZ I-E color space", "", false},
-                {{"--xyz-user", "-u"}, "Common XYZ color space in the user config", "", false},
-                {{"--xyz-internal", "-w"}, "Common XYZ color space in the internal config", "", false}
+                {{"--user-space", "-x"}, "XYZ I-E color space in the user config", "", false},
+                {{"--common-internal", "-w"}, "Common XYZ color space in the internal config", "", false},
+                {{"--common-user", "-u"}, "Common XYZ color space in the user config", "", false}
             },
             cmdCmfPreview }
         );
@@ -296,30 +329,35 @@ void CLI::proceed()
                 bool verbose = parser.exists(std::vector<std::string>{ "--verbose", "-v" });
 
                 // Print the argument map
-                if (0)
+                if (verbose)
                 {
-                    std::cout << "Arguments:\n";
+                    std::cout << consoleColor(COL_PRI) << "Arguments:" << consoleColor() << "\n";
                     for (const auto& value : args)
-                        std::cout << strFormat("\"%s\": \"%s\"\n", value.first.c_str(), value.second.c_str());
-                    std::cout << "\n";
+                        std::cout
+                        << "  "
+                        << consoleColor(COL_SEC) << strRightPadding(value.first, 24) << consoleColor()
+                        << strWordWrap(value.second, CLI_LINE_LENGTH, 26)
+                        << "\n";
                 }
 
                 cmd.action(cmd, parser, args, verbose);
             } catch (const std::exception& e)
             {
-                std::cerr << consoleColor(CONSOLE_RED) << e.what() << consoleColor() << "\n\n";
-                printHelp(cmd.name);
+                std::cerr
+                    << consoleColor(COL_ERR) << e.what() << consoleColor() << "\n"
+                    << "Use " << consoleColor(COL_PRI) << "help " << cmd.name << consoleColor()
+                    << " to see how to use this command.\n";
             }
             break;
         }
 }
 
-void cmdVersion(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
+void cmdVersion(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
     printVersion();
 }
 
-void cmdHelp(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
+void cmdHelp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
     if (parser.hasValue(cmd.name))
         printHelp(parser.get(cmd.name));
@@ -327,32 +365,209 @@ void cmdHelp(const CliCommand& cmd, const CliParser& parser, const StringMap& ar
         printHelp();
 }
 
-void cmdDiff(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
+void cmdDiff(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
-    std::cout << "Test\n";
+    // Arguments
+
+    std::string inpFilename = args["--input"];
+    std::string inpColorspace = processColorSpaceName(args["--input-space"]);
+
+    std::string outFilename = args["--output"];
+    std::string outColorspace = processColorSpaceName(args["--output-space"]);
+
+    bool grayscale = args.count("--grayscale") > 0;
+
+    // Images
+
+    if (verbose)
+        std::cout << "Reading the input image...\n";
+    CmImage imgInput("", "", 1, 1);
+    CmImageIO::readImage(imgInput, inpFilename, inpColorspace);
+
+    CmImage imgOutput("", "", 1, 1);
+
+    // Diffraction Pattern
+
+    RealBloom::DiffractionPattern diff;
+    diff.setImgAperture(&imgInput);
+    diff.setImgDiffPattern(&imgOutput);
+
+    RealBloom::DiffractionPatternParams* params = diff.getParams();
+    params->grayscale = grayscale;
+
+    // Compute
+    if (verbose)
+        std::cout << "Processing...\n";
+    diff.compute();
+
+    // Print error
+    if (!diff.success())
+        throw std::exception(diff.getError().c_str());
+
+    // Write output image
+    if (verbose)
+        std::cout << "Writing the output image...\n";
+    CmImageIO::writeImage(imgOutput, outFilename, outColorspace);
+
+    if (verbose)
+        std::cout << "Done.\n";
 }
 
-void cmdDisp(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
+void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
+{
+    // Arguments
+
+    std::string inpFilename = args["--input"];
+    std::string inpColorspace = processColorSpaceName(args["--input-space"]);
+
+    std::string outFilename = args["--output"];
+    std::string outColorspace = processColorSpaceName(args["--output-space"]);
+
+    uint32_t steps = std::stoi(args["--steps"]);
+    float amount = std::stof(args["--amount"]);
+
+    float exposure = 0;
+    if (args.count("--exposure") > 0)
+        exposure = std::stof(args["--exposure"]);
+
+    float contrast = 0;
+    if (args.count("--contrast") > 0)
+        contrast = std::stof(args["--contrast"]);
+
+    std::array<float, 3> color{ 1, 1, 1 };
+    if (args.count("--color") > 0)
+        color = strToRGB(args["--color"]);
+
+    uint32_t numThreads = getDefNumThreads();
+    if (args.count("--threads") > 0)
+        numThreads = std::stoi(args["--threads"]);
+
+    // CMF table
+    if (args.count("--cmf") > 0)
+    {
+        CmfTableInfo info("", args["--cmf"]);
+        CMF::setActiveTable(info);
+    }
+
+    // XYZ conversions
+    handleXyzArgs(args);
+
+    // Images
+    CmImage imgInputPrev("", "", 1, 1);
+    CmImage imgOutput("", "", 1, 1);
+
+    // Dispersion
+    RealBloom::Dispersion disp;
+    disp.setImgInput(&imgInputPrev);
+    disp.setImgDisp(&imgOutput);
+
+    // Read input image
+    if (verbose)
+        std::cout << "Reading the input image...\n";
+    CmImageIO::readImage(*(disp.getImgInputSrc()), inpFilename, inpColorspace);
+
+    // Parameters
+    RealBloom::DispersionParams* params = disp.getParams();
+    params->exposure = exposure;
+    params->contrast = contrast;
+    params->steps = steps;
+    params->amount = amount;
+    params->color = color;
+    params->numThreads = numThreads;
+
+    // Compute
+    if (verbose)
+        std::cout << "Processing...\n";
+    disp.compute();
+
+    // Wait
+    while (disp.isWorking())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
+    }
+
+    // Print error
+    if (disp.hasFailed())
+        throw std::exception(disp.getError().c_str());
+
+    // Write output image
+    if (verbose)
+        std::cout << "Writing the output image...\n";
+    CmImageIO::writeImage(imgOutput, outFilename, outColorspace);
+
+    if (verbose)
+        std::cout << "Done.\n";
+}
+
+void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
     //
 }
 
-void cmdConv(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
+void cmdCmfDetails(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
-    //
+    std::string filename = args["--cmf"];
+    CmfTable table(filename);
+
+    std::cout
+        << consoleColor(COL_PRI) << strRightPadding("Count:", 7) << consoleColor()
+        << table.getCount()
+        << "\n"
+        << consoleColor(COL_PRI) << strRightPadding("Start:", 7) << consoleColor()
+        << strFormat("%.3f", table.getStart())
+        << "\n"
+        << consoleColor(COL_PRI) << strRightPadding("End:", 7) << consoleColor()
+        << strFormat("%.3f", table.getEnd())
+        << "\n"
+        << consoleColor(COL_PRI) << strRightPadding("Step:", 7) << consoleColor()
+        << strFormat("%.3f", table.getStep())
+        << "\n";
 }
 
-void cmdCmfDetails(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
+void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
-    //
+    // CMF table
+    std::string cmfFilename = args["--cmf"];
+    CmfTable table(cmfFilename);
+
+    // Output info
+    std::string outFilename = args["--output"];
+    std::string outColorspace = processColorSpaceName(args["--output-space"]);
+
+    // XYZ conversions
+    handleXyzArgs(args);
+
+    // Image
+    CmImage img("", "", 1, 1);
+
+    // Compute
+    RealBloom::Dispersion disp;
+    disp.setImgDisp(&img);
+    disp.previewCmf(&table);
+
+    // Write output image
+    CmImageIO::writeImage(img, outFilename, outColorspace);
 }
 
-void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
+void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
-    //
-}
+    bool isInternal = args.count("--internal") > 0;
+    std::vector<std::string> spaces = isInternal ? CMS::getInternalColorSpaces() : CMS::getAvailableColorSpaces();
+    OCIO::ConstConfigRcPtr config = isInternal ? CMS::getInternalConfig() : CMS::getConfig();
 
-void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, const StringMap& args, bool verbose)
-{
-    //
+    std::cout
+        << consoleColor(COL_SEC)
+        << spaces.size()
+        << (isInternal ? " internal color spaces" : " color spaces")
+        << consoleColor() << "\n\n";
+
+    for (const auto& space : spaces)
+    {
+        std::string desc = getColorSpaceDesc(config, space);
+        std::cout
+            << consoleColor(COL_PRI) << "Name: " << consoleColor()
+            << strWordWrap(space, CLI_LINE_LENGTH, 6) << "\n"
+            << consoleColor(COL_PRI) << "Desc: " << consoleColor()
+            << consoleColor(COL_SEC) << strWordWrap(desc, CLI_LINE_LENGTH, 6) << consoleColor() << "\n\n";
+    }
 }

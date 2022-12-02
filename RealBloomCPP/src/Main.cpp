@@ -220,7 +220,10 @@ int main(int argc, char** argv)
 
     // Process the command line input
     if (CLI::hasCommands())
+    {
+        disablePrintErr();
         CLI::proceed();
+    }
 
     // Quit
     Config::save();
@@ -398,7 +401,7 @@ void layout()
         ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024);
         ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1);
         ImGui::ColorEdit3("Color##Disp", vars.ds_col, ImGuiColorEditFlags_NoInputs);
-        ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, vars.maxThreads);
+        ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads());
 
         if (ImGui::Button("Apply##Disp", btnSize()))
         {
@@ -539,13 +542,13 @@ void layout()
         else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_CPU)
         {
             // Threads
-            ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, vars.maxThreads);
+            ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, getMaxNumThreads());
 
             // Warning Text
-            if (vars.cv_numThreads > vars.halfMaxThreads)
+            if (vars.cv_numThreads > std::max(1u, getMaxNumThreads() / 2))
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, colorWarningText);
-                if (vars.cv_numThreads == vars.maxThreads)
+                if (vars.cv_numThreads == getMaxNumThreads())
                     ImGui::TextWrapped(
                         "Maximizing the number of threads might result in slowdowns and "
                         "potential crashes.");
@@ -842,7 +845,7 @@ void layout()
                 disp.cancel();
                 try
                 {
-                    disp.previewCmf();
+                    disp.previewCmf(CMF::getActiveTable().get());
                 } catch (const std::exception& e)
                 {
                     cmfPreviewError = e.what();
@@ -1116,10 +1119,15 @@ void loadImage(CmImage& image, std::function<void()> onLoad, std::string& outErr
         dialogAction_colorSpace = std::packaged_task<void()>(
             [&image, onLoad, filename, &outError]()
             {
-                if (CmImageIO::readImage(image, filename, dialogResult_colorSpace, outError))
+                outError = "";
+                try
                 {
+                    CmImageIO::readImage(image, filename, dialogResult_colorSpace);
                     selImageID = image.getID();
                     onLoad();
+                } catch (const std::exception& e)
+                {
+                    outError = e.what();
                 }
             });
 
@@ -1138,7 +1146,14 @@ void saveImage(CmImage& image, std::string& outError)
         dialogAction_colorSpace = std::packaged_task<void()>(
             [&image, filename, &outError]()
             {
-                CmImageIO::writeImage(image, filename, dialogResult_colorSpace, outError);
+                outError = "";
+                try
+                {
+                    CmImageIO::writeImage(image, filename, dialogResult_colorSpace);
+                } catch (const std::exception& e)
+                {
+                    outError = e.what();
+                }
             });
 
         dlgParam_colorSpace_init = true;
@@ -1205,41 +1220,41 @@ void imGuiDialogs()
 
 void updateDiffParams()
 {
-    RealBloom::DiffractionPatternParams* dpParams = diff.getParams();
-    dpParams->grayscale = vars.dp_grayscale;
+    RealBloom::DiffractionPatternParams* params = diff.getParams();
+    params->grayscale = vars.dp_grayscale;
 }
 
 void updateDispParams()
 {
-    RealBloom::DispersionParams* dispParams = disp.getParams();
-    dispParams->exposure = vars.ds_exposure;
-    dispParams->contrast = vars.ds_contrast;
-    dispParams->steps = vars.ds_steps;
-    dispParams->amount = vars.ds_amount;
-    dispParams->color = std::array<float, 3>{ vars.ds_col[0], vars.ds_col[1], vars.ds_col[2] };
-    disp.setNumThreads(vars.ds_numThreads);
+    RealBloom::DispersionParams* params = disp.getParams();
+    params->exposure = vars.ds_exposure;
+    params->contrast = vars.ds_contrast;
+    params->steps = vars.ds_steps;
+    params->amount = vars.ds_amount;
+    params->color = std::array<float, 3>{ vars.ds_col[0], vars.ds_col[1], vars.ds_col[2] };
+    params->numThreads = vars.ds_numThreads;
 }
 
 void updateConvParams()
 {
-    RealBloom::ConvolutionParams* convParams = conv.getParams();
-    convParams->methodInfo.method = (RealBloom::ConvolutionMethod)(vars.cv_method);
-    convParams->methodInfo.numThreads = vars.cv_numThreads;
-    convParams->methodInfo.numChunks = vars.cv_numChunks;
-    convParams->methodInfo.chunkSleep = vars.cv_chunkSleep;
-    convParams->kernelNormalize = vars.cv_kernelNormalize;
-    convParams->kernelExposure = vars.cv_kernelExposure;
-    convParams->kernelContrast = vars.cv_kernelContrast;
-    convParams->kernelRotation = vars.cv_kernelRotation;
-    convParams->kernelScaleX = vars.cv_kernelScale[0];
-    convParams->kernelScaleY = vars.cv_kernelScale[1];
-    convParams->kernelCropX = vars.cv_kernelCrop[0];
-    convParams->kernelCropY = vars.cv_kernelCrop[1];
-    convParams->kernelPreviewCenter = vars.cv_kernelPreviewCenter;
-    convParams->kernelCenterX = vars.cv_kernelCenter[0];
-    convParams->kernelCenterY = vars.cv_kernelCenter[1];
-    convParams->convThreshold = vars.cv_convThreshold;
-    convParams->convKnee = vars.cv_convKnee;
+    RealBloom::ConvolutionParams* params = conv.getParams();
+    params->methodInfo.method = (RealBloom::ConvolutionMethod)(vars.cv_method);
+    params->methodInfo.numThreads = vars.cv_numThreads;
+    params->methodInfo.numChunks = vars.cv_numChunks;
+    params->methodInfo.chunkSleep = vars.cv_chunkSleep;
+    params->kernelNormalize = vars.cv_kernelNormalize;
+    params->kernelExposure = vars.cv_kernelExposure;
+    params->kernelContrast = vars.cv_kernelContrast;
+    params->kernelRotation = vars.cv_kernelRotation;
+    params->kernelScaleX = vars.cv_kernelScale[0];
+    params->kernelScaleY = vars.cv_kernelScale[1];
+    params->kernelCropX = vars.cv_kernelCrop[0];
+    params->kernelCropY = vars.cv_kernelCrop[1];
+    params->kernelPreviewCenter = vars.cv_kernelPreviewCenter;
+    params->kernelCenterX = vars.cv_kernelCenter[0];
+    params->kernelCenterY = vars.cv_kernelCenter[1];
+    params->convThreshold = vars.cv_convThreshold;
+    params->convKnee = vars.cv_convKnee;
 }
 
 ImVec2 btnSize()

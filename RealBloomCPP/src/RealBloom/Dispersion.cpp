@@ -6,7 +6,7 @@ namespace RealBloom
 
     constexpr uint32_t DISP_WAIT_TIMESTEP = 33;
 
-    Dispersion::Dispersion() : m_imgInputSrc("", "")
+    Dispersion::Dispersion() : m_imgInputSrc("", "", 1, 1)
     {}
 
     DispersionParams* Dispersion::getParams()
@@ -29,51 +29,51 @@ namespace RealBloom
         return &m_imgInputSrc;
     }
 
-    void Dispersion::setNumThreads(uint32_t numThreads)
+    void Dispersion::previewCmf(CmfTable* table)
     {
-        m_numThreads = numThreads;
-    }
-
-    void Dispersion::previewCmf()
-    {
-        std::shared_ptr<CmfTable> table = CMF::getActiveTable();
-        if (table.get() == nullptr)
-            return;
-
-        uint32_t pWidth = std::max(2u, (uint32_t)table->getCount() * 2);
-        uint32_t pHeight = std::max(2u, (uint32_t)pWidth / 10);
-
-        std::vector<float> buffer;
-        buffer.resize(pWidth * pHeight * 4);
-
-        // Get wavelength samples
-        std::vector<float> samples;
-        table->sampleRGB(pWidth, samples);
-
-        // Copy to buffer
-        uint32_t redIndex, smpIndex;
-        for (uint32_t y = 0; y < pHeight; y++)
+        try
         {
-            for (uint32_t x = 0; x < pWidth; x++)
+            if (table == nullptr)
+                throw std::exception("table was null.");
+
+            uint32_t pWidth = std::max(2u, (uint32_t)table->getCount() * 2);
+            uint32_t pHeight = std::max(2u, pWidth / 10);
+
+            std::vector<float> buffer;
+            buffer.resize(pWidth * pHeight * 4);
+
+            // Get wavelength samples
+            std::vector<float> samples;
+            table->sampleRGB(pWidth, samples);
+
+            // Copy to buffer
+            uint32_t redIndex, smpIndex;
+            for (uint32_t y = 0; y < pHeight; y++)
             {
-                redIndex = (y * pWidth + x) * 4;
-                smpIndex = x * 3;
+                for (uint32_t x = 0; x < pWidth; x++)
+                {
+                    redIndex = (y * pWidth + x) * 4;
+                    smpIndex = x * 3;
 
-                buffer[redIndex + 0] = samples[smpIndex + 0];
-                buffer[redIndex + 1] = samples[smpIndex + 1];
-                buffer[redIndex + 2] = samples[smpIndex + 2];
-                buffer[redIndex + 3] = 1.0f;
+                    buffer[redIndex + 0] = samples[smpIndex + 0];
+                    buffer[redIndex + 1] = samples[smpIndex + 1];
+                    buffer[redIndex + 2] = samples[smpIndex + 2];
+                    buffer[redIndex + 3] = 1.0f;
+                }
             }
-        }
 
-        // Copy to image
+            // Copy to image
+            {
+                std::lock_guard<CmImage> lock(*m_imgDisp);
+                m_imgDisp->resize(pWidth, pHeight, false);
+                float* imageBuffer = m_imgDisp->getImageData();
+                std::copy(buffer.data(), buffer.data() + buffer.size(), imageBuffer);
+            }
+            m_imgDisp->moveToGPU();
+        } catch (const std::exception& e)
         {
-            std::lock_guard<CmImage> lock(*m_imgDisp);
-            m_imgDisp->resize(pWidth, pHeight, false);
-            float* imageBuffer = m_imgDisp->getImageData();
-            std::copy(buffer.data(), buffer.data() + buffer.size(), imageBuffer);
+            throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
         }
-        m_imgDisp->moveToGPU();
     }
 
     void Dispersion::previewInput(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
@@ -158,7 +158,6 @@ namespace RealBloom
         uint32_t dispSteps = m_params.steps;
         if (dispSteps > DISP_MAX_STEPS) dispSteps = DISP_MAX_STEPS;
         if (dispSteps < 1) dispSteps = 1;
-
         m_params.steps = dispSteps;
 
         m_state.working = true;
@@ -171,7 +170,7 @@ namespace RealBloom
 
         // Clamp the number of threads
         uint32_t maxThreads = std::thread::hardware_concurrency();
-        uint32_t numThreads = m_numThreads;
+        uint32_t numThreads = m_params.numThreads;
         if (numThreads > maxThreads) numThreads = maxThreads;
         if (numThreads < 1) numThreads = 1;
 
@@ -421,6 +420,11 @@ namespace RealBloom
     bool Dispersion::hasFailed() const
     {
         return m_state.failed;
+    }
+
+    std::string Dispersion::getError() const
+    {
+        return m_state.error;
     }
 
     uint32_t Dispersion::getNumDone() const

@@ -25,7 +25,8 @@ namespace RealBloom
         float contrast = 0.0f;
         uint32_t steps = 32;
         float amount = 0.0f;
-        std::array<float, 3> color{ 0.0f, 0.0f, 0.0f };
+        std::array<float, 3> color{ 1, 1, 1 };
+        uint32_t numThreads = 1;
     };
 
     struct DispersionState
@@ -56,7 +57,6 @@ namespace RealBloom
 
         CmImage m_imgInputSrc;
 
-        uint32_t m_numThreads = 1;
         std::thread* m_thread = nullptr;
         std::vector<DispersionThread*> m_threads;
 
@@ -69,15 +69,14 @@ namespace RealBloom
 
         CmImage* getImgInputSrc();
 
-        void setNumThreads(uint32_t numThreads);
-
-        void previewCmf();
+        void previewCmf(CmfTable* table);
         void previewInput(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
         void compute();
         void cancel();
 
         bool isWorking() const;
         bool hasFailed() const;
+        std::string getError() const;
 
         uint32_t getNumDone() const;
         std::string getStats() const;

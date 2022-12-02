@@ -1,17 +1,48 @@
 #include "Misc.h"
 
+bool printErrEnbaled = true;
+
 std::string printErr(const std::string& source, const std::string& stage, const std::string& message)
 {
     std::string s = strFormat("[%s] %s: %s", source.c_str(), stage.c_str(), message.c_str());
-    std::cerr << s << "\n";
+    if (printErrEnbaled) std::cerr << s << "\n";
     return s;
 }
 
 std::string printErr(const std::string& source, const std::string& message)
 {
     std::string s = strFormat("[%s] %s", source.c_str(), message.c_str());
-    std::cerr << s << "\n";
+    if (printErrEnbaled) std::cerr << s << "\n";
     return s;
+}
+
+void disablePrintErr()
+{
+    printErrEnbaled = false;
+}
+
+uint32_t getMaxNumThreads()
+{
+    static uint32_t v = 1;
+    static bool firstCall = true;
+    if (firstCall)
+    {
+        firstCall = false;
+        v = std::max(1u, std::thread::hardware_concurrency());
+    }
+    return v;
+}
+
+uint32_t getDefNumThreads()
+{
+    static uint32_t v = 1;
+    static bool firstCall = true;
+    if (firstCall)
+    {
+        firstCall = false;
+        v = std::max(1u, getMaxNumThreads() / 2);
+    }
+    return v;
 }
 
 uint32_t getElapsedMs(std::chrono::system_clock::time_point startTime)

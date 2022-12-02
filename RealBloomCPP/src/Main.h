@@ -77,9 +77,6 @@ void cleanUp();
 
 struct UiVars
 {
-    int maxThreads = std::max((uint32_t)1, std::thread::hardware_concurrency());
-    int halfMaxThreads = std::max(1, maxThreads / 2);
-
     // Diffraction Pattern
     bool dp_grayscale = false;
 
@@ -89,7 +86,7 @@ struct UiVars
     float ds_amount = 0.4f;
     int ds_steps = 32;
     float ds_col[3]{ 1.0f, 1.0f, 1.0f };
-    int ds_numThreads = halfMaxThreads;
+    int ds_numThreads = getDefNumThreads();
     bool dispParamsChanged = false;
 
     // Convolution Kernel
@@ -113,7 +110,7 @@ struct UiVars
 
     // Convolution Method
     int cv_method = 0;
-    int cv_numThreads = halfMaxThreads;
+    int cv_numThreads = getDefNumThreads();
     int cv_numChunks = 10;
     int cv_chunkSleep = 0;
 

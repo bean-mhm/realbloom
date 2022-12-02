@@ -2,10 +2,13 @@
 
 #include <iostream>
 #include <vector>
+#include <array>
 #include <string>
 #include <memory>
 #include <functional>
 #include <unordered_map>
+#include <thread>
+#include <chrono>
 
 #include "Utils/CliParser.h"
 
@@ -25,7 +28,7 @@ struct CliCommand
     std::string desc;
     std::string example;
     std::vector<CliArgument> arguments;
-    std::function<void(const CliCommand&, const CliParser&, const StringMap&, bool)> action;
+    std::function<void(const CliCommand&, const CliParser&, StringMap&, bool)> action;
 };
 
 class CLI

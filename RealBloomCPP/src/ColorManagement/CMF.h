@@ -38,7 +38,7 @@ public:
     void sample(size_t numSamples, std::vector<float>& outSamples) const;
     void sampleRGB(size_t numSamples, std::vector<float>& outSamples) const;
 
-    CmfTable(const std::string& filename);
+    CmfTable(std::string filename);
 };
 
 struct CmfTableInfo

@@ -23,7 +23,7 @@ namespace RealBloom
         m_state.failed = true;
     }
 
-    Convolution::Convolution() : m_imgKernelSrc("", ""), m_imgOutput("", "")
+    Convolution::Convolution() : m_imgKernelSrc("", "", 1, 1), m_imgOutput("", "", 1, 1)
     {}
 
     ConvolutionParams* Convolution::getParams()

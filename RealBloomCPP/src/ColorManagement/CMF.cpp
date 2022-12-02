@@ -2,10 +2,17 @@
 
 #pragma region CmfTable
 
-CmfTable::CmfTable(const std::string& filename)
+CmfTable::CmfTable(std::string filename)
 {
     try
     {
+        if (!std::filesystem::exists(filename))
+        {
+            filename = "./" + std::string(CMF_DIR) + "/" + filename;
+            if (!std::filesystem::exists(filename))
+                throw std::exception("File does not exist.");
+        }
+
         // Read the CSV file
         rapidcsv::Document doc(filename, rapidcsv::LabelParams(-1, -1));
 
@@ -19,7 +26,7 @@ CmfTable::CmfTable(const std::string& filename)
         // a CMF table with less than 10 entries for
         if (wavelengths.size() < 10)
             throw std::exception(
-                strFormat("At least 10 entries are needed! (%u)", wavelengths.size()).c_str()
+                strFormat("At least 10 entries are needed. (%u)", wavelengths.size()).c_str()
             );
 
         m_count = wavelengths.size();

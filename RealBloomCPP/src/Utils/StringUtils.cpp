@@ -30,8 +30,10 @@ std::string strRightPadding(const std::string& s, size_t length)
 }
 
 
-std::string strWordWrap(const std::string& s, size_t length, size_t leftPadding)
+std::string strWordWrap(const std::string& s, size_t lineLength, size_t leftPadding)
 {
+    size_t length = lineLength - leftPadding;
+
     std::istringstream i(s);
     std::ostringstream o("");
     size_t lineLnegth = 0;
@@ -52,7 +54,8 @@ std::string strWordWrap(const std::string& s, size_t length, size_t leftPadding)
                 o << ' ';
             o << word.substr(length - 1) << ' ';
             lineLnegth = (word.size() - length + 1) + 1;
-        } else
+        }
+        else
         {
             o << word << ' ';
             lineLnegth += word.size() + 1;
@@ -63,12 +66,32 @@ std::string strWordWrap(const std::string& s, size_t length, size_t leftPadding)
     return result;
 }
 
+std::vector<std::string> strSplit(const std::string& s, char delimiter)
+{
+    std::vector<std::string> elements;
+
+    std::size_t from = 0;
+    for (std::size_t i = 0; i < s.size(); ++i)
+    {
+        if (s[i] == delimiter)
+        {
+            elements.push_back(strTrim(s.substr(from, i - from)));
+            from = i + 1;
+        }
+    }
+    if (from <= s.size())
+        elements.push_back(strTrim(s.substr(from, s.size() - from)));
+
+    return elements;
+}
+
 std::string strFromDuration(float seconds)
 {
     if (seconds < 60.0f)
     {
         return strFormat("%.1fs", seconds);
-    } else
+    }
+    else
     {
         uint32_t intSec = (int)floorf(seconds);
 
@@ -79,7 +102,8 @@ std::string strFromDuration(float seconds)
         if (intHr > 0)
         {
             return strFormat("%dh %dm %ds", intHr, intMin, intSec);
-        } else
+        }
+        else
         {
             return strFormat("%dm %ds", intMin, intSec);
         }
@@ -133,4 +157,38 @@ std::string strFromBigNumber(uint64_t bigNumber)
         return strFormat("%lu", bigNumber);
     else
         return strFormat("%.1f%s", (double)bigNumber / powers[mag], suffixes[mag]);
+}
+
+std::array<float, 4> strToRGBA(const std::string& s)
+{
+    try
+    {
+        if (s.empty())
+            throw std::exception("empty string");
+
+        std::vector<std::string> elements = strSplit(s, ',');
+        if (elements.size() == 1)
+        {
+            float v = std::stof(elements[0]);
+            return { v, v, v, 1.0f };
+        }
+        else if (elements.size() == 3)
+        {
+            return { std::stof(elements[0]), std::stof(elements[1]), std::stof(elements[2]), 1.0f };
+        }
+        else if (elements.size() == 4)
+        {
+            return { std::stof(elements[0]), std::stof(elements[1]), std::stof(elements[2]), std::stof(elements[3]) };
+        }
+        throw std::exception("invalid input");
+    } catch (const std::exception& e)
+    {
+        throw std::exception(strFormat("Failed to parse color from string: %s", e.what()).c_str());
+    }
+}
+
+std::array<float, 3> strToRGB(const std::string& s)
+{
+    std::array<float, 4> rgba = strToRGBA(s);
+    return { rgba[0], rgba[1], rgba[2] };
 }

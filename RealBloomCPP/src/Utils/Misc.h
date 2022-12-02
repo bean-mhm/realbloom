@@ -32,6 +32,8 @@ std::string printErr(
     const std::string& source,
     const std::string& message);
 
+void disablePrintErr();
+
 template <typename T>
 void clearVector(std::vector<T>& v)
 {
@@ -45,6 +47,9 @@ inline void threadJoin(std::thread* t)
         if (t->joinable())
             t->join();
 }
+
+uint32_t getMaxNumThreads();
+uint32_t getDefNumThreads();
 
 uint32_t getElapsedMs(std::chrono::system_clock::time_point startTime);
 
