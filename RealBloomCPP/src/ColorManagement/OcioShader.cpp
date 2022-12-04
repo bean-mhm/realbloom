@@ -23,7 +23,7 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
     // Make fragment shader source code
     std::ostringstream fragSource;
     fragSource
-        << "#version 150 core" << std::endl
+        << "#version 130" << std::endl
         << std::endl
         << m_shaderDesc->getShaderText() << std::endl
         << std::endl

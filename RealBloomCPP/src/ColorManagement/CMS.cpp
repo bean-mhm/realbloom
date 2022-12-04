@@ -11,7 +11,8 @@ void CMS::CmVars::retrieveColorSpaces()
         size_t num = internalConfig->getNumColorSpaces();
         for (size_t i = 0; i < num; i++)
             internalColorSpaces.push_back(internalConfig->getColorSpaceNameByIndex(i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, "Internal config", e.what());
     }
@@ -22,7 +23,8 @@ void CMS::CmVars::retrieveColorSpaces()
         size_t num = config->getNumColorSpaces();
         for (size_t i = 0; i < num; i++)
             colorSpaces.push_back(config->getColorSpaceNameByIndex(i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, "User config", e.what());
     }
@@ -36,7 +38,8 @@ void CMS::CmVars::retrieveDisplays()
         size_t num = config->getNumDisplays();
         for (size_t i = 0; i < num; i++)
             displays.push_back(config->getDisplay(i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -50,7 +53,8 @@ void CMS::CmVars::retrieveViews()
         size_t num = config->getNumViews(activeDisplay.c_str());
         for (size_t i = 0; i < num; i++)
             views.push_back(config->getView(activeDisplay.c_str(), i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -65,7 +69,8 @@ void CMS::CmVars::retrieveLooks()
         size_t num = config->getNumLooks();
         for (size_t i = 0; i < num; i++)
             looks.push_back(config->getLookNameByIndex(i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -103,7 +108,8 @@ bool CMS::init()
         S_VARS->retrieveLooks();
 
         S_STATE.setOk();
-    } catch (std::exception& e)
+    }
+    catch (std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, stage, e.what()));
     }
@@ -223,22 +229,45 @@ void CMS::updateProcessors()
 
     try
     {
+        // Config
+        OCIO::ConstConfigRcPtr config = getConfig();
+
         // Create group transform
         S_VARS->groupTransform = OCIO::GroupTransform::Create();
 
-        // Add look transform
+        // Look transform
+
         std::string lookName = S_VARS->activeLook;
-        if ((!lookName.empty()) && (lookName != "None"))
+        std::string lookOutput = "";
+        bool useLook = (!lookName.empty()) && (lookName != "None");
+
+        if (useLook)
         {
-            OCIO::ConstLookRcPtr look = S_VARS->config->getLook(lookName.c_str());
-            S_VARS->groupTransform->appendTransform(look->getTransform()->createEditableCopy());
+            const char* lookOutputCC = OCIO::LookTransform::GetLooksResultColorSpace(config, config->getCurrentContext(), lookName.c_str());
+
+            if (lookOutputCC != nullptr && lookOutputCC[0] != 0)
+            {
+                lookOutput = lookOutputCC;
+
+                OCIO::LookTransformRcPtr lookTransform = OCIO::LookTransform::Create();
+                lookTransform->setSrc(OCIO::ROLE_SCENE_LINEAR);
+                lookTransform->setDst(lookOutputCC);
+                lookTransform->setLooks(lookName.c_str());
+                S_VARS->groupTransform->appendTransform(lookTransform);
+            }
+            else
+            {
+                // For empty looks, no output color space is returned.
+                useLook = false;
+            }
         }
 
-        // Add display view transform
+        // Display view transform
         OCIO::DisplayViewTransformRcPtr displayViewTransform = OCIO::DisplayViewTransform::Create();
-        displayViewTransform->setSrc(OCIO::ROLE_SCENE_LINEAR);
-        displayViewTransform->setDisplay(S_VARS->activeDisplay.c_str());
+        displayViewTransform->setSrc(useLook ? lookOutput.c_str() : OCIO::ROLE_SCENE_LINEAR);
+        displayViewTransform->setLooksBypass(useLook);
         displayViewTransform->setView(S_VARS->activeView.c_str());
+        displayViewTransform->setDisplay(S_VARS->activeDisplay.c_str());
         S_VARS->groupTransform->appendTransform(displayViewTransform);
 
         // Get processors
@@ -262,7 +291,8 @@ void CMS::updateProcessors()
         }
 
         S_STATE.setOk();
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, e.what()));
     }
