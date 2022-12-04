@@ -327,7 +327,8 @@ void OcioShader::setTextureParameters(GLenum textureType, OCIO::Interpolation in
     {
         glTexParameteri(textureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(textureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    } else
+    }
+    else
     {
         glTexParameteri(textureType, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(textureType, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -398,7 +399,8 @@ void OcioShader::allocateTexture2D(uint32_t index, uint32_t& texId,
 
         glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height, 0, format, GL_FLOAT, values);
         checkGlStatus(__FUNCTION__, strFormat("glTexImage2D (idx: %u)", index));
-    } else
+    }
+    else
     {
         glBindTexture(GL_TEXTURE_1D, texId);
         checkGlStatus(__FUNCTION__, strFormat("glBindTexture (idx: %u)", index));
@@ -426,23 +428,28 @@ void OcioShader::Uniform::use()
     if (m_data.m_getDouble)
     {
         glUniform1f(m_handle, (GLfloat)m_data.m_getDouble());
-    } else if (m_data.m_getBool)
+    }
+    else if (m_data.m_getBool)
     {
         glUniform1f(m_handle, (GLfloat)(m_data.m_getBool() ? 1.0f : 0.0f));
-    } else if (m_data.m_getFloat3)
+    }
+    else if (m_data.m_getFloat3)
     {
         glUniform3f(m_handle, (GLfloat)m_data.m_getFloat3()[0],
             (GLfloat)m_data.m_getFloat3()[1],
             (GLfloat)m_data.m_getFloat3()[2]);
-    } else if (m_data.m_vectorFloat.m_getSize && m_data.m_vectorFloat.m_getVector)
+    }
+    else if (m_data.m_vectorFloat.m_getSize && m_data.m_vectorFloat.m_getVector)
     {
         glUniform1fv(m_handle, (GLsizei)m_data.m_vectorFloat.m_getSize(),
             (GLfloat*)m_data.m_vectorFloat.m_getVector());
-    } else if (m_data.m_vectorInt.m_getSize && m_data.m_vectorInt.m_getVector)
+    }
+    else if (m_data.m_vectorInt.m_getSize && m_data.m_vectorInt.m_getVector)
     {
         glUniform1iv(m_handle, (GLsizei)m_data.m_vectorInt.m_getSize(),
             (GLint*)m_data.m_vectorInt.m_getVector());
-    } else
+    }
+    else
         throw OCIO::Exception(
             printErr(__FUNCTION__, strFormat("Uniform %s is not linked to any value.", m_name.c_str())).c_str()
         );

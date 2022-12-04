@@ -617,10 +617,10 @@ void layout()
         std::string convTime, convStatus;
         uint32_t convStatType = 1;
         conv.getConvStats(convTime, convStatus, convStatType);
+
         if (!convTime.empty())
-        {
             ImGui::Text(convTime.c_str());
-        }
+
         if (!convStatus.empty())
         {
             if (convStatType > 0)

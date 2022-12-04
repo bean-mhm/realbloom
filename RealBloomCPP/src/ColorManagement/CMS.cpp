@@ -11,8 +11,7 @@ void CMS::CmVars::retrieveColorSpaces()
         size_t num = internalConfig->getNumColorSpaces();
         for (size_t i = 0; i < num; i++)
             internalColorSpaces.push_back(internalConfig->getColorSpaceNameByIndex(i));
-    }
-    catch (OCIO::Exception& e)
+    } catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, "Internal config", e.what());
     }
@@ -23,8 +22,7 @@ void CMS::CmVars::retrieveColorSpaces()
         size_t num = config->getNumColorSpaces();
         for (size_t i = 0; i < num; i++)
             colorSpaces.push_back(config->getColorSpaceNameByIndex(i));
-    }
-    catch (OCIO::Exception& e)
+    } catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, "User config", e.what());
     }
@@ -38,8 +36,7 @@ void CMS::CmVars::retrieveDisplays()
         size_t num = config->getNumDisplays();
         for (size_t i = 0; i < num; i++)
             displays.push_back(config->getDisplay(i));
-    }
-    catch (OCIO::Exception& e)
+    } catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -53,8 +50,7 @@ void CMS::CmVars::retrieveViews()
         size_t num = config->getNumViews(activeDisplay.c_str());
         for (size_t i = 0; i < num; i++)
             views.push_back(config->getView(activeDisplay.c_str(), i));
-    }
-    catch (OCIO::Exception& e)
+    } catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -69,8 +65,7 @@ void CMS::CmVars::retrieveLooks()
         size_t num = config->getNumLooks();
         for (size_t i = 0; i < num; i++)
             looks.push_back(config->getLookNameByIndex(i));
-    }
-    catch (OCIO::Exception& e)
+    } catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -108,8 +103,7 @@ bool CMS::init()
         S_VARS->retrieveLooks();
 
         S_STATE.setOk();
-    }
-    catch (std::exception& e)
+    } catch (std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, stage, e.what()));
     }
@@ -291,8 +285,7 @@ void CMS::updateProcessors()
         }
 
         S_STATE.setOk();
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, e.what()));
     }
