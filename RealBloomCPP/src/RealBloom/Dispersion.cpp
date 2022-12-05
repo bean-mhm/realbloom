@@ -1,312 +1,384 @@
 #include "Dispersion.h"
+#include "DispersionThread.h"
 
 namespace RealBloom
 {
 
-    constexpr uint32_t DISP_PROG_TIMESTEP = 33;
-    constexpr uint32_t DISP_PROG_INTERVAL = 4;
+    constexpr uint32_t DISP_WAIT_TIMESTEP = 33;
 
-    Dispersion::Dispersion()
-    {
-        //
-    }
+    Dispersion::Dispersion() : m_imgInputSrc("", "")
+    {}
 
     DispersionParams* Dispersion::getParams()
     {
         return &m_params;
     }
 
-    void Dispersion::setDiffPatternImage(Image32Bit* image)
+    void Dispersion::setImgInput(CmImage* image)
     {
-        m_imageDP = image;
+        m_imgInput = image;
     }
 
-    void Dispersion::setDispersionImage(Image32Bit* image)
+    void Dispersion::setImgDisp(CmImage* image)
     {
-        m_imageDisp = image;
+        m_imgDisp = image;
+    }
+
+    CmImage* Dispersion::getImgInputSrc()
+    {
+        return &m_imgInputSrc;
+    }
+
+    void Dispersion::previewCmf(CmfTable* table)
+    {
+        try
+        {
+            if (table == nullptr)
+                throw std::exception("table was null.");
+
+            uint32_t pWidth = std::max(2u, (uint32_t)table->getCount() * 2);
+            uint32_t pHeight = std::max(2u, pWidth / 10);
+
+            std::vector<float> buffer;
+            buffer.resize(pWidth * pHeight * 4);
+
+            // Get wavelength samples
+            std::vector<float> samples;
+            table->sampleRGB(pWidth, samples);
+
+            // Copy to buffer
+            uint32_t redIndex, smpIndex;
+            for (uint32_t y = 0; y < pHeight; y++)
+            {
+                for (uint32_t x = 0; x < pWidth; x++)
+                {
+                    redIndex = (y * pWidth + x) * 4;
+                    smpIndex = x * 3;
+
+                    buffer[redIndex + 0] = samples[smpIndex + 0];
+                    buffer[redIndex + 1] = samples[smpIndex + 1];
+                    buffer[redIndex + 2] = samples[smpIndex + 2];
+                    buffer[redIndex + 3] = 1.0f;
+                }
+            }
+
+            // Copy to image
+            {
+                std::lock_guard<CmImage> lock(*m_imgDisp);
+                m_imgDisp->resize(pWidth, pHeight, false);
+                float* imageBuffer = m_imgDisp->getImageData();
+                std::copy(buffer.data(), buffer.data() + buffer.size(), imageBuffer);
+            }
+            m_imgDisp->moveToGPU();
+        } catch (const std::exception& e)
+        {
+            throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
+        }
+    }
+
+    void Dispersion::previewInput(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
+    {
+        std::vector<float> inputBuffer;
+        uint32_t inputBufferSize = 0;
+        uint32_t inputWidth = 0, inputHeight = 0;
+        {
+            std::lock_guard<CmImage> lock(m_imgInputSrc);
+            float* inputSrcBuffer = m_imgInputSrc.getImageData();
+            inputBufferSize = m_imgInputSrc.getImageDataSize();
+            inputWidth = m_imgInputSrc.getWidth();
+            inputHeight = m_imgInputSrc.getHeight();
+
+            inputBuffer.resize(inputBufferSize);
+            std::copy(inputSrcBuffer, inputSrcBuffer + inputBufferSize, inputBuffer.data());
+        }
+
+        float expMul = applyExposure(m_params.exposure);
+        float contrast = m_params.contrast;
+
+        // Apply contrast and exposure
+        {
+            // Get the brightest value
+            float v = 0;
+            float maxV = EPSILON;
+            for (uint32_t i = 0; i < inputBufferSize; i++)
+            {
+                v = fmaxf(0.0f, inputBuffer[i]);
+                if ((v > maxV) && (i % 4 != 3))
+                    maxV = v;
+            }
+
+            uint32_t redIndex;
+            for (uint32_t y = 0; y < inputHeight; y++)
+            {
+                for (uint32_t x = 0; x < inputWidth; x++)
+                {
+                    redIndex = (y * inputWidth + x) * 4;
+
+                    // Normalize
+                    inputBuffer[redIndex + 0] /= maxV;
+                    inputBuffer[redIndex + 1] /= maxV;
+                    inputBuffer[redIndex + 2] /= maxV;
+
+                    // Calculate contrast for the grayscale value
+                    float grayscale = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
+                    float mul = expMul * maxV * (contrastCurve(grayscale, contrast) / fmaxf(grayscale, EPSILON));
+
+                    // Apply contrast and de-normalize
+                    inputBuffer[redIndex + 0] *= mul;
+                    inputBuffer[redIndex + 1] *= mul;
+                    inputBuffer[redIndex + 2] *= mul;
+                }
+            }
+        }
+
+        // Copy to outBuffer if it's requested by another function
+        if (!previewMode && (outBuffer != nullptr))
+        {
+            *outWidth = inputWidth;
+            *outHeight = inputHeight;
+            outBuffer->resize(inputBufferSize);
+            *outBuffer = inputBuffer;
+        }
+
+        // Copy to input image
+        {
+            std::lock_guard<CmImage> lock(*m_imgInput);
+            m_imgInput->resize(inputWidth, inputHeight, false);
+            float* prevBuffer = m_imgInput->getImageData();
+            std::copy(inputBuffer.data(), inputBuffer.data() + inputBufferSize, prevBuffer);
+        }
+
+        m_imgInput->moveToGPU();
     }
 
     void Dispersion::compute()
     {
         cancel();
 
-        m_state.numSteps = m_params.steps;
-        m_state.numStepsDone = 0;
+        uint32_t dispSteps = m_params.steps;
+        if (dispSteps > DISP_MAX_STEPS) dispSteps = DISP_MAX_STEPS;
+        if (dispSteps < 1) dispSteps = 1;
+        m_params.steps = dispSteps;
+
         m_state.working = true;
         m_state.mustCancel = false;
+        m_state.failed = false;
+        m_state.error = "";
+        m_state.timeStart = std::chrono::system_clock::now();
+        m_state.hasTimestamps = false;
+        m_state.numSteps = dispSteps;
+
+        // Clamp the number of threads
+        uint32_t maxThreads = std::thread::hardware_concurrency();
+        uint32_t numThreads = m_params.numThreads;
+        if (numThreads > maxThreads) numThreads = maxThreads;
+        if (numThreads < 1) numThreads = 1;
 
         // Start the thread
-        m_thread = new std::thread([this]()
+        m_thread = new std::thread([this, dispSteps, numThreads]()
             {
-                // Diff pattern Buffer
-                std::vector<float> dpBuffer;
-                uint32_t dpWidth = 0, dpHeight = 0;
-                uint32_t dpBufferSize = 0;
+                try
                 {
-                    // Buffer from diff pattern image
-                    std::lock_guard<Image32Bit> dpImageLock(*m_imageDP);
-                    m_imageDP->getDimensions(dpWidth, dpHeight);
-                    float* dpImageData = m_imageDP->getImageData();
+                    // CMF table
+                    std::shared_ptr<CmfTable> table = CMF::getActiveTable();
+                    if (table.get() == nullptr)
+                        throw std::exception("An active CMF table is needed.");
 
-                    // Copy the buffer so the image doesn't stay locked throughout the process
-                    dpBufferSize = m_imageDP->getImageDataSize();
-                    dpBuffer.resize(dpBufferSize);
-                    std::copy(dpImageData, dpImageData + dpBufferSize, dpBuffer.data());
-                }
+                    // Input Buffer
+                    std::vector<float> inputBuffer;
+                    uint32_t inputWidth = 0, inputHeight = 0;
+                    previewInput(false, &inputBuffer, &inputWidth, &inputHeight);
+                    uint32_t inputBufferSize = inputWidth * inputHeight * 4;
 
-                uint32_t dispSteps = m_params.steps;
-                if (dispSteps > DISP_MAX_STEPS) dispSteps = DISP_MAX_STEPS;
-                if (dispSteps < 1) dispSteps = 1;
+                    // Sample wavelengths
+                    std::vector<float> cmfSamples;
+                    table->sampleRGB(dispSteps, cmfSamples);
+                    if (cmfSamples.size() < (dispSteps * 3))
+                        throw std::exception("Invalid number of samples provided by CmfTable.");
 
-                float dispAmount = fminf(fmaxf(m_params.amount, 0.0f), 1.0f);
-                float dispColor[3];
-                std::copy(m_params.color, m_params.color + 3, dispColor);
-
-                // Convert to linear space
-                for (uint32_t i = 0; i < 3; i++)
-                    dispColor[i] = srgbToLinear(dispColor[i]);
-
-                double wavelength = 0;
-                double wlR = 0, wlG = 0, wlB = 0;
-                double wavelengthPos = 0; // how far along the wavelength range
-                float scale = 0;
-
-                // Scaled buffer for individual steps
-                uint32_t scaledBufferSize = dpWidth * dpHeight * 3;
-                std::vector<float> scaledBuffer;
-                scaledBuffer.resize(scaledBufferSize);
-
-                float centerX, centerY;
-                centerX = (float)dpWidth / 2.0f;
-                centerY = (float)dpHeight / 2.0f;
-
-                // To match the brightness later
-                float inputBrightest = EPSILON, outputBrightest = EPSILON;
-                {
-                    float inputCurrentValue = 0;
-                    uint32_t redIndex;
-                    for (uint32_t y = 0; y < dpHeight; y++)
+                    // Calculate the perceived luminance for the sum of the samples
+                    float luminanceSum = 0.0f, luminanceMul = 0.0f;
                     {
-                        for (uint32_t x = 0; x < dpWidth; x++)
+                        uint32_t smpIndex;
+                        for (uint32_t i = 0; i < dispSteps; i++)
                         {
-                            redIndex = (y * dpWidth + x) * 4;
-                            inputCurrentValue = rgbToGrayscale(dpBuffer[redIndex + 0], dpBuffer[redIndex + 1], dpBuffer[redIndex + 2]);
-                            if (inputCurrentValue > inputBrightest)
-                                inputBrightest = inputCurrentValue;
+                            smpIndex = i * 3;
+                            luminanceSum += rgbToGrayscale(
+                                cmfSamples[smpIndex + 0],
+                                cmfSamples[smpIndex + 1],
+                                cmfSamples[smpIndex + 2]
+                            );
                         }
+                        luminanceMul = 1.0f / luminanceSum;
                     }
-                }
 
-                // Create and clear the dispersion buffer
-                std::vector<float> dispBuffer;
-                dispBuffer.resize(dpBufferSize);
-                for (uint32_t i = 0; i < dpBufferSize; i++)
-                    if (i % 4 == 3)
-                        dispBuffer[i] = 1.0f;
-                    else
-                        dispBuffer[i] = 0.0f;
-
-                // Apply Dispersion
-                auto lastProgTime = std::chrono::system_clock::now();
-                for (uint32_t i = 1; i <= dispSteps; i++)
-                {
-                    wavelengthPos = (double)i / (double)dispSteps;
-                    wavelength = Wavelength::LEN_MIN + (wavelengthPos * Wavelength::LEN_RANGE);
-                    Wavelength::getRGB(wavelength, wlR, wlG, wlB);
-
-                    scale = 1.0f - (dispAmount * (1.0f - (i / (float)dispSteps)));
-                    scale = fmaxf(EPSILON, scale);
-
-                    // Clear scaledBuffer
-                    for (uint32_t i = 0; i < scaledBufferSize; i++)
-                        scaledBuffer[i] = 0;
-
-                    // Scale
-                    if (areEqual(scale, 1))
+                    // Create and prepare threads
+                    for (uint32_t i = 0; i < numThreads; i++)
                     {
-                        uint32_t redIndexDP, redIndexScaled;
-                        for (uint32_t y = 0; y < dpHeight; y++)
-                        {
-                            for (uint32_t x = 0; x < dpWidth; x++)
-                            {
-                                redIndexDP = (y * dpWidth + x) * 4;
-                                redIndexScaled = (y * dpWidth + x) * 3;
+                        DispersionThread* ct = new DispersionThread(
+                            numThreads, i, m_params,
+                            inputBuffer.data(), inputWidth, inputHeight,
+                            cmfSamples.data(), luminanceMul
+                        );
 
-                                scaledBuffer[redIndexScaled + 0] = dpBuffer[redIndexDP + 0];
-                                scaledBuffer[redIndexScaled + 1] = dpBuffer[redIndexDP + 1];
-                                scaledBuffer[redIndexScaled + 2] = dpBuffer[redIndexDP + 2];
-                            }
-                        }
-                    } else
+                        std::vector<float>& threadBuffer = ct->getBuffer();
+                        threadBuffer.resize(inputBufferSize);
+                        for (uint32_t j = 0; j < inputBufferSize; j++)
+                            if (j % 4 == 3) threadBuffer[j] = 1.0f;
+                            else threadBuffer[j] = 0.0f;
+
+                        m_threads.push_back(ct);
+                    }
+
+                    // Start the threads
+                    for (uint32_t i = 0; i < numThreads; i++)
                     {
-                        float scaledWidth = (float)dpWidth * scale;
-                        float scaledHeight = (float)dpHeight * scale;
-                        float scaledRectX1, scaledRectY1, scaledRectX2, scaledRectY2;
-                        uint32_t iScaledRectX1, iScaledRectY1, iScaledRectX2, iScaledRectY2;
-
-                        scaledRectX1 = centerX - (scaledWidth / 2.0f);
-                        scaledRectY1 = centerY - (scaledHeight / 2.0f);
-                        scaledRectX2 = centerX + (scaledWidth / 2.0f);
-                        scaledRectY2 = centerY + (scaledHeight / 2.0f);
-
-                        iScaledRectX1 = (uint32_t)floorf(scaledRectX1 - 0.5f);
-                        iScaledRectY1 = (uint32_t)floorf(scaledRectY1 - 0.5f);
-                        iScaledRectX2 = (uint32_t)ceilf(scaledRectX2 - 0.5f);
-                        iScaledRectY2 = (uint32_t)ceilf(scaledRectY2 - 0.5f);
-
-                        float transX = 0, transY = 0;
-                        int redIndexBuffer, redIndexScaled = 0;
-                        Bilinear::Result bil;
-                        for (uint32_t y = iScaledRectY1; y <= iScaledRectY2; y++)
-                        {
-                            for (uint32_t x = iScaledRectX1; x <= iScaledRectX2; x++)
+                        DispersionThread* ct = m_threads[i];
+                        std::shared_ptr<std::thread> t = std::make_shared<std::thread>([ct]()
                             {
-                                redIndexScaled = (y * dpWidth + x) * 3;
-                                transX = (((float)x + 0.5f - centerX) / scale) + centerX;
-                                transY = (((float)y + 0.5f - centerY) / scale) + centerY;
-                                Bilinear::calculate(transX, transY, bil);
+                                ct->start();
+                            });
+                        ct->setThread(t);
+                    }
 
-                                if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], dpWidth, dpHeight))
+                    // Wait for the threads
+                    {
+                        uint32_t lastNumDone = 0;
+                        while (true)
+                        {
+                            uint32_t numThreadsDone = 0;
+                            DispersionThread* ct;
+                            DispersionThreadStats* stats;
+                            for (uint32_t i = 0; i < numThreads; i++)
+                            {
+                                if (m_threads[i])
                                 {
-                                    redIndexBuffer = (bil.topLeftPos[1] * dpWidth + bil.topLeftPos[0]) * 4;
-                                    blendAddRGB(scaledBuffer.data(), redIndexScaled, dpBuffer.data(), redIndexBuffer, bil.topLeftWeight);
-                                }
-
-                                if (checkBounds(bil.topRightPos[0], bil.topRightPos[1], dpWidth, dpHeight))
-                                {
-                                    redIndexBuffer = (bil.topRightPos[1] * dpWidth + bil.topRightPos[0]) * 4;
-                                    blendAddRGB(scaledBuffer.data(), redIndexScaled, dpBuffer.data(), redIndexBuffer, bil.topRightWeight);
-                                }
-
-                                if (checkBounds(bil.bottomLeftPos[0], bil.bottomLeftPos[1], dpWidth, dpHeight))
-                                {
-                                    redIndexBuffer = (bil.bottomLeftPos[1] * dpWidth + bil.bottomLeftPos[0]) * 4;
-                                    blendAddRGB(scaledBuffer.data(), redIndexScaled, dpBuffer.data(), redIndexBuffer, bil.bottomLeftWeight);
-                                }
-
-                                if (checkBounds(bil.bottomRightPos[0], bil.bottomRightPos[1], dpWidth, dpHeight))
-                                {
-                                    redIndexBuffer = (bil.bottomRightPos[1] * dpWidth + bil.bottomRightPos[0]) * 4;
-                                    blendAddRGB(scaledBuffer.data(), redIndexScaled, dpBuffer.data(), redIndexBuffer, bil.bottomRightWeight);
+                                    ct = m_threads[i];
+                                    stats = ct->getStats();
+                                    if (stats->state == DispersionThreadState::Done)
+                                        numThreadsDone++;
                                 }
                             }
+
+                            // Keep in mind that the threads will be "Done" when mustCancel is true
+                            if (numThreadsDone >= numThreads)
+                                break;
+
+                            uint32_t numDone = getNumDone();
+
+                            // Take a snapshot of the current progress
+                            if ((!m_state.mustCancel) && (numThreadsDone < numThreads) && ((numDone - lastNumDone) >= numThreads))
+                            {
+                                std::vector<float> progBuffer;
+                                progBuffer.resize(inputBufferSize);
+                                for (uint32_t i = 0; i < inputBufferSize; i++)
+                                    if (i % 4 == 3) progBuffer[i] = 1.0f;
+                                    else progBuffer[i] = 0.0f;
+
+                                for (uint32_t i = 0; i < numThreads; i++)
+                                {
+                                    if (m_threads[i])
+                                    {
+                                        std::vector<float>& currentBuffer = m_threads[i]->getBuffer();
+                                        uint32_t redIndex;
+                                        for (uint32_t y = 0; y < inputHeight; y++)
+                                        {
+                                            for (uint32_t x = 0; x < inputWidth; x++)
+                                            {
+                                                redIndex = (y * inputWidth + x) * 4;
+                                                progBuffer[redIndex + 0] += currentBuffer[redIndex + 0];
+                                                progBuffer[redIndex + 1] += currentBuffer[redIndex + 1];
+                                                progBuffer[redIndex + 2] += currentBuffer[redIndex + 2];
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Copy progBuffer into the dispersion image
+                                {
+                                    std::lock_guard<CmImage> lock(*m_imgDisp);
+                                    m_imgDisp->resize(inputWidth, inputHeight, false);
+                                    float* dispBuffer = m_imgDisp->getImageData();
+                                    std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, dispBuffer);
+                                }
+                                m_imgDisp->moveToGPU();
+
+                                lastNumDone = numDone;
+                            }
+
+                            std::this_thread::sleep_for(std::chrono::milliseconds(DISP_WAIT_TIMESTEP));
                         }
                     }
 
-                    // Colorize and add to dispBuffer
+                    // Join the threads
+                    for (uint32_t i = 0; i < numThreads; i++)
                     {
-                        float f_wlR = (float)wlR, f_wlG = (float)wlG, f_wlB = (float)wlB;
-                        float scaledArea = scale * scale;
-                        float scaledMul = 1.0f / scaledArea;
-
-                        uint32_t redIndexBuffer, redIndexScaled;
-                        for (uint32_t y = 0; y < dpHeight; y++)
-                        {
-                            for (uint32_t x = 0; x < dpWidth; x++)
-                            {
-                                redIndexScaled = (y * dpWidth + x) * 3;
-                                redIndexBuffer = (y * dpWidth + x) * 4;
-
-                                dispBuffer[redIndexBuffer + 0] += scaledBuffer[redIndexScaled + 0] * f_wlR * scaledMul * dispColor[0];
-                                dispBuffer[redIndexBuffer + 1] += scaledBuffer[redIndexScaled + 1] * f_wlG * scaledMul * dispColor[1];
-                                dispBuffer[redIndexBuffer + 2] += scaledBuffer[redIndexScaled + 2] * f_wlB * scaledMul * dispColor[2];
-                            }
-                        }
-                    }
-
-                    // Update the progress
-                    m_state.numStepsDone = i;
-                    if (!m_state.mustCancel
-                        && (i % DISP_PROG_INTERVAL == 0)                      // update every x steps
-                        && (getElapsedMs(lastProgTime) > DISP_PROG_TIMESTEP)  // update every x ms
-                        && (m_state.numStepsDone < m_state.numSteps))         // skip the last step
-                    {
-                        m_imageDisp->resize(dpWidth, dpHeight);
-                        {
-                            std::lock_guard<Image32Bit> dispImageLock(*m_imageDisp);
-                            float* imageBuffer = m_imageDisp->getImageData();
-                            std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);
-                        }
-                        Async::schedule([this]() { m_imageDisp->moveToGPU(); });
-
-                        lastProgTime = std::chrono::system_clock::now();
+                        if (m_threads[i])
+                            threadJoin(m_threads[i]->getThread().get());
                     }
 
                     if (m_state.mustCancel)
-                        break;
-                }
+                        throw std::exception();
 
-                // Calculate the brightest value in dispBuffer
-                if (!m_state.mustCancel)
-                {
-                    float outputCurrentValue = 0;
-                    uint32_t redIndex = 0;
-                    for (uint32_t y = 0; y < dpHeight; y++)
+                    // Add the buffers from each thread
                     {
-                        for (uint32_t x = 0; x < dpWidth; x++)
-                        {
-                            redIndex = (y * dpWidth + x) * 4;
+                        std::lock_guard<CmImage> lock(*m_imgDisp);
+                        m_imgDisp->resize(inputWidth, inputHeight, false);
+                        m_imgDisp->fill(color_t{ 0, 0, 0, 1 }, false);
+                        float* dispBuffer = m_imgDisp->getImageData();
 
-                            outputCurrentValue = rgbToGrayscale(dispBuffer[redIndex + 0], dispBuffer[redIndex + 1], dispBuffer[redIndex + 2]);
-                            if (outputCurrentValue > outputBrightest)
-                                outputBrightest = outputCurrentValue;
+                        for (uint32_t i = 0; i < numThreads; i++)
+                        {
+                            if (m_state.mustCancel)
+                                break;
+
+                            if (m_threads[i])
+                            {
+                                std::vector<float>& threadBuffer = m_threads[i]->getBuffer();
+                                if (!m_state.mustCancel)
+                                {
+                                    uint32_t redIndex;
+                                    for (uint32_t y = 0; y < inputHeight; y++)
+                                    {
+                                        if (m_state.mustCancel)
+                                            break;
+
+                                        for (uint32_t x = 0; x < inputWidth; x++)
+                                        {
+                                            redIndex = (y * inputWidth + x) * 4;
+                                            dispBuffer[redIndex + 0] += threadBuffer[redIndex + 0];
+                                            dispBuffer[redIndex + 1] += threadBuffer[redIndex + 1];
+                                            dispBuffer[redIndex + 2] += threadBuffer[redIndex + 2];
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                }
 
-                // Match the brightness
-                if (!m_state.mustCancel)
-                {
-                    float brightnessRatio = inputBrightest / outputBrightest;
-                    uint32_t redIndex = 0;
-                    for (uint32_t y = 0; y < dpHeight; y++)
-                    {
-                        for (uint32_t x = 0; x < dpWidth; x++)
-                        {
-                            redIndex = (y * dpWidth + x) * 4;
-
-                            dispBuffer[redIndex + 0] *= brightnessRatio;
-                            dispBuffer[redIndex + 1] *= brightnessRatio;
-                            dispBuffer[redIndex + 2] *= brightnessRatio;
-                        }
-                    }
-                }
-
-                // Test
-//                 uint32_t redIndex = 0;
-//                 double wp, wlr, wlg, wlb;
-//                 for (uint32_t y = 0; y < dpHeight; y++)
-//                 {
-//                     for (uint32_t x = 0; x < dpWidth; x++)
-//                     {
-//                         redIndex = (y * dpWidth + x) * 4;
-// 
-//                         wp = (double)x / ((double)dpWidth - 1.0);
-//                         Wavelength::getRGB((wp * Wavelength::LEN_RANGE) + Wavelength::LEN_MIN, wlr, wlg, wlb);
-// 
-//                         dispBuffer[redIndex + 0] = wlr;
-//                         dispBuffer[redIndex + 1] = wlg;
-//                         dispBuffer[redIndex + 2] = wlb;
-//                         dispBuffer[redIndex + 3] = 1.0f;
-//                     }
-//                 }
-
-                // Update the dispersion image
-                if (!m_state.mustCancel)
-                {
-                    m_imageDisp->resize(dpWidth, dpHeight);
-                    {
-                        std::lock_guard<Image32Bit> dispImageLock(*m_imageDisp);
-                        float* imageBuffer = m_imageDisp->getImageData();
-                        std::copy(dispBuffer.data(), dispBuffer.data() + dpBufferSize, imageBuffer);
-                    }
+                    // Update the dispersion image
+                    m_imgDisp->moveToGPU();
                     Async::schedule([this]()
                         {
-                            m_imageDisp->moveToGPU();
-                            int* pSelImageIndex = (int*)Async::getShared("selImageIndex");
-                            if (pSelImageIndex != nullptr) *pSelImageIndex = 2;
+                            std::string* pSelImageID = (std::string*)Async::getShared("selImageID");
+                            if (pSelImageID != nullptr) *pSelImageID = m_imgDisp->getID();
                         });
+
+                    m_state.timeEnd = std::chrono::system_clock::now();
+                    m_state.hasTimestamps = true;
+                } catch (const std::exception& e)
+                {
+                    if (!m_state.mustCancel)
+                    {
+                        m_state.failed = true;
+                        m_state.error = e.what();
+                    }
                 }
+
+                // Clean up
+                for (uint32_t i = 0; i < numThreads; i++)
+                    DELPTR(m_threads[i]);
+                m_threads.clear();
 
                 m_state.working = false;
             });
@@ -318,6 +390,17 @@ namespace RealBloom
         {
             m_state.mustCancel = true;
 
+            // Tell the sub-threads to stop
+            DispersionThread* ct;
+            for (uint32_t i = 0; i < m_threads.size(); i++)
+            {
+                ct = m_threads[i];
+                if (ct)
+                {
+                    ct->stop();
+                }
+            }
+
             // Wait for the thread
             threadJoin(m_thread);
             DELPTR(m_thread);
@@ -325,17 +408,74 @@ namespace RealBloom
 
         m_state.working = false;
         m_state.mustCancel = false;
+        m_state.failed = false;
+        m_state.hasTimestamps = false;
     }
 
-    bool Dispersion::isWorking()
+    bool Dispersion::isWorking() const
     {
         return m_state.working;
     }
 
-    std::string Dispersion::getStats()
+    bool Dispersion::hasFailed() const
     {
-        if (m_state.working && !m_state.mustCancel)
-            return stringFormat("%u/%u steps", m_state.numStepsDone, m_state.numSteps);
+        return m_state.failed;
+    }
+
+    std::string Dispersion::getError() const
+    {
+        return m_state.error;
+    }
+
+    uint32_t Dispersion::getNumDone() const
+    {
+        if (!(m_state.working && !m_state.failed && !m_state.mustCancel))
+            return 0;
+
+        uint32_t numDone = 0;
+        for (uint32_t i = 0; i < m_threads.size(); i++)
+        {
+            if (m_threads[i])
+            {
+                DispersionThreadStats* stats = m_threads[i]->getStats();
+                if (stats->state == DispersionThreadState::Working || stats->state == DispersionThreadState::Done)
+                {
+                    numDone += stats->numDone;
+                }
+            }
+        }
+        return numDone;
+    }
+
+    std::string Dispersion::getStats() const
+    {
+        if (m_state.mustCancel)
+            return "";
+
+        if (m_state.failed)
+            return m_state.error;
+
+        if (m_state.working)
+        {
+            float elapsedSec = (float)getElapsedMs(m_state.timeStart) / 1000.0f;
+
+            uint32_t numSteps = m_state.numSteps;
+            uint32_t numDone = getNumDone();
+
+            float remainingSec = (elapsedSec * (float)(numSteps - numDone)) / fmaxf((float)(numDone), EPSILON);
+            return strFormat(
+                "%u/%u steps\n%s / %s",
+                numDone,
+                numSteps,
+                strFromElapsed(elapsedSec).c_str(),
+                strFromElapsed(remainingSec).c_str());
+        }
+        else if (m_state.hasTimestamps)
+        {
+            std::chrono::milliseconds elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(m_state.timeEnd - m_state.timeStart);
+            float elapsedSec = (float)elapsedMs.count() / 1000.0f;
+            return strFormat("Done (%s)", strFromDuration(elapsedSec).c_str());
+        }
 
         return "";
     }

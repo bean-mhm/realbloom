@@ -2,22 +2,22 @@
 
 #include <vector>
 #include <string>
-
-#include <fftw/fftw3.h>
 #include <math.h>
+#include <complex>
 
+#include "pocketfft/pocketfft_hdronly.h"
+
+#include "../ColorManagement/CMImage.h"
+#include "../Utils/Array2D.h"
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/RandomNumber.h"
+#include "../Async.h"
 
 namespace RealBloom
 {
     struct DiffractionPatternParams
     {
-        uint32_t width;
-        uint32_t height;
-        double contrast;
-        double multiplier;
-        bool grayscale;
+        bool grayscale = false;
     };
 
     class DiffractionPattern
@@ -25,25 +25,23 @@ namespace RealBloom
     private:
         DiffractionPatternParams m_params;
 
-        std::vector<double> m_rawR;
-        std::vector<double> m_rawG;
-        std::vector<double> m_rawB;
+        CmImage* m_imgAperture = nullptr;
+        CmImage* m_imgDiffPattern = nullptr;
 
-        bool m_hasRawData;
-        double m_maxMag[3];
-        bool m_success;
-        std::string m_error;
+        bool m_success = false;
+        std::string m_error = "";
 
     public:
-        DiffractionPattern(uint32_t width, uint32_t height);
-
+        DiffractionPattern();
         DiffractionPatternParams* getParams();
-        void compute(float* buffer);
-        bool getRgbaOutput(std::vector<float>& outBuffer);
 
-        bool hasRawData() const;
-        bool success();
-        std::string getError();
+        void setImgAperture(CmImage* image);
+        void setImgDiffPattern(CmImage* image);
+
+        void compute();
+
+        bool success() const;
+        std::string getError() const;
     };
 
 }

@@ -1,21 +1,21 @@
 #include "Convolution.h"
 #include "ConvolutionThread.h"
-
-#include <Windows.h>
-
-constexpr uint32_t CONV_WAIT_TIMESTEP = 50;
-constexpr uint32_t CONV_PROG_TIMESTEP = 1000;
-
-constexpr uint32_t CONVGPU_FILE_TIMEOUT = 5000;
-constexpr bool CONVGPU_DELETE_TEMP = true;
-
-constexpr const char* TEXT_CANCELED_BY_USER = "Canceled by user.";
+#include "ConvolutionFFT.h"
 
 namespace RealBloom
 {
 
-    void drawRect(Image32Bit* image, int rx, int ry, int rw, int rh);
-    void fillRect(Image32Bit* image, int rx, int ry, int rw, int rh);
+    constexpr uint32_t CONV_WAIT_TIMESTEP = 50;
+    constexpr uint32_t CONV_PROG_TIMESTEP = 1000;
+
+    constexpr uint32_t CONVGPU_FILE_TIMEOUT = 5000;
+    constexpr bool CONVGPU_DELETE_TEMP = true;
+
+    constexpr const char* S_CANCELED_BY_USER = "Canceled by user.";
+
+    void drawRect(CmImage* image, int rx, int ry, int rw, int rh);
+    void fillRect(CmImage* image, int rx, int ry, int rw, int rh);
+    std::string strFromColorChannelID(uint32_t ch);
 
     void Convolution::setErrorState(const std::string& error)
     {
@@ -23,47 +23,37 @@ namespace RealBloom
         m_state.failed = true;
     }
 
-    Convolution::Convolution()
-        : m_imageInput(nullptr), m_imageKernel(nullptr), m_imageKernelPreview(nullptr),
-        m_imageConvPreview(nullptr), m_imageConvLayer(nullptr), m_imageConvMix(nullptr),
-        m_thread(nullptr)
-    {
-        //
-    }
-
-    void Convolution::setInputImage(Image32Bit* image)
-    {
-        m_imageInput = image;
-    }
-
-    void Convolution::setKernelImage(Image32Bit* image)
-    {
-        m_imageKernel = image;
-    }
-
-    void Convolution::setKernelPreviewImage(Image32Bit* image)
-    {
-        m_imageKernelPreview = image;
-    }
-
-    void Convolution::setConvPreviewImage(Image32Bit* image)
-    {
-        m_imageConvPreview = image;
-    }
-
-    void Convolution::setConvLayerImage(Image32Bit* image)
-    {
-        m_imageConvLayer = image;
-    }
-
-    void Convolution::setConvMixImage(Image32Bit* image)
-    {
-        m_imageConvMix = image;
-    }
+    Convolution::Convolution() : m_imgKernelSrc("", ""), m_imgOutput("", "")
+    {}
 
     ConvolutionParams* Convolution::getParams()
     {
         return &m_params;
+    }
+
+    void Convolution::setImgInput(CmImage* image)
+    {
+        m_imgInput = image;
+    }
+
+    void Convolution::setImgKernel(CmImage* image)
+    {
+        m_imgKernel = image;
+    }
+
+    void Convolution::setImgConvPreview(CmImage* image)
+    {
+        m_imgConvPreview = image;
+    }
+
+    void Convolution::setImgConvMix(CmImage* image)
+    {
+        m_imgConvMix = image;
+    }
+
+    CmImage* Convolution::getImgKernelSrc()
+    {
+        return &m_imgKernelSrc;
     }
 
     void Convolution::previewThreshold(size_t* outNumPixels)
@@ -72,15 +62,15 @@ namespace RealBloom
         size_t numPixels = 0;
         {
             // Input image
-            std::lock_guard<Image32Bit> lock1(*m_imageInput);
-            float* inputBuffer = m_imageInput->getImageData();
-            uint32_t inputWidth = 0, inputHeight = 0;
-            m_imageInput->getDimensions(inputWidth, inputHeight);
+            std::lock_guard<CmImage> lock1(*m_imgInput);
+            float* inputBuffer = m_imgInput->getImageData();
+            uint32_t inputWidth = m_imgInput->getWidth();
+            uint32_t inputHeight = m_imgInput->getHeight();
 
             // Convolution Preview Image
-            m_imageConvPreview->resize(inputWidth, inputHeight);
-            std::lock_guard<Image32Bit> lock2(*m_imageConvPreview);
-            float* prevBuffer = m_imageConvPreview->getImageData();
+            std::lock_guard<CmImage> lock2(*m_imgConvPreview);
+            m_imgConvPreview->resize(inputWidth, inputHeight, false);
+            float* prevBuffer = m_imgConvPreview->getImageData();
 
             float v;
             uint32_t redIndex;
@@ -106,230 +96,249 @@ namespace RealBloom
                 }
             }
         }
-        m_imageConvPreview->moveToGPU();
+        m_imgConvPreview->moveToGPU();
 
         if (outNumPixels)
             *outNumPixels = numPixels;
     }
 
-    void Convolution::kernel(bool previewMode, float** outBuffer, uint32_t* outWidth, uint32_t* outHeight)
+    void Convolution::kernel(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
     {
+        std::vector<float> kernelBuffer;
+        uint32_t kernelBufferSize = 0;
+        uint32_t kernelWidth = 0, kernelHeight = 0;
         {
-            std::vector<float> kernelBuffer;
-            uint32_t kernelBufferSize = 0;
-            uint32_t kernelWidth = 0, kernelHeight = 0;
-            {
-                std::lock_guard<Image32Bit> lock1(*m_imageKernel);
-                float* srcKernelBuffer = m_imageKernel->getImageData();
-                kernelBufferSize = m_imageKernel->getImageDataSize();
-                m_imageKernel->getDimensions(kernelWidth, kernelHeight);
+            std::lock_guard<CmImage> lock(m_imgKernelSrc);
+            float* kernelSrcBuffer = m_imgKernelSrc.getImageData();
+            kernelBufferSize = m_imgKernelSrc.getImageDataSize();
+            kernelWidth = m_imgKernelSrc.getWidth();
+            kernelHeight = m_imgKernelSrc.getHeight();
 
-                kernelBuffer.resize(kernelBufferSize);
-                std::copy(srcKernelBuffer, srcKernelBuffer + kernelBufferSize, kernelBuffer.data());
+            kernelBuffer.resize(kernelBufferSize);
+            std::copy(kernelSrcBuffer, kernelSrcBuffer + kernelBufferSize, kernelBuffer.data());
+        }
+
+        float centerX, centerY;
+        centerX = (float)kernelWidth / 2.0f;
+        centerY = (float)kernelHeight / 2.0f;
+
+        float scaleW = fmaxf(m_params.kernelScaleX, 0.01f);
+        float scaleH = fmaxf(m_params.kernelScaleY, 0.01f);
+        float cropW = fminf(fmaxf(m_params.kernelCropX, 0.1f), 1.0f);
+        float cropH = fminf(fmaxf(m_params.kernelCropY, 0.1f), 1.0f);
+        float rotation = m_params.kernelRotation;
+
+        float kernelExpMul = applyExposure(m_params.kernelExposure);
+        float kernelContrast = m_params.kernelContrast;
+
+        uint32_t scaledWidth, scaledHeight;
+        scaledWidth = (uint32_t)floorf(scaleW * (float)kernelWidth);
+        scaledHeight = (uint32_t)floorf(scaleH * (float)kernelHeight);
+
+        uint32_t croppedWidth, croppedHeight;
+        croppedWidth = (uint32_t)floorf(cropW * (float)scaledWidth);
+        croppedHeight = (uint32_t)floorf(cropH * (float)scaledHeight);
+
+        float scaledCenterX, scaledCenterY;
+        scaledCenterX = (scaleW * (float)kernelWidth) / 2.0f;
+        scaledCenterY = (scaleH * (float)kernelHeight) / 2.0f;
+
+        if (!previewMode && (outBuffer == nullptr))
+        {
+            *outWidth = croppedWidth;
+            *outHeight = croppedHeight;
+            return;
+        }
+
+        // Normalize, apply contrast and exposure
+        {
+            // Get the brightest value
+            float v = 0;
+            float maxV = EPSILON;
+            for (uint32_t i = 0; i < kernelBufferSize; i++)
+            {
+                v = fmaxf(0.0f, kernelBuffer[i]);
+                if ((v > maxV) && (i % 4 != 3)) // if not alpha channel
+                    maxV = v;
             }
 
-            float centerX, centerY;
-            centerX = (float)kernelWidth / 2.0f;
-            centerY = (float)kernelHeight / 2.0f;
-
-            float scaleW = fmaxf(m_params.kernelScaleW, 0.01f);
-            float scaleH = fmaxf(m_params.kernelScaleH, 0.01f);
-            float cropW = fminf(fmaxf(m_params.kernelCropW, 0.1f), 1.0f);
-            float cropH = fminf(fmaxf(m_params.kernelCropH, 0.1f), 1.0f);
-            float rotation = m_params.kernelRotation;
-
-            float kernelContrast = m_params.kernelContrast;
-            float kernelMultiplier = intensityCurve(fmaxf(0.0f, m_params.kernelIntensity));
-
-            uint32_t scaledWidth, scaledHeight;
-            scaledWidth = (uint32_t)floorf(scaleW * (float)kernelWidth);
-            scaledHeight = (uint32_t)floorf(scaleH * (float)kernelHeight);
-
-            uint32_t croppedWidth, croppedHeight;
-            croppedWidth = (uint32_t)floorf(cropW * (float)scaledWidth);
-            croppedHeight = (uint32_t)floorf(cropH * (float)scaledHeight);
-
-            float scaledCenterX, scaledCenterY;
-            scaledCenterX = (scaleW * (float)kernelWidth) / 2.0f;
-            scaledCenterY = (scaleH * (float)kernelHeight) / 2.0f;
-
-            // Normalize, apply contrast and multiplier
+            uint32_t redIndex;
+            for (uint32_t y = 0; y < kernelHeight; y++)
             {
-                float v = 0;
-                float maxV = EPSILON;
-                for (uint32_t i = 0; i < kernelBufferSize; i++)
+                for (uint32_t x = 0; x < kernelWidth; x++)
                 {
-                    v = fmaxf(0.0f, kernelBuffer[i]);
-                    if ((v > maxV) && (i % 4 != 3)) // if not alpha channel
-                        maxV = v;
-                }
+                    redIndex = (y * kernelWidth + x) * 4;
 
-                float grayscale, rgbMultiplier;
-                uint32_t redIndex;
-                for (uint32_t y = 0; y < kernelHeight; y++)
-                {
-                    for (uint32_t x = 0; x < kernelWidth; x++)
+                    // Normalize
+                    kernelBuffer[redIndex + 0] /= maxV;
+                    kernelBuffer[redIndex + 1] /= maxV;
+                    kernelBuffer[redIndex + 2] /= maxV;
+
+                    // Calculate contrast for the grayscale value
+                    float grayscale = rgbToGrayscale(kernelBuffer[redIndex + 0], kernelBuffer[redIndex + 1], kernelBuffer[redIndex + 2]);
+                    float mul = kernelExpMul * (contrastCurve(grayscale, kernelContrast) / fmaxf(grayscale, EPSILON));
+
+                    // Apply contrast
+                    kernelBuffer[redIndex + 0] *= mul;
+                    kernelBuffer[redIndex + 1] *= mul;
+                    kernelBuffer[redIndex + 2] *= mul;
+
+                    // De-normalize if needed
+                    if (!m_params.kernelNormalize)
                     {
-                        redIndex = (y * kernelWidth + x) * 4;
-
-                        kernelBuffer[redIndex + 0] /= maxV;
-                        kernelBuffer[redIndex + 1] /= maxV;
-                        kernelBuffer[redIndex + 2] /= maxV;
-
-                        grayscale = rgbToGrayscale(kernelBuffer[redIndex + 0], kernelBuffer[redIndex + 1], kernelBuffer[redIndex + 2]);
-                        rgbMultiplier = (contrastCurve(grayscale, kernelContrast) / fmaxf(grayscale, EPSILON)) * kernelMultiplier;
-
-                        kernelBuffer[redIndex + 0] *= rgbMultiplier;
-                        kernelBuffer[redIndex + 1] *= rgbMultiplier;
-                        kernelBuffer[redIndex + 2] *= rgbMultiplier;
+                        kernelBuffer[redIndex + 0] *= maxV;
+                        kernelBuffer[redIndex + 1] *= maxV;
+                        kernelBuffer[redIndex + 2] *= maxV;
                     }
                 }
-            }
-
-            // Scale and Rotation
-            std::vector<float> scaledBuffer;
-            uint32_t scaledBufferSize = 0;
-            if ((scaleW == 1) && (scaleH == 1) && (rotation == 0))
-            {
-                scaledBufferSize = kernelBufferSize;
-                scaledBuffer.resize(scaledBufferSize);
-                std::copy(kernelBuffer.data(), kernelBuffer.data() + kernelBufferSize, scaledBuffer.data());
-            } else
-            {
-                scaledBufferSize = scaledWidth * scaledHeight * 4;
-                scaledBuffer.resize(scaledBufferSize);
-
-                uint32_t redIndexKernel, redIndexScaled;
-                float transX, transY;
-                float transX_rot = 0, transY_rot = 0;
-                float targetColor[3];
-                Bilinear::Result bil;
-                for (uint32_t y = 0; y < scaledHeight; y++)
-                {
-                    for (uint32_t x = 0; x < scaledWidth; x++)
-                    {
-                        transX = ((float)x + 0.5f) / scaleW;
-                        transY = ((float)y + 0.5f) / scaleH;
-                        rotatePoint(transX, transY, centerX, centerY, -rotation, transX_rot, transY_rot);
-                        Bilinear::calculate(transX_rot, transY_rot, bil);
-
-                        // CURRENT COLOR = (KERNEL[TOPLEFT] * TOPLEFTMIX) + (KERNEL[TOPRIGHT] * TOPRIGHTMIX) + ...
-
-                        targetColor[0] = 0;
-                        targetColor[1] = 0;
-                        targetColor[2] = 0;
-
-                        if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], kernelWidth, kernelHeight))
-                        {
-                            redIndexKernel = (bil.topLeftPos[1] * kernelWidth + bil.topLeftPos[0]) * 4;
-                            blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.topLeftWeight);
-                        }
-                        if (checkBounds(bil.topRightPos[0], bil.topRightPos[1], kernelWidth, kernelHeight))
-                        {
-                            redIndexKernel = (bil.topRightPos[1] * kernelWidth + bil.topRightPos[0]) * 4;
-                            blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.topRightWeight);
-                        }
-                        if (checkBounds(bil.bottomLeftPos[0], bil.bottomLeftPos[1], kernelWidth, kernelHeight))
-                        {
-                            redIndexKernel = (bil.bottomLeftPos[1] * kernelWidth + bil.bottomLeftPos[0]) * 4;
-                            blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.bottomLeftWeight);
-                        }
-                        if (checkBounds(bil.bottomRightPos[0], bil.bottomRightPos[1], kernelWidth, kernelHeight))
-                        {
-                            redIndexKernel = (bil.bottomRightPos[1] * kernelWidth + bil.bottomRightPos[0]) * 4;
-                            blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.bottomRightWeight);
-                        }
-
-                        redIndexScaled = (y * scaledWidth + x) * 4;
-                        scaledBuffer[redIndexScaled + 0] = targetColor[0];
-                        scaledBuffer[redIndexScaled + 1] = targetColor[1];
-                        scaledBuffer[redIndexScaled + 2] = targetColor[2];
-                        scaledBuffer[redIndexScaled + 3] = 1.0f;
-                    }
-                }
-            }
-
-            // No longer need the original buffer
-            kernelBuffer.clear();
-
-            // Crop
-            std::vector<float> croppedBuffer;
-            uint32_t croppedBufferSize = 0;
-            if ((cropW == 1) && (cropH == 1))
-            {
-                croppedBufferSize = scaledBufferSize;
-                croppedBuffer.resize(croppedBufferSize);
-                std::copy(scaledBuffer.data(), scaledBuffer.data() + scaledBufferSize, croppedBuffer.data());
-            } else
-            {
-                croppedBufferSize = croppedWidth * croppedHeight * 4;
-                croppedBuffer.resize(croppedBufferSize);
-
-                float cropMaxOffsetX = scaledWidth - croppedWidth;
-                float cropMaxOffsetY = scaledHeight - croppedHeight;
-
-                uint32_t cropStartX = (uint32_t)floorf(m_params.kernelCenterX * cropMaxOffsetX);
-                uint32_t cropStartY = (uint32_t)floorf(m_params.kernelCenterY * cropMaxOffsetY);
-
-                uint32_t redIndexCropped, redIndexScaled;
-                for (uint32_t y = 0; y < croppedHeight; y++)
-                {
-                    for (uint32_t x = 0; x < croppedWidth; x++)
-                    {
-                        redIndexCropped = (y * croppedWidth + x) * 4;
-                        redIndexScaled = 4 * (((y + cropStartY) * scaledWidth) + x + cropStartX);
-
-                        croppedBuffer[redIndexCropped + 0] = scaledBuffer[redIndexScaled + 0];
-                        croppedBuffer[redIndexCropped + 1] = scaledBuffer[redIndexScaled + 1];
-                        croppedBuffer[redIndexCropped + 2] = scaledBuffer[redIndexScaled + 2];
-                        croppedBuffer[redIndexCropped + 3] = scaledBuffer[redIndexScaled + 3];
-                    }
-                }
-            }
-            scaledBuffer.clear();
-
-            // Copy to outBuffer if it's requested by another function
-            if (!previewMode && (outBuffer != nullptr))
-            {
-                *outWidth = croppedWidth;
-                *outHeight = croppedHeight;
-                *outBuffer = new float[croppedBufferSize];
-                std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, *outBuffer);
-            }
-
-            // Copy to kernel preview image
-            {
-                m_imageKernelPreview->resize(croppedWidth, croppedHeight);
-                std::lock_guard<Image32Bit> lock2(*m_imageKernelPreview);
-                float* prevBuffer = m_imageKernelPreview->getImageData();
-                std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, prevBuffer);
-            }
-
-            // Preview center point
-            if (m_params.kernelPreviewCenter)
-            {
-                int newCenterX = (int)floorf(m_params.kernelCenterX * (float)croppedWidth - 0.5f);
-                int newCenterY = (int)floorf(m_params.kernelCenterY * (float)croppedHeight - 0.5f);
-                int prevSquareSize = (int)roundf(0.15f * fminf((float)croppedWidth, (float)croppedHeight));
-
-                drawRect(
-                    m_imageKernelPreview,
-                    newCenterX - (prevSquareSize / 2),
-                    newCenterY - (prevSquareSize / 2),
-                    prevSquareSize, prevSquareSize);
-
-                fillRect(m_imageKernelPreview, newCenterX - 2, newCenterY - 2, 4, 4);
             }
         }
 
-        m_imageKernelPreview->moveToGPU();
+        // Scale and Rotation
+        std::vector<float> scaledBuffer;
+        uint32_t scaledBufferSize = 0;
+        if ((scaleW == 1) && (scaleH == 1) && (rotation == 0))
+        {
+            scaledBufferSize = kernelBufferSize;
+            scaledBuffer.resize(scaledBufferSize);
+            std::copy(kernelBuffer.data(), kernelBuffer.data() + kernelBufferSize, scaledBuffer.data());
+        }
+        else
+        {
+            scaledBufferSize = scaledWidth * scaledHeight * 4;
+            scaledBuffer.resize(scaledBufferSize);
+
+            uint32_t redIndexKernel, redIndexScaled;
+            float transX, transY;
+            float transX_rot = 0, transY_rot = 0;
+            float targetColor[3];
+            Bilinear::Result bil;
+            for (uint32_t y = 0; y < scaledHeight; y++)
+            {
+                for (uint32_t x = 0; x < scaledWidth; x++)
+                {
+                    transX = ((float)x + 0.5f) / scaleW;
+                    transY = ((float)y + 0.5f) / scaleH;
+                    rotatePoint(transX, transY, centerX, centerY, -rotation, transX_rot, transY_rot);
+                    Bilinear::calculate(transX_rot, transY_rot, bil);
+
+                    // CURRENT COLOR = (KERNEL[TOPLEFT] * TOPLEFTMIX) + (KERNEL[TOPRIGHT] * TOPRIGHTMIX) + ...
+
+                    targetColor[0] = 0;
+                    targetColor[1] = 0;
+                    targetColor[2] = 0;
+
+                    if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], kernelWidth, kernelHeight))
+                    {
+                        redIndexKernel = (bil.topLeftPos[1] * kernelWidth + bil.topLeftPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.topLeftWeight);
+                    }
+                    if (checkBounds(bil.topRightPos[0], bil.topRightPos[1], kernelWidth, kernelHeight))
+                    {
+                        redIndexKernel = (bil.topRightPos[1] * kernelWidth + bil.topRightPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.topRightWeight);
+                    }
+                    if (checkBounds(bil.bottomLeftPos[0], bil.bottomLeftPos[1], kernelWidth, kernelHeight))
+                    {
+                        redIndexKernel = (bil.bottomLeftPos[1] * kernelWidth + bil.bottomLeftPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.bottomLeftWeight);
+                    }
+                    if (checkBounds(bil.bottomRightPos[0], bil.bottomRightPos[1], kernelWidth, kernelHeight))
+                    {
+                        redIndexKernel = (bil.bottomRightPos[1] * kernelWidth + bil.bottomRightPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, kernelBuffer.data(), redIndexKernel, bil.bottomRightWeight);
+                    }
+
+                    redIndexScaled = (y * scaledWidth + x) * 4;
+                    scaledBuffer[redIndexScaled + 0] = targetColor[0];
+                    scaledBuffer[redIndexScaled + 1] = targetColor[1];
+                    scaledBuffer[redIndexScaled + 2] = targetColor[2];
+                    scaledBuffer[redIndexScaled + 3] = 1.0f;
+                }
+            }
+        }
+
+        // No longer need the original buffer
+        clearVector(kernelBuffer);
+
+        // Crop
+        std::vector<float> croppedBuffer;
+        uint32_t croppedBufferSize = 0;
+        if ((cropW == 1) && (cropH == 1))
+        {
+            croppedBufferSize = scaledBufferSize;
+            croppedBuffer.resize(croppedBufferSize);
+            std::copy(scaledBuffer.data(), scaledBuffer.data() + scaledBufferSize, croppedBuffer.data());
+        }
+        else
+        {
+            croppedBufferSize = croppedWidth * croppedHeight * 4;
+            croppedBuffer.resize(croppedBufferSize);
+
+            float cropMaxOffsetX = scaledWidth - croppedWidth;
+            float cropMaxOffsetY = scaledHeight - croppedHeight;
+
+            uint32_t cropStartX = (uint32_t)floorf(m_params.kernelCenterX * cropMaxOffsetX);
+            uint32_t cropStartY = (uint32_t)floorf(m_params.kernelCenterY * cropMaxOffsetY);
+
+            uint32_t redIndexCropped, redIndexScaled;
+            for (uint32_t y = 0; y < croppedHeight; y++)
+            {
+                for (uint32_t x = 0; x < croppedWidth; x++)
+                {
+                    redIndexCropped = (y * croppedWidth + x) * 4;
+                    redIndexScaled = 4 * (((y + cropStartY) * scaledWidth) + x + cropStartX);
+
+                    croppedBuffer[redIndexCropped + 0] = scaledBuffer[redIndexScaled + 0];
+                    croppedBuffer[redIndexCropped + 1] = scaledBuffer[redIndexScaled + 1];
+                    croppedBuffer[redIndexCropped + 2] = scaledBuffer[redIndexScaled + 2];
+                    croppedBuffer[redIndexCropped + 3] = scaledBuffer[redIndexScaled + 3];
+                }
+            }
+        }
+
+        clearVector(scaledBuffer);
+
+        // Copy to outBuffer if it's requested by another function
+        if (!previewMode && (outBuffer != nullptr))
+        {
+            *outWidth = croppedWidth;
+            *outHeight = croppedHeight;
+            outBuffer->resize(croppedBufferSize);
+            *outBuffer = croppedBuffer;
+        }
+
+        // Copy to kernel preview image
+        {
+            std::lock_guard<CmImage> lock(*m_imgKernel);
+            m_imgKernel->resize(croppedWidth, croppedHeight, false);
+            float* prevBuffer = m_imgKernel->getImageData();
+            std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, prevBuffer);
+        }
+
+        // Preview center point
+        if (m_params.kernelPreviewCenter)
+        {
+            int newCenterX = (int)floorf(m_params.kernelCenterX * (float)croppedWidth - 0.5f);
+            int newCenterY = (int)floorf(m_params.kernelCenterY * (float)croppedHeight - 0.5f);
+            int prevSquareSize = (int)roundf(0.15f * fminf((float)croppedWidth, (float)croppedHeight));
+
+            drawRect(
+                m_imgKernel,
+                newCenterX - (prevSquareSize / 2),
+                newCenterY - (prevSquareSize / 2),
+                prevSquareSize, prevSquareSize);
+
+            fillRect(m_imgKernel, newCenterX - 2, newCenterY - 2, 4, 4);
+        }
+
+        m_imgKernel->moveToGPU();
     }
 
-    void Convolution::mixConv(bool additive, float inputMix, float convMix, float mix, float convIntensity)
+    void Convolution::mixConv(bool additive, float inputMix, float convMix, float mix, float convExposure)
     {
         inputMix = fmaxf(inputMix, 0.0f);
         convMix = fmaxf(convMix, 0.0f);
-        convIntensity = fmaxf(convIntensity, 0.0f);
         if (!additive)
         {
             mix = fminf(fmaxf(mix, 0.0f), 1.0f);
@@ -339,31 +348,25 @@ namespace RealBloom
 
         {
             // Input buffer
-            std::lock_guard<Image32Bit> inputImageLock(*m_imageInput);
-            float* inputBuffer = m_imageInput->getImageData();
-            uint32_t inputWidth = 0, inputHeight = 0;
-            m_imageInput->getDimensions(inputWidth, inputHeight);
+            std::lock_guard<CmImage> lock1(*m_imgInput);
+            float* inputBuffer = m_imgInput->getImageData();
+            uint32_t inputWidth = m_imgInput->getWidth();
+            uint32_t inputHeight = m_imgInput->getHeight();
 
             // Conv Buffer
-            std::lock_guard<Image32Bit> convLayerImageLock(*m_imageConvLayer);
-            float* convBuffer = m_imageConvLayer->getImageData();
-            uint32_t convWidth = 0, convHeight = 0;
-            m_imageConvLayer->getDimensions(convWidth, convHeight);
+            std::lock_guard<CmImage> lock2(m_imgOutput);
+            float* convBuffer = m_imgOutput.getImageData();
+            uint32_t convWidth = m_imgOutput.getWidth();
+            uint32_t convHeight = m_imgOutput.getHeight();
 
             if ((inputWidth == convWidth) && (inputHeight == convHeight))
             {
-                m_imageConvMix->resize(inputWidth, inputHeight);
-
                 // Conv Mix Buffer
-                std::lock_guard<Image32Bit> convMixImageLock(*m_imageConvMix);
-                float* convMixBuffer = m_imageConvMix->getImageData();
+                std::lock_guard<CmImage> convMixImageLock(*m_imgConvMix);
+                m_imgConvMix->resize(inputWidth, inputHeight, false);
+                float* convMixBuffer = m_imgConvMix->getImageData();
 
-                float multiplier;
-                if (additive)
-                    multiplier = intensityCurve(convMix);
-                else
-                    multiplier = convMix * intensityCurve(convIntensity);
-
+                float multiplier = convMix * applyExposure(convExposure);
                 uint32_t redIndex;
                 for (uint32_t y = 0; y < inputHeight; y++)
                 {
@@ -383,8 +386,7 @@ namespace RealBloom
                 }
             }
         }
-
-        m_imageConvMix->moveToGPU();
+        m_imgConvMix->moveToGPU();
     }
 
     void Convolution::convolve()
@@ -392,18 +394,19 @@ namespace RealBloom
         // If there's already a convolution process going on
         cancelConv();
 
-        // Clamp the number of threads so it's not negative or some crazy number
+        // Clamp the number of threads
         uint32_t maxThreads = std::thread::hardware_concurrency();
-        uint32_t numThreads = m_params.device.numThreads;
+        uint32_t numThreads = m_params.methodInfo.numThreads;
         if (numThreads > maxThreads) numThreads = maxThreads;
         if (numThreads < 1) numThreads = 1;
 
         // Same for chunks
-        uint32_t numChunks = m_params.device.numChunks;
+        uint32_t numChunks = m_params.methodInfo.numChunks;
         if (numChunks < 1) numChunks = 1;
         if (numChunks > CONV_MAX_CHUNKS) numChunks = CONV_MAX_CHUNKS;
 
-        uint32_t chunkSleep = m_params.device.chunkSleep;
+        uint32_t chunkSleep = m_params.methodInfo.chunkSleep;
+        if (chunkSleep > CONV_MAX_SLEEP) chunkSleep = CONV_MAX_SLEEP;
 
         // Reset state
         m_state.working = true;
@@ -412,49 +415,125 @@ namespace RealBloom
         m_state.error = "";
         m_state.timeStart = std::chrono::system_clock::now();
         m_state.hasTimestamps = false;
-        m_state.device = m_params.device;
+        m_state.methodInfo = m_params.methodInfo;
         m_state.numChunksDone = 0;
+        m_state.fftStage = "";
 
         // Start the main thread
         m_thread = new std::thread([this, numThreads, maxThreads, numChunks, chunkSleep]()
             {
                 // Kernel Buffer
-                float* kernelBuffer = nullptr;
+                std::vector<float> kernelBuffer;
                 uint32_t kernelWidth = 0, kernelHeight = 0;
                 kernel(false, &kernelBuffer, &kernelWidth, &kernelHeight);
 
                 // Input Buffer
-                float* inputBuffer = nullptr;
+                std::vector<float> inputBuffer;
                 uint32_t inputWidth = 0, inputHeight = 0;
                 uint32_t inputBufferSize = 0;
                 {
                     // Input buffer from input image
-                    std::lock_guard<Image32Bit> inputImageLock(*m_imageInput);
-                    m_imageInput->getDimensions(inputWidth, inputHeight);
-                    float* inputImageData = m_imageInput->getImageData();
+                    std::lock_guard<CmImage> lock(*m_imgInput);
+                    inputWidth = m_imgInput->getWidth();
+                    inputHeight = m_imgInput->getHeight();
+                    inputBufferSize = m_imgInput->getImageDataSize();
+                    float* inputImageData = m_imgInput->getImageData();
 
                     // Copy the buffer so the input image doesn't stay locked throughout the process
-                    inputBufferSize = m_imageInput->getImageDataSize();
-                    inputBuffer = new float[inputBufferSize];
-                    std::copy(inputImageData, inputImageData + inputBufferSize, inputBuffer);
+                    inputBuffer.resize(inputBufferSize);
+                    std::copy(inputImageData, inputImageData + inputBufferSize, inputBuffer.data());
                 }
 
                 ConvolutionGPUBinaryInput cgBinInput;
-                if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
+                if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
+                {
+                    try
+                    {
+                        // FFT
+                        ConvolutionFFT fftConv(
+                            m_params, inputBuffer.data(), inputWidth, inputHeight,
+                            kernelBuffer.data(), kernelWidth, kernelHeight
+                        );
+
+                        uint32_t numStages = 14;
+                        uint32_t currStage = 0;
+
+                        // Prepare padded buffers
+                        currStage++;
+                        m_state.fftStage = strFormat("%u/%u Preparing", currStage, numStages);
+                        fftConv.pad();
+
+                        if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+
+                        // Repeat for 3 color channels
+                        for (uint32_t i = 0; i < 3; i++)
+                        {
+                            // Input FFT
+                            currStage++;
+                            m_state.fftStage = strFormat("%u/%u %s: Input FFT", currStage, numStages, strFromColorChannelID(i).c_str());
+                            fftConv.inputFFT(i);
+
+                            if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+
+                            // Kernel FFT
+                            currStage++;
+                            m_state.fftStage = strFormat("%u/%u %s: Kernel FFT", currStage, numStages, strFromColorChannelID(i).c_str());
+                            fftConv.kernelFFT(i);
+
+                            if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+
+                            // Multiply the Fourier transforms
+                            currStage++;
+                            m_state.fftStage = strFormat("%u/%u %s: Multiplying", currStage, numStages, strFromColorChannelID(i).c_str());
+                            fftConv.multiply(i);
+
+                            if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+
+                            // Inverse FFT
+                            currStage++;
+                            m_state.fftStage = strFormat("%u/%u %s: Inverse FFT", currStage, numStages, strFromColorChannelID(i).c_str());
+                            fftConv.inverse(i);
+
+                            if (m_state.mustCancel)throw std::exception(S_CANCELED_BY_USER);
+                        }
+
+                        // Get the final output
+                        currStage++;
+                        m_state.fftStage = strFormat("%u/%u Finalizing", currStage, numStages);
+                        fftConv.output();
+
+                        // Update the output image
+                        {
+                            std::lock_guard<CmImage> lock(m_imgOutput);
+                            m_imgOutput.resize(inputWidth, inputHeight, false);
+                            float* convBuffer = m_imgOutput.getImageData();
+                            std::copy(
+                                fftConv.getBuffer().data(),
+                                fftConv.getBuffer().data() + fftConv.getBuffer().size(),
+                                convBuffer
+                            );
+                        }
+                    } catch (const std::exception& e)
+                    {
+                        setErrorState(e.what());
+                    }
+                }
+                else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
                 {
                     // Create and prepare threads
                     for (uint32_t i = 0; i < numThreads; i++)
                     {
                         ConvolutionThread* ct = new ConvolutionThread(
                             numThreads, i, m_params,
-                            inputBuffer, inputWidth, inputHeight,
-                            kernelBuffer, kernelWidth, kernelHeight);
+                            inputBuffer.data(), inputWidth, inputHeight,
+                            kernelBuffer.data(), kernelWidth, kernelHeight
+                        );
 
-                        std::vector<float>* threadBuffer = ct->getBuffer();
-                        threadBuffer->resize(inputBufferSize);
+                        std::vector<float>& threadBuffer = ct->getBuffer();
+                        threadBuffer.resize(inputBufferSize);
                         for (uint32_t j = 0; j < inputBufferSize; j++)
-                            if (j % 4 == 3) (*threadBuffer)[j] = 1.0f;
-                            else (*threadBuffer)[j] = 0.0f;
+                            if (j % 4 == 3) threadBuffer[j] = 1.0f;
+                            else threadBuffer[j] = 0.0f;
 
                         m_threads.push_back(ct);
                     }
@@ -472,11 +551,10 @@ namespace RealBloom
 
                     // Wait for the threads
                     {
-                        uint32_t numThreadsDone;
                         std::chrono::time_point<std::chrono::system_clock> lastTime = std::chrono::system_clock::now();
                         while (true)
                         {
-                            numThreadsDone = 0;
+                            uint32_t numThreadsDone = 0;
                             ConvolutionThread* ct;
                             ConvolutionThreadStats* stats;
                             for (uint32_t i = 0; i < numThreads; i++)
@@ -494,10 +572,11 @@ namespace RealBloom
                             if (numThreadsDone >= numThreads)
                                 break;
 
-                            // Take a snapshot of the current progress and put it into conv result
+                            // Take a snapshot of the current progress
                             if ((!m_state.mustCancel) && (getElapsedMs(lastTime) > CONV_PROG_TIMESTEP) && (numThreadsDone < numThreads))
                             {
-                                float* progBuffer = new float[inputBufferSize];
+                                std::vector<float> progBuffer;
+                                progBuffer.resize(inputBufferSize);
                                 for (uint32_t i = 0; i < inputBufferSize; i++)
                                     if (i % 4 == 3) progBuffer[i] = 1.0f;
                                     else progBuffer[i] = 0.0f;
@@ -506,7 +585,7 @@ namespace RealBloom
                                 {
                                     if (m_threads[i])
                                     {
-                                        std::vector<float> currentBuffer = *(m_threads[i]->getBuffer());
+                                        std::vector<float>& currentBuffer = m_threads[i]->getBuffer();
                                         uint32_t redIndex;
                                         for (uint32_t y = 0; y < inputHeight; y++)
                                         {
@@ -521,16 +600,15 @@ namespace RealBloom
                                     }
                                 }
 
-                                // Copy progBuffer into the convolution layer
-                                m_imageConvLayer->resize(inputWidth, inputHeight);
+                                // Copy progBuffer into conv. mix
                                 {
-                                    std::lock_guard<Image32Bit> convLayerImageLock(*m_imageConvLayer);
-                                    float* convBuffer = m_imageConvLayer->getImageData();
+                                    std::lock_guard<CmImage> lock(*m_imgConvMix);
+                                    m_imgConvMix->resize(inputWidth, inputHeight, false);
+                                    float* convBuffer = m_imgConvMix->getImageData();
 
-                                    std::copy(progBuffer, progBuffer + inputBufferSize, convBuffer);
-                                    delete[] progBuffer;
+                                    std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, convBuffer);
                                 }
-                                Async::schedule([this]() { m_imageConvLayer->moveToGPU(); });
+                                m_imgConvMix->moveToGPU();
 
                                 lastTime = std::chrono::system_clock::now();
                             }
@@ -545,9 +623,11 @@ namespace RealBloom
                         if (m_threads[i])
                             threadJoin(m_threads[i]->getThread().get());
                     }
-                    DELARR(inputBuffer);
-                    DELARR(kernelBuffer);
-                } else
+
+                    clearVector(inputBuffer);
+                    clearVector(kernelBuffer);
+                }
+                else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
                 {
                     // Prepare input data for GPU convolution
                     cgBinInput.numChunks = numChunks;
@@ -561,18 +641,16 @@ namespace RealBloom
                     cgBinInput.inputHeight = inputHeight;
                     cgBinInput.kernelWidth = kernelWidth;
                     cgBinInput.kernelHeight = kernelHeight;
-                    cgBinInput.inputBuffer = inputBuffer;
-                    cgBinInput.kernelBuffer = kernelBuffer;
+                    cgBinInput.inputBuffer = inputBuffer.data();
+                    cgBinInput.kernelBuffer = kernelBuffer.data();
                 }
 
-                if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
+                if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
                 {
-                    // Prepare the convolution layer
-                    m_imageConvLayer->resize(inputWidth, inputHeight);
-                    m_imageConvLayer->fill({ 0, 0, 0, 1 });
-
-                    std::lock_guard<Image32Bit> convLayerImageLock(*m_imageConvLayer);
-                    float* convBuffer = m_imageConvLayer->getImageData();
+                    // Prepare the output buffer
+                    std::lock_guard<CmImage> lock(m_imgOutput);
+                    m_imgOutput.resize(inputWidth, inputHeight, false);
+                    float* convBuffer = m_imgOutput.getImageData();
 
                     // Add the buffers from each thread
                     for (uint32_t i = 0; i < numThreads; i++)
@@ -582,7 +660,7 @@ namespace RealBloom
 
                         if (m_threads[i])
                         {
-                            std::vector<float> threadBuffer = *(m_threads[i]->getBuffer());
+                            std::vector<float>& threadBuffer = m_threads[i]->getBuffer();
                             if (!m_state.mustCancel)
                             {
                                 uint32_t redIndex;
@@ -594,13 +672,17 @@ namespace RealBloom
                                     for (uint32_t x = 0; x < inputWidth; x++)
                                     {
                                         redIndex = (y * inputWidth + x) * 4;
-                                        blendAddRGB(convBuffer, redIndex, threadBuffer.data(), redIndex, CONV_MULTIPLIER);
+                                        convBuffer[redIndex + 0] += threadBuffer[redIndex + 0] * CONV_MULTIPLIER;
+                                        convBuffer[redIndex + 1] += threadBuffer[redIndex + 1] * CONV_MULTIPLIER;
+                                        convBuffer[redIndex + 2] += threadBuffer[redIndex + 2] * CONV_MULTIPLIER;
+                                        convBuffer[redIndex + 3] += 1.0f;
                                     }
                                 }
                             }
                         }
                     }
-                } else
+                }
+                else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
                 {
                     // Create input file for GPU convolution
                     std::string tempDir;
@@ -608,7 +690,7 @@ namespace RealBloom
                     uint32_t randomNumber = (uint32_t)RandomNumber::nextInt();
 
                     // Filenames
-                    std::string cgInpFilename = stringFormat(
+                    std::string cgInpFilename = strFormat(
                         "%sgpuconv%u",
                         tempDir.c_str(),
                         randomNumber);
@@ -624,7 +706,7 @@ namespace RealBloom
                     }
                     HANDLE cgStatMutex = createMutex(cgStatMutexName);
                     if (cgStatMutex == NULL)
-                        setErrorState(stringFormat("Mutex \"%s\" could not be created.", cgStatMutexName.c_str()));
+                        setErrorState(strFormat("Mutex \"%s\" could not be created.", cgStatMutexName.c_str()));
 
                     // Create the input file
                     std::ofstream cgInpFile;
@@ -633,7 +715,7 @@ namespace RealBloom
                         cgInpFile.open(cgInpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
                         if (!cgInpFile.is_open())
                         {
-                            setErrorState(stringFormat("File \"%s\" could not be created/opened.", cgInpFilename.c_str()));
+                            setErrorState(strFormat("File \"%s\" could not be created/opened.", cgInpFilename.c_str()));
                         }
                     }
 
@@ -658,12 +740,12 @@ namespace RealBloom
                         cgInpFile.write(cgBinInput.statMutexNameBuffer, cgBinInput.statMutexNameSize);
 
                         uint32_t inputSize = inputWidth * inputHeight * 4;
-                        cgInpFile.write(PTR_AS_BYTES(inputBuffer), inputSize * sizeof(float));
-                        DELARR(inputBuffer);
+                        cgInpFile.write(PTR_AS_BYTES(inputBuffer.data()), inputSize * sizeof(float));
+                        clearVector(inputBuffer);
 
                         uint32_t kernelSize = kernelWidth * kernelHeight * 4;
-                        cgInpFile.write(PTR_AS_BYTES(kernelBuffer), kernelSize * sizeof(float));
-                        DELARR(kernelBuffer);
+                        cgInpFile.write(PTR_AS_BYTES(kernelBuffer.data()), kernelSize * sizeof(float));
+                        clearVector(kernelBuffer);
 
                         cgInpFile.flush();
                         cgInpFile.close();
@@ -683,7 +765,7 @@ namespace RealBloom
                     ZeroMemory(&cgProcessInfo, sizeof(cgProcessInfo));
 
                     bool cgHasHandles = false;
-                    std::string cgCommandLine = stringFormat("RealBloomGPUConv.exe \"%s\"", cgInpFilename.c_str());
+                    std::string cgCommandLine = strFormat("\"%s\" \"%s\"", getLocalPath("RealBloomGPUConv.exe").c_str(), cgInpFilename.c_str());
                     if (!m_state.failed)
                     {
                         if (CreateProcessA(
@@ -704,9 +786,10 @@ namespace RealBloom
                             HANDLE hJobObject = Async::getShared("hJobObject");
                             if (hJobObject)
                                 AssignProcessToJobObject(hJobObject, cgProcessInfo.hProcess);
-                        } else
+                        }
+                        else
                         {
-                            setErrorState(stringFormat("CreateProcess failed (%d).", GetLastError()));
+                            setErrorState(strFormat("CreateProcess failed (%d).", GetLastError()));
                         }
                     }
 
@@ -721,10 +804,11 @@ namespace RealBloom
                                 killProcess(cgProcessInfo);
                                 setErrorState("RealBloomGPUConv did not create an output file.");
                                 break;
-                            } else if (m_state.mustCancel)
+                            }
+                            else if (m_state.mustCancel)
                             {
                                 killProcess(cgProcessInfo);
-                                setErrorState(TEXT_CANCELED_BY_USER);
+                                setErrorState(S_CANCELED_BY_USER);
                                 break;
                             }
                             std::this_thread::sleep_for(std::chrono::milliseconds(CONV_WAIT_TIMESTEP));
@@ -740,11 +824,11 @@ namespace RealBloom
                             if (m_state.mustCancel)
                             {
                                 killProcess(cgProcessInfo);
-                                setErrorState(TEXT_CANCELED_BY_USER);
+                                setErrorState(S_CANCELED_BY_USER);
                                 break;
                             }
 
-                            // Read stat file and update conv layer
+                            // Read stat file
                             if (!(m_state.mustCancel) && std::filesystem::exists(cgStatFilename) && (getElapsedMs(t1) > CONV_PROG_TIMESTEP))
                             {
                                 ConvolutionGPUBinaryStat cgBinStat;
@@ -752,7 +836,7 @@ namespace RealBloom
 
                                 // Open and read the stat file, check if numChunksDone has increased,
                                 // and if it has, then read the rest of the file and the buffer, and
-                                // show it using the conv layer image.
+                                // show it through conv. mix
                                 std::ifstream cgStatFile;
                                 cgStatFile.open(cgStatFilename, std::ifstream::in | std::ifstream::binary);
                                 bool statParseFailed = false;
@@ -778,20 +862,21 @@ namespace RealBloom
                                             cgBinStat.buffer = new float[cgBinStat.bufferSize];
                                             cgStatFile.read(PTR_AS_BYTES(cgBinStat.buffer), cgBinStat.bufferSize * sizeof(float));
                                             statParseFailed |= cgStatFile.fail();
-                                        } else
+                                        }
+                                        else
                                             statParseFailed = true;
                                     }
 
                                     if (!statParseFailed && (cgBinStat.bufferSize > 0) && (cgBinStat.buffer != nullptr))
                                     {
-                                        // Copy the stat buffer into the convolution layer
-                                        m_imageConvLayer->resize(inputWidth, inputHeight);
+                                        // Copy the stat buffer into conv. mix
                                         {
-                                            std::lock_guard<Image32Bit> convLayerImageLock(*m_imageConvLayer);
-                                            float* convBuffer = m_imageConvLayer->getImageData();
+                                            std::lock_guard<CmImage> lock(*m_imgConvMix);
+                                            m_imgConvMix->resize(inputWidth, inputHeight, false);
+                                            float* convBuffer = m_imgConvMix->getImageData();
                                             std::copy(cgBinStat.buffer, cgBinStat.buffer + cgBinStat.bufferSize, convBuffer);
                                         }
-                                        Async::schedule([this]() { m_imageConvLayer->moveToGPU(); });
+                                        m_imgConvMix->moveToGPU();
                                     }
 
                                     DELARR(cgBinStat.buffer);
@@ -814,7 +899,7 @@ namespace RealBloom
                     {
                         cgOutFile.open(cgOutFilename, std::ifstream::in | std::ifstream::binary);
                         if (!cgOutFile.is_open() || cgOutFile.fail())
-                            setErrorState(stringFormat("Output file \"%s\" could not be opened.", cgOutFilename.c_str()));
+                            setErrorState(strFormat("Output file \"%s\" could not be opened.", cgOutFilename.c_str()));
                         else
                             cgOutFile.seekg(std::ifstream::beg);
                     }
@@ -875,23 +960,21 @@ namespace RealBloom
                                     "crashed. Try using more chunks, as the GPU might not be able to handle the "
                                     "current amount of data at once.");
                             else
-                                setErrorState(stringFormat(
+                                setErrorState(strFormat(
                                     "Could not retrieve data from the output file, failed at \"%s\".", parseStage.c_str()));
                     }
 
-                    // If successful, copy the output buffer to our conv. layer,
+                    // If successful, update the output image
                     // otherwise set error
                     if (!m_state.failed)
                     {
                         if (cgBinOutput.status == 1)
                         {
-                            // Prepare the convolution layer
-                            m_imageConvLayer->resize(inputWidth, inputHeight);
-                            m_imageConvLayer->fill({ 0, 0, 0, 1 });
-
-                            std::lock_guard<Image32Bit> convLayerImageLock(*m_imageConvLayer);
-                            float* convBuffer = m_imageConvLayer->getImageData();
-                            uint32_t convBufferSize = m_imageConvLayer->getImageDataSize();
+                            // Prepare the output buffer
+                            std::lock_guard<CmImage> lock(m_imgOutput);
+                            m_imgOutput.resize(inputWidth, inputHeight, false);
+                            float* convBuffer = m_imgOutput.getImageData();
+                            uint32_t convBufferSize = m_imgOutput.getImageDataSize();
 
                             if (convBufferSize == cgBinOutput.bufferSize)
                             {
@@ -899,18 +982,20 @@ namespace RealBloom
                                 {
                                     convBuffer[i] = cgBinOutput.buffer[i];
                                 }
-                            } else
+                            }
+                            else
                             {
-                                setErrorState(stringFormat(
+                                setErrorState(strFormat(
                                     "Output buffer size (%u) does not match the input size (%u).", cgBinOutput.bufferSize, convBufferSize));
                             }
-                        } else
+                        }
+                        else
                         {
                             std::string errorS = "Unknown";
                             if (cgBinOutput.errorSize > 0)
                                 errorS = cgBinOutput.errorBuffer;
 
-                            setErrorState(stringFormat("RealBloomGPUConv: %s", errorS.c_str()));
+                            setErrorState(errorS);
                         }
                     }
 
@@ -934,21 +1019,20 @@ namespace RealBloom
                 }
 
                 // Clean up
-                if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
+                if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
                 {
                     for (uint32_t i = 0; i < numThreads; i++)
                         DELPTR(m_threads[i]);
                     m_threads.clear();
                 }
-                DELARR(inputBuffer);
-                DELARR(kernelBuffer);
+                clearVector(inputBuffer);
+                clearVector(kernelBuffer);
 
-                // Update the conv. layer image
+                // Update convMixParamsChanged
                 if (!m_state.failed && !m_state.mustCancel)
                 {
                     Async::schedule([this]()
                         {
-                            m_imageConvLayer->moveToGPU();
                             bool* pConvMixParamsChanged = (bool*)Async::getShared("convMixParamsChanged");
                             if (pConvMixParamsChanged != nullptr) *pConvMixParamsChanged = true;
                         });
@@ -965,7 +1049,7 @@ namespace RealBloom
         if (m_state.working)
         {
             m_state.mustCancel = true;
-            if (m_state.device.deviceType == ConvolutionDeviceType::CPU)
+            if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
             {
                 // Tell the sub-threads to stop
                 ConvolutionThread* ct;
@@ -988,11 +1072,23 @@ namespace RealBloom
         m_state.mustCancel = false;
         m_state.failed = false;
         m_state.hasTimestamps = false;
+        m_state.numChunksDone = 0;
+        m_state.fftStage = "";
     }
 
-    bool Convolution::isWorking()
+    bool Convolution::isWorking() const
     {
         return m_state.working;
+    }
+
+    bool Convolution::hasFailed() const
+    {
+        return m_state.failed;
+    }
+
+    std::string Convolution::getError() const
+    {
+        return m_state.error;
     }
 
     void Convolution::getConvStats(std::string& outTime, std::string& outStatus, uint32_t& outStatType)
@@ -1001,25 +1097,25 @@ namespace RealBloom
         outStatus = "";
         outStatType = 0;
 
-        uint32_t numThreads = m_threads.size();
         if (m_state.failed && !m_state.mustCancel)
         {
             outStatus = m_state.error;
             outStatType = 3;
-        } else if (m_state.working && !m_state.mustCancel)
+        }
+        else if (m_state.working && !m_state.mustCancel)
         {
             float elapsedSec = (float)getElapsedMs(m_state.timeStart) / 1000.0f;
-            if (m_state.device.deviceType == ConvolutionDeviceType::CPU)
+            if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
             {
+                uint32_t numThreads = m_threads.size();
                 uint32_t numPixels = 0;
                 uint32_t numDone = 0;
 
-                ConvolutionThreadStats* stats = nullptr;
                 for (uint32_t i = 0; i < numThreads; i++)
                 {
                     if (m_threads[i])
                     {
-                        stats = m_threads[i]->getStats();
+                        ConvolutionThreadStats* stats = m_threads[i]->getStats();
                         if (stats->state == ConvolutionThreadState::Working || stats->state == ConvolutionThreadState::Done)
                         {
                             numPixels += stats->numPixels;
@@ -1030,40 +1126,47 @@ namespace RealBloom
 
                 float progress = (numPixels > 0) ? (float)numDone / (float)numPixels : 1.0f;
                 float remainingSec = (elapsedSec * (float)(numPixels - numDone)) / fmaxf((float)(numDone), EPSILON);
-                outTime = stringFormat(
+                outTime = strFormat(
                     "%.1f%%%% (%u/%u)\n%s / %s",
                     progress * 100.0f,
                     numDone,
                     numPixels,
-                    stringFromDuration2(elapsedSec).c_str(),
-                    stringFromDuration2(remainingSec).c_str());
-            } else
+                    strFromElapsed(elapsedSec).c_str(),
+                    strFromElapsed(remainingSec).c_str());
+            }
+            else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
             {
-                outTime = stringFormat(
+                outTime = strFormat(
                     "%u/%u chunks\n%s",
                     m_state.numChunksDone,
-                    m_state.device.numChunks,
-                    stringFromDuration2(elapsedSec));
+                    m_state.methodInfo.numChunks,
+                    strFromElapsed(elapsedSec));
             }
-        } else if (m_state.hasTimestamps && !m_state.mustCancel)
+            else if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
+            {
+                outTime = strFormat(
+                    "%s\n%s",
+                    m_state.fftStage.c_str(),
+                    strFromElapsed(elapsedSec));
+            }
+        }
+        else if (m_state.hasTimestamps && !m_state.mustCancel)
         {
             std::chrono::milliseconds elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(m_state.timeEnd - m_state.timeStart);
             float elapsedSec = (float)elapsedMs.count() / 1000.0f;
-            outTime = stringFormat("Done (%s)", stringFromDuration(elapsedSec).c_str());
+            outTime = strFormat("Done (%s)", strFromDuration(elapsedSec).c_str());
         }
     }
 
     std::string Convolution::getResourceInfo()
     {
-        // Kernel Buffer
-        float* kernelBuffer = nullptr;
+        // Kernel Size
         uint32_t kernelWidth = 0, kernelHeight = 0;
-        kernel(false, &kernelBuffer, &kernelWidth, &kernelHeight);
-        delete[] kernelBuffer;
+        kernel(false, nullptr, &kernelWidth, &kernelHeight);
 
-        // Input Buffer
-        uint32_t inputWidth = 0, inputHeight = 0;
-        m_imageInput->getDimensions(inputWidth, inputHeight);
+        // Input Size
+        uint32_t inputWidth = m_imgInput->getWidth();
+        uint32_t inputHeight = m_imgInput->getHeight();
 
         // Estimate resource usage
         uint64_t numPixels = 0;
@@ -1071,18 +1174,37 @@ namespace RealBloom
         uint64_t ramUsage = 0;
         uint64_t vramUsage = 0;
 
-        previewThreshold(&numPixels);
-        if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
-            numPixelsPerBlock = numPixels / m_params.device.numThreads;
-        else
-            numPixelsPerBlock = numPixels / m_params.device.numChunks;
+        // Number of pixels that pass the threshold
+        if ((m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU) || (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU))
+            previewThreshold(&numPixels);
 
+        // Number of pixels per thread/chunk
+        if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
+            numPixelsPerBlock = numPixels / m_params.methodInfo.numThreads;
+        else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
+            numPixelsPerBlock = numPixels / m_params.methodInfo.numChunks;
+
+        // Input and kernel size in bytes
         uint64_t inputSizeBytes = (uint64_t)inputWidth * (uint64_t)inputHeight * 4 * sizeof(float);
         uint64_t kernelSizeBytes = (uint64_t)kernelWidth * (uint64_t)kernelHeight * 4 * sizeof(float);
-        if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
+
+        // Calculate memory usage for different methods
+        if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
         {
-            ramUsage = inputSizeBytes + kernelSizeBytes + (inputSizeBytes * m_params.device.numThreads);
-        } else
+            uint32_t paddedWidth, paddedHeight;
+            ConvolutionFFT::calcPadding(
+                inputWidth, inputHeight,
+                kernelWidth, kernelHeight,
+                m_params.kernelCenterX, m_params.kernelCenterY,
+                paddedWidth, paddedHeight);
+
+            ramUsage = inputSizeBytes + kernelSizeBytes + ((uint64_t)paddedWidth * (uint64_t)paddedHeight * 10 * sizeof(float));
+        }
+        else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
+        {
+            ramUsage = inputSizeBytes + kernelSizeBytes + (inputSizeBytes * m_params.methodInfo.numThreads);
+        }
+        else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
         {
             // input buffer + kernel buffer + final output buffer + output buffer for chunk
             // + (numPoints * 5) + fbData (same size as input buffer)
@@ -1092,31 +1214,40 @@ namespace RealBloom
             vramUsage = (numPixelsPerBlock * 5 * sizeof(float)) + kernelSizeBytes + inputSizeBytes;
         }
 
-        if (m_params.device.deviceType == ConvolutionDeviceType::CPU)
+        // Format output
+        if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
         {
-            return stringFormat(
-                "Total Pixels: %s\nPixels/Thread: %s\nEst. Memory: %s",
-                stringFromBigNumber(numPixels).c_str(),
-                stringFromBigNumber(numPixelsPerBlock).c_str(),
-                stringFromSize(ramUsage).c_str());
-        } else
-        {
-            return stringFormat(
-                "Total Pixels: %s\nPixels/Chunk: %s\nEst. Memory: %s\nEst. VRAM: %s",
-                stringFromBigNumber(numPixels).c_str(),
-                stringFromBigNumber(numPixelsPerBlock).c_str(),
-                stringFromSize(ramUsage).c_str(),
-                stringFromSize(vramUsage).c_str());
+            return strFormat(
+                "Est. Memory: %s",
+                strFromSize(ramUsage).c_str());
         }
+        else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
+        {
+            return strFormat(
+                "Total Pixels: %s\nPixels/Thread: %s\nEst. Memory: %s",
+                strFromBigNumber(numPixels).c_str(),
+                strFromBigNumber(numPixelsPerBlock).c_str(),
+                strFromSize(ramUsage).c_str());
+        }
+        else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
+        {
+            return strFormat(
+                "Total Pixels: %s\nPixels/Chunk: %s\nEst. Memory: %s\nEst. VRAM: %s",
+                strFromBigNumber(numPixels).c_str(),
+                strFromBigNumber(numPixelsPerBlock).c_str(),
+                strFromSize(ramUsage).c_str(),
+                strFromSize(vramUsage).c_str());
+        }
+
+        return "";
     }
 
-    void drawRect(Image32Bit* image, int rx, int ry, int rw, int rh)
+    void drawRect(CmImage* image, int rx, int ry, int rw, int rh)
     {
-        std::lock_guard<Image32Bit> lock(*image);
+        std::lock_guard<CmImage> lock(*image);
         float* buffer = image->getImageData();
-
-        uint32_t imageWidth, imageHeight;
-        image->getDimensions(imageWidth, imageHeight);
+        uint32_t imageWidth = image->getWidth();
+        uint32_t imageHeight = image->getHeight();
 
         int rx2 = rx + rw;
         int ry2 = ry + rh;
@@ -1164,13 +1295,12 @@ namespace RealBloom
         }
     }
 
-    void fillRect(Image32Bit* image, int rx, int ry, int rw, int rh)
+    void fillRect(CmImage* image, int rx, int ry, int rw, int rh)
     {
-        std::lock_guard<Image32Bit> lock(*image);
+        std::lock_guard<CmImage> lock(*image);
         float* buffer = image->getImageData();
-
-        uint32_t imageWidth, imageHeight;
-        image->getDimensions(imageWidth, imageHeight);
+        uint32_t imageWidth = image->getWidth();
+        uint32_t imageHeight = image->getHeight();
 
         int rx2 = rx + rw;
         int ry2 = ry + rh;
@@ -1190,6 +1320,15 @@ namespace RealBloom
                 }
             }
         }
+    }
+
+    std::string strFromColorChannelID(uint32_t ch)
+    {
+        if (ch == 0)
+            return "R";
+        if (ch == 1)
+            return "G";
+        return "B";
     }
 
 }

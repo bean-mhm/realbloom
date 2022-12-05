@@ -96,7 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -115,7 +115,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -134,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -153,7 +153,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -167,29 +167,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.cpp" />
+    <ClCompile Include="..\RealBloomCPP\src\Utils\GlUtils.cpp" />
+    <ClCompile Include="..\RealBloomCPP\src\Utils\Misc.cpp" />
+    <ClCompile Include="..\RealBloomCPP\src\Utils\NumberHelpers.cpp" />
+    <ClCompile Include="..\RealBloomCPP\src\Utils\RandomNumber.cpp" />
     <ClCompile Include="src\MainGPU.cpp" />
     <ClCompile Include="src\RealBloom\ConvolutionGPU.cpp" />
     <ClCompile Include="src\Utils\GlContext.cpp" />
-    <ClCompile Include="src\Utils\GlUtils.cpp" />
-    <ClCompile Include="src\Utils\Misc.cpp" />
-    <ClCompile Include="src\Utils\NumberHelpers.cpp" />
-    <ClCompile Include="src\Utils\RandomNumber.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glew32s.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\RealBloomCPP\src\RealBloom\ConvolutionGPUBinary.h" />
+    <ClInclude Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.h" />
+    <ClInclude Include="..\RealBloomCPP\src\Utils\GlUtils.h" />
+    <ClInclude Include="..\RealBloomCPP\src\Utils\Misc.h" />
+    <ClInclude Include="..\RealBloomCPP\src\Utils\NumberHelpers.h" />
+    <ClInclude Include="..\RealBloomCPP\src\Utils\RandomNumber.h" />
     <ClInclude Include="include\GL\eglew.h" />
     <ClInclude Include="include\GL\glew.h" />
     <ClInclude Include="include\GL\glxew.h" />
     <ClInclude Include="include\GL\wglew.h" />
     <ClInclude Include="src\RealBloom\ConvolutionGPU.h" />
-    <ClInclude Include="src\RealBloom\ConvolutionGPUBinary.h" />
     <ClInclude Include="src\Utils\GlContext.h" />
-    <ClInclude Include="src\Utils\GlUtils.h" />
-    <ClInclude Include="src\Utils\Misc.h" />
-    <ClInclude Include="src\Utils\NumberHelpers.h" />
-    <ClInclude Include="src\Utils\RandomNumber.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

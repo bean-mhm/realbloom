@@ -97,82 +97,25 @@ constexpr float GPU_COORD_SCALE = 2.0f;
 
 namespace RealBloom
 {
-    void setFailure(ConvolutionGPUData* data, std::string err)
-    {
-        if (data)
-        {
-            data->success = false;
-            data->error = err;
-            data->done = true;
-        }
-    }
-
-    // returns true if we're good to go
-    bool checkErrors(ConvolutionGPUData* data, const char* operation, std::string& errorList)
-    {
-        if (!checkGlErrors(errorList))
-        {
-            setFailure(data, stringFormat("OpenGL Error in \"%s\": %s", operation, errorList.c_str()));
-            return false;
-        }
-        return true;
-    }
 
     void init(void* pdata);
 
     void ConvolutionGPU::initGL()
     {
-        std::string err1;
+        std::string err2;
 
         if (!oglOneTimeContext(
-            m_frameWidth,
-            m_frameHeight,
-            this,
+            m_width,
+            m_height,
             init,
-            [&](std::string err2)
+            this,
+            [&](std::string err)
             {
-                setFailure(m_data, stringFormat("OpenGL Initialization Error: \"%s\"", err2.c_str()));
+                m_data->setError(strFormat("OpenGL Initialization Error: \"%s\"", err.c_str()));
             },
-            err1))
+            err2))
         {
-            setFailure(m_data, stringFormat("OpenGL Initialization Error: \"%s\"", err1.c_str()));
-        }
-    }
-
-    void ConvolutionGPU::makeFrameBuffer()
-    {
-        std::string errorList = "";
-
-        glGenFramebuffers(1, &m_frameBuffer);
-        if (!checkErrors(m_data, "makeFrameBuffer: glGenFramebuffers", errorList)) return;
-
-        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-        if (!checkErrors(m_data, "makeFrameBuffer: glBindFramebuffer", errorList)) return;
-
-        glViewport(0, 0, m_frameWidth, m_frameHeight);
-        if (!checkErrors(m_data, "makeFrameBuffer: glViewport", errorList)) return;
-
-        // Make a color buffer for our frame buffer (render target)
-        glGenTextures(1, &m_texColorBuffer);
-        glBindTexture(GL_TEXTURE_2D, m_texColorBuffer);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, m_frameWidth, m_frameHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-
-        if (!checkErrors(m_data, "makeFrameBuffer: Color Buffer Generation for the Framebuffer", errorList)) return;
-
-        // Assign the color buffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texColorBuffer, 0);
-        if (!checkErrors(m_data, "makeFrameBuffer: glFramebufferTexture2D", errorList)) return;
-
-        GLenum fbStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (!checkErrors(m_data, "makeFrameBuffer: glCheckFramebufferStatus", errorList)) return;
-
-        if (fbStatus != GL_FRAMEBUFFER_COMPLETE)
-        {
-            setFailure(m_data, stringFormat("Framebuffer was not ready. Status: %s", toHex(fbStatus)));
+            m_data->setError(strFormat("OpenGL Initialization Error: \"%s\"", err2.c_str()));
         }
     }
 
@@ -182,20 +125,20 @@ namespace RealBloom
 
         // Create Vertex Array Object
         glGenVertexArrays(1, &m_vao);
-        if (!checkErrors(m_data, "definePoints: glGenVertexArrays", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glGenVertexArrays");
 
         glBindVertexArray(m_vao);
-        if (!checkErrors(m_data, "definePoints: glBindVertexArray", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glBindVertexArray");
 
         // Create a Vertex Buffer Object and copy the vertex data to it
         glGenBuffers(1, &m_vbo);
-        if (!checkErrors(m_data, "definePoints: Vertex Buffer Object Generation", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glGenBuffers");
 
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        if (!checkErrors(m_data, "definePoints: glBindBuffer", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glBindBuffer");
 
         glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numPoints * numAttribs, points, GL_STATIC_DRAW);
-        if (!checkErrors(m_data, "definePoints: glBufferData", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glBufferData");
 
         /*Example:
         {
@@ -203,124 +146,119 @@ namespace RealBloom
             -0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
              0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
              0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-            -0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+            -0.5f, -0.5f, 1.0f, 1.0f, 1.0f
         }*/
     }
 
     void ConvolutionGPU::makeProgram()
     {
-        std::string errorList = "";
-
         // Create and compile shaders
-        if (!createShader("Vertex Shader", GL_VERTEX_SHADER, vertexSource, m_vertexShader))
-        {
-            setFailure(m_data, "Vertex shader could not be compiled.");
-            return;
-        }
+        std::string shaderLog;
 
-        if (!createShader("Geometry Shader", GL_GEOMETRY_SHADER, geometrySource, m_geometryShader))
-        {
-            setFailure(m_data, "Geometry shader could not be compiled.");
-            return;
-        }
+        if (!createShader(GL_VERTEX_SHADER, vertexSource, m_vertexShader, shaderLog))
+            throw std::exception(
+                printErr(__FUNCTION__, strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
+            );
 
-        if (!createShader("Fragment Shader", GL_FRAGMENT_SHADER, fragmentSource, m_fragmentShader))
-        {
-            setFailure(m_data, "Fragment shader could not be compiled.");
-            return;
-        }
+        if (!createShader(GL_GEOMETRY_SHADER, geometrySource, m_geometryShader, shaderLog))
+            throw std::exception(
+                printErr(__FUNCTION__, strFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
+            );
+
+        if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, m_fragmentShader, shaderLog))
+            throw std::exception(
+                printErr(__FUNCTION__, strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
+            );
 
         // Link the vertex and fragment shader into a shader program
         m_shaderProgram = glCreateProgram();
-        if (!checkErrors(m_data, "makeProgram: glCreateProgram", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glCreateProgram");
 
         glAttachShader(m_shaderProgram, m_vertexShader);
-        if (!checkErrors(m_data, "makeProgram: glAttachShader (Vertex Shader)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glAttachShader (Vertex Shader)");
 
         glAttachShader(m_shaderProgram, m_geometryShader);
-        if (!checkErrors(m_data, "makeProgram: glAttachShader (Geometry Shader)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glAttachShader (Geometry Shader)");
 
         glAttachShader(m_shaderProgram, m_fragmentShader);
-        if (!checkErrors(m_data, "makeProgram: glAttachShader (Fragment Shader)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glAttachShader (Fragment Shader)");
 
         glBindFragDataLocation(m_shaderProgram, 0, "outColor");
-        if (!checkErrors(m_data, "makeProgram: glBindFragDataLocation", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glBindFragDataLocation");
 
         glLinkProgram(m_shaderProgram);
-        if (!checkErrors(m_data, "makeProgram: glLinkProgram", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glLinkProgram");
 
         glUseProgram(m_shaderProgram);
-        if (!checkErrors(m_data, "makeProgram: glUseProgram", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glUseProgram");
 
         // Specify the layout of the vertex data
         GLint posAttrib = glGetAttribLocation(m_shaderProgram, "pos");
         glEnableVertexAttribArray(posAttrib);
         glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
-        if (!checkErrors(m_data, "makeProgram: Vertex buffer layout specification (pos)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "Vertex buffer layout specification (pos)");
 
         GLint colAttrib = glGetAttribLocation(m_shaderProgram, "color");
         glEnableVertexAttribArray(colAttrib);
         glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
-        if (!checkErrors(m_data, "makeProgram: Vertex buffer layout specification (color)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "Vertex buffer layout specification (color)");
     }
 
     void ConvolutionGPU::makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize)
     {
-        std::string errorList = "";
-
         // Set uniforms
         GLint kernelTopLeftUniform = glGetUniformLocation(m_shaderProgram, "kernelTopLeft");
-        if (!checkErrors(m_data, "makeKernelTexture: glGetUniformLocation (kernelTopLeft)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glGetUniformLocation(kernelTopLeft)");
+
         glUniform2f(kernelTopLeftUniform, kernelTopLeft[0], kernelTopLeft[1]);
-        if (!checkErrors(m_data, "makeKernelTexture: glUniform2f (kernelTopLeftUniform)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glUniform2f(kernelTopLeftUniform)");
 
         GLint kernelSizeUniform = glGetUniformLocation(m_shaderProgram, "kernelSize");
-        if (!checkErrors(m_data, "makeKernelTexture: glGetUniformLocation (kernelSize)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glGetUniformLocation(kernelSize)");
+
         glUniform2f(kernelSizeUniform, kernelSize[0], kernelSize[1]);
-        if (!checkErrors(m_data, "makeKernelTexture: glUniform2f (kernelSizeUniform)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glUniform2f(kernelSizeUniform)");
 
         // Generate a texture
         glGenTextures(1, &m_texKernel);
-        if (!checkErrors(m_data, "makeKernelTexture: glGenTextures", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glGenTextures");
 
         glActiveTexture(GL_TEXTURE0);
-        if (!checkErrors(m_data, "makeKernelTexture: glActiveTexture", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glActiveTexture");
 
         glBindTexture(GL_TEXTURE_2D, m_texKernel);
-        if (!checkErrors(m_data, "makeKernelTexture: glBindTexture", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glBindTexture");
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        if (!checkErrors(m_data, "makeKernelTexture: glTexParameteri", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glTexParameteri");
 
         GLint texKernelUniform = glGetUniformLocation(m_shaderProgram, "texKernel");
-        if (!checkErrors(m_data, "makeKernelTexture: glGetUniformLocation (texKernel)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glGetUniformLocation(texKernel)");
 
         glUniform1i(texKernelUniform, 0);
-        if (!checkErrors(m_data, "makeKernelTexture: glUniform1i (texKernelUniform)", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glUniform1i(texKernelUniform)");
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, kernelWidth, kernelHeight, 0, GL_RGBA, GL_FLOAT, kernelBuffer);
-        if (!checkErrors(m_data, "makeKernelTexture: glTexImage2D", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glTexImage2D");
     }
 
     void ConvolutionGPU::drawScene(uint32_t numPoints)
     {
-        std::string errorList = "";
-
         // Clear the screen to black
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        if (!checkErrors(m_data, "drawScene: glClearColor", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glClearColor");
 
         glClear(GL_COLOR_BUFFER_BIT);
-        if (!checkErrors(m_data, "drawScene: glClear", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glClear");
 
         glBlendFunc(GL_ONE, GL_ONE);
-        if (!checkErrors(m_data, "drawScene: glBlendFunc", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glBlendFunc");
 
         glDrawArrays(GL_POINTS, 0, numPoints);
-        if (!checkErrors(m_data, "drawScene: glDrawArrays", errorList)) return;
+        checkGlStatus(__FUNCTION__, "glDrawArrays");
     }
 
     ConvolutionGPU::ConvolutionGPU(ConvolutionGPUData* data)
@@ -335,8 +273,8 @@ namespace RealBloom
         m_data->numPoints = 0;
 
         ConvolutionGPUBinaryInput* binInput = m_data->binaryInput;
-        m_frameWidth = binInput->inputWidth;
-        m_frameHeight = binInput->inputHeight;
+        m_width = binInput->inputWidth;
+        m_height = binInput->inputHeight;
 
         uint32_t inputWidth = binInput->inputWidth;
         uint32_t inputHeight = binInput->inputHeight;
@@ -421,91 +359,75 @@ namespace RealBloom
         ConvolutionGPUBinaryInput* binInput = data->binaryInput;
 
         // Copy some variables from data for more readability
-        uint32_t inputWidth, inputHeight, kernelWidth, kernelHeight, numPoints;
-        inputWidth = binInput->inputWidth;
-        inputHeight = binInput->inputHeight;
-        kernelWidth = binInput->kernelWidth;
-        kernelHeight = binInput->kernelHeight;
-        numPoints = data->numPoints;
+        uint32_t inputWidth = binInput->inputWidth;
+        uint32_t inputHeight = binInput->inputHeight;
+        uint32_t kernelWidth = binInput->kernelWidth;
+        uint32_t kernelHeight = binInput->kernelHeight;
+        uint32_t numPoints = data->numPoints;
 
-        // For error checking
-        std::string errorList = "";
-
-        // Grab the name of the renderer
-        const char* rendererS = (const char*)glGetString(GL_RENDERER);
-        checkErrors(data, "init: glGetString(GL_RENDERER)", errorList);
-
-        if (!(data->done) && rendererS)
+        std::shared_ptr<GlFrameBuffer> frameBuffer = nullptr;
+        GLfloat* fbData = nullptr;
+        try
         {
+            // Grab the name of the renderer
+            const char* rendererS = (const char*)glGetString(GL_RENDERER);
+            checkGlStatus(__FUNCTION__, "glGetString(GL_RENDERER)");
             data->gpuName = rendererS;
-        }
 
-        // Capabilities
-        if (!(data->done))
-        {            
+            // Capabilities
             glDisable(GL_CULL_FACE);
             glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
-            checkErrors(data, "init: Capability Management", errorList);
-        }
+            checkGlStatus(__FUNCTION__, "Capabilities");
 
-        if (!(data->done))
-        {
-            instance->makeFrameBuffer();
-        }
+            // Make a frame buffer that we'll render to
+            frameBuffer = std::make_shared<GlFrameBuffer>(instance->m_width, instance->m_height);
 
-        if (!(data->done))
-        {
+            // Define the input data
             instance->definePoints(data->points.data(), numPoints, 5);
-        }
 
-        if (!(data->done))
-        {
+            // Prepare the shader program
             instance->makeProgram();
-        }
 
-        if (!(data->done))
-        {
-            float kernelTopLeft[2], kernelSize[2];
-            kernelTopLeft[0] = GPU_COORD_SCALE * 2 * (floorf((float)kernelWidth / 2.0f) / (float)inputWidth);
-            kernelTopLeft[1] = GPU_COORD_SCALE * 2 * (floorf((float)kernelHeight / 2.0f) / (float)inputHeight);
-            kernelSize[0] = GPU_COORD_SCALE * 2 * (float)kernelWidth / (float)inputWidth;
-            kernelSize[1] = GPU_COORD_SCALE * 2 * (float)kernelHeight / (float)inputHeight;
+            // Upload the kernel texture to the GPU along with some uniforms
+            {
+                float kernelTopLeft[2], kernelSize[2];
+                kernelTopLeft[0] = GPU_COORD_SCALE * 2 * (floorf((float)kernelWidth / 2.0f) / (float)inputWidth);
+                kernelTopLeft[1] = GPU_COORD_SCALE * 2 * (floorf((float)kernelHeight / 2.0f) / (float)inputHeight);
+                kernelSize[0] = GPU_COORD_SCALE * 2 * (float)kernelWidth / (float)inputWidth;
+                kernelSize[1] = GPU_COORD_SCALE * 2 * (float)kernelHeight / (float)inputHeight;
 
-            instance->makeKernelTexture(
-                binInput->kernelBuffer,
-                binInput->kernelWidth,
-                binInput->kernelHeight,
-                kernelTopLeft,
-                kernelSize);
-        }
+                instance->makeKernelTexture(
+                    binInput->kernelBuffer,
+                    binInput->kernelWidth,
+                    binInput->kernelHeight,
+                    kernelTopLeft,
+                    kernelSize);
+            }
 
-        if (!(data->done))
-        {
+            // Draw
             instance->drawScene(numPoints);
-        }
 
-        if (!(data->done))
-        {
+            // Copy pixel data from the frame buffer
             uint32_t fbSize = inputWidth * inputHeight * 4;
-            GLfloat* fbData = new float[fbSize];
-
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, instance->m_frameBuffer);
-            checkErrors(data, "init: glBindFramebuffer", errorList);
-
-            if (!(data->done))
+            fbData = new float[fbSize];
+            try
             {
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer->getFrameBuffer());
+                checkGlStatus(__FUNCTION__, "glBindFramebuffer");
+
                 glReadBuffer(GL_COLOR_ATTACHMENT0);
-                checkErrors(data, "init: glReadBuffer", errorList);
-            }
+                checkGlStatus(__FUNCTION__, "glReadBuffer");
 
-            if (!(data->done))
-            {
                 glReadPixels(0, 0, inputWidth, inputHeight, GL_RGBA, GL_FLOAT, fbData);
-                checkErrors(data, "init: glReadPixels", errorList);
+                checkGlStatus(__FUNCTION__, "glReadPixels");
+            } catch (const std::exception& e)
+            {
+                DELARR(fbData);
+                throw e;
             }
 
-            if (!(data->done))
+            // Copy to output buffer
             {
                 uint32_t obSize = inputWidth * inputHeight * 4;
                 data->outputBuffer.resize(obSize);
@@ -527,29 +449,43 @@ namespace RealBloom
                 }
             }
 
-            delete[] fbData;
-        }
-
-        // Clean up
-        glDeleteTextures(1, &(instance->m_texColorBuffer));
-        glDeleteFramebuffers(1, &(instance->m_frameBuffer));
-
-        glDeleteTextures(1, &(instance->m_texKernel));
-
-        glDeleteProgram(instance->m_shaderProgram);
-        glDeleteShader(instance->m_vertexShader);
-        glDeleteShader(instance->m_geometryShader);
-        glDeleteShader(instance->m_fragmentShader);
-
-        glDeleteBuffers(1, &(instance->m_vbo));
-        glDeleteVertexArrays(1, &(instance->m_vao));
-
-        if (!(data->done))
-        {
             data->success = true;
             data->error = "Success";
             data->done = true;
+        } catch (const std::exception& e)
+        {
+            data->setError(printErr(__FUNCTION__, e.what()));
         }
+
+        // Clean up
+        try
+        {
+            DELARR(fbData);
+
+            try { frameBuffer = nullptr; } catch (...) {}
+
+            glDeleteTextures(1, &(instance->m_texKernel));
+
+            glDeleteProgram(instance->m_shaderProgram);
+            glDeleteShader(instance->m_vertexShader);
+            glDeleteShader(instance->m_geometryShader);
+            glDeleteShader(instance->m_fragmentShader);
+
+            glDeleteBuffers(1, &(instance->m_vbo));
+            glDeleteVertexArrays(1, &(instance->m_vao));
+
+            checkGlStatus(__FUNCTION__, "Cleanup");
+        } catch (const std::exception& e)
+        {
+            printErr(__FUNCTION__, e.what());
+        }
+    }
+
+    void ConvolutionGPUData::setError(std::string message)
+    {
+        success = false;
+        error = message;
+        done = true;
     }
 
 }

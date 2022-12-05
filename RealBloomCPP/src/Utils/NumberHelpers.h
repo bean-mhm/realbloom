@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <numbers>
+#include <complex>
 
 constexpr float DEG_TO_RAD = (float)std::numbers::pi / 180.0f;
 constexpr float EPSILON = 0.000001f;
@@ -32,14 +33,41 @@ inline double getMagnitude(double a, double b)
     return sqrt(a * a + b * b);
 }
 
+template <typename T>
+inline T getMagnitude(std::complex<T> v)
+{
+    return getMagnitude(v.real(), v.imag());
+}
+
+inline float getPhase(float x, float y)
+{
+    return atan2f(y, x);
+}
+
+inline double getPhase(double x, double y)
+{
+    return atan2(y, x);
+}
+
 inline float getDistance(float x1, float y1, float x2, float y2)
 {
     return sqrtf(powf(x2 - x1, 2) + powf(y2 - y1, 2));
 }
 
+
 inline float lerp(float a, float b, float t)
 {
     return a + ((b - a) * t);
+}
+
+inline uint32_t upperPowerOf2(uint32_t v)
+{
+    return (uint32_t)floor(pow(2, ceil(log(v) / log(2))));
+}
+
+inline int shiftIndex(int i, int shift, int size)
+{
+    return (i + shift) % size;
 }
 
 inline float rgbToGrayscale(float r, float g, float b)
@@ -81,11 +109,19 @@ inline void blendAddRGB(float* colorA, uint32_t indexA, float* colorB, uint32_t 
     colorA[indexA + 2] += colorB[indexB + 2] * t;
 }
 
+inline float applyExposure(float v)
+{
+    return powf(2.0f, v);
+}
+
+inline double applyExposure(double v)
+{
+    return pow(2.0, v);
+}
+
 uint8_t doubleTo8bit(double v);
-float srgbToLinear(float x);
-float linearToSrgb(float x);
+float srgbToLinear_DEPRECATED(float x);
+float linearToSrgb_DEPRECATED(float x);
 float contrastCurve(float v, float contrast);
 double contrastCurve(double v, double contrast);
-float intensityCurve(float v);
-double intensityCurve(double v);
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY);

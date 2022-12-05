@@ -3,11 +3,9 @@
 #ifndef GLEW_STATIC
 #define GLEW_STATIC
 #endif
-
 #include <GL/glew.h>
-
 #include "../Utils/GlContext.h"
-#include "../Utils/GlUtils.h"
+#include "Utils/GlUtils.h"
 
 #include <vector>
 #include <string>
@@ -15,9 +13,10 @@
 #include <chrono>
 #include <thread>
 
-#include "ConvolutionGPUBinary.h"
-#include "../Utils/NumberHelpers.h"
-#include "../Utils/Misc.h"
+#include "RealBloom/ConvolutionGPUBinary.h"
+#include "Utils/NumberHelpers.h"
+#include "Utils/Misc.h"
+#include "Utils/GlFrameBuffer.h"
 
 namespace RealBloom
 {
@@ -34,8 +33,9 @@ namespace RealBloom
         bool done = false;
         bool success = false;
         std::string error = "";
-
         std::string gpuName = "Unknown";
+
+        void setError(std::string message);
     };
 
     class ConvolutionGPU
@@ -43,13 +43,10 @@ namespace RealBloom
     private:
         ConvolutionGPUData* m_data;
 
-        uint32_t m_frameWidth = 0;
-        uint32_t m_frameHeight = 0;
+        uint32_t m_width = 0;
+        uint32_t m_height = 0;
 
         // OpenGL Variables
-        GLuint m_frameBuffer = 0;
-        GLuint m_texColorBuffer = 0;
-
         GLuint m_vao = 0;
         GLuint m_vbo = 0;
 
@@ -61,7 +58,6 @@ namespace RealBloom
         GLuint m_texKernel = 0;
 
         void initGL();
-        void makeFrameBuffer();
         void definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs);
         void makeProgram();
         void makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize);

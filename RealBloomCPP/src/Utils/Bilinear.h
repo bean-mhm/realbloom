@@ -16,6 +16,9 @@ namespace Bilinear
         int topRightPos[2];
         int bottomLeftPos[2];
         int bottomRightPos[2];
+
+        float util_alongX;
+        float util_alongY;
     };
 
     void calculate(float px, float py, Result& outResult);

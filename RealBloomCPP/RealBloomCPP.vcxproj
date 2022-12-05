@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -108,9 +108,16 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\libtiff;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;nfd.lib;tiff.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;nfd.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
+XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
+XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
+      <Message>Copying external resources to the output directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -130,9 +137,16 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\libtiff;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;nfd.lib;tiff.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;nfd.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
+XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
+XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
+      <Message>Copying external resources to the output directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -147,9 +161,16 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\libtiff;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;nfd.lib;tiff.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;nfd.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
+XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
+XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
+      <Message>Copying external resources to the output directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -169,14 +190,35 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\libtiff;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32s.lib;nfd.lib;tiff.lib;glfw3.lib;opengl32.lib;glu32.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\nfd;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;nfd.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
+XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
+XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
+      <Message>Copying external resources to the output directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\CLI.cpp" />
+    <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
+    <ClCompile Include="src\ColorManagement\CMF.cpp" />
+    <ClCompile Include="src\RealBloom\ConvolutionFFT.cpp" />
+    <ClCompile Include="src\RealBloom\DispersionThread.cpp" />
+    <ClCompile Include="src\Utils\ConsoleColors.cpp" />
+    <ClCompile Include="src\Utils\CliParser.cpp" />
+    <ClCompile Include="src\Utils\GlTexture.cpp" />
+    <ClCompile Include="include\oiio\detail\pugixml\pugixml.cpp" />
+    <ClCompile Include="src\ColorManagement\OcioShader.cpp" />
+    <ClCompile Include="src\Utils\GlFrameBuffer.cpp" />
     <ClCompile Include="src\Async.cpp" />
+    <ClCompile Include="src\ColorManagement\CmImage.cpp" />
+    <ClCompile Include="src\ColorManagement\CmImageIO.cpp" />
+    <ClCompile Include="src\ColorManagement\CMS.cpp" />
     <ClCompile Include="src\Config.cpp" />
-    <ClCompile Include="src\Utils\ColorSystem.cpp" />
+    <ClCompile Include="src\Utils\GlUtils.cpp" />
     <ClCompile Include="src\Utils\RandomNumber.cpp" />
     <ClCompile Include="src\RealBloom\ConvolutionThread.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
@@ -192,20 +234,97 @@
     <ClCompile Include="src\Utils\Bilinear.cpp" />
     <ClCompile Include="src\Utils\Misc.cpp" />
     <ClCompile Include="src\Utils\NumberHelpers.cpp" />
-    <ClCompile Include="src\Utils\PngUtils.cpp" />
-    <ClCompile Include="src\Utils\Image32Bit.cpp" />
-    <ClCompile Include="include\lodepng\lodepng.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\RealBloom\DiffractionPattern.cpp" />
-    <ClCompile Include="src\Utils\Wavelength.cpp" />
-    <ClCompile Include="src\Utils\TiffUtils.cpp" />
+    <ClCompile Include="src\Utils\StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\pocketfft\pocketfft_hdronly.h" />
+    <ClInclude Include="include\rapidcsv\rapidcsv.h" />
+    <ClInclude Include="src\CLI.h" />
+    <ClInclude Include="src\ColorManagement\CMF.h" />
+    <ClInclude Include="src\ColorManagement\CmXYZ.h" />
+    <ClInclude Include="src\RealBloom\ConvolutionFFT.h" />
+    <ClInclude Include="src\RealBloom\DispersionThread.h" />
+    <ClInclude Include="src\Utils\ConsoleColors.h" />
+    <ClInclude Include="src\Utils\CliParser.h" />
+    <ClInclude Include="src\Utils\GlTexture.h" />
     <ClInclude Include="include\inih\INIReader.h" />
+    <ClInclude Include="include\ocio\OpenColorABI.h" />
+    <ClInclude Include="include\ocio\OpenColorAppHelpers.h" />
+    <ClInclude Include="include\ocio\OpenColorIO.h" />
+    <ClInclude Include="include\ocio\OpenColorTransforms.h" />
+    <ClInclude Include="include\ocio\OpenColorTypes.h" />
+    <ClInclude Include="include\oiio\argparse.h" />
+    <ClInclude Include="include\oiio\array_view.h" />
+    <ClInclude Include="include\oiio\atomic.h" />
+    <ClInclude Include="include\oiio\attrdelegate.h" />
+    <ClInclude Include="include\oiio\benchmark.h" />
+    <ClInclude Include="include\oiio\c-deepdata.h" />
+    <ClInclude Include="include\oiio\c-paramlist.h" />
+    <ClInclude Include="include\oiio\c-typedesc.h" />
+    <ClInclude Include="include\oiio\color.h" />
+    <ClInclude Include="include\oiio\dassert.h" />
+    <ClInclude Include="include\oiio\deepdata.h" />
+    <ClInclude Include="include\oiio\detail\farmhash.h" />
+    <ClInclude Include="include\oiio\detail\fmt.h" />
+    <ClInclude Include="include\oiio\detail\fmt\core.h" />
+    <ClInclude Include="include\oiio\detail\fmt\format-inl.h" />
+    <ClInclude Include="include\oiio\detail\fmt\format.h" />
+    <ClInclude Include="include\oiio\detail\fmt\ostream.h" />
+    <ClInclude Include="include\oiio\detail\fmt\printf.h" />
+    <ClInclude Include="include\oiio\detail\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="include\oiio\detail\pugixml\pugixml.hpp" />
+    <ClInclude Include="include\oiio\errorhandler.h" />
+    <ClInclude Include="include\oiio\export.h" />
+    <ClInclude Include="include\oiio\filesystem.h" />
+    <ClInclude Include="include\oiio\filter.h" />
+    <ClInclude Include="include\oiio\fmath.h" />
+    <ClInclude Include="include\oiio\fstream_mingw.h" />
+    <ClInclude Include="include\oiio\function_view.h" />
+    <ClInclude Include="include\oiio\hash.h" />
+    <ClInclude Include="include\oiio\imagebuf.h" />
+    <ClInclude Include="include\oiio\imagebufalgo.h" />
+    <ClInclude Include="include\oiio\imagebufalgo_util.h" />
+    <ClInclude Include="include\oiio\imagecache.h" />
+    <ClInclude Include="include\oiio\imageio.h" />
+    <ClInclude Include="include\oiio\image_view.h" />
+    <ClInclude Include="include\oiio\Imath.h" />
+    <ClInclude Include="include\oiio\missing_math.h" />
+    <ClInclude Include="include\oiio\oiioversion.h" />
+    <ClInclude Include="include\oiio\optparser.h" />
+    <ClInclude Include="include\oiio\parallel.h" />
+    <ClInclude Include="include\oiio\paramlist.h" />
+    <ClInclude Include="include\oiio\platform.h" />
+    <ClInclude Include="include\oiio\plugin.h" />
+    <ClInclude Include="include\oiio\refcnt.h" />
+    <ClInclude Include="include\oiio\simd.h" />
+    <ClInclude Include="include\oiio\span.h" />
+    <ClInclude Include="include\oiio\strided_ptr.h" />
+    <ClInclude Include="include\oiio\string_view.h" />
+    <ClInclude Include="include\oiio\strongparam.h" />
+    <ClInclude Include="include\oiio\strutil.h" />
+    <ClInclude Include="include\oiio\sysutil.h" />
+    <ClInclude Include="include\oiio\texture.h" />
+    <ClInclude Include="include\oiio\thread.h" />
+    <ClInclude Include="include\oiio\tiffutils.h" />
+    <ClInclude Include="include\oiio\timer.h" />
+    <ClInclude Include="include\oiio\typedesc.h" />
+    <ClInclude Include="include\oiio\type_traits.h" />
+    <ClInclude Include="include\oiio\unittest.h" />
+    <ClInclude Include="include\oiio\unordered_map_concurrent.h" />
+    <ClInclude Include="include\oiio\ustring.h" />
+    <ClInclude Include="include\oiio\varyingref.h" />
+    <ClInclude Include="include\oiio\version.h" />
+    <ClInclude Include="src\ColorManagement\OcioShader.h" />
+    <ClInclude Include="src\Utils\GlFrameBuffer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\Async.h" />
+    <ClInclude Include="src\ColorManagement\CmImage.h" />
+    <ClInclude Include="src\ColorManagement\CmImageIO.h" />
+    <ClInclude Include="src\ColorManagement\CMS.h" />
     <ClInclude Include="src\RealBloom\ConvolutionGPUBinary.h" />
-    <ClInclude Include="src\Utils\ColorSystem.h" />
+    <ClInclude Include="src\Utils\GlUtils.h" />
     <ClInclude Include="src\Utils\RandomNumber.h" />
     <ClInclude Include="include\GL\eglew.h" />
     <ClInclude Include="include\GL\glew.h" />
@@ -224,33 +343,17 @@
     <ClInclude Include="src\imgui\imstb_textedit.h" />
     <ClInclude Include="src\imgui\imstb_truetype.h" />
     <ClInclude Include="src\RealBloom\Convolution.h" />
-    <ClInclude Include="include\libtiff\t4.h" />
-    <ClInclude Include="include\libtiff\tiff.h" />
-    <ClInclude Include="include\libtiff\tiffconf.h" />
-    <ClInclude Include="include\libtiff\tiffio.h" />
-    <ClInclude Include="include\libtiff\tiffio.hxx" />
-    <ClInclude Include="include\libtiff\tiffiop.h" />
-    <ClInclude Include="include\libtiff\tiffvers.h" />
-    <ClInclude Include="include\libtiff\tif_config.h" />
-    <ClInclude Include="include\libtiff\tif_dir.h" />
-    <ClInclude Include="include\libtiff\tif_fax3.h" />
-    <ClInclude Include="include\libtiff\tif_predict.h" />
-    <ClInclude Include="include\libtiff\uvcode.h" />
     <ClInclude Include="src\RealBloom\Dispersion.h" />
     <ClInclude Include="src\Utils\Bilinear.h" />
     <ClInclude Include="src\Utils\NumberHelpers.h" />
-    <ClInclude Include="src\Utils\PngUtils.h" />
-    <ClInclude Include="src\Utils\Image32Bit.h" />
-    <ClInclude Include="include\fftw\fftw3.h" />
     <ClInclude Include="include\GLFW\glfw3.h" />
     <ClInclude Include="include\GLFW\glfw3native.h" />
-    <ClInclude Include="include\lodepng\lodepng.h" />
     <ClInclude Include="src\Config.h" />
     <ClInclude Include="src\Main.h" />
     <ClInclude Include="src\RealBloom\DiffractionPattern.h" />
     <ClInclude Include="src\Utils\Misc.h" />
-    <ClInclude Include="src\Utils\Wavelength.h" />
-    <ClInclude Include="src\Utils\TiffUtils.h" />
+    <ClInclude Include="src\Utils\StringUtils.h" />
+    <ClInclude Include="src\Utils\Array2D.h" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="imgui.ini">
@@ -267,132 +370,19 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </CopyFileToFolders>
-    <None Include="include\libtiff\libtiff.def" />
-    <CopyFileToFolders Include="libs\fftw\libfftw3-3.dll">
-      <DeploymentContent>false</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="libs\fftw\libfftw3f-3.dll">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="libs\fftw\libfftw3l-3.dll">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-    </CopyFileToFolders>
     <None Include="libs\glfw3\glfw3.dll" />
-    <CopyFileToFolders Include="libs\libtiff\tiff.dll">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-    <None Include="libs\libtiff\tiff.exp" />
-    <CopyFileToFolders Include="libs\libtiff\tiffxx.dll">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-    </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libs\fftw\libfftw3-3.lib" />
-    <Library Include="libs\fftw\libfftw3f-3.lib" />
-    <Library Include="libs\fftw\libfftw3l-3.lib" />
     <Library Include="libs\glew\glew32s.lib" />
     <Library Include="libs\glfw3\glfw3.lib" />
     <Library Include="libs\glfw3\glfw3dll.lib" />
     <Library Include="libs\glfw3\glfw3_mt.lib" />
-    <Library Include="libs\libtiff\tiff.lib" />
     <Library Include="libs\nfd\nfd.lib" />
+    <Library Include="libs\ocio\OpenColorIO.lib" />
+    <Library Include="libs\oiio\OpenImageIO.lib" />
+    <Library Include="libs\oiio\OpenImageIO_Util.lib" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-Bold.ttf">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-BoldItalic.ttf">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-Italic.ttf">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-Light.ttf">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-LightItalic.ttf">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="assets\fonts\RobotoCondensed-Regular.ttf">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="assets\fonts\mono\RobotoMono-Regular.ttf">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)assets\fonts\mono</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)assets\fonts\mono</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)assets\fonts\mono</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)assets\fonts\mono</DestinationFolders>
-    </CopyFileToFolders>
     <Font Include="assets\Roboto-Bold.ttf">
       <DeploymentContent>true</DeploymentContent>
     </Font>
@@ -407,301 +397,9 @@
     </Font>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="demo\Apertures\Heptagon.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="assets\fonts\LICENSE.txt">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)assets\fonts\</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="demo\Apertures\Circle.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Double Slit.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Hexagon.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Pentagon.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Phone Camera.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Pupil.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Rectangle (Horizontal).png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Rectangle (Vertical).png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Square.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Triangle.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Ugly Cat.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="demo\Debug\5x5 centered.tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Debug\6x6 centered.tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Debug\6x6 scaled to 240x240.tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Debug\input.tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="demo\HDR Images\Colorful Sphere.tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="assets\fonts\mono\LICENSE.txt">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)assets\fonts\mono</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)assets\fonts\mono</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)assets\fonts\mono</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)assets\fonts\mono</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="RealBloomCPP.rc" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="demo\HDR Images\Courtyard Night (PolyHeaven).tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\HDR Images\Hallway.tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\HDR Images\Pretville Street (PolyHeaven).tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\HDR Images\Sci-Fi Object (Ducky3D Tutorial).tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\HDR Images\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Circle 2.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Octagon.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Oval.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Apertures\Pupil 2.png">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Apertures\</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="demo\Debug\identity.tif">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)demo\Debug\</DestinationFolders>
-    </CopyFileToFolders>
     <Image Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

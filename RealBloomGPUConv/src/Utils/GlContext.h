@@ -13,13 +13,13 @@
 #include <functional>
 #include <string>
 
-#include "Misc.h"
-#include "RandomNumber.h"
+#include "Utils/Misc.h"
+#include "Utils/RandomNumber.h"
 
 bool oglOneTimeContext(
     uint32_t width,
     uint32_t height,
-    void* data,
     std::function<void(void*)> job,
+    void* data,
     std::function<void(std::string)> errHandler,
     std::string& outError);

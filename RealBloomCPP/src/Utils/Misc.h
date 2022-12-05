@@ -9,6 +9,10 @@
 #include <stdint.h>
 #include <math.h>
 #include <filesystem>
+#include <algorithm>
+#include <vector>
+
+#include "StringUtils.h"
 
 #define NOMINMAX
 #include <Windows.h>
@@ -19,6 +23,24 @@
 #define AS_BYTES(X) reinterpret_cast<char*>(&(X))
 #define PTR_AS_BYTES(X) reinterpret_cast<char*>(X)
 
+std::string printErr(
+    const std::string& source,
+    const std::string& stage,
+    const std::string& message);
+
+std::string printErr(
+    const std::string& source,
+    const std::string& message);
+
+void disablePrintErr();
+
+template <typename T>
+void clearVector(std::vector<T>& v)
+{
+    v.clear();
+    std::vector<T>().swap(v);
+}
+
 inline void threadJoin(std::thread* t)
 {
     if (t)
@@ -26,39 +48,8 @@ inline void threadJoin(std::thread* t)
             t->join();
 }
 
-template<typename ... Args>
-std::string stringFormat(const std::string& format, Args ... args)
-{
-    int size_s = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
-    if (size_s <= 0)
-    {
-        //throw std::runtime_error("Error during formatting.");
-        return "Error";
-    }
-    auto size = static_cast<size_t>(size_s);
-    std::unique_ptr<char[]> buf(new char[size]);
-    std::snprintf(buf.get(), size, format.c_str(), args ...);
-    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
-}
-
-// Examples: "6h 9m 42s", "10.7s"
-std::string stringFromDuration(float seconds);
-
-// Examples: "06:09:42", "00:00:10"
-std::string stringFromDuration2(float seconds);
-
-std::string stringFromSize(uint64_t sizeBytes);
-std::string stringFromBigNumber(uint64_t bigNumber);
-
-template< typename T >
-std::string toHex(T i)
-{
-    std::stringstream stream;
-    stream << "0x"
-        << std::setfill('0') << std::setw(sizeof(T) * 2)
-        << std::hex << i;
-    return stream.str();
-}
+uint32_t getMaxNumThreads();
+uint32_t getDefNumThreads();
 
 uint32_t getElapsedMs(std::chrono::system_clock::time_point startTime);
 
@@ -68,8 +59,26 @@ void waitForMutex(HANDLE hMutex);
 void releaseMutex(HANDLE hMutex);
 void closeMutex(HANDLE hMutex);
 
+std::string getPathSeparator();
+std::string getExecDir();
+std::string getLocalPath(const std::string& path);
+
 void killProcess(PROCESS_INFORMATION pi);
 bool processIsRunning(PROCESS_INFORMATION pi);
 bool deleteFile(const std::string& filename);
 void getTempDirectory(std::string& outDir);
 void openURL(std::string url);
+
+class SimpleState
+{
+private:
+    bool m_ok = true;
+    std::string m_error = "";
+
+public:
+    void setError(const std::string& message);
+    void setOk();
+
+    bool ok() const;
+    std::string getError() const;
+};

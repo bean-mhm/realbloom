@@ -1,75 +1,48 @@
 #include "Misc.h"
 
-std::string stringFromDuration(float seconds)
+bool printErrEnbaled = true;
+
+std::string printErr(const std::string& source, const std::string& stage, const std::string& message)
 {
-    if (seconds < 60.0f)
-    {
-        return stringFormat("%.1fs", seconds);
-    } else
-    {
-        uint32_t intSec = (int)floorf(seconds);
+    std::string s = strFormat("[%s] %s: %s", source.c_str(), stage.c_str(), message.c_str());
+    if (printErrEnbaled) std::cerr << s << "\n";
+    return s;
+}
 
-        uint32_t intHr = intSec / 3600;
-        uint32_t intMin = (intSec / 60) % 60;
-        intSec %= 60;
+std::string printErr(const std::string& source, const std::string& message)
+{
+    std::string s = strFormat("[%s] %s", source.c_str(), message.c_str());
+    if (printErrEnbaled) std::cerr << s << "\n";
+    return s;
+}
 
-        if (intHr > 0)
-        {
-            return stringFormat("%dh %dm %ds", intHr, intMin, intSec);
-        } else
-        {
-            return stringFormat("%dm %ds", intMin, intSec);
-        }
+void disablePrintErr()
+{
+    printErrEnbaled = false;
+}
+
+uint32_t getMaxNumThreads()
+{
+    static uint32_t v = 1;
+    static bool firstCall = true;
+    if (firstCall)
+    {
+        firstCall = false;
+        v = std::max(1u, std::thread::hardware_concurrency());
     }
+    return v;
 }
 
-std::string stringFromDuration2(float seconds)
+uint32_t getDefNumThreads()
 {
-    uint32_t intSec = (int)floorf(seconds);
-
-    uint32_t intHr = intSec / 3600;
-    uint32_t intMin = (intSec / 60) % 60;
-    intSec %= 60;
-
-    return stringFormat("%02d:%02d:%02d", intHr, intMin, intSec);
-}
-
-std::string stringFromSize(uint64_t sizeBytes)
-{
-    static const char* suffixes[]{ "bytes", "KB", "MB", "GB", "TB" };
-    static double powers[]
+    static uint32_t v = 1;
+    static bool firstCall = true;
+    if (firstCall)
     {
-        pow(1024, 0), // 1 byte
-        pow(1024, 1), // 1 KB
-        pow(1024, 2), // 1 MB
-        pow(1024, 3), // 1 GB
-        pow(1024, 4)  // 1 TB
-    };
-
-    uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)sizeBytes) / log(1024.0))));
-    if (mag == 0)
-        return stringFormat("%lu %s", sizeBytes, suffixes[mag]);
-    else
-        return stringFormat("%.1f %s", (double)sizeBytes / powers[mag], suffixes[mag]);
-}
-
-std::string stringFromBigNumber(uint64_t bigNumber)
-{
-    static const char* suffixes[]{ "", "K", "M", "B", "T" };
-    static double powers[]
-    {
-        pow(1000, 0), // 1
-        pow(1000, 1), // 1K
-        pow(1000, 2), // 1M
-        pow(1000, 3), // 1B
-        pow(1000, 4)  // 1T
-    };
-
-    uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bigNumber) / log(1000.0))));
-    if (mag == 0)
-        return stringFormat("%lu", bigNumber);
-    else
-        return stringFormat("%.1f%s", (double)bigNumber / powers[mag], suffixes[mag]);
+        firstCall = false;
+        v = std::max(1u, getMaxNumThreads() / 2);
+    }
+    return v;
 }
 
 uint32_t getElapsedMs(std::chrono::system_clock::time_point startTime)
@@ -111,6 +84,35 @@ void closeMutex(HANDLE hMutex)
         CloseHandle(hMutex);
 }
 
+std::string getPathSeparator()
+{
+    return "\\";
+}
+
+std::string getExecDir()
+{
+    static std::string execDir = "";
+    if (execDir.empty())
+    {
+        char path_cstr[1024] = { 0 };
+        GetModuleFileNameA(NULL, path_cstr, 1024);
+
+        auto path = std::filesystem::path(std::string(path_cstr)).parent_path();
+        execDir = std::filesystem::canonical(path).string();
+        
+        if (!execDir.ends_with(getPathSeparator()))
+            execDir += getPathSeparator();
+
+        execDir = std::filesystem::path(execDir).make_preferred().string();
+    }
+    return execDir;
+}
+
+std::string getLocalPath(const std::string& path)
+{
+    return getExecDir() + path;
+}
+
 void killProcess(PROCESS_INFORMATION pi)
 {
     if (TerminateProcess(pi.hProcess, 1))
@@ -144,4 +146,26 @@ void getTempDirectory(std::string& outDir)
 void openURL(std::string url)
 {
     ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
+
+void SimpleState::setError(const std::string& message)
+{
+    m_ok = false;
+    m_error = message;
+}
+
+void SimpleState::setOk()
+{
+    m_ok = true;
+    m_error = "";
+}
+
+bool SimpleState::ok() const
+{
+    return m_ok;
+}
+
+std::string SimpleState::getError() const
+{
+    return m_error;
 }

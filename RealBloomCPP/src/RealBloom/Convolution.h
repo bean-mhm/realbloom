@@ -2,12 +2,11 @@
 
 #include <vector>
 #include <string>
-#include <format>
 #include <mutex>
 #include <thread>
 #include <chrono>
 
-#include "../Utils/Image32Bit.h"
+#include "../ColorManagement/CMImage.h"
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/Bilinear.h"
 #include "../Utils/RandomNumber.h"
@@ -21,19 +20,20 @@
 
 namespace RealBloom
 {
-    constexpr float CONV_MULTIPLIER = 0.001f;
+    constexpr float CONV_MULTIPLIER = 1.0 / 1024.0;
     constexpr int CONV_MAX_CHUNKS = 2048;
     constexpr int CONV_MAX_SLEEP = 5000;
 
-    enum class ConvolutionDeviceType
+    enum class ConvolutionMethod
     {
-        CPU,
-        GPU
+        FFT_CPU = 0,
+        NAIVE_CPU = 1,
+        NAIVE_GPU = 2
     };
 
-    struct ConvolutionDevice
+    struct ConvolutionMethodInfo
     {
-        ConvolutionDeviceType deviceType = ConvolutionDeviceType::CPU;
+        ConvolutionMethod method = ConvolutionMethod::FFT_CPU;
         uint32_t numThreads = 1;
         uint32_t numChunks = 1;
         uint32_t chunkSleep = 0;
@@ -41,17 +41,18 @@ namespace RealBloom
 
     struct ConvolutionParams
     {
-        ConvolutionDevice device;
+        ConvolutionMethodInfo methodInfo;
+        bool  kernelNormalize = true;
+        float kernelExposure = 0.0f;
+        float kernelContrast = 0.0f;
         float kernelRotation = 0.0f;
-        float kernelScaleW = 1.0f;
-        float kernelScaleH = 1.0f;
-        float kernelCropW = 1.0f;
-        float kernelCropH = 1.0f;
+        float kernelScaleX = 1.0f;
+        float kernelScaleY = 1.0f;
+        float kernelCropX = 1.0f;
+        float kernelCropY = 1.0f;
+        bool  kernelPreviewCenter = true;
         float kernelCenterX = 0.5f;
         float kernelCenterY = 0.5f;
-        bool  kernelPreviewCenter = true;
-        float kernelContrast = 0.0f;
-        float kernelIntensity = 1.0f;
         float convThreshold = 0.5f;
         float convKnee = 0.2f;
     };
@@ -68,8 +69,9 @@ namespace RealBloom
         std::chrono::time_point<std::chrono::system_clock> timeEnd;
         bool hasTimestamps = false;
 
-        ConvolutionDevice device;
+        ConvolutionMethodInfo methodInfo;
         uint32_t numChunksDone = 0;
+        std::string fftStage = "";
     };
 
     class ConvolutionThread;
@@ -79,14 +81,16 @@ namespace RealBloom
     private:
         ConvolutionState m_state;
         ConvolutionParams m_params;
-        Image32Bit* m_imageInput;
-        Image32Bit* m_imageKernel;
-        Image32Bit* m_imageKernelPreview;
-        Image32Bit* m_imageConvPreview;
-        Image32Bit* m_imageConvLayer;
-        Image32Bit* m_imageConvMix;
 
-        std::thread* m_thread;
+        CmImage* m_imgInput = nullptr;
+        CmImage* m_imgKernel = nullptr;
+        CmImage* m_imgConvPreview = nullptr;
+        CmImage* m_imgConvMix = nullptr;
+
+        CmImage m_imgKernelSrc;
+        CmImage m_imgOutput;
+
+        std::thread* m_thread = nullptr;
         std::vector<ConvolutionThread*> m_threads;
 
         void setErrorState(const std::string& error);
@@ -95,21 +99,22 @@ namespace RealBloom
         Convolution();
         ConvolutionParams* getParams();
 
-        void setInputImage(Image32Bit* image);
-        void setKernelImage(Image32Bit* image);
-        void setKernelPreviewImage(Image32Bit* image);
-        void setConvPreviewImage(Image32Bit* image);
-        void setConvLayerImage(Image32Bit* image);
-        void setConvMixImage(Image32Bit* image);
+        void setImgInput(CmImage* image);
+        void setImgKernel(CmImage* image);
+        void setImgConvPreview(CmImage* image);
+        void setImgConvMix(CmImage* image);
+
+        CmImage* getImgKernelSrc();
 
         void previewThreshold(size_t* outNumPixels = nullptr);
-        void kernel(bool previewMode = true, float** outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
-        void mixConv(bool additive, float inputMix, float convMix, float mix, float convIntensity);
-
+        void kernel(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
+        void mixConv(bool additive, float inputMix, float convMix, float mix, float convExposure);
         void convolve();
         void cancelConv();
 
-        bool isWorking();
+        bool isWorking() const;
+        bool hasFailed() const;
+        std::string getError() const;
 
         // outStatType: 0 = normal, 1 = info, 2 = warning, 3 = error
         void getConvStats(std::string& outTime, std::string& outStatus, uint32_t& outStatType);
