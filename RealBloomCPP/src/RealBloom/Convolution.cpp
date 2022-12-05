@@ -765,7 +765,7 @@ namespace RealBloom
                     ZeroMemory(&cgProcessInfo, sizeof(cgProcessInfo));
 
                     bool cgHasHandles = false;
-                    std::string cgCommandLine = strFormat("RealBloomGPUConv.exe \"%s\"", cgInpFilename.c_str());
+                    std::string cgCommandLine = strFormat("\"%s\" \"%s\"", getLocalPath("RealBloomGPUConv.exe").c_str(), cgInpFilename.c_str());
                     if (!m_state.failed)
                     {
                         if (CreateProcessA(

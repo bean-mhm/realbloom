@@ -11,6 +11,8 @@
 class Config
 {
 public:
+    static std::string CFG_FILENAME;
+
     // const
     static const char* S_APP_TITLE;
     static const char* S_APP_VERSION;

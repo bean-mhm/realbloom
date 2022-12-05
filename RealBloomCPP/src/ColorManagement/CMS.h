@@ -13,14 +13,14 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "../Utils/Misc.h"
 #include "../CLI.h"
 
-constexpr const char* CMS_INTERNAL_CONFIG_PATH = "./assets/internal/ocio/config.ocio";
-constexpr const char* CMS_INTERNAL_XYZ_IE = "Linear CIE-XYZ I-E";
-constexpr const char* CMS_CONFIG_PATH = "./ocio/config.ocio";
-constexpr const bool CMS_USE_GPU = true;
-
 class CMS
 {
 private:
+    static std::string CONFIG_PATH;
+    static std::string INTERNAL_CONFIG_PATH;
+    static std::string INTERNAL_XYZ_IE;
+    static bool USE_GPU;
+
     struct CmVars
     {
         OCIO::ConstConfigRcPtr config;
@@ -97,6 +97,8 @@ public:
     static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();
     static OCIO::ConstGPUProcessorRcPtr getGpuProcessor();
     static std::shared_ptr<OcioShader> getShader();
+
+    static bool usingGPU();
 };
 
 std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace);

@@ -68,6 +68,10 @@ int main(int argc, char** argv)
     // No GUI if there is command line input
     if (!CLI::hasCommands())
     {
+        // Change the working directory so ImGui can load its
+        // config properly
+        SetCurrentDirectoryA(getExecDir().c_str());
+
         // Setup GLFW and ImGui
         if (!setupGLFW())
             return 1;
@@ -1338,10 +1342,20 @@ bool setupImGui()
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
+
     io->FontGlobalScale = Config::UI_SCALE / Config::S_UI_MAX_SCALE;
-    fontRoboto = io->Fonts->AddFontFromFileTTF("./assets/fonts/RobotoCondensed-Regular.ttf", 18.0f * Config::S_UI_MAX_SCALE);
-    fontRobotoBold = io->Fonts->AddFontFromFileTTF("./assets/fonts/RobotoCondensed-Bold.ttf", 19.0f * Config::S_UI_MAX_SCALE);
-    fontMono = io->Fonts->AddFontFromFileTTF("./assets/fonts/mono/RobotoMono-Regular.ttf", 18.0f * Config::S_UI_MAX_SCALE);
+
+    fontRoboto = io->Fonts->AddFontFromFileTTF(
+        getLocalPath("assets/fonts/RobotoCondensed-Regular.ttf").c_str(),
+        18.0f * Config::S_UI_MAX_SCALE);
+
+    fontRobotoBold = io->Fonts->AddFontFromFileTTF(
+        getLocalPath("assets/fonts/RobotoCondensed-Bold.ttf").c_str(),
+        19.0f * Config::S_UI_MAX_SCALE);
+
+    fontMono = io->Fonts->AddFontFromFileTTF(
+        getLocalPath("assets/fonts/mono/RobotoMono-Regular.ttf").c_str(),
+        18.0f * Config::S_UI_MAX_SCALE);
 
     if (fontRoboto && fontRobotoBold && fontMono)
         return true;

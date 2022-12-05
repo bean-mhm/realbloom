@@ -1,5 +1,8 @@
 #include "CMF.h"
 
+const std::string CMF_DIR = getLocalPath("cmf") + getPathSeparator();
+const std::string CMF_DEFAULT_TABLE = "CIE 1931 2-deg";
+
 #pragma region CmfTable
 
 CmfTable::CmfTable(std::string filename)
@@ -8,7 +11,7 @@ CmfTable::CmfTable(std::string filename)
     {
         if (!std::filesystem::exists(filename))
         {
-            filename = "./" + std::string(CMF_DIR) + "/" + filename;
+            filename = CMF_DIR + filename;
             if (!std::filesystem::exists(filename))
                 throw std::exception("File does not exist.");
         }
@@ -263,7 +266,7 @@ void CMF::retrieveTables()
     S_VARS->tables.clear();
 
     if (!(std::filesystem::exists(CMF_DIR) && std::filesystem::is_directory(CMF_DIR)))
-        throw std::exception(strFormat("\"%s\" was not found.", CMF_DIR).c_str());
+        throw std::exception(strFormat("\"%s\" was not found.", CMF_DIR.c_str()).c_str());
 
     for (const auto& entry : std::filesystem::directory_iterator(CMF_DIR))
     {

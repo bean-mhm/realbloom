@@ -84,6 +84,35 @@ void closeMutex(HANDLE hMutex)
         CloseHandle(hMutex);
 }
 
+std::string getPathSeparator()
+{
+    return "\\";
+}
+
+std::string getExecDir()
+{
+    static std::string execDir = "";
+    if (execDir.empty())
+    {
+        char path_cstr[1024] = { 0 };
+        GetModuleFileNameA(NULL, path_cstr, 1024);
+
+        auto path = std::filesystem::path(std::string(path_cstr)).parent_path();
+        execDir = std::filesystem::canonical(path).string();
+        
+        if (!execDir.ends_with(getPathSeparator()))
+            execDir += getPathSeparator();
+
+        execDir = std::filesystem::path(execDir).make_preferred().string();
+    }
+    return execDir;
+}
+
+std::string getLocalPath(const std::string& path)
+{
+    return getExecDir() + path;
+}
+
 void killProcess(PROCESS_INFORMATION pi)
 {
     if (TerminateProcess(pi.hProcess, 1))

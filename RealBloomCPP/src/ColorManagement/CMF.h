@@ -13,9 +13,6 @@
 #include "CmXYZ.h"
 #include "../Utils/Misc.h"
 
-constexpr const char* CMF_DIR = "cmf";
-constexpr const char* CMF_DEFAULT_TABLE = "CIE 1931 2-deg";
-
 class CmfTable
 {
 private:

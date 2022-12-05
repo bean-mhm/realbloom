@@ -195,7 +195,7 @@ void CmImage::moveToGPU_Internal()
     float* transData = nullptr;
 
     // Color Transform (CPU)
-    if (!CMS_USE_GPU && CMS::ok())
+    if (!CMS::usingGPU() && CMS::ok())
     {
         transData = new float[m_imageDataSize];
         std::copy(m_imageData, m_imageData + m_imageDataSize, transData);
@@ -240,7 +240,7 @@ void CmImage::moveToGPU_Internal()
 
     if (!lastTextureFailed)
     {
-        if (!CMS_USE_GPU && (transData != nullptr))
+        if (!CMS::usingGPU() && (transData != nullptr))
             m_texture->upload(transData);
         else
             m_texture->upload(m_imageData);
@@ -252,7 +252,7 @@ void CmImage::moveToGPU_Internal()
     static bool fbFailed = true;
 
     // Color Transform (GPU)
-    if (CMS_USE_GPU && CMS::ok() && !lastTextureFailed)
+    if (CMS::usingGPU() && CMS::ok() && !lastTextureFailed)
     {
         try
         {
@@ -372,7 +372,7 @@ uint32_t CmImage::getGlTexture()
         moveToGPU_Internal();
     }
 
-    if (CMS_USE_GPU && s_frameBuffer.get())
+    if (CMS::usingGPU() && s_frameBuffer.get())
         return s_frameBuffer->getColorBuffer();
     if (m_texture.get())
         return m_texture->getTexture();

@@ -59,6 +59,10 @@ void waitForMutex(HANDLE hMutex);
 void releaseMutex(HANDLE hMutex);
 void closeMutex(HANDLE hMutex);
 
+std::string getPathSeparator();
+std::string getExecDir();
+std::string getLocalPath(const std::string& path);
+
 void killProcess(PROCESS_INFORMATION pi);
 bool processIsRunning(PROCESS_INFORMATION pi);
 bool deleteFile(const std::string& filename);

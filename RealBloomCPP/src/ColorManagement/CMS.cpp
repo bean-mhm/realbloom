@@ -1,5 +1,10 @@
 #include "CMS.h"
 
+std::string CMS::CONFIG_PATH = getLocalPath("ocio/config.ocio");
+std::string CMS::INTERNAL_CONFIG_PATH = getLocalPath("assets/internal/ocio/config.ocio");
+std::string CMS::INTERNAL_XYZ_IE = "Linear CIE-XYZ I-E";
+bool CMS::USE_GPU = true;
+
 CMS::CmVars* CMS::S_VARS = nullptr;
 SimpleState CMS::S_STATE;
 
@@ -80,14 +85,14 @@ bool CMS::init()
         // Internal config
         stage = "Internal config";
         {
-            S_VARS->internalConfig = OCIO::Config::CreateFromFile(CMS_INTERNAL_CONFIG_PATH);
-            S_VARS->internalXyzSpace = CMS_INTERNAL_XYZ_IE;
+            S_VARS->internalConfig = OCIO::Config::CreateFromFile(INTERNAL_CONFIG_PATH.c_str());
+            S_VARS->internalXyzSpace = INTERNAL_XYZ_IE;
         }
 
         // User config
         stage = "User config";
         {
-            S_VARS->config = OCIO::Config::CreateFromFile(CMS_CONFIG_PATH);
+            S_VARS->config = OCIO::Config::CreateFromFile(CONFIG_PATH.c_str());
 
             OCIO::ConstColorSpaceRcPtr sceneLinear = S_VARS->config->getColorSpace(OCIO::ROLE_SCENE_LINEAR);
             S_VARS->workingSpace = sceneLinear->getName();
@@ -269,7 +274,7 @@ void CMS::updateProcessors()
         S_VARS->cpuProcessor = S_VARS->processor->getDefaultCPUProcessor();
         S_VARS->gpuProcessor = S_VARS->processor->getDefaultGPUProcessor();
 
-        if (CMS_USE_GPU)
+        if (USE_GPU)
         {
             // Prepare shader description
             OCIO::GpuShaderDescRcPtr shaderDesc = OCIO::GpuShaderDesc::CreateShaderDesc();
@@ -318,6 +323,11 @@ OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
 std::shared_ptr<OcioShader> CMS::getShader()
 {
     return S_VARS->shader;
+}
+
+bool CMS::usingGPU()
+{
+    return USE_GPU;
 }
 
 std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace)

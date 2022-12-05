@@ -62,6 +62,9 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename, const st
 {
     try
     {
+        if (filename.empty())
+            throw std::exception("Filename was empty.");
+
         // Open the file
         OIIO::ImageInput::unique_ptr inp = OIIO::ImageInput::open(filename);
         if (!inp)
@@ -180,6 +183,9 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
 {
     try
     {
+        if (filename.empty())
+            throw std::exception("Filename was empty.");
+
         if (strLowercase(std::filesystem::path(filename).extension().string()) != ".exr")
             throw std::exception("Output extension must be OpenEXR (.exr).");
 
@@ -234,7 +240,10 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
             throw std::exception(strFormat("OpenColorIO Error: %s", e.what()).c_str());
         }
 
-        // Create output file
+        // Create output directories if necessary
+        std::filesystem::create_directories(std::filesystem::path(filename).parent_path());
+
+        // Create ImageOutput
         std::unique_ptr<OIIO::ImageOutput> out = OIIO::ImageOutput::create("openexr");
         if (!out)
         {

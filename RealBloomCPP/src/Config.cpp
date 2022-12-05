@@ -2,7 +2,7 @@
 
 using namespace std;
 
-constexpr const char* cfgFilename = "config.ini";
+std::string Config::CFG_FILENAME = getLocalPath("config.ini");
 
 // Const
 const char* Config::S_APP_TITLE = "RealBloom";
@@ -22,11 +22,11 @@ float Config::UI_SCALE = 1.0f;
 
 void Config::load()
 {
-    INIReader reader(cfgFilename);
+    INIReader reader(CFG_FILENAME);
 
     if (reader.ParseError() != 0)
     {
-        std::cout << "Failed to read config from \"" << cfgFilename << "\".\n";
+        std::cout << "Failed to read config from \"" << CFG_FILENAME << "\".\n";
     } else
     {
         UI_SCALE = reader.GetFloat("Interface", "Scale", 1.0f);
@@ -36,10 +36,10 @@ void Config::load()
 void Config::save()
 {
     ofstream outFile;
-    outFile.open(cfgFilename, ofstream::out | ofstream::trunc);
+    outFile.open(CFG_FILENAME, ofstream::out | ofstream::trunc);
     if (!outFile)
     {
-        std::cout << "Failed to write config to \"" << cfgFilename << "\".\n";
+        std::cout << "Failed to write config to \"" << CFG_FILENAME << "\".\n";
     } else
     {
         string s = strFormat(

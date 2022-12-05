@@ -28,22 +28,22 @@
 #include "imgui/imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
-#include "Async.h"
-
 #include "ColorManagement/CMS.h"
 #include "ColorManagement/CMF.h"
 #include "ColorManagement/CmXYZ.h"
 #include "ColorManagement/CMImage.h"
 #include "ColorManagement/CMImageIO.h"
 
-#include "nfd/nfd.h"
-#include "Config.h"
-
 #include "RealBloom/DiffractionPattern.h"
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
+#include "Utils/Misc.h"
+#include "Async.h"
+#include "Config.h"
 #include "CLI.h"
+
+#include "nfd/nfd.h"
 
 void layout();
 
