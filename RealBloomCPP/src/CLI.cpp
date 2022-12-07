@@ -15,13 +15,11 @@ namespace OCIO = OpenColorIO_v2_1;
 
 #include "Utils/Misc.h"
 #include "Utils/ConsoleColors.h"
+#include "Utils/CliStackTimer.h"
 #include "Config.h"
 
-constexpr int COL_PRI = CONSOLE_YELLOW;
-constexpr int COL_SEC = CONSOLE_CYAN;
-constexpr int COL_ERR = CONSOLE_RED;
 constexpr uint32_t CLI_LINE_LENGTH = 80;
-constexpr uint32_t CLI_WAIT_TIMESTEP = 10;
+constexpr uint32_t CLI_WAIT_TIMESTEP = 5;
 
 CLI::CliVars* CLI::S_VARS = nullptr;
 std::vector<CliCommand> g_commands;
@@ -36,9 +34,15 @@ void cmdCmfDetails(const CliCommand& cmd, const CliParser& parser, StringMap& ar
 void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
 void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
 
+// Print the arguments of a command
 void printArguments(CliCommand& command)
 {
-    for (auto& arg : command.arguments)
+    std::vector<CliArgument> args = command.arguments;
+
+    if (command.hasVerbose)
+        args.push_back({ {"--verbose", "-v"}, "Enable verbose logging", "", false });
+
+    for (auto& arg : args)
     {
         std::string s_aliases = strList(arg.aliases, ", ");
 
@@ -60,6 +64,26 @@ void printArguments(CliCommand& command)
             << strWordWrap(desc, CLI_LINE_LENGTH, 26)
             << consoleColor() << "\n";
     }
+}
+
+// Print the parsed parameters (used in verbose mode)
+void printParameters(const std::vector<std::string>& params)
+{
+    std::cout << consoleColor(COL_PRI) << "Parameters:" << consoleColor() << "\n";
+
+    for (size_t i = 0; i < (params.size() / 2); i++)
+    {
+        std::string key = params[i * 2];
+        std::string val = params[i * 2 + 1];
+
+        std::cout
+            << "  "
+            << consoleColor(COL_SEC) << strRightPadding(key, 24) << consoleColor()
+            << strWordWrap(val, CLI_LINE_LENGTH, 26)
+            << "\n";
+    }
+
+    std::cout << "\n";
 }
 
 void printVersion()
@@ -189,7 +213,8 @@ void CLI::init(int& argc, char** argv)
                 {{"--output-space", "-b"}, "Output color space", "", true},
                 {{"--grayscale", "-g"}, "Grayscale", "", false}
             },
-            cmdDiff }
+            cmdDiff,
+            true }
         );
 
         g_commands.push_back(CliCommand{
@@ -213,7 +238,8 @@ void CLI::init(int& argc, char** argv)
                 {{"--common-internal", "-w"}, "Common XYZ color space in the internal config", "", false},
                 {{"--common-user", "-u"}, "Common XYZ color space in the user config", "", false}
             },
-            cmdDisp }
+            cmdDisp,
+            true }
         );
 
         g_commands.push_back(CliCommand{
@@ -241,7 +267,8 @@ void CLI::init(int& argc, char** argv)
                 {{"--mix", "-m"}, "Blend between input and output (normal blending)", "1", false},
                 {{"--conv-exposure", "-z"}, "Conv. output exposure", "0", false}
             },
-            cmdConv }
+            cmdConv,
+            true }
         );
 
         g_commands.push_back(CliCommand{
@@ -328,19 +355,6 @@ void CLI::proceed()
                 }
 
                 bool verbose = parser.exists(std::vector<std::string>{ "--verbose", "-v" });
-
-                // Print the argument map
-                if (verbose)
-                {
-                    std::cout << consoleColor(COL_PRI) << "Arguments:" << consoleColor() << "\n";
-                    for (const auto& value : args)
-                        std::cout
-                        << "  "
-                        << consoleColor(COL_SEC) << strRightPadding(value.first, 24) << consoleColor()
-                        << strWordWrap(value.second, CLI_LINE_LENGTH, 26)
-                        << "\n";
-                }
-
                 cmd.action(cmd, parser, args, verbose);
             } catch (const std::exception& e)
             {
@@ -368,6 +382,8 @@ void cmdHelp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
 
 void cmdDiff(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
+    CliStackTimer totalTimer("", true);
+
     // Arguments
 
     std::string inpFilename = args["--input"];
@@ -378,12 +394,25 @@ void cmdDiff(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
 
     bool grayscale = args.count("--grayscale") > 0;
 
+    if (verbose)
+    {
+        printParameters({
+            "Input Filename", inpFilename,
+            "Input Color Space", inpColorspace,
+            "Output Filename", outFilename,
+            "Output Color Space", outColorspace,
+            "Grayscale", strFromBool(grayscale)
+            });
+    }
+
     // Images
 
-    if (verbose)
-        std::cout << "Reading the input image...\n";
     CmImage imgInput("", "", 1, 1);
-    CmImageIO::readImage(imgInput, inpFilename, inpColorspace);
+    {
+        CliStackTimer timer("Read the input image");
+        CmImageIO::readImage(imgInput, inpFilename, inpColorspace);
+        timer.done(verbose);
+    }
 
     CmImage imgOutput("", "", 1, 1);
 
@@ -397,25 +426,30 @@ void cmdDiff(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     params->grayscale = grayscale;
 
     // Compute
-    if (verbose)
-        std::cout << "Processing...\n";
-    diff.compute();
+    {
+        CliStackTimer timer("Compute");
+        diff.compute();
+        timer.done(verbose);
+    }
 
     // Print error
     if (!diff.success())
         throw std::exception(diff.getError().c_str());
 
-    // Write output image
-    if (verbose)
-        std::cout << "Writing the output image...\n";
-    CmImageIO::writeImage(imgOutput, outFilename, outColorspace);
+    // Write the output image
+    {
+        CliStackTimer timer("Write the output image");
+        CmImageIO::writeImage(imgOutput, outFilename, outColorspace);
+        timer.done(verbose);
+    }
 
-    if (verbose)
-        std::cout << "Done.\n";
+    totalTimer.done(verbose);
 }
 
 void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
+    CliStackTimer totalTimer("", true);
+
     // Arguments
 
     std::string inpFilename = args["--input"];
@@ -443,6 +477,22 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     if (args.count("--threads") > 0)
         numThreads = std::stoi(args["--threads"]);
 
+    if (verbose)
+    {
+        printParameters({
+            "Input Filename", inpFilename,
+            "Input Color Space", inpColorspace,
+            "Output Filename", outFilename,
+            "Output Color Space", outColorspace,
+            "Steps", strFormat("%u", steps),
+            "Amount", strFormat("%.3f", amount),
+            "Exposure", strFormat("%.3f", exposure),
+            "Contrast", strFormat("%.3f", contrast),
+            "Color", strFromFloatArray(color),
+            "Threads", strFormat("%u", numThreads),
+            });
+    }
+
     // CMF table
     if (args.count("--cmf") > 0)
     {
@@ -462,10 +512,12 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     disp.setImgInput(&imgInputPrev);
     disp.setImgDisp(&imgOutput);
 
-    // Read input image
-    if (verbose)
-        std::cout << "Reading the input image...\n";
-    CmImageIO::readImage(*(disp.getImgInputSrc()), inpFilename, inpColorspace);
+    // Read the input image
+    {
+        CliStackTimer timer("Read the input image");
+        CmImageIO::readImage(*(disp.getImgInputSrc()), inpFilename, inpColorspace);
+        timer.done(verbose);
+    }
 
     // Parameters
     RealBloom::DispersionParams* params = disp.getParams();
@@ -477,31 +529,38 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     params->numThreads = numThreads;
 
     // Compute
-    if (verbose)
-        std::cout << "Processing...\n";
-    disp.compute();
-
-    // Wait
-    while (disp.isWorking())
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
+        CliStackTimer timer("Compute");
+
+        disp.compute();
+
+        // Wait
+        while (disp.isWorking())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
+        }
+
+        timer.done(verbose);
     }
 
     // Print error
     if (disp.hasFailed())
         throw std::exception(disp.getError().c_str());
 
-    // Write output image
-    if (verbose)
-        std::cout << "Writing the output image...\n";
-    CmImageIO::writeImage(imgOutput, outFilename, outColorspace);
+    // Write the output image
+    {
+        CliStackTimer timer("Write the output image");
+        CmImageIO::writeImage(imgOutput, outFilename, outColorspace);
+        timer.done(verbose);
+    }
 
-    if (verbose)
-        std::cout << "Done.\n";
+    totalTimer.done(verbose);
 }
 
 void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
+    CliStackTimer totalTimer("", true);
+
     // Arguments
 
     std::string inpFilename = args["--input"];
@@ -567,6 +626,32 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     if (args.count("--conv-exposure") > 0)
         convExposure = std::stof(args["--conv-exposure"]);
 
+    if (verbose)
+    {
+        printParameters({
+            "Input Filename", inpFilename,
+            "Input Color Space", inpColorspace,
+            "Kernel Filename", knlFilename,
+            "Kernel Color Space", knlColorspace,
+            "Output Filename", outFilename,
+            "Output Color Space", outColorspace,
+            "Normalize Kernel", strFromBool(kernelNormalize),
+            "Kernel Exposure", strFormat("%.3f", kernelExposure),
+            "Kernel Contrast", strFormat("%.3f", kernelContrast),
+            "Kernel Rotation", strFormat("%.3f", kernelRotation),
+            "Kernel Scale", strFromFloatArray(kernelScale),
+            "Kernel Crop", strFromFloatArray(kernelCrop),
+            "Kernel Center", strFromFloatArray(kernelCenter),
+            "Threshold", strFormat("%.3f", threshold),
+            "Knee", strFormat("%.3f", knee),
+            "Additive Blending", strFromBool(additive),
+            "Input Mix (Additive)", strFormat("%.3f", inputMix),
+            "Conv Mix (Additive)", strFormat("%.3f", convMix),
+            "Mix", strFormat("%.3f", mix),
+            "Conv. Exposure", strFormat("%.3f", convExposure)
+            });
+    }
+
     // Images
 
     CmImage imgInput("", "", 1, 1);
@@ -582,15 +667,19 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     conv.setImgConvPreview(&imgConvPreview);
     conv.setImgConvMix(&imgConvMix);
 
-    // Read input images
+    // Read the input image
+    {
+        CliStackTimer timer("Read the input image");
+        CmImageIO::readImage(imgInput, inpFilename, inpColorspace);
+        timer.done(verbose);
+    }
 
-    if (verbose)
-        std::cout << "Reading the input image...\n";
-    CmImageIO::readImage(imgInput, inpFilename, inpColorspace);
-
-    if (verbose)
-        std::cout << "Reading the kernel image...\n";
-    CmImageIO::readImage(*(conv.getImgKernelSrc()), knlFilename, knlColorspace);
+    // Read the kernel image
+    {
+        CliStackTimer timer("Read the kernel image");
+        CmImageIO::readImage(*(conv.getImgKernelSrc()), knlFilename, knlColorspace);
+        timer.done(verbose);
+    }
 
     // Parameters
 
@@ -615,14 +704,18 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     params->convKnee = knee;
 
     // Compute
-    if (verbose)
-        std::cout << "Processing...\n";
-    conv.convolve();
-
-    // Wait
-    while (conv.isWorking())
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
+        CliStackTimer timer("Compute");
+
+        conv.convolve();
+
+        // Wait
+        while (conv.isWorking())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
+        }
+
+        timer.done(verbose);
     }
 
     // Print error
@@ -630,17 +723,20 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
         throw std::exception(conv.getError().c_str());
 
     // Blending
-    if (verbose)
-        std::cout << "Blending...\n";
-    conv.mixConv(additive, inputMix, convMix, mix, convExposure);
+    {
+        CliStackTimer timer("Blending");
+        conv.mixConv(additive, inputMix, convMix, mix, convExposure);
+        timer.done(verbose);
+    }
 
-    // Write output image
-    if (verbose)
-        std::cout << "Writing the output image...\n";
-    CmImageIO::writeImage(imgConvMix, outFilename, outColorspace);
+    // Write the output image
+    {
+        CliStackTimer timer("Write the output image");
+        CmImageIO::writeImage(imgConvMix, outFilename, outColorspace);
+        timer.done(verbose);
+    }
 
-    if (verbose)
-        std::cout << "Done.\n";
+    totalTimer.done(verbose);
 }
 
 void cmdCmfDetails(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)

@@ -29,6 +29,7 @@ struct CliCommand
     std::string example;
     std::vector<CliArgument> arguments;
     std::function<void(const CliCommand&, const CliParser&, StringMap&, bool)> action;
+    bool hasVerbose = false;
 };
 
 class CLI

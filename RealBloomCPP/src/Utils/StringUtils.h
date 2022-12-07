@@ -11,6 +11,37 @@
 #include <locale>
 #include <stdint.h>
 
+template<typename ... Args>
+std::string strFormat(const std::string& format, Args ... args)
+{
+    int size_s = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
+    if (size_s <= 0)
+    {
+        //throw std::runtime_error("Error during formatting.");
+        return "[formatStr] Error";
+    }
+    auto size = static_cast<size_t>(size_s);
+    std::unique_ptr<char[]> buf(new char[size]);
+    std::snprintf(buf.get(), size, format.c_str(), args ...);
+    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+}
+
+template <typename T>
+std::basic_string<T> strLowercase(const std::basic_string<T>& s)
+{
+    std::basic_string<T> s2 = s;
+    std::transform(s2.begin(), s2.end(), s2.begin(), tolower);
+    return s2;
+}
+
+template <typename T>
+std::basic_string<T> strUppercase(const std::basic_string<T>& s)
+{
+    std::basic_string<T> s2 = s;
+    std::transform(s2.begin(), s2.end(), s2.begin(), toupper);
+    return s2;
+}
+
 inline void strTrimLeftInPlace(std::string& s)
 {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch)
@@ -64,6 +95,21 @@ std::string strFromElapsed(float seconds);
 
 std::string strFromSize(uint64_t sizeBytes);
 std::string strFromBigNumber(uint64_t bigNumber);
+std::string strFromBool(bool v);
+
+template <size_t Size>
+std::string strFromFloatArray(const std::array<float, Size>& arr)
+{
+    std::string result = "";
+
+    for (size_t i = 0; i < Size; i++)
+    {
+        if (i != 0) result += ", ";
+        result += strFormat("%.3f", arr[i]);
+    }
+
+    return result;
+}
 
 std::array<float, 4> strToRGBA(const std::string& s);
 std::array<float, 3> strToRGB(const std::string& s);
@@ -77,35 +123,4 @@ std::string toHexStr(T i)
         << std::setfill('0') << std::setw(sizeof(T) * 2)
         << std::hex << i;
     return stream.str();
-}
-
-template<typename ... Args>
-std::string strFormat(const std::string& format, Args ... args)
-{
-    int size_s = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
-    if (size_s <= 0)
-    {
-        //throw std::runtime_error("Error during formatting.");
-        return "[formatStr] Error";
-    }
-    auto size = static_cast<size_t>(size_s);
-    std::unique_ptr<char[]> buf(new char[size]);
-    std::snprintf(buf.get(), size, format.c_str(), args ...);
-    return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
-}
-
-template <typename T>
-std::basic_string<T> strLowercase(const std::basic_string<T>& s)
-{
-    std::basic_string<T> s2 = s;
-    std::transform(s2.begin(), s2.end(), s2.begin(), tolower);
-    return s2;
-}
-
-template <typename T>
-std::basic_string<T> strUppercase(const std::basic_string<T>& s)
-{
-    std::basic_string<T> s2 = s;
-    std::transform(s2.begin(), s2.end(), s2.begin(), toupper);
-    return s2;
 }

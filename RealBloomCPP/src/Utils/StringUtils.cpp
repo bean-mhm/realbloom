@@ -159,6 +159,11 @@ std::string strFromBigNumber(uint64_t bigNumber)
         return strFormat("%.1f%s", (double)bigNumber / powers[mag], suffixes[mag]);
 }
 
+std::string strFromBool(bool v)
+{
+    return v ? "True" : "False";
+}
+
 std::array<float, 4> strToRGBA(const std::string& s)
 {
     try

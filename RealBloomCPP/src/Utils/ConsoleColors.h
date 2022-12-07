@@ -21,6 +21,10 @@ constexpr int CONSOLE_MAGENTA = 5;
 constexpr int CONSOLE_CYAN = 6;
 constexpr int CONSOLE_WHITE = 7;
 
+constexpr int COL_PRI = CONSOLE_YELLOW;
+constexpr int COL_SEC = CONSOLE_CYAN;
+constexpr int COL_ERR = CONSOLE_RED;
+
 /**
 * Colorize terminal colors ANSI escape sequences.
 *
