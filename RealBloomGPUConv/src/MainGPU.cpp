@@ -10,7 +10,7 @@
 #include "Utils/Misc.h"
 
 constexpr const char* APP_TITLE = "RealBloom GPU Convolution Helper";
-constexpr const char* APP_VERSION = "0.4.1-alpha";
+constexpr const char* APP_VERSION = "0.4.1-beta";
 
 // Use the dedicated GPU on Dual-GPU systems
 extern "C" {
