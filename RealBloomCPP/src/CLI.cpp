@@ -220,7 +220,7 @@ void CLI::init(int& argc, char** argv)
         g_commands.push_back(CliCommand{
             "disp",
             "Apply dispersion",
-            "disp -i aperture.png -a sRGB -o output.exr -b Linear "
+            "disp -i input.exr -a Linear -o output.exr -b Linear "
             "-s 128 -d 0.4",
             {
                 {{"--input", "-i"}, "Input filename", "", true},
