@@ -330,7 +330,7 @@ void layout()
         }
 
         ImGui::Image(
-            (void*)(intptr_t)selImage.getGlTexture(),
+            (void*)(intptr_t)(selImage.getGlTexture()),
             ImVec2(
                 (float)imageWidth * imageZoom,
                 (float)imageHeight * imageZoom
@@ -404,13 +404,14 @@ void layout()
 
         ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024);
         ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1);
-        ImGui::ColorEdit3("Color##Disp", vars.ds_col, ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("Color##Disp", vars.ds_col,
+            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
         ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads());
 
         if (ImGui::Button("Apply##Disp", btnSize()))
         {
             imgDispResult.resize(imgDispInput.getWidth(), imgDispInput.getHeight(), true);
-            imgDispResult.fill(color_t{ 0, 0, 0, 1 }, true);
+            imgDispResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
             imgDispResult.moveToGPU();
             selImageID = "disp-result";
 
@@ -601,7 +602,7 @@ void layout()
         if (ImGui::Button("Convolve##Conv", btnSize()))
         {
             imgConvResult.resize(imgConvInput.getWidth(), imgConvInput.getHeight(), true);
-            imgConvResult.fill(color_t{ 0, 0, 0, 1 }, true);
+            imgConvResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
             imgConvResult.moveToGPU();
             selImageID = "cv-result";
 
@@ -850,7 +851,8 @@ void layout()
                 try
                 {
                     disp.previewCmf(CMF::getActiveTable().get());
-                } catch (const std::exception& e)
+                }
+                catch (const std::exception& e)
                 {
                     cmfPreviewError = e.what();
                 }
@@ -923,7 +925,7 @@ void layout()
                     xcParamsChanged = true;
                 if (ImGui::IsItemHovered() && selUserSpace >= 0)
                 {
-                    std::string desc = getColorSpaceDesc(CMS::getConfig(), userSpaces[selUserSpace]);
+                    std::string desc = CMS::getColorSpaceDesc(CMS::getConfig(), userSpaces[selUserSpace]);
                     if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
                 }
             }
@@ -934,7 +936,7 @@ void layout()
                     xcParamsChanged = true;
                 if (ImGui::IsItemHovered() && selCommonInternal >= 0)
                 {
-                    std::string desc = getColorSpaceDesc(CMS::getInternalConfig(), internalSpaces[selCommonInternal]);
+                    std::string desc = CMS::getColorSpaceDesc(CMS::getInternalConfig(), internalSpaces[selCommonInternal]);
                     if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
                 }
 
@@ -943,7 +945,7 @@ void layout()
                     xcParamsChanged = true;
                 if (ImGui::IsItemHovered() && selCommonUser >= 0)
                 {
-                    std::string desc = getColorSpaceDesc(CMS::getConfig(), userSpaces[selCommonUser]);
+                    std::string desc = CMS::getColorSpaceDesc(CMS::getConfig(), userSpaces[selCommonUser]);
                     if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
                 }
             }
@@ -1129,7 +1131,8 @@ void loadImage(CmImage& image, std::function<void()> onLoad, std::string& outErr
                     CmImageIO::readImage(image, filename, dialogResult_colorSpace);
                     selImageID = image.getID();
                     onLoad();
-                } catch (const std::exception& e)
+                }
+                catch (const std::exception& e)
                 {
                     outError = e.what();
                 }
@@ -1154,7 +1157,8 @@ void saveImage(CmImage& image, std::string& outError)
                 try
                 {
                     CmImageIO::writeImage(image, filename, dialogResult_colorSpace);
-                } catch (const std::exception& e)
+                }
+                catch (const std::exception& e)
                 {
                     outError = e.what();
                 }
@@ -1470,7 +1474,10 @@ void applyStyle_RealBloomGray()
 void cleanUp()
 {
     if (!CLI::hasCommands())
+    {
         clearVector(images);
+        imgui_widgets_cleanup_cmimages();
+    }
 
     CmImage::cleanUp();
     CMF::cleanUp();

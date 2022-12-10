@@ -12,6 +12,7 @@
 #include "CMS.h"
 #include "CmXYZ.h"
 #include "../Utils/Misc.h"
+#include "../Utils/NumberHelpers.h"
 
 class CmfTable
 {

@@ -70,7 +70,8 @@ namespace RealBloom
                 std::copy(buffer.data(), buffer.data() + buffer.size(), imageBuffer);
             }
             m_imgDisp->moveToGPU();
-        } catch (const std::exception& e)
+        }
+        catch (const std::exception& e)
         {
             throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
         }
@@ -324,7 +325,7 @@ namespace RealBloom
                     {
                         std::lock_guard<CmImage> lock(*m_imgDisp);
                         m_imgDisp->resize(inputWidth, inputHeight, false);
-                        m_imgDisp->fill(color_t{ 0, 0, 0, 1 }, false);
+                        m_imgDisp->fill(std::array<float, 4>{ 0, 0, 0, 1 }, false);
                         float* dispBuffer = m_imgDisp->getImageData();
 
                         for (uint32_t i = 0; i < numThreads; i++)
@@ -366,7 +367,8 @@ namespace RealBloom
 
                     m_state.timeEnd = std::chrono::system_clock::now();
                     m_state.hasTimestamps = true;
-                } catch (const std::exception& e)
+                }
+                catch (const std::exception& e)
                 {
                     if (!m_state.mustCancel)
                     {

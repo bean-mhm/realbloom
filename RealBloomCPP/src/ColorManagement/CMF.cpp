@@ -99,11 +99,6 @@ float CmfTable::getStep() const
     return m_step;
 }
 
-inline float lerp2(float a, float b, float t)
-{
-    return a + ((b - a) * t);
-}
-
 std::array<float, 3> CmfTable::sample(float wavelength) const
 {
     // Out of range values
@@ -131,9 +126,9 @@ std::array<float, 3> CmfTable::sample(float wavelength) const
         return { m_valuesX[m_count - 1], m_valuesY[m_count - 1], m_valuesZ[m_count - 1] };
 
     // Sample linearly from idx to idx+1
-    float smpX = lerp2(m_valuesX[idx], m_valuesX[idx + 1], offset);
-    float smpY = lerp2(m_valuesY[idx], m_valuesY[idx + 1], offset);
-    float smpZ = lerp2(m_valuesZ[idx], m_valuesZ[idx + 1], offset);
+    float smpX = lerp(m_valuesX[idx], m_valuesX[idx + 1], offset);
+    float smpY = lerp(m_valuesY[idx], m_valuesY[idx + 1], offset);
+    float smpZ = lerp(m_valuesZ[idx], m_valuesZ[idx + 1], offset);
 
     return { smpX, smpY, smpZ };
 }

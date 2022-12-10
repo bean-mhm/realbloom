@@ -16,7 +16,8 @@ void CMS::CmVars::retrieveColorSpaces()
         size_t num = internalConfig->getNumColorSpaces();
         for (size_t i = 0; i < num; i++)
             internalColorSpaces.push_back(internalConfig->getColorSpaceNameByIndex(i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, "Internal config", e.what());
     }
@@ -27,7 +28,8 @@ void CMS::CmVars::retrieveColorSpaces()
         size_t num = config->getNumColorSpaces();
         for (size_t i = 0; i < num; i++)
             colorSpaces.push_back(config->getColorSpaceNameByIndex(i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, "User config", e.what());
     }
@@ -41,7 +43,8 @@ void CMS::CmVars::retrieveDisplays()
         size_t num = config->getNumDisplays();
         for (size_t i = 0; i < num; i++)
             displays.push_back(config->getDisplay(i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -55,7 +58,8 @@ void CMS::CmVars::retrieveViews()
         size_t num = config->getNumViews(activeDisplay.c_str());
         for (size_t i = 0; i < num; i++)
             views.push_back(config->getView(activeDisplay.c_str(), i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -70,7 +74,8 @@ void CMS::CmVars::retrieveLooks()
         size_t num = config->getNumLooks();
         for (size_t i = 0; i < num; i++)
             looks.push_back(config->getLookNameByIndex(i));
-    } catch (OCIO::Exception& e)
+    }
+    catch (OCIO::Exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -108,7 +113,8 @@ bool CMS::init()
         S_VARS->retrieveLooks();
 
         S_STATE.setOk();
-    } catch (std::exception& e)
+    }
+    catch (std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, stage, e.what()));
     }
@@ -290,7 +296,8 @@ void CMS::updateProcessors()
         }
 
         S_STATE.setOk();
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, e.what()));
     }
@@ -330,10 +337,44 @@ bool CMS::usingGPU()
     return USE_GPU;
 }
 
-std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace)
+std::string CMS::getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace)
 {
     OCIO::ConstColorSpaceRcPtr cs = config->getColorSpace(colorSpace.c_str());
     if (cs.get() == nullptr)
         return "";
     return cs->getDescription();
+}
+
+std::array<float, 4> CMS::getDisplayColor(std::array<float, 4> v)
+{
+    try
+    {
+        float col[4] = { v[0], v[1], v[2], v[3] };
+
+        OCIO::PackedImageDesc img(
+            col,
+            1,
+            1,
+            OCIO::ChannelOrdering::CHANNEL_ORDERING_RGBA,
+            OCIO::BitDepth::BIT_DEPTH_F32,
+            4,                 // 4 bytes to go to the next color channel
+            4 * 4,             // 4 color channels * 4 bytes per channel (till the next pixel)
+            1 * 4 * 4);  // width * 4 channels * 4 bytes (till the next row)
+
+        getCpuProcessor()->apply(img);
+
+        return { col[0], col[1], col[2], col[3] };
+    }
+    catch (std::exception& e)
+    {
+        printErr(__FUNCTION__, e.what());
+    }
+
+    return { 0, 0, 0, 1 };
+}
+
+std::array<float, 3> CMS::getDisplayColor(std::array<float, 3> v)
+{
+    std::array<float, 4> rgba = getDisplayColor(std::array<float, 4>{ v[0], v[1], v[2], 1.0f });
+    return { rgba[0], rgba[1], rgba[2] };
 }

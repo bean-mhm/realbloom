@@ -190,14 +190,15 @@ void CLI::init(int& argc, char** argv)
         g_commands.push_back(CliCommand{
             "version",
             "Print the current version",
-            "",{},
+            "",
+            {},
             cmdVersion }
         );
 
         g_commands.push_back(CliCommand{
             "help",
             "Print guide for all commands or a specific command",
-            "help [command]",
+            "help <command>",
             {},
             cmdHelp }
         );
@@ -299,9 +300,10 @@ void CLI::init(int& argc, char** argv)
         g_commands.push_back(CliCommand{
             "colorspaces",
             "Print the available color spaces",
-            "colorspaces [--internal]",
+            "",
             {
-                {{"--internal", "-i"}, "Use the internal config", "", false}
+                {{"--internal", "-i"}, "Use the internal config", "", false},
+                {{"--compact", "-c"}, "Compact mode", "", false}
             },
             cmdColorspaces }
         );
@@ -356,7 +358,8 @@ void CLI::proceed()
 
                 bool verbose = parser.exists(std::vector<std::string>{ "--verbose", "-v" });
                 cmd.action(cmd, parser, args, verbose);
-            } catch (const std::exception& e)
+            }
+            catch (const std::exception& e)
             {
                 std::cerr
                     << consoleColor(COL_ERR) << e.what() << consoleColor() << "\n"
@@ -786,23 +789,32 @@ void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, StringMap& ar
 
 void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
-    bool isInternal = args.count("--internal") > 0;
-    std::vector<std::string> spaces = isInternal ? CMS::getInternalColorSpaces() : CMS::getAvailableColorSpaces();
-    OCIO::ConstConfigRcPtr config = isInternal ? CMS::getInternalConfig() : CMS::getConfig();
+    bool useInternal = args.count("--internal") > 0;
+    std::vector<std::string> spaces = useInternal ? CMS::getInternalColorSpaces() : CMS::getAvailableColorSpaces();
+    OCIO::ConstConfigRcPtr config = useInternal ? CMS::getInternalConfig() : CMS::getConfig();
+
+    bool compact = args.count("--compact") > 0;
 
     std::cout
         << consoleColor(COL_SEC)
         << spaces.size()
-        << (isInternal ? " internal color spaces" : " color spaces")
-        << consoleColor() << "\n\n";
+        << (useInternal ? " internal color spaces" : " color spaces")
+        << consoleColor() << (compact ? "\n" : "\n\n");
 
     for (const auto& space : spaces)
     {
-        std::string desc = getColorSpaceDesc(config, space);
-        std::cout
-            << consoleColor(COL_PRI) << "Name: " << consoleColor()
-            << strWordWrap(space, CLI_LINE_LENGTH, 6) << "\n"
-            << consoleColor(COL_PRI) << "Desc: " << consoleColor()
-            << consoleColor(COL_SEC) << strWordWrap(desc, CLI_LINE_LENGTH, 6) << consoleColor() << "\n\n";
+        if (compact)
+        {
+            std::cout << space << "\n";
+        }
+        else
+        {
+            std::string desc = CMS::getColorSpaceDesc(config, space);
+            std::cout
+                << consoleColor(COL_PRI) << "Name: " << consoleColor()
+                << strWordWrap(space, CLI_LINE_LENGTH, 6) << "\n"
+                << consoleColor(COL_PRI) << "Desc: " << consoleColor()
+                << consoleColor(COL_SEC) << strWordWrap(desc, CLI_LINE_LENGTH, 6) << consoleColor() << "\n\n";
+        }
     }
 }

@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
+#include <array>
 #include <filesystem>
 #include <memory>
 
@@ -99,6 +101,8 @@ public:
     static std::shared_ptr<OcioShader> getShader();
 
     static bool usingGPU();
-};
 
-std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace);
+    static std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace);
+    static std::array<float, 4> getDisplayColor(std::array<float, 4> v);
+    static std::array<float, 3> getDisplayColor(std::array<float, 3> v);
+};

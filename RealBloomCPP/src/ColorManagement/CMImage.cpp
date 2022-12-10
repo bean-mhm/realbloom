@@ -4,16 +4,20 @@ using namespace std;
 
 std::shared_ptr<GlFrameBuffer> CmImage::s_frameBuffer = nullptr;
 
-CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor)
-    : m_id(id), m_name(name), m_width(width), m_height(height)
+CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor, bool useExposure, bool useGlobalFB)
+    : m_id(id), m_name(name), m_width(width), m_height(height), m_useExposure(useExposure), m_useGlobalFB(useGlobalFB)
 {
-    resize(std::max(width, 1u), std::max(height, 1u), true);
-    fill(fillColor, true);
+    lock();
+    resize(std::max(width, 1u), std::max(height, 1u), false);
+    fill(fillColor, false);
+    unlock();
 }
 
 CmImage::~CmImage()
 {
     lock_guard<mutex> lock(m_mutex);
+
+    m_localFrameBuffer = nullptr;
 
     if (m_imageData)
         delete[] m_imageData;
@@ -65,7 +69,7 @@ void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
     if (shouldLock) unlock();
 }
 
-void CmImage::fill(color_t color, bool shouldLock)
+void CmImage::fill(std::array<float, 4> color, bool shouldLock)
 {
     if (shouldLock) lock();
     if (!m_imageData)
@@ -189,7 +193,7 @@ void CmImage::moveToGPU_Internal()
 
     // Exposure
     float exposure = CMS::getExposure();
-    float exposureMul = powf(2, exposure);
+    float exposureMul = m_useExposure ? powf(2, exposure) : 1.0f;
 
     // Temporary buffer to apply transforms on (CPU)
     float* transData = nullptr;
@@ -256,15 +260,18 @@ void CmImage::moveToGPU_Internal()
     {
         try
         {
+            std::shared_ptr<GlFrameBuffer>& fb = m_useGlobalFB ? s_frameBuffer : m_localFrameBuffer;
+
             // Recreate our frame buffer if needed
             {
                 bool mustRecreate = false;
-                if (s_frameBuffer.get() == nullptr)
+                if (fb.get() == nullptr)
                 {
                     mustRecreate = true;
-                } else
+                }
+                else
                 {
-                    if ((s_frameBuffer->getWidth() != m_width) || (s_frameBuffer->getHeight() != m_height))
+                    if ((fb->getWidth() != m_width) || (fb->getHeight() != m_height))
                         mustRecreate = true;
                     else if (fbFailed)
                         mustRecreate = true;
@@ -274,7 +281,7 @@ void CmImage::moveToGPU_Internal()
                 {
                     try
                     {
-                        s_frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
+                        fb = std::make_shared<GlFrameBuffer>(m_width, m_height);
                         fbFailed = false;
                     } catch (const std::exception& e)
                     {
@@ -285,10 +292,10 @@ void CmImage::moveToGPU_Internal()
             }
 
             // Bind the frame buffer so we can render the transformed image into it
-            s_frameBuffer->bind();
+            fb->bind();
 
             // Set the viewport
-            s_frameBuffer->viewport();
+            fb->viewport();
 
             // Use the shader program
             std::shared_ptr<OcioShader> shader = CMS::getShader();
@@ -351,7 +358,7 @@ void CmImage::moveToGPU_Internal()
             }
 
             // Unbind the frame buffer so we can continue rendering to the screen
-            s_frameBuffer->unbind();
+            fb->unbind();
 
             // Clean up
             glDeleteBuffers(1, &vbo);
@@ -372,9 +379,20 @@ uint32_t CmImage::getGlTexture()
         moveToGPU_Internal();
     }
 
-    if (CMS::usingGPU() && s_frameBuffer.get())
-        return s_frameBuffer->getColorBuffer();
+    if (CMS::usingGPU())
+    {
+        if (m_useGlobalFB && (s_frameBuffer.get() != nullptr))
+        {
+            return s_frameBuffer->getColorBuffer();
+        }
+        else if (!m_useGlobalFB && (m_localFrameBuffer.get() != nullptr))
+        {
+            return m_localFrameBuffer->getColorBuffer();
+        }
+    }
+
     if (m_texture.get())
         return m_texture->getTexture();
+
     return 0;
 }

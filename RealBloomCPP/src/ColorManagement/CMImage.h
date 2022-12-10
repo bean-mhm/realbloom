@@ -19,8 +19,6 @@
 #include "../Utils/GlUtils.h"
 #include "../Utils/Misc.h"
 
-typedef std::array<float, 4> color_t;
-
 // Color Managed Image
 // Internal format is always RGBA32F
 class CmImage
@@ -28,8 +26,10 @@ class CmImage
 private:
     std::string m_id;
     std::string m_name;
-
     uint32_t m_width, m_height;
+    bool m_useExposure = true;
+    bool m_useGlobalFB = true;
+
     float* m_imageData = nullptr;
     uint32_t m_imageDataSize = 0;
 
@@ -39,6 +39,7 @@ private:
     std::shared_ptr<GlTexture> m_texture = nullptr;
 
     static std::shared_ptr<GlFrameBuffer> s_frameBuffer;
+    std::shared_ptr<GlFrameBuffer> m_localFrameBuffer = nullptr;
 
     bool m_moveToGpu = true;
     void moveToGPU_Internal();
@@ -49,7 +50,10 @@ public:
         const std::string& name,
         uint32_t width = 32,
         uint32_t height = 32,
-        std::array<float, 4> fillColor = { 0, 0, 0, 1 });
+        std::array<float, 4> fillColor = { 0, 0, 0, 1 },
+        bool useExposure = true,
+        bool useGlobalFB = true
+    );
     ~CmImage();
     static void cleanUp();
 
@@ -74,7 +78,7 @@ public:
     // shouldLock must be false if the image is already locked.
     void resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock);
 
-    void fill(color_t color, bool shouldLock);
+    void fill(std::array<float, 4> color, bool shouldLock);
     void fill(std::vector<float> buffer, bool shouldLock);
     void fill(float* buffer, bool shouldLock);
     void renderUV();
