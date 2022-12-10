@@ -1,3 +1,6 @@
+### NOTE: This page is outdated and demands rewriting. I'm currently working on it.
+
+
 
 ## Getting Started
 
