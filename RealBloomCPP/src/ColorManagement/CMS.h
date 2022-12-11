@@ -95,6 +95,7 @@ public:
 
     static bool ok();
     static std::string getError();
+    static void ensureOK();
 
     static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();
     static OCIO::ConstGPUProcessorRcPtr getGpuProcessor();
@@ -104,5 +105,5 @@ public:
 
     static std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace);
     static std::array<float, 4> getDisplayColor(std::array<float, 4> v);
-    static std::array<float, 3> getDisplayColor(std::array<float, 3> v);
+    static std::array<float, 3> getDisplayColor(const std::array<float, 3>& v);
 };

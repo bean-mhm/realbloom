@@ -68,7 +68,8 @@ CmfTable::CmfTable(std::string filename)
                 m_valuesZ.size()
             ).c_str());
         }
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
     }
@@ -163,6 +164,8 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
     {
         stage = "init";
 
+        CMS::ensureOK();
+
         XyzConversionInfo info = CmXYZ::getConversionInfo();
         OCIO::ConstConfigRcPtr userConfig = CMS::getConfig();
         OCIO::ConstConfigRcPtr internalConfig = CMS::getInternalConfig();
@@ -193,7 +196,8 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
                 OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
                 cpuProc->apply(img);
             }
-        } else if (info.method == XyzConversionMethod::CommonSpace)
+        }
+        else if (info.method == XyzConversionMethod::CommonSpace)
         {
             // Transform 1: XYZ -> Common Space (internal config)
             stage = "Transform 1 (CommonSpace)";
@@ -239,7 +243,8 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
         }
         for (auto& v : outSamples)
             v = fmaxf(v, 0.0f);
-    } catch (std::exception& e)
+    }
+    catch (std::exception& e)
     {
         throw std::exception(printErr(__FUNCTION__, stage, e.what()).c_str());
     }
@@ -284,7 +289,8 @@ bool CMF::init()
     {
         retrieveTables();
         S_STATE.setOk();
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, e.what()));
     }
@@ -357,7 +363,8 @@ void CMF::setActiveTable(const CmfTableInfo& tableInfo)
             );
         }
         S_STATE.setOk();
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         S_STATE.setError(e.what());
     }

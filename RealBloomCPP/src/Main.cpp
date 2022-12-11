@@ -405,7 +405,7 @@ void layout()
         ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024);
         ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1);
         ImGui::ColorEdit3("Color##Disp", vars.ds_col,
-            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha);
         ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads());
 
         if (ImGui::Button("Apply##Disp", btnSize()))

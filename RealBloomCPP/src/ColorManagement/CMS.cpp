@@ -313,6 +313,12 @@ std::string CMS::getError()
     return S_STATE.getError();
 }
 
+void CMS::ensureOK()
+{
+    if (!ok())
+        throw std::exception(strFormat("CMS failure: %s", getError().c_str()).c_str());
+}
+
 OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()
 {
     if (ok())
@@ -349,10 +355,10 @@ std::array<float, 4> CMS::getDisplayColor(std::array<float, 4> v)
 {
     try
     {
-        float col[4] = { v[0], v[1], v[2], v[3] };
+        ensureOK();
 
         OCIO::PackedImageDesc img(
-            col,
+            v.data(),
             1,
             1,
             OCIO::ChannelOrdering::CHANNEL_ORDERING_RGBA,
@@ -363,7 +369,7 @@ std::array<float, 4> CMS::getDisplayColor(std::array<float, 4> v)
 
         getCpuProcessor()->apply(img);
 
-        return { col[0], col[1], col[2], col[3] };
+        return v;
     }
     catch (std::exception& e)
     {
@@ -373,7 +379,7 @@ std::array<float, 4> CMS::getDisplayColor(std::array<float, 4> v)
     return { 0, 0, 0, 1 };
 }
 
-std::array<float, 3> CMS::getDisplayColor(std::array<float, 3> v)
+std::array<float, 3> CMS::getDisplayColor(const std::array<float, 3>& v)
 {
     std::array<float, 4> rgba = getDisplayColor(std::array<float, 4>{ v[0], v[1], v[2], 1.0f });
     return { rgba[0], rgba[1], rgba[2] };

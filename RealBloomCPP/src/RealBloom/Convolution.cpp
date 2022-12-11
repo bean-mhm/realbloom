@@ -618,7 +618,7 @@ namespace RealBloom
                     }
 
                     // Join the threads
-                    for (uint32_t i = 0; i < numThreads; i++)
+                    for (uint32_t i = 0; i < m_threads.size(); i++)
                     {
                         if (m_threads[i])
                             threadJoin(m_threads[i]->getThread().get());

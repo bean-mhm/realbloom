@@ -180,6 +180,8 @@ namespace RealBloom
             {
                 try
                 {
+                    CMS::ensureOK();
+
                     // CMF table
                     std::shared_ptr<CmfTable> table = CMF::getActiveTable();
                     if (table.get() == nullptr)
@@ -378,7 +380,7 @@ namespace RealBloom
                 }
 
                 // Clean up
-                for (uint32_t i = 0; i < numThreads; i++)
+                for (uint32_t i = 0; i < m_threads.size(); i++)
                     DELPTR(m_threads[i]);
                 m_threads.clear();
 

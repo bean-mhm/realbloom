@@ -45,12 +45,14 @@ bool CmImageIO::readImageColorSpace(const std::string& filename, std::string& ou
         {
             outColorSpace = attribColorSpace;
             return true;
-        } else if (oiioSpace.get() != nullptr)
+        }
+        else if (oiioSpace.get() != nullptr)
         {
             outColorSpace = attribOiioSpace;
             return true;
         }
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         printErr(__FUNCTION__, e.what());
     }
@@ -138,6 +140,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename, const st
         // Color Space Conversion
         if (channels > 1)
         {
+            CMS::ensureOK();
             try
             {
                 OCIO::ConstConfigRcPtr config = CMS::getConfig();
@@ -159,7 +162,8 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename, const st
                 OCIO::ConstProcessorRcPtr proc = config->getProcessor(transform);
                 OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
                 cpuProc->apply(img);
-            } catch (OCIO::Exception& e)
+            }
+            catch (OCIO::Exception& e)
             {
                 throw std::exception(strFormat("OpenColorIO Error: %s", e.what()).c_str());
             }
@@ -173,7 +177,8 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename, const st
             std::copy(bufferRGBA.data(), bufferRGBA.data() + bufferRGBA.size(), targetBuffer);
         }
         target.moveToGPU();
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
     }
@@ -215,6 +220,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
         source.unlock();
 
         // Color Space Conversion
+        CMS::ensureOK();
         try
         {
             OCIO::ConstConfigRcPtr config = CMS::getConfig();
@@ -235,7 +241,8 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
             OCIO::ConstProcessorRcPtr proc = config->getProcessor(transform);
             OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
             cpuProc->apply(img);
-        } catch (OCIO::Exception& e)
+        }
+        catch (OCIO::Exception& e)
         {
             throw std::exception(strFormat("OpenColorIO Error: %s", e.what()).c_str());
         }
@@ -268,7 +275,8 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
         {
             throw std::exception(strFormat("Couldn't open output file \"%s\".", filename.c_str()).c_str());
         }
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
     }

@@ -60,7 +60,8 @@ bool CmXYZ::init()
             );
 
         S_STATE.setOk();
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         S_STATE.setError(printErr(__FUNCTION__, e.what()));
     }

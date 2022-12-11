@@ -58,10 +58,10 @@ Index of this file:
 #include "../ColorManagement/CMImage.h"
 #include "../Utils/NumberHelpers.h"
 
+constexpr bool OCIO_COLOR_CORRECTION = true;
+
 std::shared_ptr<CmImage> color_picker_sv_sqaure_cmimage = nullptr;
 std::shared_ptr<CmImage> color_picker_hue_bar_cmimage = nullptr;
-
-const bool OCIO_COLOR_CORRECTION = true;
 
 #pragma endregion
 
@@ -5153,11 +5153,6 @@ bool ImGui::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flag
         window->DC.CursorPos = ImVec2(pos.x + button_offset_x, pos.y);
 
         ImVec4 col_v4(col[0], col[1], col[2], alpha ? col[3] : 1.0f);
-        if (OCIO_COLOR_CORRECTION)
-        {
-            std::array<float, 4> rgba = CMS::getDisplayColor({ col_v4.x, col_v4.y, col_v4.z, col_v4.w });
-            col_v4 = { rgba[0], rgba[1], rgba[2], rgba[3] };
-        }
 
         if (ColorButton("##ColorButton", col_v4, flags))
         {
@@ -5445,26 +5440,16 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
     if (!(flags & ImGuiColorEditFlags_NoSidePreview))
     {
         ImVec4 col_v4 = { col[0], col[1], col[2], (flags & ImGuiColorEditFlags_NoAlpha) ? 1.0f : col[3] };
-        if (OCIO_COLOR_CORRECTION)
-        {
-            std::array<float, 4> rgba = CMS::getDisplayColor({ col_v4.x, col_v4.y, col_v4.z, col_v4.w });
-            col_v4 = { rgba[0], rgba[1], rgba[2], rgba[3] };
-        }
 
         PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
         if ((flags & ImGuiColorEditFlags_NoLabel))
             Text("Current");
 
-        ImGuiColorEditFlags sub_flags_to_forward = ImGuiColorEditFlags_InputMask_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_NoTooltip;
+        ImGuiColorEditFlags sub_flags_to_forward = ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_InputMask_ | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_NoTooltip;
         ColorButton("##current", col_v4, (flags & sub_flags_to_forward), ImVec2(square_sz * 3, square_sz * 2));
         if (ref_col != NULL)
         {
             ImVec4 ref_col_v4 = { ref_col[0], ref_col[1], ref_col[2], (flags & ImGuiColorEditFlags_NoAlpha) ? 1.0f : ref_col[3] };
-            if (OCIO_COLOR_CORRECTION)
-            {
-                std::array<float, 4> rgba = CMS::getDisplayColor({ ref_col_v4.x, ref_col_v4.y, ref_col_v4.z, ref_col_v4.w });
-                ref_col_v4 = { rgba[0], rgba[1], rgba[2], rgba[3] };
-            }
 
             Text("Original");
             if (ColorButton("##original", ref_col_v4, (flags & sub_flags_to_forward), ImVec2(square_sz * 3, square_sz * 2)))
@@ -5808,7 +5793,16 @@ bool ImGui::ColorButton(const char* desc_id, const ImVec4& col, ImGuiColorEditFl
     if (flags & ImGuiColorEditFlags_NoAlpha)
         flags &= ~(ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaPreviewHalf);
 
-    ImVec4 col_rgb = col;
+    ImVec4 col_orig = col;
+    ImVec4 col_display = col;
+
+    if (OCIO_COLOR_CORRECTION)
+    {
+        std::array<float, 4> rgba = CMS::getDisplayColor({ col_display.x, col_display.y, col_display.z, col_display.w });
+        col_display = { rgba[0], rgba[1], rgba[2], rgba[3] };
+    }
+
+    ImVec4 col_rgb = col_display;
     if (flags & ImGuiColorEditFlags_InputHSV)
         ColorConvertHSVtoRGB(col_rgb.x, col_rgb.y, col_rgb.z, col_rgb.x, col_rgb.y, col_rgb.z);
 
@@ -5862,7 +5856,7 @@ bool ImGui::ColorButton(const char* desc_id, const ImVec4& col, ImGuiColorEditFl
 
     // Tooltip
     if (!(flags & ImGuiColorEditFlags_NoTooltip) && hovered)
-        ColorTooltip(desc_id, &col.x, flags & (ImGuiColorEditFlags_InputMask_ | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaPreviewHalf));
+        ColorTooltip(desc_id, &col_orig.x, flags & (ImGuiColorEditFlags_InputMask_ | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaPreviewHalf));
 
     return pressed;
 }
