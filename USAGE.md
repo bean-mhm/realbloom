@@ -29,7 +29,7 @@ As of now, there are 6 panels, each for a specific purpose. A panel can be docke
 
  - **Image List**: This is a static list of image slots that serve different purposes. You can switch to another slot by clicking on it. We'll go through what each slot is used for later.
 
- -  **Color Management**: We'll use this panel to change how we view images, as well as some options that'll come handy when simulating dispersion.
+ - **Color Management**: We'll use this panel to change how we view images, as well as some options that'll come handy when simulating dispersion.
 
  - **Misc**: This panel displays miscellaneous information, as well as a slider for the UI scale, which you can adjust if the interface is too small or too big.
 
