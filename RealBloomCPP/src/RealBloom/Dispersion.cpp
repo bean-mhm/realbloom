@@ -150,6 +150,7 @@ namespace RealBloom
         }
 
         m_imgInput->moveToGPU();
+        m_imgInput->setSourceName(m_imgInputSrc.getSourceName());
     }
 
     void Dispersion::compute()

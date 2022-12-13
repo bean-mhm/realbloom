@@ -55,7 +55,7 @@ Index of this file:
 #include <mutex>
 
 #include "../ColorManagement/CMS.h"
-#include "../ColorManagement/CMImage.h"
+#include "../ColorManagement/CmImage.h"
 #include "../Utils/NumberHelpers.h"
 
 constexpr bool OCIO_COLOR_CORRECTION = true;

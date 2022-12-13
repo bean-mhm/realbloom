@@ -1,4 +1,4 @@
-#include "CMImage.h"
+#include "CmImage.h"
 
 using namespace std;
 
@@ -36,6 +36,16 @@ std::string CmImage::getID()
 std::string CmImage::getName()
 {
     return m_name;
+}
+
+std::string CmImage::getSourceName()
+{
+    return m_sourceName;
+}
+
+void CmImage::setSourceName(const std::string& sourceName)
+{
+    m_sourceName = sourceName;
 }
 
 void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
@@ -220,7 +230,8 @@ void CmImage::moveToGPU_Internal()
                 m_width * 4 * 4);  // width * 4 channels * 4 bytes (till the next row)
 
             CMS::getCpuProcessor()->apply(img);
-        } catch (std::exception& e)
+        }
+        catch (std::exception& e)
         {
             printErr(__FUNCTION__, "Color Transform (CPU)", e.what());
         }
@@ -235,7 +246,8 @@ void CmImage::moveToGPU_Internal()
         {
             m_texture = std::make_shared<GlTexture>(m_width, m_height, GL_CLAMP, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
             lastTextureFailed = false;
-        } catch (const std::exception&)
+        }
+        catch (const std::exception&)
         {
             lastTextureFailed = true;
             printErr(__FUNCTION__, "Failed to create texture.");
@@ -283,7 +295,8 @@ void CmImage::moveToGPU_Internal()
                     {
                         fb = std::make_shared<GlFrameBuffer>(m_width, m_height);
                         fbFailed = false;
-                    } catch (const std::exception& e)
+                    }
+                    catch (const std::exception& e)
                     {
                         fbFailed = true;
                         throw e;
@@ -364,7 +377,8 @@ void CmImage::moveToGPU_Internal()
             glDeleteBuffers(1, &vbo);
             glDeleteVertexArrays(1, &vao);
             checkGlStatus(__FUNCTION__, "Cleanup");
-        } catch (const std::exception&)
+        }
+        catch (const std::exception&)
         {
             printErr(__FUNCTION__, "GPU Color Transform failed.");
         }

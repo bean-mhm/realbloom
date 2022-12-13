@@ -333,6 +333,7 @@ namespace RealBloom
         }
 
         m_imgKernel->moveToGPU();
+        m_imgKernel->setSourceName(m_imgKernelSrc.getSourceName());
     }
 
     void Convolution::mixConv(bool additive, float inputMix, float convMix, float mix, float convExposure)

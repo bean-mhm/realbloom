@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <array>
+#include <unordered_map>
 #include <string>
 #include <filesystem>
 #include <thread>
@@ -32,19 +33,19 @@
 #include "ColorManagement/CMS.h"
 #include "ColorManagement/CMF.h"
 #include "ColorManagement/CmXYZ.h"
-#include "ColorManagement/CMImage.h"
-#include "ColorManagement/CMImageIO.h"
+#include "ColorManagement/CmImage.h"
+#include "ColorManagement/CmImageIO.h"
 
 #include "RealBloom/DiffractionPattern.h"
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
-#include "Utils/Misc.h"
 #include "Async.h"
 #include "Config.h"
 #include "CLI.h"
 
-#include "nfd/nfd.h"
+#include "Utils/FileDialogs.h"
+#include "Utils/Misc.h"
 
 void layout();
 
@@ -57,11 +58,8 @@ bool imguiCombo(const std::string& label, const std::vector<std::string>& items,
 void addImage(const std::string& id, const std::string& name);
 CmImage* getImageByID(const std::string& id);
 
-bool openImageDialog(std::string& outFilename);
-bool saveImageDialog(std::string& outFilename);
-
-void loadImage(CmImage& image, std::function<void()> onLoad, std::string& outError);
-void saveImage(CmImage& image, std::string& outError);
+void loadImage(CmImage& image, const std::string& dlgID, std::function<void()> onLoad, std::string& outError);
+void saveImage(CmImage& image, const std::string& dlgID, std::string& outError);
 
 void imGuiDialogs();
 void updateDiffParams();

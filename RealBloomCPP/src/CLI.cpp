@@ -6,8 +6,8 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "ColorManagement/CMS.h"
 #include "ColorManagement/CMF.h"
 #include "ColorManagement/CmXYZ.h"
-#include "ColorManagement/CMImage.h"
-#include "ColorManagement/CMImageIO.h"
+#include "ColorManagement/CmImage.h"
+#include "ColorManagement/CmImageIO.h"
 
 #include "RealBloom/DiffractionPattern.h"
 #include "RealBloom/Dispersion.h"

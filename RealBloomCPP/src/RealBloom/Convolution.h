@@ -6,7 +6,7 @@
 #include <thread>
 #include <chrono>
 
-#include "../ColorManagement/CMImage.h"
+#include "../ColorManagement/CmImage.h"
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/Bilinear.h"
 #include "../Utils/RandomNumber.h"

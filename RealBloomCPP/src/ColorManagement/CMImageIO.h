@@ -13,13 +13,17 @@
 namespace OCIO = OpenColorIO_v2_1;
 
 #include "CMS.h"
-#include "CMImage.h"
+#include "CmImage.h"
 
 #include "../Utils/Misc.h"
 
 class CmImageIO
 {
 public:
+    CmImageIO() = delete;
+    CmImageIO(const CmImageIO&) = delete;
+    CmImageIO& operator= (const CmImageIO&) = delete;
+
     static bool readImageColorSpace(const std::string& filename, std::string& outColorSpace);
     static void readImage(CmImage& target, const std::string& filename, const std::string& colorSpace);
 

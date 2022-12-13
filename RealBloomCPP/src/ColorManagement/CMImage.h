@@ -26,6 +26,8 @@ class CmImage
 private:
     std::string m_id;
     std::string m_name;
+    std::string m_sourceName = "";
+
     uint32_t m_width, m_height;
     bool m_useExposure = true;
     bool m_useGlobalFB = true;
@@ -59,6 +61,9 @@ public:
 
     std::string getID();
     std::string getName();
+
+    std::string getSourceName();
+    void setSourceName(const std::string& sourceName);
 
     void lock();
     void unlock();

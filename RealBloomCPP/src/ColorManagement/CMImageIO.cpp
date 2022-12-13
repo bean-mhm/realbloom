@@ -1,4 +1,4 @@
-#include "CMImageIO.h"
+#include "CmImageIO.h"
 
 bool CmImageIO::readImageColorSpace(const std::string& filename, std::string& outColorSpace)
 {
@@ -177,6 +177,9 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename, const st
             std::copy(bufferRGBA.data(), bufferRGBA.data() + bufferRGBA.size(), targetBuffer);
         }
         target.moveToGPU();
+
+        // Update target source name
+        target.setSourceName(std::filesystem::path(filename).filename().string());
     }
     catch (const std::exception& e)
     {
@@ -275,6 +278,9 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
         {
             throw std::exception(strFormat("Couldn't open output file \"%s\".", filename.c_str()).c_str());
         }
+
+        // Update target source name
+        source.setSourceName(std::filesystem::path(filename).filename().string());
     }
     catch (const std::exception& e)
     {
