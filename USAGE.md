@@ -96,7 +96,7 @@ This is the image we want to apply bloom on. We'll need an HDR image for this, w
 
 > Q: **How are HDR images displayed on a monitor?**
 
-> A: This is a huge topic, but I'll try to summarize what you'll need to know. Values higher than 1 *usually* get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out. However, some games and programs - including RealBloom - support [Tone Mapping](https://en.wikipedia.org/wiki/Tone_mapping) to nicely transform the raw floating-point values into something that looks more accurate. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the pixel values being clamped/clipped when *displayed*, they are still *stored* as floating-point values.
+> A: This is a huge topic, but I'll try to summarize what you'll need to know. Pixel values higher than 1 usually just get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out. Some games and programs - including RealBloom - support proper display/view transforms to nicely transform linear RGB trisimulus into something that can be correctly displayed on your monitor. This might inaccurately be called "tone mapping" in some cases. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the pixel values being clamped or transformed when *displayed*, they are still *stored* as their original floating-point values.
 
 > Q: **How do I enable "tone mapping" in RealBloom?**
 
