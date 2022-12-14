@@ -98,11 +98,13 @@ This is the image we want to apply bloom on. We'll need an HDR image for this, w
 
 > A: This is a huge topic, but I'll try to summarize what you'll need to know. Values higher than 1 *usually* get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out. However, some games and programs - including RealBloom - support [Tone Mapping](https://en.wikipedia.org/wiki/Tone_mapping) to nicely transform the raw floating-point values into something that looks more accurate. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the RGB values being clamped/clipped when *displayed*, they are still *stored* as floating-point values.
 
-> Q: **How do I enable tone mapping in RealBloom?**
+> Q: **How do I enable "tone mapping" in RealBloom?**
 
-> A: In the *Color Management* panel, you can switch the view to *AgX* to have a better view of HDR images. Note that this will mess up images that have already been transformed and gone through a camera, so this works best on raw scene-linear output from your rendering software.
+> A: RealBloom supports display/view transforms through OpenColorIO. The term "tone mapping" may be misleading here, as dispaly/view transforms are different and can be more advanced. In the *Color Management* panel, you can switch the view to *AgX* to have a better view of HDR images. Note that this will mess up images that have already been transformed and gone through a camera, so this works best on raw scene-linear output from your rendering software.
 
-*... ANYWAYS*
+> Q: **What is AgX?**
+
+> A: [AgX](https://github.com/sobotka/AgX) is an experimental OCIO config made by [Troy James Sobotka](https://twitter.com/troy_s), aimed at cinematic color transforms for scene-linear data. Troy is the author of the famous Filmic config for Blender, and a true master of color science. RealBloom uses a [fork](https://github.com/EaryChow/AgX) of AgX as its default user config, as well as its internal config (we'll discuss that later).
 
 In the *Convolution* panel, click on *Browse Input* and select an HDR image. I have included some example images in `demo/HDR Images`. For this demonstration, I will use `Leaves.exr` which is a render I made in Blender for demonstrating convolutional bloom.
 
@@ -217,7 +219,7 @@ For those of you interested, I'll quickly explain the Color Management panel and
 
 ### VIEW
 
-Here we can adjust how we *view* the image contained in the current slot. This does not affect the pixel values of the image in any way, it just changes how the image is displayed. RealBloom uses [OpenColorIO](https://opencolorio.org/) for color management. For more information, there will be links to some helpful articles about color management below.
+Here we can adjust how we *view* the image contained in the current slot, by changing the **display** type, the **view** transform, and optionally an artistic **look**. This does not affect the pixel values of the image in any way, it just changes how the image is displayed. RealBloom uses [OpenColorIO](https://opencolorio.org/) for color management. For more information, there will be links to some helpful articles about color management below.
 
 ### INFO
 
@@ -231,9 +233,9 @@ Color Matching Functions (CMF) help us go from wavelengths to [XYZ tristimulus](
 
 ### XYZ CONVERSION
 
-Here we can alter how the XYZ values from a CMF table get transformed into RGB values in the working space. The *User Config* method should be used if a CIE XYZ I-E color spaces exists in the user config. Otherwise, you can use the *Common Space* method and choose a color space that exists in both your config and RealBloom's internal OCIO config.
+Here we can alter how the XYZ values from a CMF table get transformed into RGB values in the working space. The *User Config* method should be used if a CIE XYZ I-E color space exists in the user config. Otherwise, you can use the *Common Space* method and choose a color space that exists in both your config and RealBloom's internal OCIO config.
 
-With the *Common Space* method, the XYZ values will be converted from XYZ in the internal config to the common color space in the internal config, then from the common space in the user config to the working color space in the user config.
+With the *Common Space* method, the XYZ values will be converted from XYZ in the internal config to the common space in the internal config, then from the common space in the user config to the working space.
 
 ## Command Line Interface
 
