@@ -101,7 +101,7 @@ RealBloom uses the following libraries:
 <!-- USAGE -->
 ## Using RealBloom
 
-Check out [this page](USAGE.md) for a step-by-step tutorial on getting started with RealBloom.
+Check out [this page](USAGE.md) for a step-by-step tutorial on getting started with RealBloom. This tutorial will cover most of the things you need to know.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -122,7 +122,7 @@ The project was made for Windows and built with MSVC, so you're going to need a 
 
 2. Open the solution `RealBloomCPP.sln` in Visual Studio.
 
-3. `RealBloomCPP` is the main project, while `RealBloomGPUConv` is a GPU helper program that gets used by the main program.*
+3. `RealBloomCPP` is the main project, while `RealBloomGPUConv` is a GPU helper program that gets used by the main program.
 
 4. Build the solution and run `RealBloom.exe`. Feel free to explore and play with the code!
 
