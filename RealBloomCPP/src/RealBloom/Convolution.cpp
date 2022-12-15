@@ -104,6 +104,8 @@ namespace RealBloom
 
     void Convolution::kernel(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
     {
+        // Parameters
+
         std::vector<float> kernelBuffer;
         uint32_t kernelBufferSize = 0;
         uint32_t kernelWidth = 0, kernelHeight = 0;
@@ -128,6 +130,7 @@ namespace RealBloom
         float cropH = fminf(fmaxf(m_params.kernelCropY, 0.1f), 1.0f);
         float rotation = m_params.kernelRotation;
 
+        bool kernelAutoExposure = m_params.kernelAutoExposure;
         float kernelExpMul = applyExposure(m_params.kernelExposure);
         float kernelContrast = m_params.kernelContrast;
 
@@ -143,55 +146,12 @@ namespace RealBloom
         scaledCenterX = (scaleW * (float)kernelWidth) / 2.0f;
         scaledCenterY = (scaleH * (float)kernelHeight) / 2.0f;
 
+        // return the result dimensions if requested
         if (!previewMode && (outBuffer == nullptr))
         {
             *outWidth = croppedWidth;
             *outHeight = croppedHeight;
             return;
-        }
-
-        // Normalize, apply contrast and exposure
-        {
-            // Get the brightest value
-            float v = 0;
-            float maxV = EPSILON;
-            for (uint32_t i = 0; i < kernelBufferSize; i++)
-            {
-                v = fmaxf(0.0f, kernelBuffer[i]);
-                if ((v > maxV) && (i % 4 != 3)) // if not alpha channel
-                    maxV = v;
-            }
-
-            uint32_t redIndex;
-            for (uint32_t y = 0; y < kernelHeight; y++)
-            {
-                for (uint32_t x = 0; x < kernelWidth; x++)
-                {
-                    redIndex = (y * kernelWidth + x) * 4;
-
-                    // Normalize
-                    kernelBuffer[redIndex + 0] /= maxV;
-                    kernelBuffer[redIndex + 1] /= maxV;
-                    kernelBuffer[redIndex + 2] /= maxV;
-
-                    // Calculate contrast for the grayscale value
-                    float grayscale = rgbToGrayscale(kernelBuffer[redIndex + 0], kernelBuffer[redIndex + 1], kernelBuffer[redIndex + 2]);
-                    float mul = kernelExpMul * (contrastCurve(grayscale, kernelContrast) / fmaxf(grayscale, EPSILON));
-
-                    // Apply contrast
-                    kernelBuffer[redIndex + 0] *= mul;
-                    kernelBuffer[redIndex + 1] *= mul;
-                    kernelBuffer[redIndex + 2] *= mul;
-
-                    // De-normalize if needed
-                    if (!m_params.kernelNormalize)
-                    {
-                        kernelBuffer[redIndex + 0] *= maxV;
-                        kernelBuffer[redIndex + 1] *= maxV;
-                        kernelBuffer[redIndex + 2] *= maxV;
-                    }
-                }
-            }
         }
 
         // Scale and Rotation
@@ -299,8 +259,72 @@ namespace RealBloom
 
         clearVector(scaledBuffer);
 
+        // Apply contrast and exposure
+        {
+            // Get the brightest value
+            float maxV = EPSILON;
+            for (uint32_t i = 0; i < croppedBufferSize; i++)
+            {
+                float v = fmaxf(0.0f, croppedBuffer[i]);
+                if ((v > maxV) && (i % 4 != 3)) // if not alpha channel
+                    maxV = v;
+            }
+
+            for (uint32_t y = 0; y < croppedHeight; y++)
+            {
+                for (uint32_t x = 0; x < croppedWidth; x++)
+                {
+                    uint32_t redIndex = (y * croppedWidth + x) * 4;
+
+                    // Normalize
+                    croppedBuffer[redIndex + 0] /= maxV;
+                    croppedBuffer[redIndex + 1] /= maxV;
+                    croppedBuffer[redIndex + 2] /= maxV;
+
+                    // Calculate contrast for the grayscale value
+                    float grayscale = rgbToGrayscale(croppedBuffer[redIndex + 0], croppedBuffer[redIndex + 1], croppedBuffer[redIndex + 2]);
+                    float mul = kernelExpMul * maxV * (contrastCurve(grayscale, kernelContrast) / fmaxf(grayscale, EPSILON));
+
+                    // Apply contrast and de-normalize
+                    croppedBuffer[redIndex + 0] *= mul;
+                    croppedBuffer[redIndex + 1] *= mul;
+                    croppedBuffer[redIndex + 2] *= mul;
+                }
+            }
+        }
+
+        bool outerRequest = (!previewMode && (outBuffer != nullptr));
+
+        // Auto-adjust the exposure
+        if (kernelAutoExposure && outerRequest)
+        {
+            // Get the sum of the grayscale values
+            float sumV = 0.0f;
+            for (uint32_t y = 0; y < croppedHeight; y++)
+            {
+                for (uint32_t x = 0; x < croppedWidth; x++)
+                {
+                    uint32_t redIndex = (y * croppedWidth + x) * 4;
+
+                    float grayscale = rgbToGrayscale(croppedBuffer[redIndex + 0], croppedBuffer[redIndex + 1], croppedBuffer[redIndex + 2]);
+                    sumV += fmaxf(0.0f, grayscale);
+                }
+            }
+
+            // To avoid division by zero
+            sumV = fmaxf(EPSILON, sumV);
+
+            // Divide by the sum, and cancel out the convolution multiplier
+            float mul = 1.0 / ((double)sumV * (double)CONV_MULTIPLIER);
+            for (uint32_t i = 0; i < croppedBufferSize; i++)
+            {
+                if (i % 4 != 3) // if not alpha channel
+                    croppedBuffer[i] *= mul;
+            }
+        }
+
         // Copy to outBuffer if it's requested by another function
-        if (!previewMode && (outBuffer != nullptr))
+        if (outerRequest)
         {
             *outWidth = croppedWidth;
             *outHeight = croppedHeight;
@@ -514,7 +538,8 @@ namespace RealBloom
                                 convBuffer
                             );
                         }
-                    } catch (const std::exception& e)
+                    }
+                    catch (const std::exception& e)
                     {
                         setErrorState(e.what());
                     }

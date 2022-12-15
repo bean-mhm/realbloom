@@ -96,7 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;$(SolutionDir)RealBloomCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -115,7 +115,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;$(SolutionDir)RealBloomCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -134,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;$(SolutionDir)RealBloomCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -153,7 +153,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;$(SolutionDir)RealBloomCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -167,6 +167,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\RealBloomCPP\src\Config.cpp" />
     <ClCompile Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.cpp" />
     <ClCompile Include="..\RealBloomCPP\src\Utils\GlUtils.cpp" />
     <ClCompile Include="..\RealBloomCPP\src\Utils\Misc.cpp" />
@@ -180,6 +181,8 @@
     <Library Include="libs\glew32s.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\RealBloomCPP\include\inih\INIReader.h" />
+    <ClInclude Include="..\RealBloomCPP\src\Config.h" />
     <ClInclude Include="..\RealBloomCPP\src\RealBloom\ConvolutionGPUBinary.h" />
     <ClInclude Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.h" />
     <ClInclude Include="..\RealBloomCPP\src\Utils\GlUtils.h" />

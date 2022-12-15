@@ -314,15 +314,15 @@ void layout()
         ImGui::TextWrapped(imageName.c_str());
         ImGui::PopFont();
 
+        ImGui::PushFont(fontMono);
+
         // Size
         uint32_t imageWidth = selImage.getWidth();
         uint32_t imageHeight = selImage.getHeight();
-        ImGui::Text("Size: %dx%d", imageWidth, imageHeight);
+        ImGui::Text("%dx%d", imageWidth, imageHeight);
 
         // Zoom
         {
-            ImGui::PushFont(fontMono);
-
             ImGui::Text(strRightPadding(std::to_string((int)roundf(imageZoom * 100.0f)) + "%%", 5, false).c_str());
 
             ImGui::SameLine();
@@ -336,9 +336,9 @@ void layout()
             ImGui::SameLine();
             if (ImGui::SmallButton("R"))
                 imageZoom = 1.0f;
-
-            ImGui::PopFont();
         }
+
+        ImGui::PopFont();
 
         ImGui::Image(
             (void*)(intptr_t)(selImage.getGlTexture()),
@@ -450,7 +450,7 @@ void layout()
         {
             static std::string loadError;
             if (ImGui::Button("Browse Input##Conv", btnSize()))
-                loadImage(imgConvInput, imgConvInput.getID(), []() {}, loadError);
+                loadImage(imgConvInput, imgConvInput.getID(), []() { vars.convThresholdChanged = true; }, loadError);
             imGuiText(loadError, true, false);
         }
 
@@ -466,9 +466,6 @@ void layout()
 
         IMGUI_DIV;
         IMGUI_BOLD("KERNEL");
-
-        if (ImGui::Checkbox("Normalize##Kernel", &(vars.cv_kernelNormalize)))
-            vars.convParamsChanged = true;
 
         if (ImGui::SliderFloat("Exposure##Kernel", &(vars.cv_kernelExposure), -10, 10))
             vars.convParamsChanged = true;
@@ -609,6 +606,11 @@ void layout()
             }
             vars.convThresholdChanged = false;
         }
+
+        ImGui::Checkbox("Auto-Exposure##Kernel", &(vars.cv_kernelAutoExposure));
+
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Adjust the exposure to match the brightness of the convolution layer to that of the input.");
 
         if (ImGui::Button("Convolve##Conv", btnSize()))
         {
@@ -1224,7 +1226,6 @@ void updateConvParams()
     params->methodInfo.numThreads = vars.cv_numThreads;
     params->methodInfo.numChunks = vars.cv_numChunks;
     params->methodInfo.chunkSleep = vars.cv_chunkSleep;
-    params->kernelNormalize = vars.cv_kernelNormalize;
     params->kernelExposure = vars.cv_kernelExposure;
     params->kernelContrast = vars.cv_kernelContrast;
     params->kernelRotation = vars.cv_kernelRotation;
@@ -1237,6 +1238,7 @@ void updateConvParams()
     params->kernelCenterY = vars.cv_kernelCenter[1];
     params->convThreshold = vars.cv_convThreshold;
     params->convKnee = vars.cv_convKnee;
+    params->kernelAutoExposure = vars.cv_kernelAutoExposure;
 }
 
 ImVec2 btnSize()
@@ -1401,7 +1403,7 @@ void applyStyle_RealBloomGray()
     style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(1.0, 1.0, 1.0, 0.1176470592617989);
     style.Colors[ImGuiCol_FrameBgActive] = ImVec4(1.0, 1.0, 1.0, 0.196078434586525);
     style.Colors[ImGuiCol_TitleBg] = ImVec4(0.1098039224743843, 0.1098039224743843, 0.1098039224743843, 1.0);
-    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.1568627506494522, 0.1568627506494522, 0.1568627506494522, 1.0);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.1098039224743843, 0.1098039224743843, 0.1098039224743843, 1.0);
     style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.1098039224743843, 0.1098039224743843, 0.1098039224743843, 1.0);
     style.Colors[ImGuiCol_MenuBarBg] = ImVec4(1.0, 1.0, 1.0, 0.062745101749897);
     style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.0, 0.0, 0.0, 0.1176470592617989);

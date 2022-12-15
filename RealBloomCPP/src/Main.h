@@ -89,7 +89,6 @@ struct UiVars
     bool dispParamsChanged = false;
 
     // Convolution Kernel
-    bool cv_kernelNormalize = true;
     float cv_kernelExposure = 0.0f;
     float cv_kernelContrast = 0.0f;
     float cv_kernelRotation = 0.0f;
@@ -101,17 +100,20 @@ struct UiVars
     float cv_kernelCenter[2] = { 0.5f, 0.5f };
     bool convParamsChanged = false;
 
-    // Convolution Threshold
-    float cv_convThreshold = 0.5f;
-    float cv_convKnee = 0.0f;
-    bool convThresholdChanged = false;
-    bool convThresholdSwitchImage = false;
-
     // Convolution Method
     int cv_method = 0;
     int cv_numThreads = getDefNumThreads();
     int cv_numChunks = 10;
     int cv_chunkSleep = 0;
+
+    // Convolution Threshold
+    float cv_convThreshold = 0.0f;
+    float cv_convKnee = 0.0f;
+    bool convThresholdChanged = false;
+    bool convThresholdSwitchImage = false;
+
+    // Kernel Auto-Exposure
+    bool cv_kernelAutoExposure = true;
 
     // Convolution Mix (Layers)
     bool cm_additive = false;
