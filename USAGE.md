@@ -92,19 +92,19 @@ This is the image we want to apply bloom on. We'll need an HDR image for this, w
 
 > Q: **How do you store an HDR image?**
 
-> A: Image formats like OpenEXR and TIFF allow us to save the RGB values as floating-point numbers that don't really have a range.
+> A: Image formats like OpenEXR and TIFF allow us to save the pixel data as floating-point numbers that don't really have a range.
 
 > Q: **How are HDR images displayed on a monitor?**
 
-> A: This is a huge topic, but I'll try to summarize what you'll need to know. Values higher than 1 *usually* get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out. However, some games and programs - including RealBloom - support [Tone Mapping](https://en.wikipedia.org/wiki/Tone_mapping) to nicely transform the raw floating-point values into something that looks more accurate. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the RGB values being clamped/clipped when *displayed*, they are still *stored* as floating-point values.
+> A: This is a huge topic, but I'll try to summarize what you'll need to know. Pixel values higher than 1 usually just get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out. Some games and programs - including RealBloom - support proper display/view transforms to nicely transform linear RGB trisimulus into something that can be correctly displayed on your monitor. This might inaccurately be called "tone mapping" in some cases. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the pixel values being clamped or transformed when *displayed*, they are still *stored* as their original floating-point values.
 
 > Q: **How do I enable "tone mapping" in RealBloom?**
 
-> A: RealBloom supports display/view transforms through OpenColorIO. The term "tone mapping" may be misleading here, as dispaly/view transforms are different and can be more advanced. In the *Color Management* panel, you can switch the view to *AgX* to have a better view of HDR images. Note that this will mess up images that have already been transformed and gone through a camera, so this works best on raw scene-linear output from your rendering software.
+> A: RealBloom supports display/view transforms through OpenColorIO. The term "tone mapping" may be misleading here, as display/view transforms are different and can be more advanced. In the *Color Management* panel, you can switch the view to *AgX* to have a better view of HDR images. Note that this will mess up images that have already been transformed and gone through a camera, so this works best on raw linear tristimulus output from your rendering software.
 
 > Q: **What is AgX?**
 
-> A: [AgX](https://github.com/sobotka/AgX) is an experimental OCIO config made by [Troy James Sobotka](https://twitter.com/troy_s), aimed at cinematic color transforms for scene-linear data. Troy is the author of the famous Filmic config for Blender, and a true master of color science. RealBloom uses a [fork](https://github.com/EaryChow/AgX) of AgX as its default user config, as well as its internal config (we'll discuss that later).
+> A: [AgX](https://www.elsksa.me/scientia/cgi-offline-rendering/rendering-transform) is an experimental OCIO config made by [Troy James Sobotka](https://twitter.com/troy_s), aimed at cinematic and accurate color transforms. Troy is the author of the famous Filmic config for Blender, and a true master of color science. RealBloom uses a [fork](https://github.com/EaryChow/AgX) of AgX as its default user config, as well as its internal config (we'll discuss that later).
 
 In the *Convolution* panel, click on *Browse Input* and select an HDR image. I have included some example images in `demo/HDR Images`. For this demonstration, I will use `Leaves.exr` which is a render I made in Blender for demonstrating convolutional bloom.
 
