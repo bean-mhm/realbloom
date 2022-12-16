@@ -229,7 +229,7 @@ This section displays the working color space of the current OCIO config, or mor
 
 ### COLOR MATCHING
 
-Color Matching Functions (CMF) help us go from wavelengths to [XYZ tristimulus](https://en.wikipedia.org/wiki/CIE_1931_color_space). This is used in Dispersion. You can hit the *Preview* button to see what will be sampled for dispersion.
+Color Matching Functions (CMF) help us go from wavelengths to [XYZ tristimulus](https://en.wikipedia.org/wiki/CIE_1931_color_space) when simulating dispersion. RealBloom looks for [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) tables in the `cmf` folder located in the program directory to recognize and parse the available CMF tables. There are a few CMF tables included by default. You can hit *Preview* to see what will be sampled for dispersion.
 
 ### XYZ CONVERSION
 
