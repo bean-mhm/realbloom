@@ -284,6 +284,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
     }
     catch (const std::exception& e)
     {
+        deleteFile(filename);
         throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
     }
 }
