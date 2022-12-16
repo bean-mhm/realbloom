@@ -197,7 +197,7 @@ Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/b
 
 Harry Bean (Developer)
  - Email: [harry.bean.dev@gmail.com](mailto:harry.bean.dev@gmail.com)
- - Instagram: [@bean.idefk](https://www.instagram.com/bean.idefk/)
+ - Discord: `!bean#0446`
 
 Project Link: [https://github.com/bean-mhm/realbloom](https://github.com/bean-mhm/realbloom)
 
