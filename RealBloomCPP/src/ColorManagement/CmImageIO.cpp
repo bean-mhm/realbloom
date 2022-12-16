@@ -222,11 +222,19 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
         }
         source.unlock();
 
-        // Color Space Conversion
+        // Get the OCIO config
         CMS::ensureOK();
+        OCIO::ConstConfigRcPtr config = CMS::getConfig();
+
+        // Resolve color space name
+        OCIO::ConstColorSpaceRcPtr cs = config->getColorSpace(colorSpace.c_str());
+        if (cs.get() == nullptr)
+            throw std::exception(strFormat("Color space \"%s\" was not found.", colorSpace.c_str()).c_str());
+        std::string csName = cs->getName();
+
+        // Color space conversion
         try
         {
-            OCIO::ConstConfigRcPtr config = CMS::getConfig();
             OCIO::PackedImageDesc img(
                 bufferRGB.data(),
                 xres,
@@ -239,7 +247,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
 
             OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
             transform->setSrc(OCIO::ROLE_SCENE_LINEAR);
-            transform->setDst(colorSpace.c_str());
+            transform->setDst(csName.c_str());
 
             OCIO::ConstProcessorRcPtr proc = config->getProcessor(transform);
             OCIO::ConstCPUProcessorRcPtr cpuProc = proc->getDefaultCPUProcessor();
@@ -262,8 +270,8 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
 
         // Write output
         OIIO::ImageSpec spec(xres, yres, 3, OIIO::TypeDesc::FLOAT);
-        spec.attribute("oiio:ColorSpace", OIIO::TypeDesc::TypeString, colorSpace);
-        spec.attribute("colorspace", OIIO::TypeDesc::TypeString, colorSpace);
+        spec.attribute("oiio:ColorSpace", OIIO::TypeDesc::TypeString, csName);
+        spec.attribute("colorspace", OIIO::TypeDesc::TypeString, csName);
         if (out->open(filename, spec))
         {
             if (out->write_image(OIIO::TypeDesc::FLOAT, bufferRGB.data()))
@@ -284,7 +292,6 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
     }
     catch (const std::exception& e)
     {
-        deleteFile(filename);
         throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
     }
 }
