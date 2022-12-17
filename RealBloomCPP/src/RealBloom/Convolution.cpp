@@ -281,14 +281,17 @@ namespace RealBloom
                     croppedBuffer[redIndex + 1] /= maxV;
                     croppedBuffer[redIndex + 2] /= maxV;
 
-                    // Calculate contrast for the grayscale value
+                    // Calculate the grayscale value
                     float grayscale = rgbToGrayscale(croppedBuffer[redIndex + 0], croppedBuffer[redIndex + 1], croppedBuffer[redIndex + 2]);
-                    float mul = kernelExpMul * maxV * (contrastCurve(grayscale, kernelContrast) / fmaxf(grayscale, EPSILON));
 
                     // Apply contrast and de-normalize
-                    croppedBuffer[redIndex + 0] *= mul;
-                    croppedBuffer[redIndex + 1] *= mul;
-                    croppedBuffer[redIndex + 2] *= mul;
+                    if (grayscale > 0.0f)
+                    {
+                        float mul = kernelExpMul * maxV * (contrastCurve(grayscale, kernelContrast) / grayscale);
+                        croppedBuffer[redIndex + 0] *= mul;
+                        croppedBuffer[redIndex + 1] *= mul;
+                        croppedBuffer[redIndex + 2] *= mul;
+                    }
                 }
             }
         }

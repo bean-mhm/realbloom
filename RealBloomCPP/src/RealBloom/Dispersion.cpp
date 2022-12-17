@@ -120,14 +120,17 @@ namespace RealBloom
                     inputBuffer[redIndex + 1] /= maxV;
                     inputBuffer[redIndex + 2] /= maxV;
 
-                    // Calculate contrast for the grayscale value
+                    // Calculate the grayscale value
                     float grayscale = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
-                    float mul = expMul * maxV * (contrastCurve(grayscale, contrast) / fmaxf(grayscale, EPSILON));
 
                     // Apply contrast and de-normalize
-                    inputBuffer[redIndex + 0] *= mul;
-                    inputBuffer[redIndex + 1] *= mul;
-                    inputBuffer[redIndex + 2] *= mul;
+                    if (grayscale > 0.0f)
+                    {
+                        float mul = expMul * maxV * (contrastCurve(grayscale, contrast) / grayscale);
+                        inputBuffer[redIndex + 0] *= mul;
+                        inputBuffer[redIndex + 1] *= mul;
+                        inputBuffer[redIndex + 2] *= mul;
+                    }
                 }
             }
         }
