@@ -1,8 +1,9 @@
 
 
+
 # Quick Start
 
-This tutorial intends to get your hands on RealBloom as quickly as possible. Below we'll go through the process of applying convolutional bloom - A.K.A. the super cool physically accurate realistic bloom sauce -  on an HDR image. So buckle up, run the [latest release](https://github.com/bean-mhm/realbloom/releases) of RealBloom, and let's get started.
+This tutorial intends to get your hands on RealBloom as quickly as possible. Below we'll go through the process of applying convolutional bloom - A.K.A. the super cool physically accurate realistic bloom sauce - on a 3D render. So buckle up, run the [latest release](https://github.com/bean-mhm/realbloom/releases) of RealBloom, and let's get started.
 
 ## Wait
 
@@ -14,13 +15,13 @@ RealBloom provides 3 main functionalities, in order to achieve the so-called phy
 
  1. Simulating the **Diffraction Pattern** of an aperture
  2. Applying **Dispersion** on the pattern
- 3. Performing **Convolution** on an HDR image
+ 3. Performing **Convolution** on an image
 
 If any or all of these terms sound alien to you, fear not, as they'll be explained below.
 
 ## Interface
 
-We'll start by observing the user interface. RealBloom's interface is rather simple, and there's only a single main window that provides everything we need. Let's see how everything is laid out.
+We'll start by observing the user interface. RealBloom's interface is rather simple, and there's a single main window that provides everything we need. Let's see how everything is laid out.
 
 ![RealBloom Screenshot](images/4-interface.png)
 
@@ -82,31 +83,31 @@ Now, hit *Save* in the *Image List* panel, and save the dispersion result as `ke
 
 > I know these color space stuff may seem confusing or scary to some readers, so I've included links to some really helpful articles about color science at the end, written by experienced people in the industry.
  
-## Convolution Input & HDR Images
+## Convolution Input
 
-This is the image we want to apply bloom on. We'll need an HDR image for this, which preserves bright values instead of clipping.
+This is the image we want to apply bloom on. We'll need an open-domain image for this, which preserves pixel values outside the 0-1 range.
 
-> Q: **What do you mean by an HDR image?**
+> Q: **What on earth is an Open-Domain Image?**
 
-> A: Most everyday image formats - including PNG and JPEG - do not have a high dynamic range, and their RGB values are clamped between 0 and 1, making it impossible to apply bloom accurately. An HDR image can contain color values higher than 1 to represent brighter spots.
+> A: Most everyday image formats such as PNG and JPEG can only have RGB values from 0-1, which translates to 0-255 when stored using 8-bit integers. An open-domain image accepts any real number for its pixel values, while also providing more depth and precision, as it is typically stored using 32-bit or 16-bit floating-point numbers. This may be called an "HDR" image in some articles.
 
-> Q: **How do you store an HDR image?**
+> Q: **How do you store these images?**
 
-> A: Image formats like OpenEXR and TIFF allow us to save the pixel data as floating-point numbers that don't really have a range.
+> A: Image formats like [OpenEXR](https://en.wikipedia.org/wiki/OpenEXR) and [TIFF](https://en.wikipedia.org/wiki/TIFF) allow us to store pixel data as floating-point numbers that aren't limited to any range.
 
-> Q: **How are HDR images displayed on a monitor?**
+> Q: **How do you display them on a monitor?**
 
-> A: This is a huge topic, but I'll try to summarize what you'll need to know. Pixel values higher than 1 usually just get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out. Some games and programs - including RealBloom - support proper display/view transforms to nicely transform linear RGB trisimulus into something that can be correctly displayed on your monitor. This might inaccurately be called "tone mapping" in some cases. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the pixel values being clamped or transformed when *displayed*, they are still *stored* as their original floating-point values.
+> A: This is a huge topic, but I'll try to summarize what you'll need to know. Pixel values higher than 1 usually just get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out. Some games and programs support proper display/view transforms to nicely convert linear RGB tristimulus into something that can be correctly displayed on your monitor. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the pixel values being clamped or transformed when *displayed*, they are still *stored* as their original floating-point values.
 
-> Q: **How do I enable "tone mapping" in RealBloom?**
+> Q: **Does RealBloom support display transforms?**
 
-> A: RealBloom supports display/view transforms through OpenColorIO. The term "tone mapping" may be misleading here, as display/view transforms are different and can be more advanced. In the *Color Management* panel, you can switch the view to *AgX* to have a better view of HDR images. Note that this will mess up images that have already been transformed and gone through a camera, so this works best on raw linear tristimulus output from your rendering software.
+> A: Yes. RealBloom supports display/view transforms through [OpenColorIO](https://opencolorio.org/). In the *Color Management* panel, you can switch the view to *AgX* to have a better view of 3D scenes. Note that this will mess up images that have already been transformed and gone through a camera, so this works best on raw linear tristimulus output from your rendering software, typically stored in an OpenEXR image.
 
 > Q: **What is AgX?**
 
 > A: [AgX](https://www.elsksa.me/scientia/cgi-offline-rendering/rendering-transform) is an experimental OCIO config made by [Troy James Sobotka](https://twitter.com/troy_s), aimed at cinematic and accurate color transforms. Troy is the author of the famous Filmic config for Blender, and a true master of color science. RealBloom uses a [fork](https://github.com/EaryChow/AgX) of AgX as its default user config, as well as its internal config (we'll discuss that later).
 
-In the *Convolution* panel, click on *Browse Input* and select an HDR image. I have included some example images in `demo/HDR Images`. For this demonstration, I will use `Leaves.exr` which is a render I made in Blender for demonstrating convolutional bloom.
+In the *Convolution* panel, click on *Browse Input* and select an HDR (open-domain) image. I have included some example images in `demo/Images`. For this tutorial, I will use `Leaves.exr` which is a render I made in Blender for demonstrating convolutional bloom.
 
 After opening, you'll be prompted to choose the color space of the image, *again*. This will be detected automatically for images in the `demo` folder, and all images exported from RealBloom. You can safely hit *OK* and continue on.
 
@@ -124,14 +125,13 @@ The kernel is what defines the "shape" of the bloom pattern. Meaning, convolutio
 
 > A: Convolution is like a moving weighted average that can be performed on a 1D signal like audio or a 2D image, or any number of dimensions really. It is really powerful, and can be used to achieve lots of cool audio and image effects, as well as a million other things in different fields. I highly, *highly* recommend watching [this video](https://youtu.be/KuXjwB4LzSA) by 3Blue1Brown to get a better understanding of convolution.
 
-Click on *Browse Kernel* and choose the dispersion result from before. This will switch the current slot to *Conv. Kernel*.
+Click on *Browse Kernel* and choose the dispersion result from before. This will switch the current slot to *Conv. Kernel*. I'll also reset my view exposure to zero.
 
 > The kernel doesn't necessarily have to be a diffraction pattern. You can use anything as the kernel, so definitely try experimenting with it.
 
 Let's see what each slider in the *KERNEL* section does.
 | Parameter | Effect |
 |--|--|
-| Normalize | This will adjust the brightness so that the brightest value is 1. |
 | Exposure | Exposure adjustment |
 | Contrast | Contrast adjustment |
 | Rotation | Rotation in degrees |
@@ -142,11 +142,11 @@ Let's see what each slider in the *KERNEL* section does.
 
 ![An HDR image loaded as the convolution kernel](images/tutorial/5-kernel-1.png)
 
-The kernel looks way darker than what we saved, this is because it has been normalized. We can disable normalization, but it's usually best to keep it on. So let's adjust the kernel exposure and contrast until it looks right. We don't want the kernel to be too bright, though.
+Let's adjust the kernel exposure and contrast until we like it.
 
 ![Adjusting the kernel exposure and contrast](images/tutorial/5-kernel-2.png)
 
-Now, since most outer parts of the kernel are black, we can crop it to increase performance. To determine the right amount of cropping, I'll increase the kernel exposure to something really high like +12, and slowly decrease the crop amount until it barely touches the edges of the pattern.
+Now, since most outer parts of the kernel are black, we can crop it to increase performance. To determine the right amount of cropping, I'll maximize my kernel exposure, and slowly decrease the crop amount until it barely touches the edges of the pattern.
 
 > Ctrl+Click on a slider to type a custom value.
 
@@ -177,6 +177,14 @@ In the Naive (CPU) method, you can split the job between multiple threads that r
 
 For this tutorial, we'll go with FFT (CPU).
 
+### GPU Helper
+
+The Naive (GPU) method uses RealBloom's GPU helper program, `RealBloomGPUConv.exe`, to try and perform convolution on the dedicated GPU, while the main program is intended to run on the integrated GPU. This is only relevant for Dual-GPU systems.
+
+You can check your `%TEMP%` directory and look for a text file such as `gpuconv000000log.txt`, the middle part is random. This log file will contain the name of the GPU ("Renderer") on which the GPU helper ran. If the GPU helper isn't using the desired GPU, visit **Windows Settings > System > Display > Graphics**  to change the default/preferred GPU for `RealBloomGPUConv.exe`. This might differ for older versions of Windows.
+
+> There's no official way to choose a specific GPU device using OpenGL on Windows. However, we can "signal" to NVIDIA and AMD drivers that "this program needs the high-performance GPU". RealBloom's main program does not contain this signal, but the GPU helper does. This makes the process easier on most Dual-GPU systems, as the UI continues to render smoothly while the dedicated GPU is busy.
+
 ## Convolution Threshold
 
 The threshold defines the darkest a pixel can go before being ignored by the convolution process. We can increase the threshold to skip pixels that aren't bright enough to contribute to the final result. The *Knee* parameter defines how smooth the transition will be. A higher threshold speeds up the process in the naive methods, but it does not affect the performance in the FFT method.
@@ -187,13 +195,9 @@ In *Conv. Preview*, we can preview what the convolution process will see after t
 
 Using a threshold of 0 and mixing the convolution output with the original input generally gives more realistic and appealing results, so we'll set the threshold to 0 for this tutorial, which will leave the input image unchanged.
 
-### GPU Helper
+## Auto-Exposure
 
-The Naive (GPU) method uses RealBloom's GPU helper program, `RealBloomGPUConv.exe`, to try and perform convolution on the dedicated GPU, while the main program is intended to run on the integrated GPU. This is only relevant for Dual-GPU systems.
-
-You can check your `%TEMP%` directory and look for a text file such as `gpuconv000000log.txt`, the middle part is random. This log file will contain the name of the GPU ("Renderer") on which the GPU helper ran. If the GPU helper isn't using the desired GPU, visit **Windows Settings > System > Display > Graphics**  to change the default/preferred GPU for `RealBloomGPUConv.exe`. This might differ for older versions of Windows.
-
-> There's no official way to choose a specific GPU device using OpenGL on Windows. However, we can "signal" to NVIDIA and AMD drivers that "this program needs the high-performance GPU". RealBloom's main program does not contain this signal, but the GPU helper does. This makes the process easier on most Dual-GPU systems, as the UI continues to render smoothly while the dedicated GPU is busy.
+This option will adjust the exposure of the kernel in order to match the brightness of the convolution output to that of the input. This is done by making the pixel values in the kernel add up to 1, hence leaving the brightness unchanged. We'll have this on for this demonstration.
  
 ## Convolve, Mix, Compare
 
@@ -201,11 +205,11 @@ After having loaded an input and a kenrel, and set all the parameters, hit this 
 
 ![Convolution result](images/tutorial/7-convmix.png)
 
-Let's hit *Show Conv. Layer* to see how the convolution output looks like on its own.
+Look, we have a sun! Let's hit *Show Conv. Layer* to see how the convolution output looks like on its own.
 
 ![Convolution layer](images/tutorial/8-convlayer.png)
 
-Generally speaking, the convolution layer should have the same overall brightness as the input. We can move the *Mix* slider back and forth and adjust the exposure of the convolution layer using the *Exposure* slider in the *LAYERS* section. In this case, however, we'll keep the exposure at 0 and set the mix to 0.1.
+Generally speaking, the convolution layer should have the same overall brightness as the input. We can use the *Exposure* slider in the *LAYERS* section to adjust the exposure of the convolution layer. In this case, we don't need to do this, since we had enabled Auto-Exposure. We'll set the mix to 0.1 to gently introduce some bloom to our image.
 
 > You can enable additive blending using the *Additive* checkbox. However, it's usually more accurate and best not to use this mode.
 
@@ -215,7 +219,7 @@ You'll notice a *Compare* button has appeared In the *Image List* panel. We can 
 
 ## Color Management
 
-For those of you interested, I'll quickly explain the Color Management panel and what it contains.
+For those of you interested, I'll quickly explain the Color Management panel and what it provides.
 
 ### VIEW
 
@@ -243,9 +247,11 @@ RealBloom has a CLI that can be used from within a terminal, or any other progra
 
 > If you run RealBloom with a command that isn't supported, or is empty, RealBloom will start its GUI. Otherwise, it'll process the command. This is why you get the GUI when opening the program normally.
 
-## Creativity
+## Animations
 
-Despite this being a project for simulating physics phenomena, you can get really weird and artistic with the parameters and achieve some interesting results. My advice is to definitely try out some unusual settings and see what you can make. You can use an irrelevant image as the kernel, an unfitting image as the aperture shape, etc.
+As mentioned above, a CLI opens the possibility to use RealBloom on animations. You can get started by taking a look at `demo/Scripts/anim_conv.py` which is a basic Python script for performing convolution on a sequence of frames.
+
+## Community
 
 If you use RealBloom on your artwork, or make an artwork using RealBloom, feel free to publish it on Twitter or Instagram under #realbloom.
 
@@ -255,7 +261,7 @@ If you find RealBloom useful, consider introducing it to a friend or anyone who 
 
 ## Special Thanks
 
-I want to say a huge thank you to  [Nihal](https://twitter.com/Mulana3D)  and their colleagues for supporting the development of RealBloom, by helping with researchs, testing dev builds and finding bugs, suggesting new features - including a CLI, the use of OCIO, adding demo kernels, etc. - and trying out RealBloom on their artworks and renders.
+I want to say a huge thank you to  [Nihal](https://twitter.com/Mulana3D)  and their colleagues for supporting the development of RealBloom, by helping with research, testing dev builds and finding bugs, suggesting new features - including a CLI, the use of OCIO, adding demo kernels, etc. - and trying out RealBloom on their artworks and renders.
 
 ## Read More
 
