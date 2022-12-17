@@ -42,7 +42,7 @@ As of now, there are 6 panels, each for a specific purpose. A panel can be docke
 
 ## Aperture
 
-An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a [diffraction](https://en.wikipedia.org/wiki/Diffraction) pattern to form, which affects all the images taken by the camera. The diffraction pattern usually looks like a star with a halo around it, but it depends on the shape of the aperture. This is what makes stars have *the star shape* in the first place.
+An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a [diffraction](https://en.wikipedia.org/wiki/Diffraction) pattern to form, which affects all the images taken by the camera. The diffraction pattern usually looks like a star with a halo around it, but it generally depends on the shape of the aperture. This is what makes stars have *the star shape* in the first place.
 
 Let's start by loading an image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Heptagon.png`.
 
@@ -56,7 +56,7 @@ Let's see what the diffraction pattern of our aperture looks like. We'll continu
 
 ![Diffraction pattern of a heptagon](images/tutorial/2-diff.png)
 
-> The *Grayscale* checkbox can be enabled for color images, in order to make the image black-and-white before feeding it to the FFT algorithm. If disabled, FFT will be performed on all color channels separately.
+> The *Grayscale* checkbox can be enabled for colored images, in order to make the image black-and-white before feeding it to the FFT algorithm. If disabled, FFT will be performed on all color channels separately.
 
 I've increased my view exposure in the *Color Management* panel so that we can see the image properly. As you can see, this is a star with 14 blades, double the number of sides! You can experiment and see how this relation differs for other regular polygons.
 
@@ -66,10 +66,10 @@ Notice how the selected image slot has changed to *Dispersion Input*. We could u
 
 Our little star pattern isn't quite ready to be used yet. In the real world, the scale of the pattern depends on the wavelength of the light, making it appear colorful and "rainbow-ey". We can simulate [this phenomenon](https://en.wikipedia.org/wiki/Dispersion_%28optics%29) in the *DISPERSION* section. Here's what each slider does:
 
-| Parameter | Effect |
+| Parameter | Description |
 |--|--|
-| Exposure | Exposure of the input |
-| Contrast | Contrast of the input |
+| Exposure | Exposure adjustment |
+| Contrast | Contrast adjustment |
 | Steps | Number of wavelengths to sample from the visible light spectrum. A value of 32 is only enough for previewing. For a final result, use a higher value. |
 | Amount | Amount of dispersion. This is a linear value between 0 and 1 which affects the smallest scale. A normal range would be 0.3 - 0.6. |
 | Color | Multiplies the dispersion result with a custom color. You would want to keep this at white in most cases. |
@@ -97,7 +97,7 @@ This is the image we want to apply bloom on. We'll need an open-domain image for
 
 > Q: **How do you display them on a monitor?**
 
-> A: This is a huge topic, but I'll try to summarize what you'll need to know. Pixel values higher than 1 usually just get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out. Some games and programs support proper display/view transforms to nicely convert linear RGB tristimulus into something that can be correctly displayed on your monitor. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the pixel values being clamped or transformed when *displayed*, they are still *stored* as their original floating-point values.
+> A: This is a huge topic, but I'll try to summarize what you'll need to know. Pixel values higher than 1 usually just get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out. Some games and programs support proper display/view transforms to nicely convert linear RGB tristimulus into something that can be correctly displayed on your monitor. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the pixel values being clamped and/or transformed when *displayed*, they are still *stored* as their original floating-point values.
 
 > Q: **Does RealBloom support display transforms?**
 
@@ -130,19 +130,18 @@ Click on *Browse Kernel* and choose the dispersion result from before. This will
 > The kernel doesn't necessarily have to be a diffraction pattern. You can use anything as the kernel, so definitely try experimenting with it.
 
 Let's see what each slider in the *KERNEL* section does.
-| Parameter | Effect |
+| Parameter | Description |
 |--|--|
 | Exposure | Exposure adjustment |
 | Contrast | Contrast adjustment |
 | Rotation | Rotation in degrees |
 | Scale | Scale of the kernel |
 | Crop | Amount of cropping from the center point |
-| Preview Center | If enabled, the center point will be marked. |
 | Center | The center point of the kernel. Adjusting this will shift the convolution layer and affect how the kernel is cropped. |
 
 ![An HDR image loaded as the convolution kernel](images/tutorial/5-kernel-1.png)
 
-Let's adjust the kernel exposure and contrast until we like it.
+The image might look slightly different from before, that's because we are using the AgX view transform. Let's adjust the kernel exposure and contrast until we like it.
 
 ![Adjusting the kernel exposure and contrast](images/tutorial/5-kernel-2.png)
 
@@ -160,7 +159,7 @@ Don't forget to dial down the kernel exposure after the cropping is done. Let's 
 
 At the time of writing this, RealBloom provides 3 ways to do convolution.
 
- - **FFT (CPU)**: This method uses [FFT](https://en.wikipedia.org/wiki/Fast_Fourier_transform) and the [convolution theorem](https://en.wikipedia.org/wiki/Convolution_theorem) to perform convolution in a much shorter timespan. So far, this is the fastest implementation available, although there will be a GPU FFT method coming soon.
+ - **FFT (CPU)**: This method uses the [FFT](https://en.wikipedia.org/wiki/Fast_Fourier_transform) and the [convolution theorem](https://en.wikipedia.org/wiki/Convolution_theorem) to perform convolution in a much shorter timespan. So far, this is the fastest implementation available, although there will be a GPU FFT method coming soon.
 
  - **Naive (CPU)**: This method uses the traditional algorithm for convolution, which is inefficient for large inputs. There's not really any point in using this unless for testing.
 
@@ -179,7 +178,7 @@ For this tutorial, we'll go with FFT (CPU).
 
 ### GPU Helper
 
-The Naive (GPU) method uses RealBloom's GPU helper program, `RealBloomGPUConv.exe`, to try and perform convolution on the dedicated GPU, while the main program is intended to run on the integrated GPU. This is only relevant for Dual-GPU systems.
+The Naive (GPU) method uses RealBloom's GPU helper program, `RealBloomGPUConv.exe`, to try and perform convolution on the dedicated GPU, while the main program and its GUI is intended to run on the integrated GPU. This is only relevant for Dual-GPU systems.
 
 You can check your `%TEMP%` directory and look for a text file such as `gpuconv000000log.txt`, the middle part is random. This log file will contain the name of the GPU ("Renderer") on which the GPU helper ran. If the GPU helper isn't using the desired GPU, visit **Windows Settings > System > Display > Graphics**  to change the default/preferred GPU for `RealBloomGPUConv.exe`. This might differ for older versions of Windows.
 
@@ -193,7 +192,7 @@ In *Conv. Preview*, we can preview what the convolution process will see after t
 
 ![Threshold preview](images/tutorial/6-thres.png)
 
-Using a threshold of 0 and mixing the convolution output with the original input generally gives more realistic and appealing results, so we'll set the threshold to 0 for this tutorial, which will leave the input image unchanged.
+Using a threshold of 0 and mixing the convolution output with the original input generally gives more realistic and appealing results, so we'll set the threshold and knee parameters to 0 for this tutorial, which will leave the input image unchanged.
 
 ## Auto-Exposure
 
@@ -209,13 +208,13 @@ Look, we have a sun! Let's hit *Show Conv. Layer* to see how the convolution out
 
 ![Convolution layer](images/tutorial/8-convlayer.png)
 
-Generally speaking, the convolution layer should have the same overall brightness as the input. We can use the *Exposure* slider in the *LAYERS* section to adjust the exposure of the convolution layer. In this case, we don't need to do this, since we had enabled Auto-Exposure. We'll set the mix to 0.1 to gently introduce some bloom to our image.
+Generally speaking, the convolution layer should have the same overall brightness as the input. We can use the *Exposure* slider in the *LAYERS* section to adjust the exposure of the convolution layer. In this case, we don't need to do this, since we had Auto-Exposure enabled. We'll set the mix to 0.1 to gently introduce some bloom to the image.
 
 > You can enable additive blending using the *Additive* checkbox. However, it's usually more accurate and best not to use this mode.
 
 You'll notice a *Compare* button has appeared In the *Image List* panel. We can use this to compare *Conv. Input* with *Conv. Result*. Finally, while having selected *Conv. Result* as the current slot, we'll use the *Save* button in *Image List* to export the result into an OpenEXR image file.
 
-**Congrats, we've just finished the tutorial!** Hopefully, you've learned some valuable information and gained some knowledge on how to operate RealBloom.
+**Congrats!** We've just finished the tutorial. Hopefully, you've learned some valuable information and gained knowledge on how to operate RealBloom.
 
 ## Color Management
 
@@ -223,31 +222,31 @@ For those of you interested, I'll quickly explain the Color Management panel and
 
 ### VIEW
 
-Here we can adjust how we *view* the image contained in the current slot, by changing the **display** type, the **view** transform, and optionally an artistic **look**. This does not affect the pixel values of the image in any way, it just changes how the image is displayed. RealBloom uses [OpenColorIO](https://opencolorio.org/) for color management. For more information, there will be links to some helpful articles about color management below.
+Here we can adjust how we *view* the image contained in the current slot, by changing the **display** type, the **view** transform, and optionally choosing an artistic **look**. This does not affect the pixel values of the image in any way, it just defines how the image is displayed. RealBloom uses [OpenColorIO](https://opencolorio.org/) for color management. For more information, there will be links to some helpful articles about color management below.
 
 ### INFO
 
 This section displays the working color space of the current OCIO config, or more specifically, the color space associated with the scene_linear role. If there are any errors in RealBloom's Color Management System (CMS), they will also be shown in this section.
 
-> The user config is stored in the `ocio` folder in the program directory. You can swap the contents of this folder with your own custom OCIO config.
+> The user config is stored in the `ocio` folder located in the program directory. You may swap the contents with your own custom OCIO config.
 
 ### COLOR MATCHING
 
-Color Matching Functions (CMF) help us go from wavelengths to [XYZ tristimulus](https://en.wikipedia.org/wiki/CIE_1931_color_space) when simulating dispersion. RealBloom looks for [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) tables in the `cmf` folder located in the program directory to recognize and parse the available CMF tables. There are a few CMF tables included by default. You can hit *Preview* to see what will be sampled for dispersion.
+Color Matching Functions (CMF) help us go from wavelengths to [XYZ tristimulus](https://en.wikipedia.org/wiki/CIE_1931_color_space) when simulating dispersion. RealBloom looks for [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) tables in the `cmf` folder located in the program directory, to recognize and parse the available CMF tables. There are a few CMF tables included by default. You can hit *Preview* to see what will be sampled for dispersion.
 
 ### XYZ CONVERSION
 
-Here we can alter how the XYZ values from a CMF table get transformed into RGB values in the working space. The *User Config* method should be used if a CIE XYZ I-E color space exists in the user config. Otherwise, you can use the *Common Space* method and choose a color space that exists in both your config and RealBloom's internal OCIO config.
+Here we can alter how the XYZ values from a CMF table get transformed into RGB tristimulus in the working space. The *User Config* method should be used if a CIE XYZ I-E color space exists in the user config. Otherwise, you can use the *Common Space* method and choose a color space that exists in both your config and RealBloom's internal OCIO config.
 
 With the *Common Space* method, the XYZ values will be converted from XYZ in the internal config to the common space in the internal config, then from the common space in the user config to the working space.
 
 ## Command Line Interface
 
-RealBloom has a CLI that can be used from within a terminal, or any other program. This can be useful for doing animations and such. You can get started by running `realbloom help` in the program directory. The commands are straightforward and self-explanatory, since they provide the same functionality as the GUI.
+RealBloom provides a CLI that can be used from within a terminal, or any other program. This can be useful for doing animations and such. You can get started by running `realbloom help` in the program directory. The commands are straightforward and self-explanatory, since they deliver the same functionality as the GUI.
 
-> If you run RealBloom with a command that isn't supported, or is empty, RealBloom will start its GUI. Otherwise, it'll process the command. This is why you get the GUI when opening the program normally.
+> If you run RealBloom with an empty command, or one that's not supported, RealBloom will start in GUI mode. Otherwise, it'll process the command. This is why you get the GUI when opening the program normally.
 
-## Animations
+### Animations
 
 As mentioned above, a CLI opens the possibility to use RealBloom on animations. You can get started by taking a look at `demo/Scripts/anim_conv.py` which is a basic Python script for performing convolution on a sequence of frames.
 
@@ -268,6 +267,7 @@ I want to say a huge thank you to  [Nihal](https://twitter.com/Mulana3D)  and th
  - [Convolutional Bloom in Unreal Engine](https://docs.unrealengine.com/5.0/en-US/bloom-in-unreal-engine/#bloom-convolution:~:text=%235-,Bloom%20Convolution,-The%20Bloom%20Convolution)
  - [The Hitchhiker's Guide to Digital Colour](https://hg2dc.com/)
  - [CG Cinematography - Christophe Brejon](https://chrisbrejon.com/cg-cinematography/)
- - [But what is a convolution? - 3Blue1Brown](https://youtu.be/KuXjwB4LzSA)
+ - [But what is a convolution? - 3Blue1Brown](https://www.youtube.com/watch?v=KuXjwB4LzSA)
+ - [But what is the Fourier Transform? A visual introduction. - 3Blue1Brown](https://www.youtube.com/watch?v=spUNpyF58BY)
 
 
