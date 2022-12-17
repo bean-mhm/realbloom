@@ -7,7 +7,7 @@
 
 #include "pocketfft/pocketfft_hdronly.h"
 
-#include "../ColorManagement/CMImage.h"
+#include "../ColorManagement/CmImage.h"
 #include "../Utils/Array2D.h"
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/RandomNumber.h"

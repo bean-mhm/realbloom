@@ -6,7 +6,7 @@
 #include <thread>
 #include <chrono>
 
-#include "../ColorManagement/CMImage.h"
+#include "../ColorManagement/CmImage.h"
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/Bilinear.h"
 #include "../Utils/RandomNumber.h"
@@ -42,7 +42,6 @@ namespace RealBloom
     struct ConvolutionParams
     {
         ConvolutionMethodInfo methodInfo;
-        bool  kernelNormalize = true;
         float kernelExposure = 0.0f;
         float kernelContrast = 0.0f;
         float kernelRotation = 0.0f;
@@ -53,8 +52,9 @@ namespace RealBloom
         bool  kernelPreviewCenter = true;
         float kernelCenterX = 0.5f;
         float kernelCenterY = 0.5f;
-        float convThreshold = 0.5f;
-        float convKnee = 0.2f;
+        float convThreshold = 0.0f;
+        float convKnee = 0.0f;
+        bool  kernelAutoExposure = true;
     };
 
     struct ConvolutionState

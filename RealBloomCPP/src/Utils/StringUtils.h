@@ -84,7 +84,8 @@ inline std::string strTrim(std::string s)
 
 bool strContains(const std::string& source, const std::string& substring);
 std::string strList(const std::vector<std::string>& list, const std::string& separator);
-std::string strRightPadding(const std::string& s, size_t length);
+std::string strLeftPadding(const std::string& s, size_t length, bool addSpace = true);
+std::string strRightPadding(const std::string& s, size_t length, bool addSpace = true);
 std::string strWordWrap(const std::string& s, size_t lineLength, size_t leftPadding = 0);
 
 // Examples: "6h 9m 42s", "10.7s"

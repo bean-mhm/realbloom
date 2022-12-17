@@ -4,13 +4,16 @@
 #include <fstream>
 #include <ctime>
 #include <chrono>
+#include <locale>
+#include <clocale>
 
 #include "RealBloom/ConvolutionGPU.h"
 #include "RealBloom/ConvolutionGPUBinary.h"
 #include "Utils/Misc.h"
 
-constexpr const char* APP_TITLE = "RealBloom GPU Convolution Helper";
-constexpr const char* APP_VERSION = "0.4.1-beta";
+#include "Config.h"
+
+constexpr const char* APP_TITLE = "RealBloom GPU Helper";
 
 // Use the dedicated GPU on Dual-GPU systems
 extern "C" {
@@ -105,11 +108,16 @@ int main(int argc, char* argv[])
     {
         std::cout << "Log file could not be created/opened.\n";
         return 1;
-    } else
+    }
+    else
     {
         std::cout << "Further information will be written into \"" << logFilename << "\".\n";
-        logAdd(LogLevel::Info, strFormat("%s v%s", APP_TITLE, APP_VERSION));
+        logAdd(LogLevel::Info, strFormat("%s v%s", APP_TITLE, Config::S_APP_VERSION));
     }
+
+    // Set Locale
+    if (!std::setlocale(LC_ALL, Config::S_APP_LOCALE))
+        logAdd(LogLevel::Warning, strFormat("Couldn't set locale to \"%s\".", Config::S_APP_LOCALE));
 
     // Log filenames
     std::string outFilename = inpFilename + "out";
@@ -132,7 +140,8 @@ int main(int argc, char* argv[])
     {
         logFail("Input file could not be opened.");
         return 1;
-    } else
+    }
+    else
     {
         inpFile.seekg(std::ifstream::beg);
     }
@@ -296,7 +305,8 @@ int main(int argc, char* argv[])
                 for (uint32_t j = 0; j < inputSize; j++)
                     if (j % 4 != 3) // if not alpha channel
                         cgFinalBuffer[j] += cgData.outputBuffer[j];
-            } else
+            }
+            else
             {
                 cgFinalSuccess = false;
                 cgFinalError = cgData.error;
@@ -313,7 +323,8 @@ int main(int argc, char* argv[])
             {
                 logAdd(LogLevel::Info, strFormat(
                     "Chunk %d/%d (%d points) was successful.", i + 1, cgInput.numChunks, cgData.numPoints));
-            } else
+            }
+            else
             {
                 logAdd(LogLevel::Error, strFormat(
                     "Chunk %d/%d (%d points) was failed.", i + 1, cgInput.numChunks, cgData.numPoints));
@@ -344,7 +355,8 @@ int main(int argc, char* argv[])
                 if (!statFile.is_open())
                 {
                     logAdd(LogLevel::Error, strFormat("Stat file \"%s\" could not be created/opened.", statFilename.c_str()));
-                } else
+                }
+                else
                 {
                     {
                         // numChunksDone
@@ -402,14 +414,16 @@ int main(int argc, char* argv[])
             cgOutput.status = 1;
             cgOutput.bufferSize = cgFinalBuffer.size();
             cgOutput.buffer = cgFinalBuffer.data();
-        } else
+        }
+        else
         {
             cgOutputError = cgFinalError;
             cgOutput.status = 0;
             cgOutput.bufferSize = 0;
             cgOutput.buffer = nullptr;
         }
-    } else
+    }
+    else
     {
         cgOutputError = "Could not retrieve data from the input file, failed at \"" + parseStage;
         cgOutputError += "\".";

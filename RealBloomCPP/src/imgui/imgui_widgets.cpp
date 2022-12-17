@@ -50,12 +50,13 @@ Index of this file:
 
 #pragma region modification by bean-mhm
 
+#include <string>
 #include <exception>
 #include <memory>
 #include <mutex>
 
 #include "../ColorManagement/CMS.h"
-#include "../ColorManagement/CMImage.h"
+#include "../ColorManagement/CmImage.h"
 #include "../Utils/NumberHelpers.h"
 
 constexpr bool OCIO_COLOR_CORRECTION = true;
@@ -5903,9 +5904,9 @@ void ImGui::ColorTooltip(const char* text, const float* col, ImGuiColorEditFlags
         if (OCIO_COLOR_CORRECTION)
         {
             if (flags & ImGuiColorEditFlags_NoAlpha)
-                Text("HDR\n(%.3f, %.3f, %.3f)", col[0], col[1], col[2]);
+                Text("%s\n(%.3f, %.3f, %.3f)", CMS::getWorkingSpace().c_str(), col[0], col[1], col[2]);
             else
-                Text("HDR\n(%.3f, %.3f, %.3f, %.3f)", col[0], col[1], col[2], col[3]);
+                Text("%s\n(%.3f, %.3f, %.3f, %.3f)", CMS::getWorkingSpace().c_str(), col[0], col[1], col[2], col[3]);
         }
         else
         {

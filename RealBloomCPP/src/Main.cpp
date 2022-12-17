@@ -180,11 +180,11 @@ int main(int argc, char** argv)
 
             // Process our queued tasks
             {
-                std::unique_lock<std::mutex> lock(Async::s_tasksMutex);
-                while (!Async::s_tasks.empty())
+                std::unique_lock<std::mutex> lock(Async::S_TASKS_MUTEX);
+                while (!Async::S_TASKS.empty())
                 {
-                    auto task(std::move(Async::s_tasks.front()));
-                    Async::s_tasks.pop_front();
+                    auto task(std::move(Async::S_TASKS.front()));
+                    Async::S_TASKS.pop_front();
 
                     // unlock during the task
                     lock.unlock();
@@ -289,7 +289,7 @@ void layout()
         {
             static std::string saveError = "";
             if (ImGui::Button("Save", btnSize()))
-                saveImage(selImage, saveError);
+                saveImage(selImage, selImage.getID(), saveError);
             imGuiText(saveError, true, false);
         }
 
@@ -303,19 +303,29 @@ void layout()
         ImGui::Begin("Image Viewer", 0, ImGuiWindowFlags_HorizontalScrollbar);
 
         // Name
-        ImGui::Text(selImage.getName().c_str());
+
+        std::string imageName;
+        if (selImage.getSourceName().empty())
+            imageName = selImage.getName();
+        else
+            imageName = strFormat("%s (%s)", selImage.getName().c_str(), selImage.getSourceName().c_str());
+
+        ImGui::PushFont(fontRobotoBold);
+        ImGui::TextWrapped(imageName.c_str());
+        ImGui::PopFont();
+
+        ImGui::PushFont(fontMono);
 
         // Size
         uint32_t imageWidth = selImage.getWidth();
         uint32_t imageHeight = selImage.getHeight();
-        ImGui::Text("Size: %dx%d", imageWidth, imageHeight);
+        ImGui::Text("%dx%d", imageWidth, imageHeight);
 
         // Zoom
         {
-            ImGui::Text("%d%%", (int)roundf(imageZoom * 100.0f));
+            ImGui::Text(strRightPadding(std::to_string((int)roundf(imageZoom * 100.0f)) + "%%", 5, false).c_str());
 
             ImGui::SameLine();
-            ImGui::PushFont(fontMono);
             if (ImGui::SmallButton("+"))
                 imageZoom = fminf(fmaxf(imageZoom + 0.125f, 0.25f), 2.0f);
 
@@ -326,8 +336,9 @@ void layout()
             ImGui::SameLine();
             if (ImGui::SmallButton("R"))
                 imageZoom = 1.0f;
-            ImGui::PopFont();
         }
+
+        ImGui::PopFont();
 
         ImGui::Image(
             (void*)(intptr_t)(selImage.getGlTexture()),
@@ -354,7 +365,7 @@ void layout()
         {
             static std::string loadError;
             if (ImGui::Button("Browse Aperture##DP", btnSize()))
-                loadImage(imgAperture, []() {}, loadError);
+                loadImage(imgAperture, imgAperture.getID(), []() {}, loadError);
             imGuiText(loadError, true, false);
         }
 
@@ -384,7 +395,7 @@ void layout()
             if (ImGui::Button("Browse Input##Disp", btnSize()))
             {
                 CmImage* inputSrc = disp.getImgInputSrc();
-                loadImage(*inputSrc, []() { vars.dispParamsChanged = true; }, loadError);
+                loadImage(*inputSrc, imgDispInput.getID(), []() { vars.dispParamsChanged = true; }, loadError);
             }
             imGuiText(loadError, true, false);
         }
@@ -408,7 +419,7 @@ void layout()
             ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha);
         ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads());
 
-        if (ImGui::Button("Apply##Disp", btnSize()))
+        if (ImGui::Button("Apply Dispersion##Disp", btnSize()))
         {
             imgDispResult.resize(imgDispInput.getWidth(), imgDispInput.getHeight(), true);
             imgDispResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
@@ -439,7 +450,7 @@ void layout()
         {
             static std::string loadError;
             if (ImGui::Button("Browse Input##Conv", btnSize()))
-                loadImage(imgConvInput, []() {}, loadError);
+                loadImage(imgConvInput, imgConvInput.getID(), []() { vars.convThresholdChanged = true; }, loadError);
             imGuiText(loadError, true, false);
         }
 
@@ -448,16 +459,13 @@ void layout()
             if (ImGui::Button("Browse Kernel##Conv", btnSize()))
             {
                 CmImage* kernelSrc = conv.getImgKernelSrc();
-                loadImage(*kernelSrc, []() { vars.convParamsChanged = true; }, loadError);
+                loadImage(*kernelSrc, imgConvKernel.getID(), []() { vars.convParamsChanged = true; }, loadError);
             }
             imGuiText(loadError, true, false);
         }
 
         IMGUI_DIV;
         IMGUI_BOLD("KERNEL");
-
-        if (ImGui::Checkbox("Normalize##Kernel", &(vars.cv_kernelNormalize)))
-            vars.convParamsChanged = true;
 
         if (ImGui::SliderFloat("Exposure##Kernel", &(vars.cv_kernelExposure), -10, 10))
             vars.convParamsChanged = true;
@@ -538,7 +546,7 @@ void layout()
         IMGUI_BOLD("CONVOLUTION");
 
         const char* const convMethodItems[]{ "FFT (CPU)", "Naive (CPU)", "Naive (GPU)" };
-        ImGui::Combo("Device##Conv", &(vars.cv_method), convMethodItems, 3);
+        ImGui::Combo("Method##Conv", &(vars.cv_method), convMethodItems, 3);
 
         if (vars.cv_method == (int)RealBloom::ConvolutionMethod::FFT_CPU)
         {
@@ -598,6 +606,11 @@ void layout()
             }
             vars.convThresholdChanged = false;
         }
+
+        ImGui::Checkbox("Auto-Exposure##Kernel", &(vars.cv_kernelAutoExposure));
+
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Adjust the exposure to match the brightness of the convolution layer to that of the input.");
 
         if (ImGui::Button("Convolve##Conv", btnSize()))
         {
@@ -1080,47 +1093,10 @@ CmImage* getImageByID(const std::string& id)
     return nullptr;
 }
 
-bool openImageDialog(std::string& outFilename)
-{
-    nfdchar_t* outPath = NULL;
-    nfdresult_t result = NFD_OpenDialog("", NULL, &outPath);
-    if (result == NFD_OKAY)
-    {
-        outFilename = outPath;
-        free(outPath);
-        return true;
-    }
-    return false;
-}
-
-bool saveImageDialog(std::string& outFilename)
-{
-    const char* fileExtension = "exr";
-    nfdchar_t* outPath = NULL;
-    nfdresult_t result = NFD_SaveDialog(fileExtension, NULL, &outPath);
-    if (result == NFD_OKAY)
-    {
-        outFilename = outPath;
-        free(outPath);
-
-        bool hasExtension = false;
-        size_t lastDotIndex = outFilename.find_last_of('.');
-        if (lastDotIndex != std::string::npos)
-            if (outFilename.substr(lastDotIndex + 1) == fileExtension)
-                hasExtension = true;
-
-        if (!hasExtension)
-            outFilename += "." + std::string(fileExtension);
-
-        return true;
-    }
-    return false;
-}
-
-void loadImage(CmImage& image, std::function<void()> onLoad, std::string& outError)
+void loadImage(CmImage& image, const std::string& dlgID, std::function<void()> onLoad, std::string& outError)
 {
     std::string filename;
-    if (openImageDialog(filename))
+    if (FileDialogs::openDialog(dlgID, filename))
     {
         dialogAction_colorSpace = std::packaged_task<void()>(
             [&image, onLoad, filename, &outError]()
@@ -1145,10 +1121,10 @@ void loadImage(CmImage& image, std::function<void()> onLoad, std::string& outErr
     }
 }
 
-void saveImage(CmImage& image, std::string& outError)
+void saveImage(CmImage& image, const std::string& dlgID, std::string& outError)
 {
     std::string filename;
-    if (saveImageDialog(filename))
+    if (FileDialogs::saveDialog(dlgID, "exr", filename))
     {
         dialogAction_colorSpace = std::packaged_task<void()>(
             [&image, filename, &outError]()
@@ -1250,7 +1226,6 @@ void updateConvParams()
     params->methodInfo.numThreads = vars.cv_numThreads;
     params->methodInfo.numChunks = vars.cv_numChunks;
     params->methodInfo.chunkSleep = vars.cv_chunkSleep;
-    params->kernelNormalize = vars.cv_kernelNormalize;
     params->kernelExposure = vars.cv_kernelExposure;
     params->kernelContrast = vars.cv_kernelContrast;
     params->kernelRotation = vars.cv_kernelRotation;
@@ -1263,6 +1238,7 @@ void updateConvParams()
     params->kernelCenterY = vars.cv_kernelCenter[1];
     params->convThreshold = vars.cv_convThreshold;
     params->convKnee = vars.cv_convKnee;
+    params->kernelAutoExposure = vars.cv_kernelAutoExposure;
 }
 
 ImVec2 btnSize()
@@ -1427,7 +1403,7 @@ void applyStyle_RealBloomGray()
     style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(1.0, 1.0, 1.0, 0.1176470592617989);
     style.Colors[ImGuiCol_FrameBgActive] = ImVec4(1.0, 1.0, 1.0, 0.196078434586525);
     style.Colors[ImGuiCol_TitleBg] = ImVec4(0.1098039224743843, 0.1098039224743843, 0.1098039224743843, 1.0);
-    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.1568627506494522, 0.1568627506494522, 0.1568627506494522, 1.0);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.1098039224743843, 0.1098039224743843, 0.1098039224743843, 1.0);
     style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.1098039224743843, 0.1098039224743843, 0.1098039224743843, 1.0);
     style.Colors[ImGuiCol_MenuBarBg] = ImVec4(1.0, 1.0, 1.0, 0.062745101749897);
     style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.0, 0.0, 0.0, 0.1176470592617989);

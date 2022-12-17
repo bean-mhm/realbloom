@@ -371,10 +371,7 @@ std::array<float, 4> CMS::getDisplayColor(std::array<float, 4> v)
 
         return v;
     }
-    catch (std::exception& e)
-    {
-        printErr(__FUNCTION__, e.what());
-    }
+    catch (std::exception& e) {}
 
     return { 0, 0, 0, 1 };
 }

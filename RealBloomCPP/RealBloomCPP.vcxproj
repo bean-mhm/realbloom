@@ -210,6 +210,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\Utils\CliStackTimer.cpp" />
     <ClCompile Include="src\Utils\ConsoleColors.cpp" />
     <ClCompile Include="src\Utils\CliParser.cpp" />
+    <ClCompile Include="src\Utils\FileDialogs.cpp" />
     <ClCompile Include="src\Utils\GlTexture.cpp" />
     <ClCompile Include="include\oiio\detail\pugixml\pugixml.cpp" />
     <ClCompile Include="src\ColorManagement\OcioShader.cpp" />
@@ -250,6 +251,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\Utils\CliStackTimer.h" />
     <ClInclude Include="src\Utils\ConsoleColors.h" />
     <ClInclude Include="src\Utils\CliParser.h" />
+    <ClInclude Include="src\Utils\FileDialogs.h" />
     <ClInclude Include="src\Utils\GlTexture.h" />
     <ClInclude Include="include\inih\INIReader.h" />
     <ClInclude Include="include\ocio\OpenColorABI.h" />

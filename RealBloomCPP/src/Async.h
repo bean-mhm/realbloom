@@ -13,12 +13,12 @@
 class Async
 {
 private:
-    static std::unordered_map<std::string, void*> s_shared;
-    static std::mutex s_sharedMutex;
+    static std::unordered_map<std::string, void*> S_SHARED;
+    static std::mutex S_SHARED_MUTEX;
 
 public:
-    static std::deque<std::packaged_task<void()>> s_tasks;
-    static std::mutex s_tasksMutex;
+    static std::deque<std::packaged_task<void()>> S_TASKS;
+    static std::mutex S_TASKS_MUTEX;
     static void schedule(std::function<void()> job);
 
     static void putShared(std::string key, void* value);

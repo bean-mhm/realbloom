@@ -39,6 +39,9 @@
     <ClCompile Include="..\RealBloomCPP\src\Utils\RandomNumber.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\RealBloomCPP\src\Config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glew32s.lib" />
@@ -78,6 +81,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\RealBloomCPP\src\Utils\RandomNumber.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloomCPP\include\inih\INIReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloomCPP\src\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

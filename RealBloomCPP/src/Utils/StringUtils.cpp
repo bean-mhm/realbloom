@@ -16,7 +16,20 @@ std::string strList(const std::vector<std::string>& list, const std::string& sep
     return result;
 }
 
-std::string strRightPadding(const std::string& s, size_t length)
+std::string strLeftPadding(const std::string& s, size_t length, bool addSpace)
+{
+    if (length > s.size())
+    {
+        size_t numSpaces = (length - s.size());
+        std::string padding;
+        for (size_t i = 0; i < numSpaces; i++)
+            padding += " ";
+        return padding + s;
+    }
+    return addSpace ? (" " + s) : s;
+}
+
+std::string strRightPadding(const std::string& s, size_t length, bool addSpace)
 {
     if (length > s.size())
     {
@@ -26,7 +39,7 @@ std::string strRightPadding(const std::string& s, size_t length)
             padding += " ";
         return s + padding;
     }
-    return s + " ";
+    return addSpace ? (s + " ") : s;
 }
 
 

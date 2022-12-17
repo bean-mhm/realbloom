@@ -6,8 +6,8 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "ColorManagement/CMS.h"
 #include "ColorManagement/CMF.h"
 #include "ColorManagement/CmXYZ.h"
-#include "ColorManagement/CMImage.h"
-#include "ColorManagement/CMImageIO.h"
+#include "ColorManagement/CmImage.h"
+#include "ColorManagement/CmImageIO.h"
 
 #include "RealBloom/DiffractionPattern.h"
 #include "RealBloom/Dispersion.h"
@@ -254,7 +254,6 @@ void CLI::init(int& argc, char** argv)
                 {{"--kernel-space", "-b"}, "Kernel color space", "", true},
                 {{"--output", "-o"}, "Output filename", "", true},
                 {{"--output-space", "-c"}, "Output color space", "", true},
-                {{"--kernel-denorm", "-d"}, "Disable kernel normalization", "", false},
                 {{"--kernel-exposure", "-e"}, "Kernel exposure", "0", false},
                 {{"--kernel-contrast", "-f"}, "Kernel contrast", "0", false},
                 {{"--kernel-rotation", "-r"}, "Kernel rotation", "0", false},
@@ -263,6 +262,7 @@ void CLI::init(int& argc, char** argv)
                 {{"--kernel-center", "-u"}, "Kernel center", "0.5,0.5", false},
                 {{"--threshold", "-t"}, "Threshold", "0", false},
                 {{"--knee", "-w"}, "Threshold knee", "0", false},
+                {{"--autoexp", "-n"}, "Auto-Exposure", "", false},
                 {{"--input-mix", "-x"}, "Input mix (additive blending)", "", false},
                 {{"--conv-mix", "-y"}, "Output mix (additive blending)", "", false},
                 {{"--mix", "-m"}, "Blend between input and output (normal blending)", "1", false},
@@ -575,8 +575,6 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     std::string outFilename = args["--output"];
     std::string outColorspace = processColorSpaceName(args["--output-space"]);
 
-    bool kernelNormalize = (args.count("--kernel-denorm") == 0);
-
     float kernelExposure = 0;
     if (args.count("--kernel-exposure") > 0)
         kernelExposure = std::stof(args["--kernel-exposure"]);
@@ -609,6 +607,8 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     if (args.count("--knee") > 0)
         knee = std::stof(args["--knee"]);
 
+    bool kernelAutoExposure = args.count("--autoexp") > 0;
+
     bool additive = false;
     float mix = 1.0f;
     float inputMix = 1.0f;
@@ -638,7 +638,6 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
             "Kernel Color Space", knlColorspace,
             "Output Filename", outFilename,
             "Output Color Space", outColorspace,
-            "Normalize Kernel", strFromBool(kernelNormalize),
             "Kernel Exposure", strFormat("%.3f", kernelExposure),
             "Kernel Contrast", strFormat("%.3f", kernelContrast),
             "Kernel Rotation", strFormat("%.3f", kernelRotation),
@@ -647,6 +646,7 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
             "Kernel Center", strFromFloatArray(kernelCenter),
             "Threshold", strFormat("%.3f", threshold),
             "Knee", strFormat("%.3f", knee),
+            "Auto-Exposure", strFromBool(kernelAutoExposure),
             "Additive Blending", strFromBool(additive),
             "Input Mix (Additive)", strFormat("%.3f", inputMix),
             "Conv Mix (Additive)", strFormat("%.3f", convMix),
@@ -692,7 +692,6 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     methodInfo.method = RealBloom::ConvolutionMethod::FFT_CPU;
     params->methodInfo = methodInfo;
 
-    params->kernelNormalize = kernelNormalize;
     params->kernelExposure = kernelExposure;
     params->kernelContrast = kernelContrast;
     params->kernelRotation = kernelRotation;
@@ -705,6 +704,7 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     params->kernelCenterY = kernelCenter[1];
     params->convThreshold = threshold;
     params->convKnee = knee;
+    params->kernelAutoExposure = kernelAutoExposure;
 
     // Compute
     {
