@@ -101,7 +101,7 @@ RealBloom uses the following libraries:
 <!-- USAGE -->
 ## Using RealBloom
 
-Check out [this page](USAGE.md) for a step-by-step tutorial on getting started with RealBloom. This tutorial will cover most of what you need to know.
+Check out [this page](USAGE.md) for a step-by-step tutorial on getting started with RealBloom, along with more details on the project. This will cover most of what you need to know.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -195,11 +195,11 @@ Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/b
 <!-- CONTACT -->
 ## Contact
 
-Harry Bean (Developer)
- - Email: [harry.bean.dev@gmail.com](mailto:harry.bean.dev@gmail.com)
- - Discord: `!bean#0446`
+☀️ **RealBloom Community Server:** [Discord](https://discord.gg/Xez5yec8Hh)
 
-Project Link: [https://github.com/bean-mhm/realbloom](https://github.com/bean-mhm/realbloom)
+🧑‍💻 **Harry Bean (Developer):** [Email](mailto:harry.bean.dev@gmail.com)
+
+🔗 **Project Link:** [GitHub](https://github.com/bean-mhm/realbloom)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
