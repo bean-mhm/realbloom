@@ -254,7 +254,7 @@ As mentioned above, a CLI opens the possibility to use RealBloom on animations. 
 
 If you use RealBloom on your artwork, or make an artwork using RealBloom, feel free to publish it on Twitter or Instagram under #realbloom.
 
-You are also welcome to join [RealBloom's Discord Server](https://discord.gg/Xez5yec8Hh).
+☀️ **RealBloom Community Server:** [Discord](https://discord.gg/Xez5yec8Hh)
 
 ## Thank You
 
