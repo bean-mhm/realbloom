@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{d56aa1c7-bb67-4826-99ee-a813c8ea3dd7}</ProjectGuid>
-    <RootNamespace>RealBloomCPP</RootNamespace>
+    <RootNamespace>RealBloom</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>RealBloom</ProjectName>
   </PropertyGroup>
@@ -401,7 +401,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     </Font>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="RealBloomCPP.rc" />
+    <ResourceCompile Include="RealBloom.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

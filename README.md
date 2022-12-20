@@ -120,9 +120,9 @@ The project was made for Windows and built with MSVC, so you're going to need a 
    git clone https://github.com/bean-mhm/realbloom.git
    ```
 
-2. Open the solution `RealBloomCPP.sln` in Visual Studio.
+2. Open the solution `RealBloom.sln` in Visual Studio.
 
-3. `RealBloomCPP` is the main project, while `RealBloomGPUConv` is a GPU helper program that gets used by the main program.
+3. `RealBloom` is the main project, while `RealBloomGpuHelper` is a GPU helper program that gets used by the main program.
 
 4. Build the solution and run `RealBloom.exe`. Feel free to explore and play with the code!
 

@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{dec0ce3e-fc16-4d47-b1dc-8b06e4ec1393}</ProjectGuid>
-    <RootNamespace>RealBloomGPUConv</RootNamespace>
+    <RootNamespace>RealBloomGpuHelper</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -100,7 +100,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;$(SolutionDir)RealBloomCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloom\src;$(SolutionDir)RealBloom\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -119,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;$(SolutionDir)RealBloomCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloom\src;$(SolutionDir)RealBloom\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -138,7 +138,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;$(SolutionDir)RealBloomCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloom\src;$(SolutionDir)RealBloom\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -157,7 +157,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloomCPP\src;$(SolutionDir)RealBloomCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)RealBloom\src;$(SolutionDir)RealBloom\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -171,12 +171,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\RealBloomCPP\src\Config.cpp" />
-    <ClCompile Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.cpp" />
-    <ClCompile Include="..\RealBloomCPP\src\Utils\GlUtils.cpp" />
-    <ClCompile Include="..\RealBloomCPP\src\Utils\Misc.cpp" />
-    <ClCompile Include="..\RealBloomCPP\src\Utils\NumberHelpers.cpp" />
-    <ClCompile Include="..\RealBloomCPP\src\Utils\RandomNumber.cpp" />
+    <ClCompile Include="..\RealBloom\src\Config.cpp" />
+    <ClCompile Include="..\RealBloom\src\Utils\GlFrameBuffer.cpp" />
+    <ClCompile Include="..\RealBloom\src\Utils\GlUtils.cpp" />
+    <ClCompile Include="..\RealBloom\src\Utils\Misc.cpp" />
+    <ClCompile Include="..\RealBloom\src\Utils\NumberHelpers.cpp" />
+    <ClCompile Include="..\RealBloom\src\Utils\RandomNumber.cpp" />
     <ClCompile Include="src\MainGPU.cpp" />
     <ClCompile Include="src\RealBloom\ConvolutionGPU.cpp" />
     <ClCompile Include="src\Utils\GlContext.cpp" />
@@ -185,14 +185,14 @@
     <Library Include="libs\glew32s.lib" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\RealBloomCPP\include\inih\INIReader.h" />
-    <ClInclude Include="..\RealBloomCPP\src\Config.h" />
-    <ClInclude Include="..\RealBloomCPP\src\RealBloom\ConvolutionGPUBinary.h" />
-    <ClInclude Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.h" />
-    <ClInclude Include="..\RealBloomCPP\src\Utils\GlUtils.h" />
-    <ClInclude Include="..\RealBloomCPP\src\Utils\Misc.h" />
-    <ClInclude Include="..\RealBloomCPP\src\Utils\NumberHelpers.h" />
-    <ClInclude Include="..\RealBloomCPP\src\Utils\RandomNumber.h" />
+    <ClInclude Include="..\RealBloom\include\inih\INIReader.h" />
+    <ClInclude Include="..\RealBloom\src\Config.h" />
+    <ClInclude Include="..\RealBloom\src\RealBloom\ConvolutionGPUBinary.h" />
+    <ClInclude Include="..\RealBloom\src\Utils\GlFrameBuffer.h" />
+    <ClInclude Include="..\RealBloom\src\Utils\GlUtils.h" />
+    <ClInclude Include="..\RealBloom\src\Utils\Misc.h" />
+    <ClInclude Include="..\RealBloom\src\Utils\NumberHelpers.h" />
+    <ClInclude Include="..\RealBloom\src\Utils\RandomNumber.h" />
     <ClInclude Include="include\GL\eglew.h" />
     <ClInclude Include="include\GL\glew.h" />
     <ClInclude Include="include\GL\glxew.h" />

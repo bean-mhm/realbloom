@@ -498,7 +498,7 @@
     <CopyFileToFolders Include="config.ini" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="RealBloomCPP.rc">
+    <ResourceCompile Include="RealBloom.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

@@ -24,22 +24,22 @@
     <ClCompile Include="src\Utils\GlContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.cpp">
+    <ClCompile Include="..\RealBloom\src\Utils\GlFrameBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RealBloomCPP\src\Utils\GlUtils.cpp">
+    <ClCompile Include="..\RealBloom\src\Utils\GlUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RealBloomCPP\src\Utils\Misc.cpp">
+    <ClCompile Include="..\RealBloom\src\Utils\Misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RealBloomCPP\src\Utils\NumberHelpers.cpp">
+    <ClCompile Include="..\RealBloom\src\Utils\NumberHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RealBloomCPP\src\Utils\RandomNumber.cpp">
+    <ClCompile Include="..\RealBloom\src\Utils\RandomNumber.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RealBloomCPP\src\Config.cpp">
+    <ClCompile Include="..\RealBloom\src\Config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -65,28 +65,28 @@
     <ClInclude Include="src\Utils\GlContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloomCPP\src\RealBloom\ConvolutionGPUBinary.h">
+    <ClInclude Include="..\RealBloom\src\RealBloom\ConvolutionGPUBinary.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloomCPP\src\Utils\GlFrameBuffer.h">
+    <ClInclude Include="..\RealBloom\src\Utils\GlFrameBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloomCPP\src\Utils\GlUtils.h">
+    <ClInclude Include="..\RealBloom\src\Utils\GlUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloomCPP\src\Utils\Misc.h">
+    <ClInclude Include="..\RealBloom\src\Utils\Misc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloomCPP\src\Utils\NumberHelpers.h">
+    <ClInclude Include="..\RealBloom\src\Utils\NumberHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloomCPP\src\Utils\RandomNumber.h">
+    <ClInclude Include="..\RealBloom\src\Utils\RandomNumber.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloomCPP\include\inih\INIReader.h">
+    <ClInclude Include="..\RealBloom\include\inih\INIReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloomCPP\src\Config.h">
+    <ClInclude Include="..\RealBloom\src\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

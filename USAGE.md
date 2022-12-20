@@ -178,9 +178,9 @@ For this tutorial, we'll go with FFT (CPU).
 
 ### GPU Helper
 
-The Naive (GPU) method uses RealBloom's GPU helper program, `RealBloomGPUConv.exe`, to try and perform convolution on the dedicated GPU, while the main program and its GUI is intended to run on the integrated GPU. This is only relevant for Dual-GPU systems.
+The Naive (GPU) method uses RealBloom's GPU helper program, `RealBloomGpuHelper.exe`, to try and perform convolution on the dedicated GPU, while the main program and its GUI is intended to run on the integrated GPU. This is only relevant for Dual-GPU systems.
 
-You can check your `%TEMP%` directory and look for a text file such as `gpuconv000000log.txt`, the middle part is random. This log file will contain the name of the GPU ("Renderer") on which the GPU helper ran. If the GPU helper isn't using the desired GPU, visit **Windows Settings > System > Display > Graphics**  to change the default/preferred GPU for `RealBloomGPUConv.exe`. This might differ for older versions of Windows.
+You can check your `%TEMP%` directory and look for a text file such as `gpuconv000000log.txt`, the middle part is random. This log file will contain the name of the GPU ("Renderer") on which the GPU helper ran. If the GPU helper isn't using the desired GPU, visit **Windows Settings > System > Display > Graphics**  to change the default/preferred GPU for `RealBloomGpuHelper.exe`. This might differ for older versions of Windows.
 
 > There's no official way to choose a specific GPU device using OpenGL on Windows. However, we can "signal" to NVIDIA and AMD drivers that "this program needs the high-performance GPU". RealBloom's main program does not contain this signal, but the GPU helper does. This makes the process easier on most Dual-GPU systems, as the UI continues to render smoothly while the dedicated GPU is busy.
 
