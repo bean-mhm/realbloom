@@ -1,4 +1,4 @@
-#include "ConvolutionGPU.h"
+#include "ConvolutionNaiveGPU.h"
 
 #pragma region Shaders
 const char* vertexSource = R"glsl(
@@ -98,31 +98,8 @@ constexpr float GPU_COORD_SCALE = 2.0f;
 namespace RealBloom
 {
 
-    void init(void* pdata);
-
-    void ConvolutionGPU::initGL()
+    void ConvolutionNaiveGPU::definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs)
     {
-        std::string err2;
-
-        if (!oglOneTimeContext(
-            m_width,
-            m_height,
-            init,
-            this,
-            [&](std::string err)
-            {
-                m_data->setError(strFormat("OpenGL Initialization Error: \"%s\"", err.c_str()));
-            },
-            err2))
-        {
-            m_data->setError(strFormat("OpenGL Initialization Error: \"%s\"", err2.c_str()));
-        }
-    }
-
-    void ConvolutionGPU::definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs)
-    {
-        std::string errorList = "";
-
         // Create Vertex Array Object
         glGenVertexArrays(1, &m_vao);
         checkGlStatus(__FUNCTION__, "glGenVertexArrays");
@@ -150,7 +127,7 @@ namespace RealBloom
         }*/
     }
 
-    void ConvolutionGPU::makeProgram()
+    void ConvolutionNaiveGPU::makeProgram()
     {
         // Create and compile shaders
         std::string shaderLog;
@@ -204,7 +181,7 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "Vertex buffer layout specification (color)");
     }
 
-    void ConvolutionGPU::makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize)
+    void ConvolutionNaiveGPU::makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize)
     {
         // Set uniforms
         GLint kernelTopLeftUniform = glGetUniformLocation(m_shaderProgram, "kernelTopLeft");
@@ -245,7 +222,7 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "glTexImage2D");
     }
 
-    void ConvolutionGPU::drawScene(uint32_t numPoints)
+    void ConvolutionNaiveGPU::drawScene(uint32_t numPoints)
     {
         // Clear the screen to black
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -261,18 +238,18 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "glDrawArrays");
     }
 
-    ConvolutionGPU::ConvolutionGPU(ConvolutionGPUData* data)
+    ConvolutionNaiveGPU::ConvolutionNaiveGPU(ConvolutionNaiveGPUData* data)
         : m_data(data)
     {}
 
-    void ConvolutionGPU::start(uint32_t numChunks, uint32_t chunkIndex)
+    void ConvolutionNaiveGPU::start(uint32_t numChunks, uint32_t chunkIndex)
     {
         m_data->done = false;
         m_data->error = "";
         m_data->success = false;
         m_data->numPoints = 0;
 
-        ConvolutionGPUBinaryInput* binInput = m_data->binaryInput;
+        BinaryConvNaiveGpuInput* binInput = m_data->binInput;
         m_width = binInput->inputWidth;
         m_height = binInput->inputHeight;
 
@@ -281,6 +258,7 @@ namespace RealBloom
         uint32_t inputPixels = inputWidth * inputHeight;
         uint32_t kernelWidth = binInput->kernelWidth;
         uint32_t kernelHeight = binInput->kernelHeight;
+
         float threshold = binInput->cp_convThreshold;
         float knee = binInput->cp_convKnee;
 
@@ -290,6 +268,7 @@ namespace RealBloom
         float offsetX = floorf((float)kernelWidth / 2.0f) - kernelCenterX;
         float offsetY = floorf((float)kernelHeight / 2.0f) - kernelCenterY;
 
+        // Collect points
         float v;
         float px, py;
         float color[3]{ 0, 0, 0 };
@@ -341,53 +320,26 @@ namespace RealBloom
             }
         }
 
-        initGL();
-
-        while (!(m_data->done))
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-    }
-
-    void init(void* pdata)
-    {
-        if (!pdata)
-            return;
-
-        ConvolutionGPU* instance = (ConvolutionGPU*)pdata;
-        ConvolutionGPUData* data = instance->m_data;
-        ConvolutionGPUBinaryInput* binInput = data->binaryInput;
-
-        // Copy some variables from data for more readability
-        uint32_t inputWidth = binInput->inputWidth;
-        uint32_t inputHeight = binInput->inputHeight;
-        uint32_t kernelWidth = binInput->kernelWidth;
-        uint32_t kernelHeight = binInput->kernelHeight;
-        uint32_t numPoints = data->numPoints;
-
+        // Draw
         std::shared_ptr<GlFrameBuffer> frameBuffer = nullptr;
-        GLfloat* fbData = nullptr;
         try
         {
-            // Grab the name of the renderer
-            const char* rendererS = (const char*)glGetString(GL_RENDERER);
-            checkGlStatus(__FUNCTION__, "glGetString(GL_RENDERER)");
-            data->gpuName = rendererS;
-
             // Capabilities
             glDisable(GL_CULL_FACE);
             glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
             checkGlStatus(__FUNCTION__, "Capabilities");
 
-            // Make a frame buffer that we'll render to
-            frameBuffer = std::make_shared<GlFrameBuffer>(instance->m_width, instance->m_height);
+            // Frame buffer
+            frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
+            frameBuffer->bind();
+            frameBuffer->viewport();
 
-            // Define the input data
-            instance->definePoints(data->points.data(), numPoints, 5);
+            // Upload the input data
+            definePoints(m_data->points.data(), m_data->numPoints, 5);
 
-            // Prepare the shader program
-            instance->makeProgram();
+            // Shader program
+            makeProgram();
 
             // Upload the kernel texture to the GPU along with some uniforms
             {
@@ -397,8 +349,8 @@ namespace RealBloom
                 kernelSize[0] = GPU_COORD_SCALE * 2 * (float)kernelWidth / (float)inputWidth;
                 kernelSize[1] = GPU_COORD_SCALE * 2 * (float)kernelHeight / (float)inputHeight;
 
-                instance->makeKernelTexture(
-                    binInput->kernelBuffer,
+                makeKernelTexture(
+                    binInput->kernelBuffer.data(),
                     binInput->kernelWidth,
                     binInput->kernelHeight,
                     kernelTopLeft,
@@ -406,33 +358,28 @@ namespace RealBloom
             }
 
             // Draw
-            instance->drawScene(numPoints);
+            drawScene(m_data->numPoints);
 
             // Copy pixel data from the frame buffer
             uint32_t fbSize = inputWidth * inputHeight * 4;
-            fbData = new float[fbSize];
-            try
-            {
+            std::vector<float> fbData;
+            fbData.resize(fbSize);
+            {            
                 glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer->getFrameBuffer());
                 checkGlStatus(__FUNCTION__, "glBindFramebuffer");
 
                 glReadBuffer(GL_COLOR_ATTACHMENT0);
                 checkGlStatus(__FUNCTION__, "glReadBuffer");
 
-                glReadPixels(0, 0, inputWidth, inputHeight, GL_RGBA, GL_FLOAT, fbData);
+                glReadPixels(0, 0, inputWidth, inputHeight, GL_RGBA, GL_FLOAT, fbData.data());
                 checkGlStatus(__FUNCTION__, "glReadPixels");
-            } catch (const std::exception& e)
-            {
-                DELARR(fbData);
-                throw e;
             }
 
             // Copy to output buffer
             {
-                uint32_t obSize = inputWidth * inputHeight * 4;
-                data->outputBuffer.resize(obSize);
+                m_data->outputBuffer.resize(fbSize);
 
-                float convMultiplier = data->binaryInput->convMultiplier;
+                float convMultiplier = m_data->binInput->convMultiplier;
                 uint32_t redIndexFb, redIndexOutput;
                 for (uint32_t y = 0; y < inputHeight; y++)
                 {
@@ -441,47 +388,48 @@ namespace RealBloom
                         redIndexFb = ((inputHeight - 1 - y) * inputWidth + x) * 4;
                         redIndexOutput = (y * inputWidth + x) * 4;
 
-                        data->outputBuffer[redIndexOutput + 0] = fbData[redIndexFb + 0] * convMultiplier;
-                        data->outputBuffer[redIndexOutput + 1] = fbData[redIndexFb + 1] * convMultiplier;
-                        data->outputBuffer[redIndexOutput + 2] = fbData[redIndexFb + 2] * convMultiplier;
-                        data->outputBuffer[redIndexOutput + 3] = 1;
+                        m_data->outputBuffer[redIndexOutput + 0] = fbData[redIndexFb + 0] * convMultiplier;
+                        m_data->outputBuffer[redIndexOutput + 1] = fbData[redIndexFb + 1] * convMultiplier;
+                        m_data->outputBuffer[redIndexOutput + 2] = fbData[redIndexFb + 2] * convMultiplier;
+                        m_data->outputBuffer[redIndexOutput + 3] = 1;
                     }
                 }
             }
 
-            data->success = true;
-            data->error = "Success";
-            data->done = true;
-        } catch (const std::exception& e)
+            // Finalize
+            m_data->success = true;
+            m_data->done = true;
+        }
+        catch (const std::exception& e)
         {
-            data->setError(printErr(__FUNCTION__, e.what()));
+            m_data->setError(printErr(__FUNCTION__, e.what(), true));
         }
 
         // Clean up
         try
         {
-            DELARR(fbData);
+            try { frameBuffer = nullptr; }
+            catch (...) {}
 
-            try { frameBuffer = nullptr; } catch (...) {}
+            glDeleteTextures(1, &m_texKernel);
 
-            glDeleteTextures(1, &(instance->m_texKernel));
+            glDeleteProgram(m_shaderProgram);
+            glDeleteShader(m_vertexShader);
+            glDeleteShader(m_geometryShader);
+            glDeleteShader(m_fragmentShader);
 
-            glDeleteProgram(instance->m_shaderProgram);
-            glDeleteShader(instance->m_vertexShader);
-            glDeleteShader(instance->m_geometryShader);
-            glDeleteShader(instance->m_fragmentShader);
-
-            glDeleteBuffers(1, &(instance->m_vbo));
-            glDeleteVertexArrays(1, &(instance->m_vao));
+            glDeleteBuffers(1, &m_vbo);
+            glDeleteVertexArrays(1, &m_vao);
 
             checkGlStatus(__FUNCTION__, "Cleanup");
-        } catch (const std::exception& e)
+        }
+        catch (const std::exception& e)
         {
-            printErr(__FUNCTION__, e.what());
+            printErr(__FUNCTION__, e.what(), true);
         }
     }
 
-    void ConvolutionGPUData::setError(std::string message)
+    void ConvolutionNaiveGPUData::setError(std::string message)
     {
         success = false;
         error = message;

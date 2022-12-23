@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "StringUtils.h"
+#include "StreamUtils.h"
 
 #define NOMINMAX
 #include <Windows.h>
@@ -26,11 +27,13 @@
 std::string printErr(
     const std::string& source,
     const std::string& stage,
-    const std::string& message);
+    const std::string& message,
+    bool printAnyway = false);
 
 std::string printErr(
     const std::string& source,
-    const std::string& message);
+    const std::string& message,
+    bool printAnyway = false);
 
 void disablePrintErr();
 

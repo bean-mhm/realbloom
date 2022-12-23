@@ -4,11 +4,14 @@
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include <vector>
 #include <array>
 #include <algorithm>
 #include <cctype>
 #include <locale>
+#include <clocale>
+#include <ctime>
 #include <stdint.h>
 
 template<typename ... Args>
@@ -111,6 +114,8 @@ std::string strFromFloatArray(const std::array<float, Size>& arr)
 
     return result;
 }
+
+std::string strFromTime();
 
 std::array<float, 4> strToRGBA(const std::string& s);
 std::array<float, 3> strToRGB(const std::string& s);

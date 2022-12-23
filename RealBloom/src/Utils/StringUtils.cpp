@@ -177,6 +177,20 @@ std::string strFromBool(bool v)
     return v ? "True" : "False";
 }
 
+std::string strFromTime()
+{
+    time_t rawtime;
+    struct tm timeinfo;
+    char buffer[128];
+
+    time(&rawtime);
+    localtime_s(&timeinfo, &rawtime);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeinfo);
+
+    std::string result = buffer;
+    return result;
+}
+
 std::array<float, 4> strToRGBA(const std::string& s)
 {
     try
@@ -199,7 +213,8 @@ std::array<float, 4> strToRGBA(const std::string& s)
             return { std::stof(elements[0]), std::stof(elements[1]), std::stof(elements[2]), std::stof(elements[3]) };
         }
         throw std::exception("invalid input");
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         throw std::exception(strFormat("Failed to parse color from string: %s", e.what()).c_str());
     }
@@ -229,7 +244,8 @@ std::array<float, 2> strToXY(const std::string& s)
             return { std::stof(elements[0]), std::stof(elements[1]) };
         }
         throw std::exception("invalid input");
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         throw std::exception(strFormat("Failed to parse XY from string: %s", e.what()).c_str());
     }

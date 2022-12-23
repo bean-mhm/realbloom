@@ -203,9 +203,10 @@ namespace RealBloom
                     if (cmfSamples.size() < (dispSteps * 3))
                         throw std::exception("Invalid number of samples provided by CmfTable.");
 
-                    // Calculate the perceived luminance for the sum of the samples
-                    float luminanceSum = 0.0f, luminanceMul = 0.0f;
+                    // Normalize the samples
                     {
+                        // Calculate the total perceived luminance
+                        float luminanceSum = EPSILON;
                         uint32_t smpIndex;
                         for (uint32_t i = 0; i < dispSteps; i++)
                         {
@@ -216,7 +217,15 @@ namespace RealBloom
                                 cmfSamples[smpIndex + 2]
                             );
                         }
-                        luminanceMul = 1.0f / luminanceSum;
+
+                        // Divide by the sum
+                        for (uint32_t i = 0; i < dispSteps; i++)
+                        {
+                            smpIndex = i * 3;
+                            cmfSamples[smpIndex + 0] /= luminanceSum;
+                            cmfSamples[smpIndex + 1] /= luminanceSum;
+                            cmfSamples[smpIndex + 2] /= luminanceSum;
+                        }
                     }
 
                     // Create and prepare threads
@@ -225,7 +234,7 @@ namespace RealBloom
                         DispersionThread* ct = new DispersionThread(
                             numThreads, i, m_params,
                             inputBuffer.data(), inputWidth, inputHeight,
-                            cmfSamples.data(), luminanceMul
+                            cmfSamples.data()
                         );
 
                         std::vector<float>& threadBuffer = ct->getBuffer();

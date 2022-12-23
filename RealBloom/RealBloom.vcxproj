@@ -205,8 +205,11 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\CLI.cpp" />
     <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
     <ClCompile Include="src\ColorManagement\CMF.cpp" />
+    <ClCompile Include="src\RealBloom\Binary\BinaryData.cpp" />
+    <ClCompile Include="src\RealBloom\Binary\BinaryConvNaiveGpu.cpp" />
     <ClCompile Include="src\RealBloom\ConvolutionFFT.cpp" />
     <ClCompile Include="src\RealBloom\DispersionThread.cpp" />
+    <ClCompile Include="src\RealBloom\GpuHelper.cpp" />
     <ClCompile Include="src\Utils\CliStackTimer.cpp" />
     <ClCompile Include="src\Utils\ConsoleColors.cpp" />
     <ClCompile Include="src\Utils\CliParser.cpp" />
@@ -238,6 +241,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\Utils\NumberHelpers.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\RealBloom\DiffractionPattern.cpp" />
+    <ClCompile Include="src\Utils\StreamUtils.cpp" />
     <ClCompile Include="src\Utils\StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -246,8 +250,11 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\CLI.h" />
     <ClInclude Include="src\ColorManagement\CMF.h" />
     <ClInclude Include="src\ColorManagement\CmXYZ.h" />
+    <ClInclude Include="src\RealBloom\Binary\BinaryData.h" />
+    <ClInclude Include="src\RealBloom\Binary\BinaryConvNaiveGpu.h" />
     <ClInclude Include="src\RealBloom\ConvolutionFFT.h" />
     <ClInclude Include="src\RealBloom\DispersionThread.h" />
+    <ClInclude Include="src\RealBloom\GpuHelper.h" />
     <ClInclude Include="src\Utils\CliStackTimer.h" />
     <ClInclude Include="src\Utils\ConsoleColors.h" />
     <ClInclude Include="src\Utils\CliParser.h" />
@@ -327,7 +334,6 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\ColorManagement\CmImage.h" />
     <ClInclude Include="src\ColorManagement\CmImageIO.h" />
     <ClInclude Include="src\ColorManagement\CMS.h" />
-    <ClInclude Include="src\RealBloom\ConvolutionGPUBinary.h" />
     <ClInclude Include="src\Utils\GlUtils.h" />
     <ClInclude Include="src\Utils\RandomNumber.h" />
     <ClInclude Include="include\GL\eglew.h" />
@@ -356,6 +362,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\Main.h" />
     <ClInclude Include="src\RealBloom\DiffractionPattern.h" />
     <ClInclude Include="src\Utils\Misc.h" />
+    <ClInclude Include="src\Utils\StreamUtils.h" />
     <ClInclude Include="src\Utils\StringUtils.h" />
     <ClInclude Include="src\Utils\Array2D.h" />
   </ItemGroup>

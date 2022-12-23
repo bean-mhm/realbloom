@@ -12,8 +12,11 @@
 #include <memory>
 #include <chrono>
 #include <thread>
+#include <stdint.h>
 
-#include "RealBloom/ConvolutionGPUBinary.h"
+#include "RealBloom/Binary/BinaryData.h"
+#include "RealBloom/Binary/BinaryConvNaiveGpu.h"
+
 #include "Utils/NumberHelpers.h"
 #include "Utils/Misc.h"
 #include "Utils/GlFrameBuffer.h"
@@ -21,11 +24,11 @@
 namespace RealBloom
 {
 
-    class ConvolutionGPU;
+    class ConvolutionNaiveGPU;
 
-    struct ConvolutionGPUData
+    struct ConvolutionNaiveGPUData
     {
-        ConvolutionGPUBinaryInput* binaryInput;
+        BinaryConvNaiveGpuInput* binInput;
         uint32_t numPoints = 0;
         std::vector<float> points; // Each point consists of 2 elements for position and 3 for color: x, y, r, g ,b
         std::vector<float> outputBuffer;
@@ -38,10 +41,10 @@ namespace RealBloom
         void setError(std::string message);
     };
 
-    class ConvolutionGPU
+    class ConvolutionNaiveGPU
     {
     private:
-        ConvolutionGPUData* m_data;
+        ConvolutionNaiveGPUData* m_data;
 
         uint32_t m_width = 0;
         uint32_t m_height = 0;
@@ -57,15 +60,13 @@ namespace RealBloom
 
         GLuint m_texKernel = 0;
 
-        void initGL();
         void definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs);
         void makeProgram();
         void makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize);
         void drawScene(uint32_t numPoints);
 
-        friend void init(void* pdata);
     public:
-        ConvolutionGPU(ConvolutionGPUData* data);
+        ConvolutionNaiveGPU(ConvolutionNaiveGPUData* data);
         void start(uint32_t numChunks, uint32_t chunkIndex);
     };
 

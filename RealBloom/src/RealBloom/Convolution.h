@@ -5,6 +5,13 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
+#include <filesystem>
+#include <iostream>
+#include <fstream>
+
+#include "GpuHelper.h"
+#include "Binary/BinaryData.h"
+#include "Binary/BinaryConvNaiveGpu.h"
 
 #include "../ColorManagement/CmImage.h"
 #include "../Utils/NumberHelpers.h"
@@ -13,13 +20,9 @@
 #include "../Utils/Misc.h"
 #include "../Async.h"
 
-#include "ConvolutionGPUBinary.h"
-#include <filesystem>
-#include <iostream>
-#include <fstream>
-
 namespace RealBloom
 {
+
     constexpr float CONV_MULTIPLIER = 1.0 / 1024.0;
     constexpr int CONV_MAX_CHUNKS = 2048;
     constexpr int CONV_MAX_SLEEP = 5000;

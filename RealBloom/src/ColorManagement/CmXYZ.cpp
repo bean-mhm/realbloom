@@ -88,3 +88,9 @@ std::string CmXYZ::getError()
 {
     return S_STATE.getError();
 }
+
+void CmXYZ::ensureOK()
+{
+    if (!ok())
+        throw std::exception(strFormat("CmXYZ failure: %s", getError().c_str()).c_str());
+}

@@ -52,4 +52,5 @@ public:
 
     static bool ok();
     static std::string getError();
+    static void ensureOK();
 };

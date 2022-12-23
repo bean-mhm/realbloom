@@ -6,10 +6,10 @@ namespace RealBloom
     DispersionThread::DispersionThread(
         uint32_t numThreads, uint32_t threadIndex, const DispersionParams& params,
         float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
-        float* cmfSamples, float cmfLuminanceMul)
+        float* cmfSamples)
         : m_numThreads(numThreads), m_threadIndex(threadIndex), m_params(params),
         m_inputBuffer(inputBuffer), m_inputWidth(inputWidth), m_inputHeight(inputHeight),
-        m_cmfSamples(cmfSamples), m_cmfLuminanceMul(cmfLuminanceMul)
+        m_cmfSamples(cmfSamples)
     {}
 
     void DispersionThread::start()
@@ -63,9 +63,9 @@ namespace RealBloom
             float scaledMul = 1.0f / scaledArea;
 
             uint32_t smpIndex = (i - 1) * 3;
-            float wlR = m_cmfSamples[smpIndex + 0] * m_cmfLuminanceMul * scaledMul * dispColor[0];
-            float wlG = m_cmfSamples[smpIndex + 1] * m_cmfLuminanceMul * scaledMul * dispColor[1];
-            float wlB = m_cmfSamples[smpIndex + 2] * m_cmfLuminanceMul * scaledMul * dispColor[2];
+            float wlR = m_cmfSamples[smpIndex + 0] * scaledMul * dispColor[0];
+            float wlG = m_cmfSamples[smpIndex + 1] * scaledMul * dispColor[1];
+            float wlB = m_cmfSamples[smpIndex + 2] * scaledMul * dispColor[2];
 
             // Clear scaledBuffer
             for (uint32_t i = 0; i < scaledBufferSize; i++)

@@ -1,24 +1,24 @@
 #include "Misc.h"
 
-bool printErrEnbaled = true;
+bool g_printErrEnbaled = true;
 
-std::string printErr(const std::string& source, const std::string& stage, const std::string& message)
+std::string printErr(const std::string& source, const std::string& stage, const std::string& message, bool printAnyway)
 {
     std::string s = strFormat("[%s] %s: %s", source.c_str(), stage.c_str(), message.c_str());
-    if (printErrEnbaled) std::cerr << s << "\n";
+    if (g_printErrEnbaled || printAnyway) std::cerr << s << "\n";
     return s;
 }
 
-std::string printErr(const std::string& source, const std::string& message)
+std::string printErr(const std::string& source, const std::string& message, bool printAnyway)
 {
     std::string s = strFormat("[%s] %s", source.c_str(), message.c_str());
-    if (printErrEnbaled) std::cerr << s << "\n";
+    if (g_printErrEnbaled || printAnyway) std::cerr << s << "\n";
     return s;
 }
 
 void disablePrintErr()
 {
-    printErrEnbaled = false;
+    g_printErrEnbaled = false;
 }
 
 uint32_t getMaxNumThreads()

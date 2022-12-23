@@ -44,7 +44,6 @@ namespace RealBloom
         uint32_t m_inputHeight;
 
         float* m_cmfSamples;
-        float m_cmfLuminanceMul;
 
         std::vector<float> m_outputBuffer;
 
@@ -52,7 +51,7 @@ namespace RealBloom
         DispersionThread(
             uint32_t numThreads, uint32_t threadIndex, const DispersionParams& params,
             float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
-            float* cmfSamples, float cmfLuminanceMul);
+            float* cmfSamples);
 
         void start();
         void stop();

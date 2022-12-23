@@ -54,7 +54,7 @@ bool CmImageIO::readImageColorSpace(const std::string& filename, std::string& ou
     }
     catch (const std::exception& e)
     {
-        printErr(__FUNCTION__, e.what());
+        printErr(__FUNCTION__, e.what(), true);
     }
 
     return false;

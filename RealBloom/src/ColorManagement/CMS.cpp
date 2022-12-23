@@ -19,7 +19,7 @@ void CMS::CmVars::retrieveColorSpaces()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, "Internal config", e.what());
+        printErr(__FUNCTION__, "Internal config", e.what(), true);
     }
 
     colorSpaces.clear();
@@ -31,7 +31,7 @@ void CMS::CmVars::retrieveColorSpaces()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, "User config", e.what());
+        printErr(__FUNCTION__, "User config", e.what(), true);
     }
 }
 
@@ -46,7 +46,7 @@ void CMS::CmVars::retrieveDisplays()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, e.what());
+        printErr(__FUNCTION__, e.what(), true);
     }
 }
 
@@ -61,7 +61,7 @@ void CMS::CmVars::retrieveViews()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, e.what());
+        printErr(__FUNCTION__, e.what(), true);
     }
 }
 
@@ -77,7 +77,7 @@ void CMS::CmVars::retrieveLooks()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, e.what());
+        printErr(__FUNCTION__, e.what(), true);
     }
 }
 

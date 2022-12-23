@@ -72,25 +72,21 @@ namespace RealBloom
             m_imgConvPreview->resize(inputWidth, inputHeight, false);
             float* prevBuffer = m_imgConvPreview->getImageData();
 
-            float v;
-            uint32_t redIndex;
-            float mul;
             for (uint32_t y = 0; y < inputHeight; y++)
             {
                 for (uint32_t x = 0; x < inputWidth; x++)
                 {
-                    redIndex = (y * inputWidth + x) * 4;
+                    uint32_t redIndex = (y * inputWidth + x) * 4;
                     prevBuffer[redIndex + 0] = 0;
                     prevBuffer[redIndex + 1] = 0;
                     prevBuffer[redIndex + 2] = 0;
                     prevBuffer[redIndex + 3] = 1;
 
-                    v = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
+                    float v = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
                     if (v > threshold)
                     {
                         numPixels++;
-
-                        mul = softThreshold(v, threshold, m_params.convKnee);
+                        float mul = softThreshold(v, threshold, m_params.convKnee);
                         blendAddRGB(prevBuffer, redIndex, inputBuffer, redIndex, mul);
                     }
                 }
@@ -241,13 +237,12 @@ namespace RealBloom
             uint32_t cropStartX = (uint32_t)floorf(m_params.kernelCenterX * cropMaxOffsetX);
             uint32_t cropStartY = (uint32_t)floorf(m_params.kernelCenterY * cropMaxOffsetY);
 
-            uint32_t redIndexCropped, redIndexScaled;
             for (uint32_t y = 0; y < croppedHeight; y++)
             {
                 for (uint32_t x = 0; x < croppedWidth; x++)
                 {
-                    redIndexCropped = (y * croppedWidth + x) * 4;
-                    redIndexScaled = 4 * (((y + cropStartY) * scaledWidth) + x + cropStartX);
+                    uint32_t redIndexCropped = (y * croppedWidth + x) * 4;
+                    uint32_t redIndexScaled = 4 * (((y + cropStartY) * scaledWidth) + x + cropStartX);
 
                     croppedBuffer[redIndexCropped + 0] = scaledBuffer[redIndexScaled + 0];
                     croppedBuffer[redIndexCropped + 1] = scaledBuffer[redIndexScaled + 1];
@@ -395,12 +390,11 @@ namespace RealBloom
                 float* convMixBuffer = m_imgConvMix->getImageData();
 
                 float multiplier = convMix * applyExposure(convExposure);
-                uint32_t redIndex;
                 for (uint32_t y = 0; y < inputHeight; y++)
                 {
                     for (uint32_t x = 0; x < inputWidth; x++)
                     {
-                        redIndex = (y * inputWidth + x) * 4;
+                        uint32_t redIndex = (y * inputWidth + x) * 4;
 
                         convMixBuffer[redIndex + 0] =
                             (inputBuffer[redIndex + 0] * inputMix) + (convBuffer[redIndex + 0] * multiplier);
@@ -472,7 +466,6 @@ namespace RealBloom
                     std::copy(inputImageData, inputImageData + inputBufferSize, inputBuffer.data());
                 }
 
-                ConvolutionGPUBinaryInput cgBinInput;
                 if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
                 {
                     try
@@ -615,12 +608,11 @@ namespace RealBloom
                                     if (m_threads[i])
                                     {
                                         std::vector<float>& currentBuffer = m_threads[i]->getBuffer();
-                                        uint32_t redIndex;
                                         for (uint32_t y = 0; y < inputHeight; y++)
                                         {
                                             for (uint32_t x = 0; x < inputWidth; x++)
                                             {
-                                                redIndex = (y * inputWidth + x) * 4;
+                                                uint32_t redIndex = (y * inputWidth + x) * 4;
                                                 progBuffer[redIndex + 0] += currentBuffer[redIndex + 0] * CONV_MULTIPLIER;
                                                 progBuffer[redIndex + 1] += currentBuffer[redIndex + 1] * CONV_MULTIPLIER;
                                                 progBuffer[redIndex + 2] += currentBuffer[redIndex + 2] * CONV_MULTIPLIER;
@@ -655,52 +647,27 @@ namespace RealBloom
 
                     clearVector(inputBuffer);
                     clearVector(kernelBuffer);
-                }
-                else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
-                {
-                    // Prepare input data for GPU convolution
-                    cgBinInput.numChunks = numChunks;
-                    cgBinInput.chunkSleep = chunkSleep;
-                    cgBinInput.cp_kernelCenterX = m_params.kernelCenterX;
-                    cgBinInput.cp_kernelCenterY = m_params.kernelCenterY;
-                    cgBinInput.cp_convThreshold = m_params.convThreshold;
-                    cgBinInput.cp_convKnee = m_params.convKnee;
-                    cgBinInput.convMultiplier = CONV_MULTIPLIER;
-                    cgBinInput.inputWidth = inputWidth;
-                    cgBinInput.inputHeight = inputHeight;
-                    cgBinInput.kernelWidth = kernelWidth;
-                    cgBinInput.kernelHeight = kernelHeight;
-                    cgBinInput.inputBuffer = inputBuffer.data();
-                    cgBinInput.kernelBuffer = kernelBuffer.data();
-                }
 
-                if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
-                {
-                    // Prepare the output buffer
-                    std::lock_guard<CmImage> lock(m_imgOutput);
-                    m_imgOutput.resize(inputWidth, inputHeight, false);
-                    float* convBuffer = m_imgOutput.getImageData();
-
-                    // Add the buffers from each thread
-                    for (uint32_t i = 0; i < numThreads; i++)
+                    // Update the output buffer
                     {
-                        if (m_state.mustCancel)
-                            break;
+                        std::lock_guard<CmImage> lock(m_imgOutput);
+                        m_imgOutput.resize(inputWidth, inputHeight, false);
+                        float* convBuffer = m_imgOutput.getImageData();
 
-                        if (m_threads[i])
+                        // Add the buffers from each thread
+                        for (uint32_t i = 0; i < numThreads; i++)
                         {
-                            std::vector<float>& threadBuffer = m_threads[i]->getBuffer();
-                            if (!m_state.mustCancel)
+                            if (m_state.mustCancel)
+                                break;
+
+                            if (m_threads[i])
                             {
-                                uint32_t redIndex;
+                                std::vector<float>& threadBuffer = m_threads[i]->getBuffer();
                                 for (uint32_t y = 0; y < inputHeight; y++)
                                 {
-                                    if (m_state.mustCancel)
-                                        break;
-
                                     for (uint32_t x = 0; x < inputWidth; x++)
                                     {
-                                        redIndex = (y * inputWidth + x) * 4;
+                                        uint32_t redIndex = (y * inputWidth + x) * 4;
                                         convBuffer[redIndex + 0] += threadBuffer[redIndex + 0] * CONV_MULTIPLIER;
                                         convBuffer[redIndex + 1] += threadBuffer[redIndex + 1] * CONV_MULTIPLIER;
                                         convBuffer[redIndex + 2] += threadBuffer[redIndex + 2] * CONV_MULTIPLIER;
@@ -710,91 +677,88 @@ namespace RealBloom
                             }
                         }
                     }
+
+                    // Clean up
+                    for (uint32_t i = 0; i < numThreads; i++)
+                        DELPTR(m_threads[i]);
+                    m_threads.clear();
                 }
                 else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
                 {
+                    // Prepare input data for GPU convolution
+                    BinaryConvNaiveGpuInput binInput;
+                    binInput.numChunks = numChunks;
+                    binInput.chunkSleep = chunkSleep;
+                    binInput.cp_kernelCenterX = m_params.kernelCenterX;
+                    binInput.cp_kernelCenterY = m_params.kernelCenterY;
+                    binInput.cp_convThreshold = m_params.convThreshold;
+                    binInput.cp_convKnee = m_params.convKnee;
+                    binInput.convMultiplier = CONV_MULTIPLIER;
+                    binInput.inputWidth = inputWidth;
+                    binInput.inputHeight = inputHeight;
+                    binInput.kernelWidth = kernelWidth;
+                    binInput.kernelHeight = kernelHeight;
+                    binInput.inputBuffer = inputBuffer;
+                    binInput.kernelBuffer = kernelBuffer;
+
                     // Create input file for GPU convolution
                     std::string tempDir;
                     getTempDirectory(tempDir);
                     uint32_t randomNumber = (uint32_t)RandomNumber::nextInt();
 
                     // Filenames
-                    std::string cgInpFilename = strFormat(
+                    std::string inpFilename = strFormat(
                         "%sgpuconv%u",
                         tempDir.c_str(),
                         randomNumber);
-                    std::string cgOutFilename = cgInpFilename + "out";
-                    std::string cgStatFilename = cgInpFilename + "stat";
+                    std::string outFilename = inpFilename + "out";
+                    std::string statFilename = inpFilename + "stat";
 
                     // Global mutex for IO operations on the stat file
-                    std::string cgStatMutexName = "GlobalRbStatMutex" + std::to_string(randomNumber);
-                    {
-                        cgBinInput.statMutexNameSize = cgStatMutexName.size();
-                        cgBinInput.statMutexNameBuffer = new char[cgBinInput.statMutexNameSize];
-                        cgStatMutexName.copy(cgBinInput.statMutexNameBuffer, cgBinInput.statMutexNameSize);
-                    }
-                    HANDLE cgStatMutex = createMutex(cgStatMutexName);
-                    if (cgStatMutex == NULL)
-                        setErrorState(strFormat("Mutex \"%s\" could not be created.", cgStatMutexName.c_str()));
+                    std::string statMutexName = "GlobalRbStatMutex" + std::to_string(randomNumber);
+                    binInput.statMutexName = statMutexName;
+                    HANDLE statMutex = createMutex(statMutexName);
+                    if (statMutex == NULL)
+                        setErrorState(strFormat("Mutex \"%s\" could not be created.", statMutexName.c_str()));
 
                     // Create the input file
-                    std::ofstream cgInpFile;
+                    std::ofstream inpFile;
                     if (!m_state.failed)
                     {
-                        cgInpFile.open(cgInpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-                        if (!cgInpFile.is_open())
+                        inpFile.open(inpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+                        if (!inpFile.is_open())
                         {
-                            setErrorState(strFormat("File \"%s\" could not be created/opened.", cgInpFilename.c_str()));
+                            setErrorState(strFormat("File \"%s\" could not be created/opened.", inpFilename.c_str()));
                         }
                     }
 
                     // Write input data
                     if (!m_state.failed)
                     {
-                        cgInpFile.write(AS_BYTES(cgBinInput.statMutexNameSize), sizeof(cgBinInput.statMutexNameSize));
-                        cgInpFile.write(AS_BYTES(cgBinInput.numChunks), sizeof(cgBinInput.numChunks));
-                        cgInpFile.write(AS_BYTES(cgBinInput.chunkSleep), sizeof(cgBinInput.chunkSleep));
-
-                        cgInpFile.write(AS_BYTES(cgBinInput.cp_kernelCenterX), sizeof(cgBinInput.cp_kernelCenterX));
-                        cgInpFile.write(AS_BYTES(cgBinInput.cp_kernelCenterY), sizeof(cgBinInput.cp_kernelCenterY));
-                        cgInpFile.write(AS_BYTES(cgBinInput.cp_convThreshold), sizeof(cgBinInput.cp_convThreshold));
-                        cgInpFile.write(AS_BYTES(cgBinInput.cp_convKnee), sizeof(cgBinInput.cp_convKnee));
-                        cgInpFile.write(AS_BYTES(cgBinInput.convMultiplier), sizeof(cgBinInput.convMultiplier));
-
-                        cgInpFile.write(AS_BYTES(cgBinInput.inputWidth), sizeof(cgBinInput.inputWidth));
-                        cgInpFile.write(AS_BYTES(cgBinInput.inputHeight), sizeof(cgBinInput.inputHeight));
-                        cgInpFile.write(AS_BYTES(cgBinInput.kernelWidth), sizeof(cgBinInput.kernelWidth));
-                        cgInpFile.write(AS_BYTES(cgBinInput.kernelHeight), sizeof(cgBinInput.kernelHeight));
-
-                        cgInpFile.write(cgBinInput.statMutexNameBuffer, cgBinInput.statMutexNameSize);
-
-                        uint32_t inputSize = inputWidth * inputHeight * 4;
-                        cgInpFile.write(PTR_AS_BYTES(inputBuffer.data()), inputSize * sizeof(float));
-                        clearVector(inputBuffer);
-
-                        uint32_t kernelSize = kernelWidth * kernelHeight * 4;
-                        cgInpFile.write(PTR_AS_BYTES(kernelBuffer.data()), kernelSize * sizeof(float));
-                        clearVector(kernelBuffer);
-
-                        cgInpFile.flush();
-                        cgInpFile.close();
-                        if (cgInpFile.fail())
+                        try
                         {
-                            setErrorState("There was a problem when writing to the input file.");
+                            uint32_t opType = (uint32_t)GpuHelperOperationType::ConvNaive;
+                            stmWriteScalar(inpFile, opType);
+                            binInput.writeTo(inpFile);
                         }
+                        catch (const std::exception& e)
+                        {
+                            setErrorState(e.what());
+                        }
+                        inpFile.flush();
+                        inpFile.close();
                     }
-                    DELARR(cgBinInput.statMutexNameBuffer);
 
                     // Execute GPU Helper
-                    STARTUPINFOA cgStartupInfo;
-                    PROCESS_INFORMATION cgProcessInfo;
+                    STARTUPINFOA startupInfo;
+                    PROCESS_INFORMATION processInfo;
 
-                    ZeroMemory(&cgStartupInfo, sizeof(cgStartupInfo));
-                    cgStartupInfo.cb = sizeof(cgStartupInfo);
-                    ZeroMemory(&cgProcessInfo, sizeof(cgProcessInfo));
+                    ZeroMemory(&startupInfo, sizeof(startupInfo));
+                    startupInfo.cb = sizeof(startupInfo);
+                    ZeroMemory(&processInfo, sizeof(processInfo));
 
                     bool cgHasHandles = false;
-                    std::string cgCommandLine = strFormat("\"%s\" \"%s\"", getLocalPath("RealBloomGPUConv.exe").c_str(), cgInpFilename.c_str());
+                    std::string cgCommandLine = strFormat("\"%s\" \"%s\"", getLocalPath("RealBloomGpuHelper.exe").c_str(), inpFilename.c_str());
                     if (!m_state.failed)
                     {
                         if (CreateProcessA(
@@ -806,15 +770,15 @@ namespace RealBloom
                             CREATE_NO_WINDOW,                // Creation flags
                             NULL,                            // Use parent's environment block
                             NULL,                            // Use parent's starting directory 
-                            &cgStartupInfo,                  // Pointer to STARTUPINFO structure
-                            &cgProcessInfo))                 // Pointer to PROCESS_INFORMATION structure
+                            &startupInfo,                  // Pointer to STARTUPINFO structure
+                            &processInfo))                 // Pointer to PROCESS_INFORMATION structure
                         {
                             cgHasHandles = true;
 
                             // Close when the parent dies
                             HANDLE hJobObject = Async::getShared("hJobObject");
                             if (hJobObject)
-                                AssignProcessToJobObject(hJobObject, cgProcessInfo.hProcess);
+                                AssignProcessToJobObject(hJobObject, processInfo.hProcess);
                         }
                         else
                         {
@@ -826,17 +790,17 @@ namespace RealBloom
                     if (!m_state.failed)
                     {
                         auto t1 = std::chrono::system_clock::now();
-                        while (!std::filesystem::exists(cgOutFilename))
+                        while (!std::filesystem::exists(outFilename))
                         {
                             if (getElapsedMs(t1) > CONVGPU_FILE_TIMEOUT)
                             {
-                                killProcess(cgProcessInfo);
-                                setErrorState("RealBloomGPUConv did not create an output file.");
+                                killProcess(processInfo);
+                                setErrorState("RealBloomGpuHelper did not create an output file.");
                                 break;
                             }
                             else if (m_state.mustCancel)
                             {
-                                killProcess(cgProcessInfo);
+                                killProcess(processInfo);
                                 setErrorState(S_CANCELED_BY_USER);
                                 break;
                             }
@@ -848,71 +812,53 @@ namespace RealBloom
                     if (!m_state.failed)
                     {
                         auto t1 = std::chrono::system_clock::now();
-                        while (processIsRunning(cgProcessInfo))
+                        while (processIsRunning(processInfo))
                         {
                             if (m_state.mustCancel)
                             {
-                                killProcess(cgProcessInfo);
+                                killProcess(processInfo);
                                 setErrorState(S_CANCELED_BY_USER);
                                 break;
                             }
 
                             // Read stat file
-                            if (!(m_state.mustCancel) && std::filesystem::exists(cgStatFilename) && (getElapsedMs(t1) > CONV_PROG_TIMESTEP))
+                            if (!(m_state.mustCancel) && std::filesystem::exists(statFilename) && (getElapsedMs(t1) > CONV_PROG_TIMESTEP))
                             {
-                                ConvolutionGPUBinaryStat cgBinStat;
-                                waitForMutex(cgStatMutex);
+                                BinaryConvNaiveGpuStat binStat;
+                                waitForMutex(statMutex);
 
                                 // Open and read the stat file, check if numChunksDone has increased,
                                 // and if it has, then read the rest of the file and the buffer, and
                                 // show it through conv. mix
-                                std::ifstream cgStatFile;
-                                cgStatFile.open(cgStatFilename, std::ifstream::in | std::ifstream::binary);
-                                bool statParseFailed = false;
-                                if (cgStatFile.is_open())
+                                std::ifstream statFile;
+                                statFile.open(statFilename, std::ifstream::in | std::ifstream::binary);
+                                if (statFile.is_open())
                                 {
-                                    cgStatFile.seekg(std::ifstream::beg);
-
-                                    cgStatFile.read(AS_BYTES(cgBinStat.numChunksDone), sizeof(cgBinStat.numChunksDone));
-                                    statParseFailed |= cgStatFile.fail();
-
-                                    if (!statParseFailed && (cgBinStat.numChunksDone > m_state.numChunksDone))
-                                        m_state.numChunksDone = cgBinStat.numChunksDone;
-                                    else
-                                        statParseFailed = true;
-
-                                    if (!statParseFailed)
+                                    statFile.seekg(std::ifstream::beg);
+                                    try
                                     {
-                                        cgStatFile.read(AS_BYTES(cgBinStat.bufferSize), sizeof(cgBinStat.bufferSize));
-                                        statParseFailed |= cgStatFile.fail();
+                                        binStat.readFrom(statFile);
 
-                                        if (!statParseFailed && (cgBinStat.bufferSize > 0))
-                                        {
-                                            cgBinStat.buffer = new float[cgBinStat.bufferSize];
-                                            cgStatFile.read(PTR_AS_BYTES(cgBinStat.buffer), cgBinStat.bufferSize * sizeof(float));
-                                            statParseFailed |= cgStatFile.fail();
-                                        }
-                                        else
-                                            statParseFailed = true;
-                                    }
-
-                                    if (!statParseFailed && (cgBinStat.bufferSize > 0) && (cgBinStat.buffer != nullptr))
-                                    {
                                         // Copy the stat buffer into conv. mix
+                                        if (binStat.buffer.size() == (inputWidth * inputHeight * 4))
                                         {
                                             std::lock_guard<CmImage> lock(*m_imgConvMix);
                                             m_imgConvMix->resize(inputWidth, inputHeight, false);
                                             float* convBuffer = m_imgConvMix->getImageData();
-                                            std::copy(cgBinStat.buffer, cgBinStat.buffer + cgBinStat.bufferSize, convBuffer);
+                                            std::copy(binStat.buffer.data(), binStat.buffer.data() + binStat.buffer.size(), convBuffer);
                                         }
                                         m_imgConvMix->moveToGPU();
-                                    }
 
-                                    DELARR(cgBinStat.buffer);
-                                    cgStatFile.close();
+                                        m_state.numChunksDone = std::max(binStat.numChunksDone, m_state.numChunksDone);
+                                    }
+                                    catch (const std::exception& e)
+                                    {
+                                        printErr(__FUNCTION__, e.what(), true);
+                                    }
+                                    statFile.close();
                                 }
 
-                                releaseMutex(cgStatMutex);
+                                releaseMutex(statMutex);
                                 t1 = std::chrono::system_clock::now();
                             }
                             std::this_thread::sleep_for(std::chrono::milliseconds(CONV_WAIT_TIMESTEP));
@@ -920,140 +866,82 @@ namespace RealBloom
                     }
 
                     // No longer need the mutex
-                    closeMutex(cgStatMutex);
+                    closeMutex(statMutex);
 
                     // Open the output file
-                    std::ifstream cgOutFile;
+                    std::ifstream outFile;
                     if (!m_state.failed)
                     {
-                        cgOutFile.open(cgOutFilename, std::ifstream::in | std::ifstream::binary);
-                        if (!cgOutFile.is_open() || cgOutFile.fail())
-                            setErrorState(strFormat("Output file \"%s\" could not be opened.", cgOutFilename.c_str()));
+                        outFile.open(outFilename, std::ifstream::in | std::ifstream::binary);
+                        if (!outFile.is_open())
+                            setErrorState(strFormat("Output file \"%s\" could not be opened.", outFilename.c_str()));
                         else
-                            cgOutFile.seekg(std::ifstream::beg);
+                            outFile.seekg(std::ifstream::beg);
                     }
 
                     // Parse the output file
-                    ConvolutionGPUBinaryOutput cgBinOutput;
+                    BinaryConvNaiveGpuOutput binOutput;
                     if (!m_state.failed)
                     {
-                        bool parseFailed = false;
-                        std::string parseStage = "Initialization";
-                        if (!parseFailed)
+                        try
                         {
-                            cgOutFile.read(AS_BYTES(cgBinOutput.status), sizeof(cgBinOutput.status));
-                            parseFailed |= cgOutFile.fail();
-                            parseStage = "status";
-                        }
-                        if (!parseFailed)
-                        {
-                            cgOutFile.read(AS_BYTES(cgBinOutput.errorSize), sizeof(cgBinOutput.errorSize));
-                            parseFailed |= cgOutFile.fail();
-                            parseStage = "errorSize";
-                        }
-                        if (!parseFailed)
-                        {
-                            cgOutFile.read(AS_BYTES(cgBinOutput.bufferSize), sizeof(cgBinOutput.bufferSize));
-                            parseFailed |= cgOutFile.fail();
-                            parseStage = "bufferSize";
-                        }
-                        if (!parseFailed)
-                        {
-                            if (cgBinOutput.errorSize > 0)
+                            binOutput.readFrom(outFile);
+                            if (binOutput.status == 1)
                             {
-                                cgBinOutput.errorBuffer = new char[cgBinOutput.errorSize + 1];
-                                cgBinOutput.errorBuffer[cgBinOutput.errorSize] = '\0';
+                                // Prepare the output buffer
+                                std::lock_guard<CmImage> lock(m_imgOutput);
+                                m_imgOutput.resize(inputWidth, inputHeight, false);
+                                float* convBuffer = m_imgOutput.getImageData();
+                                uint32_t convBufferSize = m_imgOutput.getImageDataSize();
 
-                                cgOutFile.read(cgBinOutput.errorBuffer, cgBinOutput.errorSize);
-                                parseFailed |= cgOutFile.fail();
-                                parseStage = "errorBuffer";
-                            }
-                        }
-                        if (!parseFailed)
-                        {
-                            if (cgBinOutput.bufferSize > 0)
-                            {
-                                cgBinOutput.buffer = new float[cgBinOutput.bufferSize];
-
-                                cgOutFile.read(PTR_AS_BYTES(cgBinOutput.buffer), cgBinOutput.bufferSize * sizeof(float));
-                                parseFailed |= cgOutFile.fail();
-                                parseStage = "buffer";
-                            }
-                        }
-                        cgOutFile.close();
-
-                        if (parseFailed)
-                            if (parseStage == "status")
-                                setErrorState(
-                                    "Could not retrieve data from the output file. The GPU Helper has probably "
-                                    "crashed. Try using more chunks, as the GPU might not be able to handle the "
-                                    "current amount of data at once.");
-                            else
-                                setErrorState(strFormat(
-                                    "Could not retrieve data from the output file, failed at \"%s\".", parseStage.c_str()));
-                    }
-
-                    // If successful, update the output image
-                    // otherwise set error
-                    if (!m_state.failed)
-                    {
-                        if (cgBinOutput.status == 1)
-                        {
-                            // Prepare the output buffer
-                            std::lock_guard<CmImage> lock(m_imgOutput);
-                            m_imgOutput.resize(inputWidth, inputHeight, false);
-                            float* convBuffer = m_imgOutput.getImageData();
-                            uint32_t convBufferSize = m_imgOutput.getImageDataSize();
-
-                            if (convBufferSize == cgBinOutput.bufferSize)
-                            {
-                                for (uint32_t i = 0; i < cgBinOutput.bufferSize; i++)
+                                if (convBufferSize == binOutput.buffer.size())
                                 {
-                                    convBuffer[i] = cgBinOutput.buffer[i];
+                                    for (uint32_t i = 0; i < convBufferSize; i++)
+                                    {
+                                        convBuffer[i] = binOutput.buffer[i];
+                                    }
+                                }
+                                else
+                                {
+                                    setErrorState(strFormat(
+                                        "Output buffer size (%u) does not match the input size (%u).",
+                                        binOutput.buffer.size(), convBufferSize
+                                    ));
                                 }
                             }
                             else
                             {
-                                setErrorState(strFormat(
-                                    "Output buffer size (%u) does not match the input size (%u).", cgBinOutput.bufferSize, convBufferSize));
+                                setErrorState(binOutput.error);
                             }
                         }
-                        else
+                        catch (const std::exception& e)
                         {
-                            std::string errorS = "Unknown";
-                            if (cgBinOutput.errorSize > 0)
-                                errorS = cgBinOutput.errorBuffer;
-
-                            setErrorState(errorS);
+                            setErrorState(strFormat(
+                                "Could not retrieve data from the output file: %s",
+                                e.what()
+                            ));
                         }
+                        outFile.close();
                     }
 
                     // Clean up
-                    DELARR(cgBinOutput.errorBuffer);
-                    DELARR(cgBinOutput.buffer);
                     if (cgHasHandles)
                     {
-                        CloseHandle(cgProcessInfo.hProcess);
-                        CloseHandle(cgProcessInfo.hThread);
+                        CloseHandle(processInfo.hProcess);
+                        CloseHandle(processInfo.hThread);
                         cgHasHandles = false;
                     }
 
                     // Delete the temporary files
                     if (CONVGPU_DELETE_TEMP)
                     {
-                        deleteFile(cgInpFilename);
-                        deleteFile(cgStatFilename);
-                        deleteFile(cgOutFilename);
+                        deleteFile(inpFilename);
+                        deleteFile(statFilename);
+                        deleteFile(outFilename);
                     }
                 }
 
                 // Clean up
-                if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
-                {
-                    for (uint32_t i = 0; i < numThreads; i++)
-                        DELPTR(m_threads[i]);
-                    m_threads.clear();
-                }
                 clearVector(inputBuffer);
                 clearVector(kernelBuffer);
 
@@ -1334,14 +1222,13 @@ namespace RealBloom
         int rx2 = rx + rw;
         int ry2 = ry + rh;
 
-        uint32_t redIndex;
         for (int y = ry; y <= ry2; y++)
         {
             for (int x = rx; x <= rx2; x++)
             {
                 if (checkBounds(x, y, imageWidth, imageHeight))
                 {
-                    redIndex = (y * imageWidth + x) * 4;
+                    uint32_t redIndex = (y * imageWidth + x) * 4;
                     buffer[redIndex + 0] = 0;
                     buffer[redIndex + 1] = 0;
                     buffer[redIndex + 2] = 1;

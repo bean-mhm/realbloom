@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <unordered_map>
+#include <functional>
 #include <filesystem>
 #include <fstream>
 #include <ctime>
@@ -7,11 +9,20 @@
 #include <locale>
 #include <clocale>
 
-#include "RealBloom/ConvolutionGPU.h"
-#include "RealBloom/ConvolutionGPUBinary.h"
-#include "Utils/Misc.h"
+#include "RealBloom/GpuHelper.h"
+#include "RealBloom/Binary/BinaryData.h"
+#include "RealBloom/Binary/BinaryConvNaiveGpu.h"
 
+#include "RealBloom/ConvolutionNaiveGPU.h"
+
+#include "Utils/GlContext.h"
+#include "Utils/Misc.h"
 #include "Config.h"
+
+#ifndef GLEW_STATIC
+#define GLEW_STATIC
+#endif
+#include <GL/glew.h>
 
 constexpr const char* APP_TITLE = "RealBloom GPU Helper";
 
@@ -21,20 +32,9 @@ extern "C" {
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
+void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
+
 std::ofstream logFile;
-
-void parseTime(std::string& outTimeS)
-{
-    time_t rawtime;
-    struct tm timeinfo;
-    char buffer[128];
-
-    time(&rawtime);
-    localtime_s(&timeinfo, &rawtime);
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeinfo);
-
-    outTimeS = buffer;
-}
 
 enum class LogLevel
 {
@@ -71,17 +71,10 @@ void logAdd(LogLevel level, const std::string& message)
         break;
     }
 
-    std::string timeS;
-    parseTime(timeS);
+    std::string timeS = strFromTime();
 
     logFile << "[" << timeS << "][" << levelS << "] " << message << "\n";
     logFile.flush();
-}
-
-void logFail(const std::string& message)
-{
-    logAdd(LogLevel::Fatal, message);
-    logFile.close();
 }
 
 int main(int argc, char* argv[])
@@ -97,7 +90,7 @@ int main(int argc, char* argv[])
     std::string inpFilename = argv[1];
     if (!std::filesystem::exists(inpFilename))
     {
-        std::cout << "Input file does not exist!\n";
+        std::cout << "Input file does not exist.\n";
         return 1;
     }
 
@@ -129,7 +122,7 @@ int main(int argc, char* argv[])
     outFile.open(outFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
     if (!outFile.is_open())
     {
-        logFail("Output file could not be created/opened.");
+        logAdd(LogLevel::Fatal, "Output file could not be created/opened.");
         return 1;
     }
 
@@ -138,7 +131,7 @@ int main(int argc, char* argv[])
     inpFile.open(inpFilename, std::ifstream::in | std::ifstream::binary);
     if (!inpFile.is_open() || inpFile.fail())
     {
-        logFail("Input file could not be opened.");
+        logAdd(LogLevel::Fatal, "Input file could not be opened.");
         return 1;
     }
     else
@@ -146,203 +139,149 @@ int main(int argc, char* argv[])
         inpFile.seekg(std::ifstream::beg);
     }
 
-    // Parse input
-    RealBloom::ConvolutionGPUBinaryInput cgInput;
+    // Read the operation type
+    GpuHelperOperationType opType = (GpuHelperOperationType)stmReadScalar<uint32_t>(inpFile);
+    if (inpFile.fail())
+    {
+        logAdd(LogLevel::Fatal, "Failed to read the operation type.");
+        return 1;
+    }
+
+    // Map operation types to functions
+    std::unordered_map<GpuHelperOperationType, GpuHelperOperation> opMap;
+    opMap[GpuHelperOperationType::ConvNaive] = runConvNaive;
+
+    // Check if operation has a function associated
+    if (opMap.count(opType) < 1)
+    {
+        logAdd(LogLevel::Fatal, "Operation not implemented.");
+        return 1;
+    }
+
+    // Create OpenGL context
+    {
+        std::string ctxError;
+        bool ctxSuccess = oglOneTimeContext(
+            [&opType, &opMap, &inpFilename, &outFilename, &inpFile, &outFile]()
+            {
+                // Log
+                logAdd(LogLevel::Info, strFormat("Operation type: %s", strFromGpuHelperOperationType(opType)));
+                logAdd(LogLevel::Info, strFormat("Renderer: %s", (const char*)glGetString(GL_RENDERER)));
+
+                // Start the operation
+                logAdd(LogLevel::Info, "Starting operation...");
+                opMap[opType](inpFilename, outFilename, inpFile, outFile);
+            },
+            ctxError);
+
+        if (!ctxSuccess)
+        {
+            logAdd(LogLevel::Fatal, strFormat("OpenGL context initialization error: \"%s\"", ctxError));
+            return 1;
+        }
+    }
+
+    // Close the output file
+    outFile.flush();
+    outFile.close();
+    if (outFile.fail())
+        logAdd(LogLevel::Error, "There was a problem when writing the output.");
+    else
+        logAdd(LogLevel::Info, "Output was successfully written.");
+
+    return 0;
+}
+
+void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)
+{
+    // Read the input
+
     logAdd(LogLevel::Info, "Attempting to read the input data...");
 
-    bool parseFailed = false;
-    std::string parseStage = "Initialization";
-    if (!parseFailed)
+    bool readInput = false;
+    std::string readInputError = "";
+    RealBloom::BinaryConvNaiveGpuInput binInput;
+    try
     {
-        inpFile.read(AS_BYTES(cgInput.statMutexNameSize), sizeof(cgInput.statMutexNameSize));
-        parseFailed |= inpFile.fail();
-        parseStage = "statMutexNameSize";
+        binInput.readFrom(inpFile);
+        readInput = true;
     }
-    if (!parseFailed)
+    catch (const std::exception& e)
     {
-        inpFile.read(AS_BYTES(cgInput.numChunks), sizeof(cgInput.numChunks));
-        parseFailed |= inpFile.fail();
-        parseStage = "numChunks";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.chunkSleep), sizeof(cgInput.chunkSleep));
-        parseFailed |= inpFile.fail();
-        parseStage = "chunkSleep";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.cp_kernelCenterX), sizeof(cgInput.cp_kernelCenterX));
-        parseFailed |= inpFile.fail();
-        parseStage = "cp_kernelCenterX";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.cp_kernelCenterY), sizeof(cgInput.cp_kernelCenterY));
-        parseFailed |= inpFile.fail();
-        parseStage = "cp_kernelCenterY";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.cp_convThreshold), sizeof(cgInput.cp_convThreshold));
-        parseFailed |= inpFile.fail();
-        parseStage = "cp_convThreshold";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.cp_convKnee), sizeof(cgInput.cp_convKnee));
-        parseFailed |= inpFile.fail();
-        parseStage = "cp_convKnee";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.convMultiplier), sizeof(cgInput.convMultiplier));
-        parseFailed |= inpFile.fail();
-        parseStage = "convMultiplier";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.inputWidth), sizeof(cgInput.inputWidth));
-        parseFailed |= inpFile.fail();
-        parseStage = "inputWidth";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.inputHeight), sizeof(cgInput.inputHeight));
-        parseFailed |= inpFile.fail();
-        parseStage = "inputHeight";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.kernelWidth), sizeof(cgInput.kernelWidth));
-        parseFailed |= inpFile.fail();
-        parseStage = "kernelWidth";
-    }
-    if (!parseFailed)
-    {
-        inpFile.read(AS_BYTES(cgInput.kernelHeight), sizeof(cgInput.kernelHeight));
-        parseFailed |= inpFile.fail();
-        parseStage = "kernelHeight";
-    }
-    if (!parseFailed)
-    {
-        cgInput.statMutexNameBuffer = new char[cgInput.statMutexNameSize + 1];
-        cgInput.statMutexNameBuffer[cgInput.statMutexNameSize] = '\0';
-
-        inpFile.read(cgInput.statMutexNameBuffer, cgInput.statMutexNameSize);
-        parseFailed |= inpFile.fail();
-        parseStage = "statMutexNameBuffer";
-    }
-    if (!parseFailed)
-    {
-        uint32_t inputSize = cgInput.inputWidth * cgInput.inputHeight * 4;
-        if (inputSize > 0)
-        {
-            cgInput.inputBuffer = new float[inputSize];
-            inpFile.read(PTR_AS_BYTES(cgInput.inputBuffer), inputSize * sizeof(float));
-            parseFailed |= inpFile.fail();
-            parseStage = "inputBuffer";
-        }
-    }
-    if (!parseFailed)
-    {
-        uint32_t kernelSize = cgInput.kernelWidth * cgInput.kernelHeight * 4;
-        if (kernelSize > 0)
-        {
-            cgInput.kernelBuffer = new float[kernelSize];
-            inpFile.read(PTR_AS_BYTES(cgInput.kernelBuffer), kernelSize * sizeof(float));
-            parseFailed |= inpFile.fail();
-            parseStage = "kernelBuffer";
-        }
+        readInputError = e.what();
+        logAdd(LogLevel::Error, e.what());
     }
     inpFile.close();
-    logAdd(LogLevel::Info, "Closed the input file.");
 
-    // Will be manipulated later
-    bool cgFinalSuccess = true;
-    std::string cgFinalError = "";
-    std::vector<float> cgFinalBuffer;
+    logAdd(LogLevel::Info, "Preparing...");
 
-    // Prepare the final buffer
-    uint32_t inputSize = cgInput.inputWidth * cgInput.inputHeight * 4;
-    cgFinalBuffer.resize(inputSize);
+    // Final status to write into the output
+    bool finalSuccess = true;
+    std::string finalError = "";
+
+    // Allocate the final buffer
+    uint32_t inputSize = binInput.inputWidth * binInput.inputHeight * 4;
+    std::vector<float> finalBuffer;
+    finalBuffer.resize(inputSize);
+
+    // Fill with black
     for (uint32_t i = 0; i < inputSize; i++)
+        finalBuffer[i] = (i % 4 == 3) ? 1.0f : 0.0f;
+
+    // Stat file info
+    std::string statFilename = inpFilename + "stat";
+    std::string statMutexName = binInput.statMutexName;
+
+    // How frequently to write the stat
+    std::chrono::time_point<std::chrono::system_clock> lastStatWriteTime = std::chrono::system_clock::now();
+    uint32_t statWriteInterval = 1; // write stat after every chunk
+    if (binInput.numChunks > 15) statWriteInterval = 2; // every 2 chunks
+    if (binInput.numChunks > 30) statWriteInterval = 3; // every 3 chunks
+    if (binInput.numChunks > 50) statWriteInterval = 4; // every 4 chunks
+
+    if (readInput)
     {
-        if (i % 4 == 3) // alpha channel
-            cgFinalBuffer[i] = 1.0f;
-        else
-            cgFinalBuffer[i] = 0.0f;
-    }
-
-    // Start convolution if input was read successfully
-    if (!parseFailed)
-    {
-        logAdd(LogLevel::Info, "Starting GPU Convolution...");
-
-        bool hasRenderer = false;
-        std::string renderer = "Unknown";
-
-        std::string statFilename = inpFilename + "stat";
-        std::string statMutexName = cgInput.statMutexNameBuffer;
-
-        std::chrono::time_point<std::chrono::system_clock> lastStatWriteTime = std::chrono::system_clock::now();
-        uint32_t statWriteInterval = 1; // write stat every x chunks
-        if (cgInput.numChunks > 15) statWriteInterval = 2; // every 2 chunks
-        if (cgInput.numChunks > 30) statWriteInterval = 3; // every 3 chunks
-        if (cgInput.numChunks > 50) statWriteInterval = 4; // every 4 chunks
-
-        for (uint32_t i = 0; i < cgInput.numChunks; i++)
+        // Start convolution
+        logAdd(LogLevel::Info, "Starting convolution...");
+        for (uint32_t i = 0; i < binInput.numChunks; i++)
         {
-            RealBloom::ConvolutionGPUData cgData;
-            cgData.binaryInput = &cgInput;
+            RealBloom::ConvolutionNaiveGPUData data;
+            data.binInput = &binInput;
 
-            // Start Convolution
-            RealBloom::ConvolutionGPU conv(&cgData);
-            conv.start(cgInput.numChunks, i);
+            RealBloom::ConvolutionNaiveGPU conv(&data);
+            conv.start(binInput.numChunks, i);
 
-            if (cgData.success)
+            if (data.success)
             {
                 for (uint32_t j = 0; j < inputSize; j++)
                     if (j % 4 != 3) // if not alpha channel
-                        cgFinalBuffer[j] += cgData.outputBuffer[j];
-            }
-            else
-            {
-                cgFinalSuccess = false;
-                cgFinalError = cgData.error;
-                clearVector(cgFinalBuffer);
-            }
+                        finalBuffer[j] += data.outputBuffer[j];
 
-            if (!hasRenderer)
-            {
-                renderer = cgData.gpuName;
-                hasRenderer = true;
-            }
-
-            if (cgFinalSuccess)
-            {
                 logAdd(LogLevel::Info, strFormat(
-                    "Chunk %d/%d (%d points) was successful.", i + 1, cgInput.numChunks, cgData.numPoints));
+                    "Chunk %u/%u (%u points) was successful.", i + 1, binInput.numChunks, data.numPoints));
             }
             else
             {
+                finalSuccess = false;
+                finalError = data.error;
+                clearVector(finalBuffer);
+
                 logAdd(LogLevel::Error, strFormat(
-                    "Chunk %d/%d (%d points) was failed.", i + 1, cgInput.numChunks, cgData.numPoints));
-                logAdd(LogLevel::Error, cgData.error);
+                    "Chunk %u/%u (%u points) was failed.", i + 1, binInput.numChunks, data.numPoints));
+                logAdd(LogLevel::Error, data.error);
                 break;
             }
 
-            // Write stat file to show the progress
-            if ((cgInput.numChunks > 1)
-                && cgFinalSuccess
+            // Write stat file to report the progress
+            if ((binInput.numChunks > 1)
+                && finalSuccess
                 && (getElapsedMs(lastStatWriteTime) > 500)
                 && (i % statWriteInterval == 0)
-                && (i < (cgInput.numChunks - 1))) // not the last chunk
+                && (i < (binInput.numChunks - 1))) // not the last chunk
             {
-                RealBloom::ConvolutionGPUBinaryStat cgStat;
-                cgStat.numChunksDone = i + 1;
-                cgStat.bufferSize = cgFinalBuffer.size();
-                cgStat.buffer = cgFinalBuffer.data();
+                RealBloom::BinaryConvNaiveGpuStat binStat;
+                binStat.numChunksDone = i + 1;
+                binStat.buffer = finalBuffer;
 
                 HANDLE hMutex = openMutex(statMutexName);
                 if (hMutex == NULL)
@@ -358,23 +297,17 @@ int main(int argc, char* argv[])
                 }
                 else
                 {
+                    try
                     {
-                        // numChunksDone
-                        statFile.write(AS_BYTES(cgStat.numChunksDone), sizeof(cgStat.numChunksDone));
-
-                        // bufferSize
-                        statFile.write(AS_BYTES(cgStat.bufferSize), sizeof(cgStat.bufferSize));
-
-                        // buffer
-                        if ((cgStat.bufferSize > 0) && (cgStat.buffer != nullptr))
-                            statFile.write(PTR_AS_BYTES(cgStat.buffer), cgStat.bufferSize * sizeof(float));
+                        binStat.writeTo(statFile);
+                        logAdd(LogLevel::Info, "Stat was successfully written.");
+                    }
+                    catch (const std::exception& e)
+                    {
+                        logAdd(LogLevel::Error, strFormat("Failed to write the stat: %s", e.what()));
                     }
                     statFile.flush();
                     statFile.close();
-                    if (statFile.fail())
-                        logAdd(LogLevel::Error, "There was a problem when writing the stat.");
-                    else
-                        logAdd(LogLevel::Info, "Stat was successfully written.");
                 }
 
                 releaseMutex(hMutex);
@@ -383,98 +316,48 @@ int main(int argc, char* argv[])
             }
 
             // Sleep
-            if ((cgInput.chunkSleep > 0) && (i < (cgInput.numChunks - 1)))
+            if ((binInput.chunkSleep > 0) && (i < (binInput.numChunks - 1)))
             {
-                logAdd(LogLevel::Info, strFormat("Sleeping for %u ms...", cgInput.chunkSleep));
+                logAdd(LogLevel::Info, strFormat("Sleeping for %u ms...", binInput.chunkSleep));
 
                 auto t1 = std::chrono::system_clock::now();
-                while (getElapsedMs(t1) < cgInput.chunkSleep)
+                while (getElapsedMs(t1) < binInput.chunkSleep)
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }
 
-        logAdd(LogLevel::Info, strFormat(
-            "GPU Convolution is done. Renderer: \"%s\"",
-            renderer.c_str())
-        );
+        logAdd(LogLevel::Info, "Convolution is done.");
     }
 
-    // Clean up the input buffers
-    DELARR(cgInput.statMutexNameBuffer);
-    DELARR(cgInput.inputBuffer);
-    DELARR(cgInput.kernelBuffer);
-
     // Setup binary output
-    RealBloom::ConvolutionGPUBinaryOutput cgOutput;
-    std::string cgOutputError = "";
-    if (!parseFailed)
+    RealBloom::BinaryConvNaiveGpuOutput binOutput;
+    if (readInput)
     {
-        if (cgFinalSuccess)
+        if (finalSuccess)
         {
-            cgOutput.status = 1;
-            cgOutput.bufferSize = cgFinalBuffer.size();
-            cgOutput.buffer = cgFinalBuffer.data();
+            binOutput.status = 1;
+            binOutput.buffer = finalBuffer;
         }
         else
         {
-            cgOutputError = cgFinalError;
-            cgOutput.status = 0;
-            cgOutput.bufferSize = 0;
-            cgOutput.buffer = nullptr;
+            binOutput.status = 0;
+            binOutput.error = finalError;
         }
     }
     else
     {
-        cgOutputError = "Could not retrieve data from the input file, failed at \"" + parseStage;
-        cgOutputError += "\".";
-        logAdd(LogLevel::Error, cgOutputError);
-
-        cgOutput.status = 0;
-        cgOutput.bufferSize = 0;
-        cgOutput.buffer = nullptr;
+        binOutput.status = 0;
+        binOutput.error = readInputError;
     }
 
-    // Write the output (status, errorSize, bufferSize, errorBuffer, buffer)
+    // Write the output
     logAdd(LogLevel::Info, "Writing the output...");
+    try
     {
-        // status
-        outFile.write(AS_BYTES(cgOutput.status), sizeof(cgOutput.status));
-
-        cgOutput.errorSize = cgOutputError.empty() ? 0 : cgOutputError.size();
-        cgOutput.errorBuffer = nullptr;
-        if (cgOutput.errorSize > 0)
-        {
-            cgOutput.errorBuffer = new char[cgOutput.errorSize];
-            cgOutputError.copy(cgOutput.errorBuffer, cgOutput.errorSize);
-        }
-
-        // errorSize
-        outFile.write(AS_BYTES(cgOutput.errorSize), sizeof(cgOutput.errorSize));
-
-        // bufferSize
-        outFile.write(AS_BYTES(cgOutput.bufferSize), sizeof(cgOutput.bufferSize));
-
-        // errorBuffer
-        if (cgOutput.errorSize > 0)
-        {
-            outFile.write(cgOutput.errorBuffer, cgOutput.errorSize);
-            DELARR(cgOutput.errorBuffer);
-        }
-
-        // buffer
-        if ((cgOutput.bufferSize > 0) && (cgOutput.buffer != nullptr))
-        {
-            outFile.write(PTR_AS_BYTES(cgOutput.buffer), cgOutput.bufferSize * sizeof(float));
-        }
+        binOutput.writeTo(outFile);
     }
-    outFile.flush();
-    outFile.close();
-    if (outFile.fail())
-        logAdd(LogLevel::Error, "There was a problem when writing the output.");
-    else
-        logAdd(LogLevel::Info, "Output was successfully written.");
-
-    cgFinalBuffer.clear();
-    logFile.close();
-    return 0;
+    catch (const std::exception& e)
+    {
+        logAdd(LogLevel::Error, e.what());
+    }
 }

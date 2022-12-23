@@ -18,7 +18,7 @@
     <ClCompile Include="src\MainGPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\RealBloom\ConvolutionGPU.cpp">
+    <ClCompile Include="src\RealBloom\ConvolutionNaiveGPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Utils\GlContext.cpp">
@@ -42,6 +42,21 @@
     <ClCompile Include="..\RealBloom\src\Config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvNaiveGpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\StreamUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\StringUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\RealBloom\GpuHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glew32s.lib" />
@@ -59,13 +74,10 @@
     <ClInclude Include="include\GL\wglew.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\RealBloom\ConvolutionGPU.h">
+    <ClInclude Include="src\RealBloom\ConvolutionNaiveGPU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utils\GlContext.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RealBloom\src\RealBloom\ConvolutionGPUBinary.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\RealBloom\src\Utils\GlFrameBuffer.h">
@@ -87,6 +99,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\RealBloom\src\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvNaiveGpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\StreamUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\StringUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\RealBloom\GpuHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

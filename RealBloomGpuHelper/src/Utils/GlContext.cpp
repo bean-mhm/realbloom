@@ -1,44 +1,52 @@
 #include "GlContext.h"
 
 HGLRC realContext = NULL;
-void* g_data = nullptr;
-std::function<void(void*)> g_job;
-std::function<void(std::string)> g_errHandler;
+
+std::function<void()> g_job;
+bool g_success = false;
+std::string* g_outError = nullptr;
 
 LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-bool oglOneTimeContext(uint32_t width, uint32_t height, std::function<void(void*)> job, void* data, std::function<void(std::string)> errHandler, std::string& outError)
+bool oglOneTimeContext(std::function<void()> job, std::string& outError)
 {
     outError = "";
 
-    g_data = data;
     g_job = job;
-    g_errHandler = errHandler;
+    g_success = false;
+    g_outError = &outError;
 
-    std::wstring className = L"oglcontext" + std::to_wstring(RandomNumber::nextInt());
+    std::string className = "RealBloomOglContext";
 
-    MSG msg = { 0 };
-    WNDCLASS wc = { 0 };
-    wc.lpfnWndProc = MyWndProc;
-    wc.hInstance = NULL;
-    wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
-    wc.lpszClassName = className.c_str();
-    wc.style = CS_OWNDC;
+    WNDCLASSEXA classInfo = { 0 };
+    bool alreadyRegistered = GetClassInfoExA(NULL, className.c_str(), &classInfo);
 
-    if (!RegisterClass(&wc))
+    if (!alreadyRegistered)
     {
-        outError = "RegisterClass failed: " + toHexStr(GetLastError());
-        return false;
+        WNDCLASSA wc = { 0 };
+        wc.lpfnWndProc = MyWndProc;
+        wc.hInstance = NULL;
+        wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
+        wc.lpszClassName = className.c_str();
+        wc.style = CS_OWNDC;
+
+        if (!RegisterClassA(&wc))
+        {
+            outError = "RegisterClass failed: " + toHexStr(GetLastError());
+            return false;
+        }
     }
 
-    CreateWindowW(wc.lpszClassName, L"oglcontext", WS_POPUP, 0, 0, width, height, 0, 0, NULL, 0);
+    CreateWindowA(className.c_str(), className.c_str(), WS_POPUP, 0, 0, 128, 128, 0, 0, NULL, 0);
 
+    MSG msg = { };
     while (GetMessage(&msg, NULL, 0, 0) > 0)
+    {
+        TranslateMessage(&msg);
         DispatchMessage(&msg);
+    }
 
-    outError = "Success";
-    return true;
-
+    return g_success;
 }
 
 LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -66,6 +74,7 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
             0,
             0, 0, 0
         };
+
         HDC devContext = GetDC(hWnd);
         int pixelFormat;
         pixelFormat = ChoosePixelFormat(devContext, &pfd);
@@ -98,10 +107,11 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 if (wglMakeCurrent(devContext, realContext))
                 {
                     //MessageBoxA(0, (char*)glGetString(GL_VERSION), "OPENGL VERSION", 0);
-                    g_job(g_data);
+                    g_success = true;
+                    g_job();
                 } else
                 {
-                    g_errHandler("Failed to activate OpenGL 3.2 rendering context.");
+                    *g_outError = "Failed to activate OpenGL 3.2 rendering context.";
                 }
 
                 // Delete the rendering context
@@ -109,22 +119,21 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 wglDeleteContext(realContext);
             } else
             {
-                g_errHandler("Failed to create OpenGL 3.2 context.");
+                *g_outError = "Failed to create OpenGL 3.2 context.";
             }
         } else
         {
-            g_errHandler("GLEW was not initialized.");
+            *g_outError = "GLEW was not initialized.";
         }
 
         // Delete the device context
         ReleaseDC(hWnd, devContext);
-        PostQuitMessage(0);
         DestroyWindow(hWnd);
+        PostQuitMessage(0);
     }
     break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
-
 }

@@ -165,11 +165,12 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
         stage = "init";
 
         CMS::ensureOK();
+        CmXYZ::ensureOK();
 
-        XyzConversionInfo info = CmXYZ::getConversionInfo();
         OCIO::ConstConfigRcPtr userConfig = CMS::getConfig();
         OCIO::ConstConfigRcPtr internalConfig = CMS::getInternalConfig();
 
+        XyzConversionInfo info = CmXYZ::getConversionInfo();
         if (info.method == XyzConversionMethod::None)
             throw std::exception("An XYZ conversion method was not specified.");
 

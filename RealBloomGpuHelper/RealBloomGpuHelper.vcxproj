@@ -172,13 +172,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\RealBloom\src\Config.cpp" />
+    <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvNaiveGpu.cpp" />
+    <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryData.cpp" />
+    <ClCompile Include="..\RealBloom\src\RealBloom\GpuHelper.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\GlFrameBuffer.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\GlUtils.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\Misc.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\NumberHelpers.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\RandomNumber.cpp" />
+    <ClCompile Include="..\RealBloom\src\Utils\StreamUtils.cpp" />
+    <ClCompile Include="..\RealBloom\src\Utils\StringUtils.cpp" />
     <ClCompile Include="src\MainGPU.cpp" />
-    <ClCompile Include="src\RealBloom\ConvolutionGPU.cpp" />
+    <ClCompile Include="src\RealBloom\ConvolutionNaiveGPU.cpp" />
     <ClCompile Include="src\Utils\GlContext.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -187,17 +192,21 @@
   <ItemGroup>
     <ClInclude Include="..\RealBloom\include\inih\INIReader.h" />
     <ClInclude Include="..\RealBloom\src\Config.h" />
-    <ClInclude Include="..\RealBloom\src\RealBloom\ConvolutionGPUBinary.h" />
+    <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvNaiveGpu.h" />
+    <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryData.h" />
+    <ClInclude Include="..\RealBloom\src\RealBloom\GpuHelper.h" />
     <ClInclude Include="..\RealBloom\src\Utils\GlFrameBuffer.h" />
     <ClInclude Include="..\RealBloom\src\Utils\GlUtils.h" />
     <ClInclude Include="..\RealBloom\src\Utils\Misc.h" />
     <ClInclude Include="..\RealBloom\src\Utils\NumberHelpers.h" />
     <ClInclude Include="..\RealBloom\src\Utils\RandomNumber.h" />
+    <ClInclude Include="..\RealBloom\src\Utils\StreamUtils.h" />
+    <ClInclude Include="..\RealBloom\src\Utils\StringUtils.h" />
     <ClInclude Include="include\GL\eglew.h" />
     <ClInclude Include="include\GL\glew.h" />
     <ClInclude Include="include\GL\glxew.h" />
     <ClInclude Include="include\GL\wglew.h" />
-    <ClInclude Include="src\RealBloom\ConvolutionGPU.h" />
+    <ClInclude Include="src\RealBloom\ConvolutionNaiveGPU.h" />
     <ClInclude Include="src\Utils\GlContext.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
