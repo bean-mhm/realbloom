@@ -54,7 +54,7 @@ bool CmImageIO::readImageColorSpace(const std::string& filename, std::string& ou
     }
     catch (const std::exception& e)
     {
-        printErr(__FUNCTION__, e.what(), true);
+        printErr(__FUNCTION__, "", e.what(), true);
     }
 
     return false;
@@ -183,7 +183,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename, const st
     }
     catch (const std::exception& e)
     {
-        throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
+        throw std::exception(printErr(__FUNCTION__, "", e.what()).c_str());
     }
 }
 
@@ -292,6 +292,6 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename, const s
     }
     catch (const std::exception& e)
     {
-        throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
+        throw std::exception(printErr(__FUNCTION__, "", e.what()).c_str());
     }
 }

@@ -6,11 +6,12 @@
 #include <thread>
 #include <chrono>
 #include <string>
-#include <stdint.h>
+#include <vector>
 #include <math.h>
+#include <stdint.h>
 #include <filesystem>
 #include <algorithm>
-#include <vector>
+#include <functional>
 
 #include "StringUtils.h"
 #include "StreamUtils.h"
@@ -30,12 +31,8 @@ std::string printErr(
     const std::string& message,
     bool printAnyway = false);
 
-std::string printErr(
-    const std::string& source,
-    const std::string& message,
-    bool printAnyway = false);
-
-void disablePrintErr();
+void setPrintErrEnabled(bool enabled);
+void setPrintErrHandler(std::function<void(std::string)> handler);
 
 template <typename T>
 void clearVector(std::vector<T>& v)

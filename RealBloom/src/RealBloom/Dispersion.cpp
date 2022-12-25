@@ -73,7 +73,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
+            throw std::exception(printErr(__FUNCTION__, "", e.what()).c_str());
         }
     }
 

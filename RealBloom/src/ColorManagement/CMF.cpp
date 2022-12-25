@@ -71,7 +71,7 @@ CmfTable::CmfTable(std::string filename)
     }
     catch (const std::exception& e)
     {
-        throw std::exception(printErr(__FUNCTION__, e.what()).c_str());
+        throw std::exception(printErr(__FUNCTION__, "", e.what()).c_str());
     }
 }
 
@@ -293,7 +293,7 @@ bool CMF::init()
     }
     catch (const std::exception& e)
     {
-        S_STATE.setError(printErr(__FUNCTION__, e.what()));
+        S_STATE.setError(printErr(__FUNCTION__, "", e.what(), true));
     }
 
     // Load the default table if it is found

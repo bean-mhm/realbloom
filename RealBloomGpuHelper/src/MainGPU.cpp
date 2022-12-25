@@ -112,6 +112,15 @@ int main(int argc, char* argv[])
     if (!std::setlocale(LC_ALL, Config::S_APP_LOCALE))
         logAdd(LogLevel::Warning, strFormat("Couldn't set locale to \"%s\".", Config::S_APP_LOCALE));
 
+    // Log printErr
+    setPrintErrEnabled(false);
+    setPrintErrHandler(
+        [](std::string err)
+        {
+            logAdd(LogLevel::Error, err);
+        }
+    );
+
     // Log filenames
     std::string outFilename = inpFilename + "out";
     logAdd(LogLevel::Info, "Input filename: " + inpFilename);
@@ -165,8 +174,8 @@ int main(int argc, char* argv[])
             [&opType, &opMap, &inpFilename, &outFilename, &inpFile, &outFile]()
             {
                 // Log
-                logAdd(LogLevel::Info, strFormat("Operation type: %s", strFromGpuHelperOperationType(opType)));
                 logAdd(LogLevel::Info, strFormat("Renderer: %s", (const char*)glGetString(GL_RENDERER)));
+                logAdd(LogLevel::Info, strFormat("Operation type: %s", strFromGpuHelperOperationType(opType)));
 
                 // Start the operation
                 logAdd(LogLevel::Info, "Starting operation...");
@@ -213,8 +222,6 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
     }
     inpFile.close();
 
-    logAdd(LogLevel::Info, "Preparing...");
-
     // Final status to write into the output
     bool finalSuccess = true;
     std::string finalError = "";
@@ -241,92 +248,114 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
 
     if (readInput)
     {
-        // Start convolution
-        logAdd(LogLevel::Info, "Starting convolution...");
-        for (uint32_t i = 0; i < binInput.numChunks; i++)
+        // Prepare
+
+        logAdd(LogLevel::Info, "Preparing convolution...");
+
+        RealBloom::ConvolutionNaiveGPUData data;
+        data.binInput = &binInput;
+
+        RealBloom::ConvolutionNaiveGPU conv(&data);
+        conv.prepare();
+
+        if (!data.success)
         {
-            RealBloom::ConvolutionNaiveGPUData data;
-            data.binInput = &binInput;
+            conv.cleanUp();
 
-            RealBloom::ConvolutionNaiveGPU conv(&data);
-            conv.start(binInput.numChunks, i);
+            finalSuccess = false;
+            finalError = data.error;
+            clearVector(finalBuffer);
 
-            if (data.success)
+            logAdd(LogLevel::Error, "Failed to prepare convolution.");
+            logAdd(LogLevel::Error, data.error);
+        }
+        else
+        {
+            // Start convolution
+            logAdd(LogLevel::Info, "Starting convolution...");
+            for (uint32_t i = 0; i < binInput.numChunks; i++)
             {
-                for (uint32_t j = 0; j < inputSize; j++)
-                    if (j % 4 != 3) // if not alpha channel
-                        finalBuffer[j] += data.outputBuffer[j];
+                conv.process(i);
 
-                logAdd(LogLevel::Info, strFormat(
-                    "Chunk %u/%u (%u points) was successful.", i + 1, binInput.numChunks, data.numPoints));
-            }
-            else
-            {
-                finalSuccess = false;
-                finalError = data.error;
-                clearVector(finalBuffer);
-
-                logAdd(LogLevel::Error, strFormat(
-                    "Chunk %u/%u (%u points) was failed.", i + 1, binInput.numChunks, data.numPoints));
-                logAdd(LogLevel::Error, data.error);
-                break;
-            }
-
-            // Write stat file to report the progress
-            if ((binInput.numChunks > 1)
-                && finalSuccess
-                && (getElapsedMs(lastStatWriteTime) > 500)
-                && (i % statWriteInterval == 0)
-                && (i < (binInput.numChunks - 1))) // not the last chunk
-            {
-                RealBloom::BinaryConvNaiveGpuStat binStat;
-                binStat.numChunksDone = i + 1;
-                binStat.buffer = finalBuffer;
-
-                HANDLE hMutex = openMutex(statMutexName);
-                if (hMutex == NULL)
-                    logAdd(LogLevel::Warning, strFormat("Mutex \"%s\" could not be opened.", statMutexName.c_str()));
-
-                waitForMutex(hMutex);
-
-                std::ofstream statFile;
-                statFile.open(statFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-                if (!statFile.is_open())
+                if (data.success)
                 {
-                    logAdd(LogLevel::Error, strFormat("Stat file \"%s\" could not be created/opened.", statFilename.c_str()));
+                    for (uint32_t j = 0; j < inputSize; j++)
+                        if (j % 4 != 3) // if not alpha channel
+                            finalBuffer[j] += data.outputBuffer[j];
+
+                    logAdd(LogLevel::Info, strFormat(
+                        "Chunk %u/%u (%u points) was successful.", i + 1, binInput.numChunks, data.numPoints));
                 }
                 else
                 {
-                    try
-                    {
-                        binStat.writeTo(statFile);
-                        logAdd(LogLevel::Info, "Stat was successfully written.");
-                    }
-                    catch (const std::exception& e)
-                    {
-                        logAdd(LogLevel::Error, strFormat("Failed to write the stat: %s", e.what()));
-                    }
-                    statFile.flush();
-                    statFile.close();
+                    finalSuccess = false;
+                    finalError = data.error;
+                    clearVector(finalBuffer);
+
+                    logAdd(LogLevel::Error, strFormat(
+                        "Chunk %u/%u (%u points) was failed.", i + 1, binInput.numChunks, data.numPoints));
+                    logAdd(LogLevel::Error, data.error);
+                    break;
                 }
 
-                releaseMutex(hMutex);
-                closeMutex(hMutex);
-                lastStatWriteTime = std::chrono::system_clock::now();
+                // Write stat file to report the progress
+                if ((binInput.numChunks > 1)
+                    && finalSuccess
+                    && (getElapsedMs(lastStatWriteTime) > 500)
+                    && (i % statWriteInterval == 0)
+                    && (i < (binInput.numChunks - 1))) // not the last chunk
+                {
+                    RealBloom::BinaryConvNaiveGpuStat binStat;
+                    binStat.numChunksDone = i + 1;
+                    binStat.buffer = finalBuffer;
+
+                    HANDLE hMutex = openMutex(statMutexName);
+                    if (hMutex == NULL)
+                        logAdd(LogLevel::Warning, strFormat("Mutex \"%s\" could not be opened.", statMutexName.c_str()));
+
+                    waitForMutex(hMutex);
+
+                    std::ofstream statFile;
+                    statFile.open(statFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+                    if (!statFile.is_open())
+                    {
+                        logAdd(LogLevel::Error, strFormat("Stat file \"%s\" could not be created/opened.", statFilename.c_str()));
+                    }
+                    else
+                    {
+                        try
+                        {
+                            binStat.writeTo(statFile);
+                            logAdd(LogLevel::Info, "Stat was successfully written.");
+                        }
+                        catch (const std::exception& e)
+                        {
+                            logAdd(LogLevel::Error, strFormat("Failed to write the stat: %s", e.what()));
+                        }
+                        statFile.flush();
+                        statFile.close();
+                    }
+
+                    releaseMutex(hMutex);
+                    closeMutex(hMutex);
+                    lastStatWriteTime = std::chrono::system_clock::now();
+                }
+
+                // Sleep
+                if ((binInput.chunkSleep > 0) && (i < (binInput.numChunks - 1)))
+                {
+                    logAdd(LogLevel::Info, strFormat("Sleeping for %u ms...", binInput.chunkSleep));
+
+                    auto t1 = std::chrono::system_clock::now();
+                    while (getElapsedMs(t1) < binInput.chunkSleep)
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                }
             }
 
-            // Sleep
-            if ((binInput.chunkSleep > 0) && (i < (binInput.numChunks - 1)))
-            {
-                logAdd(LogLevel::Info, strFormat("Sleeping for %u ms...", binInput.chunkSleep));
-
-                auto t1 = std::chrono::system_clock::now();
-                while (getElapsedMs(t1) < binInput.chunkSleep)
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            }
+            // Clean up
+            conv.cleanUp();
+            logAdd(LogLevel::Info, "Convolution is done.");
         }
-
-        logAdd(LogLevel::Info, "Convolution is done.");
     }
 
     // Setup binary output

@@ -46,7 +46,7 @@ void CMS::CmVars::retrieveDisplays()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, e.what(), true);
+        printErr(__FUNCTION__, "", e.what(), true);
     }
 }
 
@@ -61,7 +61,7 @@ void CMS::CmVars::retrieveViews()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, e.what(), true);
+        printErr(__FUNCTION__, "", e.what(), true);
     }
 }
 
@@ -77,7 +77,7 @@ void CMS::CmVars::retrieveLooks()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, e.what(), true);
+        printErr(__FUNCTION__, "", e.what(), true);
     }
 }
 
@@ -299,7 +299,7 @@ void CMS::updateProcessors()
     }
     catch (const std::exception& e)
     {
-        S_STATE.setError(printErr(__FUNCTION__, e.what()));
+        S_STATE.setError(printErr(__FUNCTION__, "", e.what(), true));
     }
 }
 

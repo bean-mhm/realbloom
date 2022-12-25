@@ -853,7 +853,7 @@ namespace RealBloom
                                     }
                                     catch (const std::exception& e)
                                     {
-                                        printErr(__FUNCTION__, e.what(), true);
+                                        printErr(__FUNCTION__, "", e.what(), true);
                                     }
                                     statFile.close();
                                 }

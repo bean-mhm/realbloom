@@ -1,24 +1,37 @@
 #include "Misc.h"
 
 bool g_printErrEnbaled = true;
+std::function<void(std::string)> g_printErrHandler = [](std::string) {};
 
 std::string printErr(const std::string& source, const std::string& stage, const std::string& message, bool printAnyway)
 {
-    std::string s = strFormat("[%s] %s: %s", source.c_str(), stage.c_str(), message.c_str());
-    if (g_printErrEnbaled || printAnyway) std::cerr << s << "\n";
+    std::string s = "";
+
+    if (!source.empty())
+        s += strFormat("[%s] ", source.c_str());
+
+    if (!stage.empty())
+        s += strFormat("%s: ", stage.c_str());
+
+    s += message;
+
+    if (g_printErrEnbaled || printAnyway)
+    {
+        std::cerr << s << "\n";
+        g_printErrHandler(s);
+    }
+
     return s;
 }
 
-std::string printErr(const std::string& source, const std::string& message, bool printAnyway)
+void setPrintErrEnabled(bool enabled)
 {
-    std::string s = strFormat("[%s] %s", source.c_str(), message.c_str());
-    if (g_printErrEnbaled || printAnyway) std::cerr << s << "\n";
-    return s;
+    g_printErrEnbaled = enabled;
 }
 
-void disablePrintErr()
+void setPrintErrHandler(std::function<void(std::string)> handler)
 {
-    g_printErrEnbaled = false;
+    g_printErrHandler = handler;
 }
 
 uint32_t getMaxNumThreads()
@@ -99,7 +112,7 @@ std::string getExecDir()
 
         auto path = std::filesystem::path(std::string(path_cstr)).parent_path();
         execDir = std::filesystem::canonical(path).string();
-        
+
         if (!execDir.ends_with(getPathSeparator()))
             execDir += getPathSeparator();
 

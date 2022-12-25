@@ -38,7 +38,8 @@ namespace RealBloom
         std::string error = "";
         std::string gpuName = "Unknown";
 
-        void setError(std::string message);
+        void reset();
+        void setError(std::string err);
     };
 
     class ConvolutionNaiveGPU
@@ -60,14 +61,20 @@ namespace RealBloom
 
         GLuint m_texKernel = 0;
 
-        void definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs);
+        void makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight);
         void makeProgram();
-        void makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize);
+        void definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs);
+        void useProgram();
+        void bindKernelTexture();
+        void setUniforms(uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize);
+        void specifyLayout();
         void drawScene(uint32_t numPoints);
 
     public:
         ConvolutionNaiveGPU(ConvolutionNaiveGPUData* data);
-        void start(uint32_t numChunks, uint32_t chunkIndex);
+        void prepare();
+        void process(uint32_t chunkIndex);
+        void cleanUp();
     };
 
 }
