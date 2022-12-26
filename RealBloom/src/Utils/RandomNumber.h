@@ -5,13 +5,23 @@
 class RandomNumber
 {
 private:
-    static std::random_device s_randomDevice; // for seeding
-    static std::mt19937 s_engine; // create engine and seed it
-    static std::uniform_int_distribution<int> s_distInt; // distribution for integers
-    static std::uniform_real_distribution<double> s_distReal; // .. for real numbers
+    // Engine
+    static std::random_device s_randomDevice;
+    static std::mt19937 s_engine;
+
+    // Distributors
+    static std::uniform_int_distribution<int32_t> s_distI32;
+    static std::uniform_int_distribution<uint32_t> s_distU32;
+    static std::uniform_int_distribution<int64_t> s_distI64;
+    static std::uniform_int_distribution<uint64_t> s_distU64;
+    static std::uniform_real_distribution<float> s_distFloat;
+    static std::uniform_real_distribution<double> s_distDouble;
 
 public:
-    static int nextInt(); // 1 to INT_MAX
-    static float nextFloat(); // 0 to 1
-    static double nextDouble(); // 0 to 1
+    static int32_t nextI32();
+    static uint32_t nextU32();
+    static int64_t nextI64();
+    static uint64_t nextU64();
+    static float nextFloat();
+    static double nextDouble();
 };

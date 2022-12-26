@@ -969,7 +969,7 @@ namespace RealBloom
         // Create input file for GPU convolution
         std::string tempDir;
         getTempDirectory(tempDir);
-        uint32_t randomNumber = (uint32_t)RandomNumber::nextInt();
+        uint32_t randomNumber = (uint32_t)RandomNumber::nextI32();
 
         // Filenames
         std::string inpFilename = strFormat(

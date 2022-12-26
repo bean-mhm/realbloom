@@ -171,6 +171,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\RealBloom\src\Async.cpp" />
     <ClCompile Include="..\RealBloom\src\Config.cpp" />
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvNaiveGpu.cpp" />
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryData.cpp" />
@@ -191,6 +192,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\RealBloom\include\inih\INIReader.h" />
+    <ClInclude Include="..\RealBloom\src\Async.h" />
     <ClInclude Include="..\RealBloom\src\Config.h" />
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvNaiveGpu.h" />
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryData.h" />
