@@ -126,9 +126,11 @@ namespace RealBloom
         float cropH = fminf(fmaxf(m_params.kernelCropY, 0.1f), 1.0f);
         float rotation = m_params.kernelRotation;
 
-        bool kernelAutoExposure = m_params.kernelAutoExposure;
-        float kernelExpMul = applyExposure(m_params.kernelExposure);
-        float kernelContrast = m_params.kernelContrast;
+        bool autoExposure = m_params.kernelAutoExposure;
+        float expMul = applyExposure(m_params.kernelExposure);
+        float contrast = m_params.kernelContrast;
+
+        std::array<float, 3> color = m_params.kernelColor;
 
         uint32_t scaledWidth, scaledHeight;
         scaledWidth = (uint32_t)floorf(scaleW * (float)kernelWidth);
@@ -279,13 +281,13 @@ namespace RealBloom
                     // Calculate the grayscale value
                     float grayscale = rgbToGrayscale(croppedBuffer[redIndex + 0], croppedBuffer[redIndex + 1], croppedBuffer[redIndex + 2]);
 
-                    // Apply contrast and de-normalize
+                    // Apply contrast, de-normalize, colorize
                     if (grayscale > 0.0f)
                     {
-                        float mul = kernelExpMul * maxV * (contrastCurve(grayscale, kernelContrast) / grayscale);
-                        croppedBuffer[redIndex + 0] *= mul;
-                        croppedBuffer[redIndex + 1] *= mul;
-                        croppedBuffer[redIndex + 2] *= mul;
+                        float mul = expMul * maxV * (contrastCurve(grayscale, contrast) / grayscale);
+                        croppedBuffer[redIndex + 0] *= mul * color[0];
+                        croppedBuffer[redIndex + 1] *= mul * color[1];
+                        croppedBuffer[redIndex + 2] *= mul * color[2];
                     }
                 }
             }
@@ -294,7 +296,7 @@ namespace RealBloom
         bool outerRequest = (!previewMode && (outBuffer != nullptr));
 
         // Auto-adjust the exposure
-        if (kernelAutoExposure && outerRequest)
+        if (autoExposure && outerRequest)
         {
             // Get the sum of the grayscale values
             float sumV = 0.0f;
@@ -341,9 +343,11 @@ namespace RealBloom
         // Preview center point
         if (m_params.kernelPreviewCenter)
         {
-            int newCenterX = (int)floorf(m_params.kernelCenterX * (float)croppedWidth - 0.5f);
-            int newCenterY = (int)floorf(m_params.kernelCenterY * (float)croppedHeight - 0.5f);
+            int newCenterX = (int)floorf(m_params.kernelCenterX * (float)croppedWidth);
+            int newCenterY = (int)floorf(m_params.kernelCenterY * (float)croppedHeight);
+            
             int prevSquareSize = (int)roundf(0.15f * fminf((float)croppedWidth, (float)croppedHeight));
+            if (prevSquareSize % 2 == 0) prevSquareSize += 1;
 
             drawRect(
                 m_imgKernel,
@@ -351,7 +355,7 @@ namespace RealBloom
                 newCenterY - (prevSquareSize / 2),
                 prevSquareSize, prevSquareSize);
 
-            fillRect(m_imgKernel, newCenterX - 2, newCenterY - 2, 4, 4);
+            fillRect(m_imgKernel, newCenterX - 2, newCenterY - 2, 5, 5);
         }
 
         m_imgKernel->moveToGPU();
@@ -1170,7 +1174,7 @@ namespace RealBloom
         int ry2 = ry + rh;
 
         uint32_t redIndex;
-        for (int y = ry; y <= ry2; y++)
+        for (int y = ry; y < ry2; y++)
         {
             if (checkBounds(rx, y, imageWidth, imageHeight))
             {
@@ -1190,7 +1194,7 @@ namespace RealBloom
                 buffer[redIndex + 3] = 1;
             }
         }
-        for (int x = rx; x <= rx2; x++)
+        for (int x = rx; x < rx2; x++)
         {
             if (checkBounds(x, ry, imageWidth, imageHeight))
             {
@@ -1222,9 +1226,9 @@ namespace RealBloom
         int rx2 = rx + rw;
         int ry2 = ry + rh;
 
-        for (int y = ry; y <= ry2; y++)
+        for (int y = ry; y < ry2; y++)
         {
-            for (int x = rx; x <= rx2; x++)
+            for (int x = rx; x < rx2; x++)
             {
                 if (checkBounds(x, y, imageWidth, imageHeight))
                 {

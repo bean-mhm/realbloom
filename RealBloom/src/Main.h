@@ -82,7 +82,7 @@ struct UiVars
     // Dispersion
     float ds_exposure = 0.0f;
     float ds_contrast = 0.0f;
-    float ds_col[3]{ 1.0f, 1.0f, 1.0f };
+    float ds_color[3]{ 1.0f, 1.0f, 1.0f };
     float ds_amount = 0.4f;
     int ds_steps = 32;
     int ds_numThreads = getDefNumThreads();
@@ -91,6 +91,7 @@ struct UiVars
     // Convolution Kernel
     float cv_kernelExposure = 0.0f;
     float cv_kernelContrast = 0.0f;
+    float cv_kernelColor[3]{ 1.0f, 1.0f, 1.0f };
     float cv_kernelRotation = 0.0f;
     bool cv_kernelLockScale = true;
     float cv_kernelScale[2] = { 1.0f, 1.0f };

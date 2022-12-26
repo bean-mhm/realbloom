@@ -404,7 +404,7 @@ void layout()
             vars.dispParamsChanged = true;
         if (ImGui::SliderFloat("Contrast##Disp", &(vars.ds_contrast), -1, 1))
             vars.dispParamsChanged = true;
-        if (ImGui::ColorEdit3("Color##Disp", vars.ds_col,
+        if (ImGui::ColorEdit3("Color##Disp", vars.ds_color,
             ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
         {
             vars.dispParamsChanged = true;
@@ -475,6 +475,12 @@ void layout()
 
         if (ImGui::SliderFloat("Contrast##Kernel", &(vars.cv_kernelContrast), -1, 1))
             vars.convParamsChanged = true;
+
+        if (ImGui::ColorEdit3("Color##Kernel", vars.cv_kernelColor,
+            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+        {
+            vars.convParamsChanged = true;
+        }
 
         if (ImGui::SliderFloat("Rotation##Kernel", &(vars.cv_kernelRotation), -180.0f, 180.0f))
             vars.convParamsChanged = true;
@@ -1216,7 +1222,7 @@ void updateDispParams()
     RealBloom::DispersionParams* params = disp.getParams();
     params->exposure = vars.ds_exposure;
     params->contrast = vars.ds_contrast;
-    params->color = std::array<float, 3>{ vars.ds_col[0], vars.ds_col[1], vars.ds_col[2] };
+    params->color = std::array<float, 3>{ vars.ds_color[0], vars.ds_color[1], vars.ds_color[2] };
     params->amount = vars.ds_amount;
     params->steps = vars.ds_steps;
     params->numThreads = vars.ds_numThreads;
@@ -1231,6 +1237,7 @@ void updateConvParams()
     params->methodInfo.chunkSleep = vars.cv_chunkSleep;
     params->kernelExposure = vars.cv_kernelExposure;
     params->kernelContrast = vars.cv_kernelContrast;
+    params->kernelColor = std::array<float, 3>{ vars.cv_kernelColor[0], vars.cv_kernelColor[1], vars.cv_kernelColor[2] };
     params->kernelRotation = vars.cv_kernelRotation;
     params->kernelScaleX = vars.cv_kernelScale[0];
     params->kernelScaleY = vars.cv_kernelScale[1];
