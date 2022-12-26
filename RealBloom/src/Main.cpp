@@ -404,6 +404,11 @@ void layout()
             vars.dispParamsChanged = true;
         if (ImGui::SliderFloat("Contrast##Disp", &(vars.ds_contrast), -1, 1))
             vars.dispParamsChanged = true;
+        if (ImGui::ColorEdit3("Color##Disp", vars.ds_col,
+            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+        {
+            vars.dispParamsChanged = true;
+        }
 
         if (vars.dispParamsChanged)
         {
@@ -413,10 +418,8 @@ void layout()
             selImageID = "disp-input";
         }
 
-        ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024);
         ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1);
-        ImGui::ColorEdit3("Color##Disp", vars.ds_col,
-            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha);
+        ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024);
         ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads());
 
         if (ImGui::Button("Apply Dispersion##Disp", btnSize()))
@@ -1213,9 +1216,9 @@ void updateDispParams()
     RealBloom::DispersionParams* params = disp.getParams();
     params->exposure = vars.ds_exposure;
     params->contrast = vars.ds_contrast;
-    params->steps = vars.ds_steps;
-    params->amount = vars.ds_amount;
     params->color = std::array<float, 3>{ vars.ds_col[0], vars.ds_col[1], vars.ds_col[2] };
+    params->amount = vars.ds_amount;
+    params->steps = vars.ds_steps;
     params->numThreads = vars.ds_numThreads;
 }
 

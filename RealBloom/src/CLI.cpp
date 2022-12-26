@@ -228,8 +228,8 @@ void CLI::init(int& argc, char** argv)
                 {{"--input-space", "-a"}, "Input color space", "", true},
                 {{"--output", "-o"}, "Output filename", "", true},
                 {{"--output-space", "-b"}, "Output color space", "", true},
-                {{"--steps", "-s"}, "Number of wavelengths to sample", "", true},
                 {{"--amount", "-d"}, "Amount of dispersion", "", true},
+                {{"--steps", "-s"}, "Number of wavelengths to sample", "", true},
                 {{"--exposure", "-e"}, "Exposure", "0", false},
                 {{"--contrast", "-c"}, "Contrast", "0", false},
                 {{"--color", "-m"}, "Dispersion color", "1,1,1", false},
@@ -461,8 +461,8 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     std::string outFilename = args["--output"];
     std::string outColorspace = processColorSpaceName(args["--output-space"]);
 
-    uint32_t steps = std::stoi(args["--steps"]);
     float amount = std::stof(args["--amount"]);
+    uint32_t steps = std::stoi(args["--steps"]);
 
     float exposure = 0;
     if (args.count("--exposure") > 0)

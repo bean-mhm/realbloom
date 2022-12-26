@@ -23,9 +23,9 @@ namespace RealBloom
     {
         float exposure = 0.0f;
         float contrast = 0.0f;
-        uint32_t steps = 32;
-        float amount = 0.0f;
         std::array<float, 3> color{ 1, 1, 1 };
+        float amount = 0.0f;
+        uint32_t steps = 32;
         uint32_t numThreads = 1;
     };
 

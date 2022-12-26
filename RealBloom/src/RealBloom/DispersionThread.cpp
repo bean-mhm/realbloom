@@ -31,7 +31,6 @@ namespace RealBloom
                 m_state.numSteps++;
 
         float dispAmount = fminf(fmaxf(m_params.amount, 0.0f), 1.0f);
-        std::array<float, 3> dispColor = m_params.color;
 
         float centerX = (float)m_inputWidth / 2.0f;
         float centerY = (float)m_inputHeight / 2.0f;
@@ -63,9 +62,9 @@ namespace RealBloom
             float scaledMul = 1.0f / scaledArea;
 
             uint32_t smpIndex = (i - 1) * 3;
-            float wlR = m_cmfSamples[smpIndex + 0] * scaledMul * dispColor[0];
-            float wlG = m_cmfSamples[smpIndex + 1] * scaledMul * dispColor[1];
-            float wlB = m_cmfSamples[smpIndex + 2] * scaledMul * dispColor[2];
+            float wlR = m_cmfSamples[smpIndex + 0] * scaledMul;
+            float wlG = m_cmfSamples[smpIndex + 1] * scaledMul;
+            float wlB = m_cmfSamples[smpIndex + 2] * scaledMul;
 
             // Clear scaledBuffer
             for (uint32_t i = 0; i < scaledBufferSize; i++)

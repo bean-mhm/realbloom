@@ -96,6 +96,8 @@ namespace RealBloom
         float expMul = applyExposure(m_params.exposure);
         float contrast = m_params.contrast;
 
+        std::array<float, 3> color = m_params.color;
+
         // Apply contrast and exposure
         {
             // Get the brightest value
@@ -123,13 +125,13 @@ namespace RealBloom
                     // Calculate the grayscale value
                     float grayscale = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
 
-                    // Apply contrast and de-normalize
+                    // Apply contrast, de-normalize, colorize
                     if (grayscale > 0.0f)
                     {
                         float mul = expMul * maxV * (contrastCurve(grayscale, contrast) / grayscale);
-                        inputBuffer[redIndex + 0] *= mul;
-                        inputBuffer[redIndex + 1] *= mul;
-                        inputBuffer[redIndex + 2] *= mul;
+                        inputBuffer[redIndex + 0] *= mul * color[0];
+                        inputBuffer[redIndex + 1] *= mul * color[1];
+                        inputBuffer[redIndex + 2] *= mul * color[2];
                     }
                 }
             }

@@ -82,9 +82,9 @@ struct UiVars
     // Dispersion
     float ds_exposure = 0.0f;
     float ds_contrast = 0.0f;
+    float ds_col[3]{ 1.0f, 1.0f, 1.0f };
     float ds_amount = 0.4f;
     int ds_steps = 32;
-    float ds_col[3]{ 1.0f, 1.0f, 1.0f };
     int ds_numThreads = getDefNumThreads();
     bool dispParamsChanged = false;
 
