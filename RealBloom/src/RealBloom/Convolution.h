@@ -5,6 +5,7 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
+#include <functional>
 #include <filesystem>
 #include <iostream>
 #include <fstream>
@@ -76,6 +77,8 @@ namespace RealBloom
         ConvolutionMethodInfo methodInfo;
         uint32_t numChunksDone = 0;
         std::string fftStage = "";
+
+        void setError(std::string err);
     };
 
     class ConvolutionThread;
@@ -96,8 +99,6 @@ namespace RealBloom
 
         std::thread* m_thread = nullptr;
         std::vector<ConvolutionThread*> m_threads;
-
-        void setErrorState(const std::string& error);
 
     public:
         Convolution();
@@ -123,6 +124,35 @@ namespace RealBloom
         // outStatType: 0 = normal, 1 = info, 2 = warning, 3 = error
         void getConvStats(std::string& outTime, std::string& outStatus, uint32_t& outStatType);
         std::string getResourceInfo();
+
+    private:
+        void convFftCPU(
+            std::vector<float>& kernelBuffer,
+            uint32_t kernelWidth,
+            uint32_t kernelHeight,
+            std::vector<float>& inputBuffer,
+            uint32_t inputWidth,
+            uint32_t inputHeight,
+            uint32_t inputBufferSize);
+
+        void convNaiveCPU(
+            std::vector<float>& kernelBuffer,
+            uint32_t kernelWidth,
+            uint32_t kernelHeight,
+            std::vector<float>& inputBuffer,
+            uint32_t inputWidth,
+            uint32_t inputHeight,
+            uint32_t inputBufferSize);
+
+        void convNaiveGPU(
+            std::vector<float>& kernelBuffer,
+            uint32_t kernelWidth,
+            uint32_t kernelHeight,
+            std::vector<float>& inputBuffer,
+            uint32_t inputWidth,
+            uint32_t inputHeight,
+            uint32_t inputBufferSize);
+
     };
 
 }
