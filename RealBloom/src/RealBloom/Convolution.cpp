@@ -877,27 +877,21 @@ namespace RealBloom
         {
             std::lock_guard<CmImage> lock(m_imgOutput);
             m_imgOutput.resize(inputWidth, inputHeight, false);
+            m_imgOutput.fill(std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f }, false);
             float* convBuffer = m_imgOutput.getImageData();
 
             // Add the buffers from each thread
-            for (uint32_t i = 0; i < numThreads; i++)
+            for (auto& ct : m_threads)
             {
-                if (m_state.mustCancel)
-                    break;
-
-                for (auto& ct : m_threads)
+                std::vector<float>& currentBuffer = ct->getBuffer();
+                for (uint32_t y = 0; y < inputHeight; y++)
                 {
-                    std::vector<float>& threadBuffer = ct->getBuffer();
-                    for (uint32_t y = 0; y < inputHeight; y++)
+                    for (uint32_t x = 0; x < inputWidth; x++)
                     {
-                        for (uint32_t x = 0; x < inputWidth; x++)
-                        {
-                            uint32_t redIndex = (y * inputWidth + x) * 4;
-                            convBuffer[redIndex + 0] += threadBuffer[redIndex + 0] * CONV_MULTIPLIER;
-                            convBuffer[redIndex + 1] += threadBuffer[redIndex + 1] * CONV_MULTIPLIER;
-                            convBuffer[redIndex + 2] += threadBuffer[redIndex + 2] * CONV_MULTIPLIER;
-                            convBuffer[redIndex + 3] += 1.0f;
-                        }
+                        uint32_t redIndex = (y * inputWidth + x) * 4;
+                        convBuffer[redIndex + 0] += currentBuffer[redIndex + 0] * CONV_MULTIPLIER;
+                        convBuffer[redIndex + 1] += currentBuffer[redIndex + 1] * CONV_MULTIPLIER;
+                        convBuffer[redIndex + 2] += currentBuffer[redIndex + 2] * CONV_MULTIPLIER;
                     }
                 }
             }

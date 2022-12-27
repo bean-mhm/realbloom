@@ -90,7 +90,7 @@ void CmImage::fill(std::array<float, 4> color, bool shouldLock)
 
     for (size_t i = 0; i < m_imageDataSize; i += 4)
     {
-        m_imageData[i] = color[0];
+        m_imageData[i + 0] = color[0];
         m_imageData[i + 1] = color[1];
         m_imageData[i + 2] = color[2];
         m_imageData[i + 3] = color[3];
