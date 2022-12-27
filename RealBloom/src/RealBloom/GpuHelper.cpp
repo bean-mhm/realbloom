@@ -21,14 +21,19 @@ GpuHelper::GpuHelper()
 {
     std::string tempDir;
     getTempDirectory(tempDir);
-    uint64_t randomNumber = RandomNumber::nextU64();
+    m_randomNumber = RandomNumber::nextU64();
 
     m_inpFilename = strFormat(
         "%srealbloom_gpu_operation%llu",
         tempDir.c_str(),
-        randomNumber);
+        m_randomNumber);
 
     m_outFilename = m_inpFilename + "out";
+}
+
+uint64_t GpuHelper::getRandomNumber()
+{
+    return m_randomNumber;
 }
 
 const std::string& GpuHelper::getInpFilename()
@@ -51,7 +56,7 @@ void GpuHelper::run()
 
     if (CreateProcessA(
         NULL,                            // No module name (use command line)
-        (char*)(commandLine.c_str()),  // Command line
+        (char*)(commandLine.c_str()),    // Command line
         NULL,                            // Process handle not inheritable
         NULL,                            // Thread handle not inheritable
         FALSE,                           // Set handle inheritance to FALSE
@@ -71,8 +76,30 @@ void GpuHelper::run()
     else
     {
         throw std::exception(printErr(
-            __FUNCTION__, "", strFormat("CreateProcess failed (%d).", GetLastError())
+            __FUNCTION__, "", strFormat("CreateProcess failed (%lu).", GetLastError())
         ).c_str());
+    }
+}
+
+void GpuHelper::waitForOutput(bool* pMustCancel)
+{
+    auto t1 = std::chrono::system_clock::now();
+
+    while (!std::filesystem::exists(m_outFilename))
+    {
+        if (getElapsedMs(t1) > GPU_HELPER_FILE_TIMEOUT)
+        {
+            killProcess(m_processInfo);
+            throw std::exception(printErr(__FUNCTION__, "", "Timeout").c_str());
+        }
+
+        if ((pMustCancel != nullptr) && (*pMustCancel))
+        {
+            killProcess(m_processInfo);
+            throw std::exception(printErr(__FUNCTION__, "", "Canceled").c_str());
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
     }
 }
 
@@ -83,16 +110,13 @@ bool GpuHelper::isRunning()
 
 void GpuHelper::kill()
 {
-    killProcess(m_processInfo);
+    if (isRunning()) killProcess(m_processInfo);
 }
 
-bool GpuHelper::outputCreated()
+void GpuHelper::cleanUp()
 {
-    return std::filesystem::exists(m_outFilename);
-}
+    kill();
 
-void GpuHelper::cleanUp(bool deleteFiles)
-{
     if (m_hasHandles)
     {
         m_hasHandles = false;
@@ -100,7 +124,7 @@ void GpuHelper::cleanUp(bool deleteFiles)
         CloseHandle(m_processInfo.hThread);
     }
 
-    if (deleteFiles)
+    if (GPU_HELPER_DELETE_TEMP)
     {
         deleteFile(m_inpFilename);
         deleteFile(m_outFilename);

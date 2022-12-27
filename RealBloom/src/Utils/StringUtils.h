@@ -91,15 +91,18 @@ std::string strLeftPadding(const std::string& s, size_t length, bool addSpace = 
 std::string strRightPadding(const std::string& s, size_t length, bool addSpace = true);
 std::string strWordWrap(const std::string& s, size_t lineLength, size_t leftPadding = 0);
 
+std::string strFromSize(uint64_t sizeBytes);
+std::string strFromBigNumber(uint64_t bigNumber);
+std::string strFromBool(bool v);
+std::string strFromColorChannelID(uint32_t ch);
+
 // Examples: "6h 9m 42s", "10.7s"
 std::string strFromDuration(float seconds);
 
 // Examples: "06:09:42", "00:00:10"
 std::string strFromElapsed(float seconds);
 
-std::string strFromSize(uint64_t sizeBytes);
-std::string strFromBigNumber(uint64_t bigNumber);
-std::string strFromBool(bool v);
+std::string strFromTime();
 
 template <size_t Size>
 std::string strFromFloatArray(const std::array<float, Size>& arr)
@@ -114,8 +117,6 @@ std::string strFromFloatArray(const std::array<float, Size>& arr)
 
     return result;
 }
-
-std::string strFromTime();
 
 std::array<float, 4> strToRGBA(const std::string& s);
 std::array<float, 3> strToRGB(const std::string& s);

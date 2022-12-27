@@ -98,42 +98,6 @@ std::vector<std::string> strSplit(const std::string& s, char delimiter)
     return elements;
 }
 
-std::string strFromDuration(float seconds)
-{
-    if (seconds < 60.0f)
-    {
-        return strFormat("%.1fs", seconds);
-    }
-    else
-    {
-        uint32_t intSec = (int)floorf(seconds);
-
-        uint32_t intHr = intSec / 3600;
-        uint32_t intMin = (intSec / 60) % 60;
-        intSec %= 60;
-
-        if (intHr > 0)
-        {
-            return strFormat("%dh %dm %ds", intHr, intMin, intSec);
-        }
-        else
-        {
-            return strFormat("%dm %ds", intMin, intSec);
-        }
-    }
-}
-
-std::string strFromElapsed(float seconds)
-{
-    uint32_t intSec = (int)floorf(seconds);
-
-    uint32_t intHr = intSec / 3600;
-    uint32_t intMin = (intSec / 60) % 60;
-    intSec %= 60;
-
-    return strFormat("%02d:%02d:%02d", intHr, intMin, intSec);
-}
-
 std::string strFromSize(uint64_t sizeBytes)
 {
     static const char* suffixes[]{ "bytes", "KB", "MB", "GB", "TB" };
@@ -176,6 +140,51 @@ std::string strFromBool(bool v)
 {
     return v ? "True" : "False";
 }
+
+std::string strFromColorChannelID(uint32_t ch)
+{
+    if (ch == 3) return "A";
+    if (ch == 2) return "B";
+    if (ch == 1) return "G";
+    return "R";
+}
+
+std::string strFromDuration(float seconds)
+{
+    if (seconds < 60.0f)
+    {
+        return strFormat("%.1fs", seconds);
+    }
+    else
+    {
+        uint32_t intSec = (int)floorf(seconds);
+
+        uint32_t intHr = intSec / 3600;
+        uint32_t intMin = (intSec / 60) % 60;
+        intSec %= 60;
+
+        if (intHr > 0)
+        {
+            return strFormat("%dh %dm %ds", intHr, intMin, intSec);
+        }
+        else
+        {
+            return strFormat("%dm %ds", intMin, intSec);
+        }
+    }
+}
+
+std::string strFromElapsed(float seconds)
+{
+    uint32_t intSec = (int)floorf(seconds);
+
+    uint32_t intHr = intSec / 3600;
+    uint32_t intMin = (intSec / 60) % 60;
+    intSec %= 60;
+
+    return strFormat("%02d:%02d:%02d", intHr, intMin, intSec);
+}
+
 
 std::string strFromTime()
 {

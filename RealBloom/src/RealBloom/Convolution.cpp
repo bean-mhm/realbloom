@@ -5,17 +5,11 @@
 namespace RealBloom
 {
 
-    constexpr uint32_t CONV_WAIT_TIMESTEP = 50;
     constexpr uint32_t CONV_PROG_TIMESTEP = 1000;
-
-    constexpr uint32_t CONVGPU_FILE_TIMEOUT = 5000;
-    constexpr bool CONVGPU_DELETE_TEMP = true;
-
     constexpr const char* S_CANCELED_BY_USER = "Canceled by user.";
 
     void drawRect(CmImage* image, int rx, int ry, int rw, int rh);
     void fillRect(CmImage* image, int rx, int ry, int rw, int rh);
-    std::string strFromColorChannelID(uint32_t ch);
 
     void ConvolutionState::setError(std::string err)
     {
@@ -502,15 +496,8 @@ namespace RealBloom
             if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
             {
                 // Tell the sub-threads to stop
-                ConvolutionThread* ct;
-                for (uint32_t i = 0; i < m_threads.size(); i++)
-                {
-                    ct = m_threads[i];
-                    if (ct)
-                    {
-                        ct->stop();
-                    }
-                }
+                for (auto& ct : m_threads)
+                    ct->stop();
             }
 
             // Wait for the main convolution thread
@@ -563,14 +550,11 @@ namespace RealBloom
 
                 for (uint32_t i = 0; i < numThreads; i++)
                 {
-                    if (m_threads[i])
+                    ConvolutionThreadStats* stats = m_threads[i]->getStats();
+                    if (stats->state == ConvolutionThreadState::Working || stats->state == ConvolutionThreadState::Done)
                     {
-                        ConvolutionThreadStats* stats = m_threads[i]->getStats();
-                        if (stats->state == ConvolutionThreadState::Working || stats->state == ConvolutionThreadState::Done)
-                        {
-                            numPixels += stats->numPixels;
-                            numDone += stats->numDone;
-                        }
+                        numPixels += stats->numPixels;
+                        numDone += stats->numDone;
                     }
                 }
 
@@ -748,7 +732,7 @@ namespace RealBloom
                 m_state.fftStage = strFormat("%u/%u %s: Inverse FFT", currStage, numStages, strFromColorChannelID(i).c_str());
                 fftConv.inverse(i);
 
-                if (m_state.mustCancel)throw std::exception(S_CANCELED_BY_USER);
+                if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
             }
 
             // Get the final output
@@ -793,110 +777,103 @@ namespace RealBloom
         // Create and prepare threads
         for (uint32_t i = 0; i < numThreads; i++)
         {
-            ConvolutionThread* ct = new ConvolutionThread(
+            std::shared_ptr<ConvolutionThread> ct = std::make_shared<ConvolutionThread>(
                 numThreads, i, m_params,
                 inputBuffer.data(), inputWidth, inputHeight,
-                kernelBuffer.data(), kernelWidth, kernelHeight
-            );
+                kernelBuffer.data(), kernelWidth, kernelHeight);
 
             std::vector<float>& threadBuffer = ct->getBuffer();
             threadBuffer.resize(inputBufferSize);
             for (uint32_t j = 0; j < inputBufferSize; j++)
-                if (j % 4 == 3) threadBuffer[j] = 1.0f;
-                else threadBuffer[j] = 0.0f;
+                threadBuffer[j] = (j % 4 == 3) ? 1.0f : 0.0f;
 
             m_threads.push_back(ct);
         }
 
         // Start the threads
-        for (uint32_t i = 0; i < numThreads; i++)
+        for (auto& ct : m_threads)
         {
-            ConvolutionThread* ct = m_threads[i];
-            std::shared_ptr<std::thread> t = std::make_shared<std::thread>([ct]()
+            std::shared_ptr<std::thread> t = std::make_shared<std::thread>(
+                [ct]()
                 {
                     ct->start();
-                });
+                }
+            );
             ct->setThread(t);
         }
 
         // Wait for the threads
+        std::chrono::time_point<std::chrono::system_clock> lastProgTime = std::chrono::system_clock::now();
+        while (true)
         {
-            std::chrono::time_point<std::chrono::system_clock> lastTime = std::chrono::system_clock::now();
-            while (true)
+            uint32_t numThreadsDone = 0;
+            ConvolutionThread* ct;
+            ConvolutionThreadStats* stats;
+
+            for (auto& ct : m_threads)
             {
-                uint32_t numThreadsDone = 0;
-                ConvolutionThread* ct;
-                ConvolutionThreadStats* stats;
-                for (uint32_t i = 0; i < numThreads; i++)
+                stats = ct->getStats();
+                if (stats->state == ConvolutionThreadState::Done)
+                    numThreadsDone++;
+            }
+
+            // Keep in mind that the threads will be "Done" when mustCancel is true
+            if (numThreadsDone >= numThreads)
+                break;
+
+            // Take a snapshot of the current progress
+
+            bool mustUpdateProg =
+                (!m_state.mustCancel)
+                && (getElapsedMs(lastProgTime) > CONV_PROG_TIMESTEP)
+                && (numThreadsDone < numThreads);
+
+            if (mustUpdateProg)
+            {
+                std::vector<float> progBuffer;
+                progBuffer.resize(inputBufferSize);
+                for (uint32_t i = 0; i < inputBufferSize; i++)
+                    progBuffer[i] = (i % 4 == 3) ? 1.0f : 0.0f;
+
+                for (auto& ct : m_threads)
                 {
-                    if (m_threads[i])
+                    std::vector<float>& currentBuffer = ct->getBuffer();
+                    for (uint32_t y = 0; y < inputHeight; y++)
                     {
-                        ct = m_threads[i];
-                        stats = ct->getStats();
-                        if (stats->state == ConvolutionThreadState::Done)
-                            numThreadsDone++;
-                    }
-                }
-
-                // Keep in mind that the threads will be "Done" when mustCancel is true
-                if (numThreadsDone >= numThreads)
-                    break;
-
-                // Take a snapshot of the current progress
-                if ((!m_state.mustCancel) && (getElapsedMs(lastTime) > CONV_PROG_TIMESTEP) && (numThreadsDone < numThreads))
-                {
-                    std::vector<float> progBuffer;
-                    progBuffer.resize(inputBufferSize);
-                    for (uint32_t i = 0; i < inputBufferSize; i++)
-                        if (i % 4 == 3) progBuffer[i] = 1.0f;
-                        else progBuffer[i] = 0.0f;
-
-                    for (uint32_t i = 0; i < numThreads; i++)
-                    {
-                        if (m_threads[i])
+                        for (uint32_t x = 0; x < inputWidth; x++)
                         {
-                            std::vector<float>& currentBuffer = m_threads[i]->getBuffer();
-                            for (uint32_t y = 0; y < inputHeight; y++)
-                            {
-                                for (uint32_t x = 0; x < inputWidth; x++)
-                                {
-                                    uint32_t redIndex = (y * inputWidth + x) * 4;
-                                    progBuffer[redIndex + 0] += currentBuffer[redIndex + 0] * CONV_MULTIPLIER;
-                                    progBuffer[redIndex + 1] += currentBuffer[redIndex + 1] * CONV_MULTIPLIER;
-                                    progBuffer[redIndex + 2] += currentBuffer[redIndex + 2] * CONV_MULTIPLIER;
-                                }
-                            }
+                            uint32_t redIndex = (y * inputWidth + x) * 4;
+                            progBuffer[redIndex + 0] += currentBuffer[redIndex + 0] * CONV_MULTIPLIER;
+                            progBuffer[redIndex + 1] += currentBuffer[redIndex + 1] * CONV_MULTIPLIER;
+                            progBuffer[redIndex + 2] += currentBuffer[redIndex + 2] * CONV_MULTIPLIER;
                         }
                     }
-
-                    // Copy progBuffer into conv. mix
-                    {
-                        std::lock_guard<CmImage> lock(*m_imgConvMix);
-                        m_imgConvMix->resize(inputWidth, inputHeight, false);
-                        float* convBuffer = m_imgConvMix->getImageData();
-
-                        std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, convBuffer);
-                    }
-                    m_imgConvMix->moveToGPU();
-
-                    lastTime = std::chrono::system_clock::now();
                 }
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(CONV_WAIT_TIMESTEP));
+                // Update Conv. Mix
+                {
+                    std::lock_guard<CmImage> lock(*m_imgConvMix);
+                    m_imgConvMix->resize(inputWidth, inputHeight, false);
+                    float* convBuffer = m_imgConvMix->getImageData();
+                    std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, convBuffer);
+                }
+                m_imgConvMix->moveToGPU();
+
+                lastProgTime = std::chrono::system_clock::now();
             }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
         }
 
         // Join the threads
-        for (uint32_t i = 0; i < m_threads.size(); i++)
-        {
-            if (m_threads[i])
-                threadJoin(m_threads[i]->getThread().get());
-        }
+        for (auto& ct : m_threads)
+            threadJoin(ct->getThread().get());
 
+        // Clear input buffers
         clearVector(inputBuffer);
         clearVector(kernelBuffer);
 
-        // Update the output buffer
+        // Update the output image
         {
             std::lock_guard<CmImage> lock(m_imgOutput);
             m_imgOutput.resize(inputWidth, inputHeight, false);
@@ -908,9 +885,9 @@ namespace RealBloom
                 if (m_state.mustCancel)
                     break;
 
-                if (m_threads[i])
+                for (auto& ct : m_threads)
                 {
-                    std::vector<float>& threadBuffer = m_threads[i]->getBuffer();
+                    std::vector<float>& threadBuffer = ct->getBuffer();
                     for (uint32_t y = 0; y < inputHeight; y++)
                     {
                         for (uint32_t x = 0; x < inputWidth; x++)
@@ -927,9 +904,7 @@ namespace RealBloom
         }
 
         // Clean up
-        for (uint32_t i = 0; i < numThreads; i++)
-            DELPTR(m_threads[i]);
-        m_threads.clear();
+        clearVector(m_threads);
     }
 
     void Convolution::convNaiveGPU(
@@ -941,160 +916,98 @@ namespace RealBloom
         uint32_t inputHeight,
         uint32_t inputBufferSize)
     {
-        // Clamp numChunks and chunkSleep
-
+        // Clamp numChunks
         if (m_params.methodInfo.numChunks < 1) m_params.methodInfo.numChunks = 1;
         if (m_params.methodInfo.numChunks > CONV_MAX_CHUNKS) m_params.methodInfo.numChunks = CONV_MAX_CHUNKS;
         uint32_t numChunks = m_params.methodInfo.numChunks;
 
+        // Clamp chunkSleep
         if (m_params.methodInfo.chunkSleep > CONV_MAX_SLEEP) m_params.methodInfo.chunkSleep = CONV_MAX_SLEEP;
         uint32_t chunkSleep = m_params.methodInfo.chunkSleep;
 
-        // Prepare input data for GPU convolution
-        BinaryConvNaiveGpuInput binInput;
-        binInput.numChunks = numChunks;
-        binInput.chunkSleep = chunkSleep;
-        binInput.cp_kernelCenterX = m_params.kernelCenterX;
-        binInput.cp_kernelCenterY = m_params.kernelCenterY;
-        binInput.cp_convThreshold = m_params.convThreshold;
-        binInput.cp_convKnee = m_params.convKnee;
-        binInput.convMultiplier = CONV_MULTIPLIER;
-        binInput.inputWidth = inputWidth;
-        binInput.inputHeight = inputHeight;
-        binInput.kernelWidth = kernelWidth;
-        binInput.kernelHeight = kernelHeight;
-        binInput.inputBuffer = inputBuffer;
-        binInput.kernelBuffer = kernelBuffer;
+        // Create GpuHelper instance
+        GpuHelper gpuHelper;
 
-        // Create input file for GPU convolution
-        std::string tempDir;
-        getTempDirectory(tempDir);
-        uint32_t randomNumber = (uint32_t)RandomNumber::nextI32();
+        std::string inpFilename = gpuHelper.getInpFilename();
+        std::string outFilename = gpuHelper.getOutFilename();
 
-        // Filenames
-        std::string inpFilename = strFormat(
-            "%sgpuconv%u",
-            tempDir.c_str(),
-            randomNumber);
-        std::string outFilename = inpFilename + "out";
         std::string statFilename = inpFilename + "stat";
+        HANDLE statMutex = NULL;
 
-        // Global mutex for IO operations on the stat file
-        std::string statMutexName = "GlobalRbStatMutex" + std::to_string(randomNumber);
-        binInput.statMutexName = statMutexName;
-        HANDLE statMutex = createMutex(statMutexName);
-        if (statMutex == NULL)
-            m_state.setError(strFormat("Mutex \"%s\" could not be created.", statMutexName.c_str()));
-
-        // Create the input file
-        std::ofstream inpFile;
-        if (!m_state.failed)
+        try
         {
+            // Prepare input data for GPU convolution
+            BinaryConvNaiveGpuInput binInput;
+            binInput.numChunks = numChunks;
+            binInput.chunkSleep = chunkSleep;
+            binInput.cp_kernelCenterX = m_params.kernelCenterX;
+            binInput.cp_kernelCenterY = m_params.kernelCenterY;
+            binInput.cp_convThreshold = m_params.convThreshold;
+            binInput.cp_convKnee = m_params.convKnee;
+            binInput.convMultiplier = CONV_MULTIPLIER;
+            binInput.inputWidth = inputWidth;
+            binInput.inputHeight = inputHeight;
+            binInput.kernelWidth = kernelWidth;
+            binInput.kernelHeight = kernelHeight;
+            binInput.inputBuffer = inputBuffer;
+            binInput.kernelBuffer = kernelBuffer;
+
+            // Mutex for IO operations on the stat file
+
+            std::string statMutexName = "GlobalRbStatMutex" + std::to_string(gpuHelper.getRandomNumber());
+            binInput.statMutexName = statMutexName;
+
+            statMutex = createMutex(statMutexName);
+            if (statMutex == NULL)
+                throw std::exception(
+                    strFormat("Mutex \"%s\" could not be created.", statMutexName.c_str()).c_str()
+                );
+
+            // Create the input file
+            std::ofstream inpFile;
             inpFile.open(inpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
             if (!inpFile.is_open())
-            {
-                m_state.setError(strFormat("File \"%s\" could not be created/opened.", inpFilename.c_str()));
-            }
-        }
+                throw std::exception(
+                    strFormat("Input file \"%s\" could not be created/opened.", inpFilename.c_str()).c_str()
+                );
 
-        // Write input data
-        if (!m_state.failed)
-        {
-            try
-            {
-                uint32_t opType = (uint32_t)GpuHelperOperationType::ConvNaive;
-                stmWriteScalar(inpFile, opType);
-                binInput.writeTo(inpFile);
-            }
-            catch (const std::exception& e)
-            {
-                m_state.setError(e.what());
-            }
+            // Write operation type
+            uint32_t opType = (uint32_t)GpuHelperOperationType::ConvNaive;
+            stmWriteScalar(inpFile, opType);
+
+            // Write input data
+            binInput.writeTo(inpFile);
+
+            // Close the input file
             inpFile.flush();
             inpFile.close();
-        }
 
-        // Execute GPU Helper
-        STARTUPINFOA startupInfo;
-        PROCESS_INFORMATION processInfo;
+            // Execute GPU Helper
+            gpuHelper.run();
 
-        ZeroMemory(&startupInfo, sizeof(startupInfo));
-        startupInfo.cb = sizeof(startupInfo);
-        ZeroMemory(&processInfo, sizeof(processInfo));
+            // Wait for the output file to be created
+            gpuHelper.waitForOutput(&(m_state.mustCancel));
 
-        bool cgHasHandles = false;
-        std::string cgCommandLine = strFormat("\"%s\" \"%s\"", getLocalPath("RealBloomGpuHelper.exe").c_str(), inpFilename.c_str());
-        if (!m_state.failed)
-        {
-            if (CreateProcessA(
-                NULL,                            // No module name (use command line)
-                (char*)(cgCommandLine.c_str()),  // Command line
-                NULL,                            // Process handle not inheritable
-                NULL,                            // Thread handle not inheritable
-                FALSE,                           // Set handle inheritance to FALSE
-                CREATE_NO_WINDOW,                // Creation flags
-                NULL,                            // Use parent's environment block
-                NULL,                            // Use parent's starting directory 
-                &startupInfo,                  // Pointer to STARTUPINFO structure
-                &processInfo))                 // Pointer to PROCESS_INFORMATION structure
-            {
-                cgHasHandles = true;
-
-                // Close when the parent dies
-                HANDLE hJobObject = Async::getShared("hJobObject");
-                if (hJobObject)
-                    AssignProcessToJobObject(hJobObject, processInfo.hProcess);
-            }
-            else
-            {
-                m_state.setError(strFormat("CreateProcess failed (%d).", GetLastError()));
-            }
-        }
-
-        // Wait for the output file to be created
-        if (!m_state.failed)
-        {
+            // Wait for the GPU Helper to finish its job
             auto t1 = std::chrono::system_clock::now();
-            while (!std::filesystem::exists(outFilename))
-            {
-                if (getElapsedMs(t1) > CONVGPU_FILE_TIMEOUT)
-                {
-                    killProcess(processInfo);
-                    m_state.setError("RealBloomGpuHelper did not create an output file.");
-                    break;
-                }
-                else if (m_state.mustCancel)
-                {
-                    killProcess(processInfo);
-                    m_state.setError(S_CANCELED_BY_USER);
-                    break;
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(CONV_WAIT_TIMESTEP));
-            }
-        }
-
-        // Wait for our little GPU helper buddy to finish its job
-        if (!m_state.failed)
-        {
-            auto t1 = std::chrono::system_clock::now();
-            while (processIsRunning(processInfo))
+            while (gpuHelper.isRunning())
             {
                 if (m_state.mustCancel)
-                {
-                    killProcess(processInfo);
-                    m_state.setError(S_CANCELED_BY_USER);
-                    break;
-                }
+                    throw std::exception(S_CANCELED_BY_USER);
 
-                // Read stat file
-                if (!(m_state.mustCancel) && std::filesystem::exists(statFilename) && (getElapsedMs(t1) > CONV_PROG_TIMESTEP))
+                // Read the stat file
+
+                bool mustReadStat =
+                    !(m_state.mustCancel)
+                    && std::filesystem::exists(statFilename)
+                    && (getElapsedMs(t1) > CONV_PROG_TIMESTEP);
+
+                if (mustReadStat)
                 {
                     BinaryConvNaiveGpuStat binStat;
                     waitForMutex(statMutex);
 
-                    // Open and read the stat file, check if numChunksDone has increased,
-                    // and if it has, then read the rest of the file and the buffer, and
-                    // show it through conv. mix
+                    // Open and read the stat file
                     std::ifstream statFile;
                     statFile.open(statFilename, std::ifstream::in | std::ifstream::binary);
                     if (statFile.is_open())
@@ -1104,17 +1017,21 @@ namespace RealBloom
                         {
                             binStat.readFrom(statFile);
 
-                            // Copy the stat buffer into conv. mix
-                            if (binStat.buffer.size() == (inputWidth * inputHeight * 4))
+                            // If numChunksDone has increased
+                            if (binStat.numChunksDone > m_state.numChunksDone)
                             {
-                                std::lock_guard<CmImage> lock(*m_imgConvMix);
-                                m_imgConvMix->resize(inputWidth, inputHeight, false);
-                                float* convBuffer = m_imgConvMix->getImageData();
-                                std::copy(binStat.buffer.data(), binStat.buffer.data() + binStat.buffer.size(), convBuffer);
-                            }
-                            m_imgConvMix->moveToGPU();
+                                m_state.numChunksDone = binStat.numChunksDone;
 
-                            m_state.numChunksDone = std::max(binStat.numChunksDone, m_state.numChunksDone);
+                                // Update Conv. Mix
+                                if (binStat.buffer.size() == (inputWidth * inputHeight * 4))
+                                {
+                                    std::lock_guard<CmImage> lock(*m_imgConvMix);
+                                    m_imgConvMix->resize(inputWidth, inputHeight, false);
+                                    float* convBuffer = m_imgConvMix->getImageData();
+                                    std::copy(binStat.buffer.data(), binStat.buffer.data() + binStat.buffer.size(), convBuffer);
+                                }
+                                m_imgConvMix->moveToGPU();
+                            }
                         }
                         catch (const std::exception& e)
                         {
@@ -1122,38 +1039,40 @@ namespace RealBloom
                         }
                         statFile.close();
                     }
+                    else
+                    {
+                        printErr(__FUNCTION__, "", strFormat("Stat file \"%s\" could not be opened.", statFilename.c_str()), true);
+                    }
 
                     releaseMutex(statMutex);
                     t1 = std::chrono::system_clock::now();
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(CONV_WAIT_TIMESTEP));
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
             }
-        }
 
-        // No longer need the mutex
-        closeMutex(statMutex);
+            // No longer need the mutex
+            closeMutex(statMutex);
 
-        // Open the output file
-        std::ifstream outFile;
-        if (!m_state.failed)
-        {
+            // Open the output file
+            std::ifstream outFile;
             outFile.open(outFilename, std::ifstream::in | std::ifstream::binary);
             if (!outFile.is_open())
-                m_state.setError(strFormat("Output file \"%s\" could not be opened.", outFilename.c_str()));
+                throw std::exception(
+                    strFormat("Output file \"%s\" could not be opened.", outFilename.c_str()).c_str()
+                );
             else
                 outFile.seekg(std::ifstream::beg);
-        }
 
-        // Parse the output file
-        BinaryConvNaiveGpuOutput binOutput;
-        if (!m_state.failed)
-        {
+            // Parse the output file
+            BinaryConvNaiveGpuOutput binOutput;
             try
             {
                 binOutput.readFrom(outFile);
                 if (binOutput.status == 1)
                 {
-                    // Prepare the output buffer
+                    // Update the output image
+
                     std::lock_guard<CmImage> lock(m_imgOutput);
                     m_imgOutput.resize(inputWidth, inputHeight, false);
                     float* convBuffer = m_imgOutput.getImageData();
@@ -1161,15 +1080,12 @@ namespace RealBloom
 
                     if (convBufferSize == binOutput.buffer.size())
                     {
-                        for (uint32_t i = 0; i < convBufferSize; i++)
-                        {
-                            convBuffer[i] = binOutput.buffer[i];
-                        }
+                        std::copy(binOutput.buffer.data(), binOutput.buffer.data() + binOutput.buffer.size(), convBuffer);
                     }
                     else
                     {
                         m_state.setError(strFormat(
-                            "Output buffer size (%u) does not match the input size (%u).",
+                            "Output buffer size (%u) does not match the input buffer size (%u).",
                             binOutput.buffer.size(), convBufferSize
                         ));
                     }
@@ -1188,21 +1104,17 @@ namespace RealBloom
             }
             outFile.close();
         }
-
-        // Clean up
-        if (cgHasHandles)
+        catch (const std::exception& e)
         {
-            CloseHandle(processInfo.hProcess);
-            CloseHandle(processInfo.hThread);
-            cgHasHandles = false;
+            m_state.setError(e.what());
         }
 
-        // Delete the temporary files
-        if (CONVGPU_DELETE_TEMP)
+        // Clean up
+        gpuHelper.cleanUp();
+        closeMutex(statMutex);
+        if (GPU_HELPER_DELETE_TEMP)
         {
-            deleteFile(inpFilename);
             deleteFile(statFilename);
-            deleteFile(outFilename);
         }
     }
 
@@ -1283,15 +1195,6 @@ namespace RealBloom
                 }
             }
         }
-    }
-
-    std::string strFromColorChannelID(uint32_t ch)
-    {
-        if (ch == 0)
-            return "R";
-        if (ch == 1)
-            return "G";
-        return "B";
     }
 
 }

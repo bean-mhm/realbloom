@@ -4,7 +4,7 @@
 namespace RealBloom
 {
 
-    constexpr uint32_t DISP_WAIT_TIMESTEP = 33;
+    constexpr uint32_t DISP_PROG_TIMESTEP = 33;
 
     Dispersion::Dispersion() : m_imgInputSrc("", "")
     {}
@@ -324,7 +324,7 @@ namespace RealBloom
                                 lastNumDone = numDone;
                             }
 
-                            std::this_thread::sleep_for(std::chrono::milliseconds(DISP_WAIT_TIMESTEP));
+                            std::this_thread::sleep_for(std::chrono::milliseconds(DISP_PROG_TIMESTEP));
                         }
                     }
 

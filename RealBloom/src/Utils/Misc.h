@@ -25,6 +25,8 @@
 #define AS_BYTES(X) reinterpret_cast<char*>(&(X))
 #define PTR_AS_BYTES(X) reinterpret_cast<char*>(X)
 
+constexpr uint32_t WAIT_TIMESTEP_SHORT = 10;
+
 std::string printErr(
     const std::string& source,
     const std::string& stage,

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <chrono>
@@ -97,7 +98,7 @@ namespace RealBloom
         CmImage m_imgOutput;
 
         std::thread* m_thread = nullptr;
-        std::vector<ConvolutionThread*> m_threads;
+        std::vector<std::shared_ptr<ConvolutionThread>> m_threads;
 
     public:
         Convolution();
