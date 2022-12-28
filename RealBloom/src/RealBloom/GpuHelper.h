@@ -23,8 +23,6 @@ enum class GpuHelperOperationType
 // Is this Java? Perhaps not long enough of a name.
 std::string strFromGpuHelperOperationType(GpuHelperOperationType opType);
 
-typedef std::function<void(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)> GpuHelperOperation;
-
 constexpr uint32_t GPU_HELPER_FILE_TIMEOUT = 5000;
 constexpr bool GPU_HELPER_DELETE_TEMP = true;
 

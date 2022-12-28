@@ -91,10 +91,13 @@ void releaseMutex(HANDLE hMutex)
         ReleaseMutex(hMutex);
 }
 
-void closeMutex(HANDLE hMutex)
+void closeMutex(HANDLE& hMutex)
 {
     if (hMutex != NULL)
+    {
         CloseHandle(hMutex);
+        hMutex = NULL;
+    }
 }
 
 std::string getPathSeparator()

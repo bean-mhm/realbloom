@@ -24,15 +24,18 @@
 #endif
 #include <GL/glew.h>
 
-constexpr const char* APP_TITLE = "RealBloom GPU Helper";
-
 // Use the dedicated GPU on Dual-GPU systems
 extern "C" {
     __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
+constexpr const char* APP_TITLE = "RealBloom GPU Helper";
+
+typedef std::function<void(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)> GpuHelperOperation;
+
 void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
+void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
 
 std::ofstream logFile;
 
@@ -159,6 +162,7 @@ int main(int argc, char* argv[])
     // Map operation types to functions
     std::unordered_map<GpuHelperOperationType, GpuHelperOperation> opMap;
     opMap[GpuHelperOperationType::ConvNaive] = runConvNaive;
+    opMap[GpuHelperOperationType::ConvFFT] = runConvFFT;
 
     // Check if operation has a function associated
     if (opMap.count(opType) < 1)
@@ -173,11 +177,9 @@ int main(int argc, char* argv[])
         bool ctxSuccess = oglOneTimeContext(
             [&opType, &opMap, &inpFilename, &outFilename, &inpFile, &outFile]()
             {
-                // Log
+                // Start the operation
                 logAdd(LogLevel::Info, strFormat("Renderer: %s", (const char*)glGetString(GL_RENDERER)));
                 logAdd(LogLevel::Info, strFormat("Operation type: %s", strFromGpuHelperOperationType(opType)));
-
-                // Start the operation
                 logAdd(LogLevel::Info, "Starting operation...");
                 opMap[opType](inpFilename, outFilename, inpFile, outFile);
             },
@@ -389,4 +391,9 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
     {
         logAdd(LogLevel::Error, e.what());
     }
+}
+
+void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)
+{
+    logAdd(LogLevel::Debug, "Test");
 }

@@ -59,7 +59,7 @@ HANDLE createMutex(const std::string& name);
 HANDLE openMutex(const std::string& name);
 void waitForMutex(HANDLE hMutex);
 void releaseMutex(HANDLE hMutex);
-void closeMutex(HANDLE hMutex);
+void closeMutex(HANDLE& hMutex);
 
 std::string getPathSeparator();
 std::string getExecDir();

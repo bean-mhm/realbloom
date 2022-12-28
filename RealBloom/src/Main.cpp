@@ -554,8 +554,8 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("CONVOLUTION");
 
-        const char* const convMethodItems[]{ "FFT (CPU)", "Naive (CPU)", "Naive (GPU)" };
-        if (ImGui::Combo("Method##Conv", &(vars.cv_method), convMethodItems, 3))
+        const char* const convMethodItems[]{ "FFT (CPU)", "FFT (GPU)", "Naive (CPU)", "Naive (GPU)" };
+        if (ImGui::Combo("Method##Conv", &(vars.cv_method), convMethodItems, 4))
             conv.cancelConv();
 
         if (vars.cv_method == (int)RealBloom::ConvolutionMethod::FFT_CPU)

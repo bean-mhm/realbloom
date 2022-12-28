@@ -138,6 +138,9 @@
     <ClCompile Include="src\RealBloom\GpuHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\RealBloom\Binary\BinaryConvFftGpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RealBloom\DiffractionPattern.h">
@@ -498,6 +501,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\RealBloom\GpuHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RealBloom\Binary\BinaryConvFftGpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

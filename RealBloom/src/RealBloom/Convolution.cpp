@@ -13,7 +13,7 @@ namespace RealBloom
 
     void ConvolutionState::setError(std::string err)
     {
-        error = error;
+        error = err;
         failed = true;
     }
 
@@ -457,6 +457,11 @@ namespace RealBloom
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
 
+                if (m_params.methodInfo.method == ConvolutionMethod::FFT_GPU)
+                    convFftGPU(
+                        kernelBuffer, kernelWidth, kernelHeight,
+                        inputBuffer, inputWidth, inputHeight, inputBufferSize);
+
                 if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
                     convNaiveCPU(
                         kernelBuffer, kernelWidth, kernelHeight,
@@ -466,10 +471,6 @@ namespace RealBloom
                     convNaiveGPU(
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
-
-                // Clean up
-                clearVector(inputBuffer);
-                clearVector(kernelBuffer);
 
                 // Update convMixParamsChanged
                 if (!m_state.failed && !m_state.mustCancel)
@@ -758,6 +759,120 @@ namespace RealBloom
         }
     }
 
+    void Convolution::convFftGPU(
+        std::vector<float>& kernelBuffer,
+        uint32_t kernelWidth,
+        uint32_t kernelHeight,
+        std::vector<float>& inputBuffer,
+        uint32_t inputWidth,
+        uint32_t inputHeight,
+        uint32_t inputBufferSize)
+    {
+        // Create GpuHelper instance
+        GpuHelper gpuHelper;
+        std::string inpFilename = gpuHelper.getInpFilename();
+        std::string outFilename = gpuHelper.getOutFilename();
+
+        try
+        {
+            // Prepare input data
+            BinaryConvFftGpuInput binInput;
+            binInput.cp_kernelCenterX = m_params.kernelCenterX;
+            binInput.cp_kernelCenterY = m_params.kernelCenterY;
+            binInput.cp_convThreshold = m_params.convThreshold;
+            binInput.cp_convKnee = m_params.convKnee;
+            binInput.convMultiplier = CONV_MULTIPLIER;
+            binInput.inputWidth = inputWidth;
+            binInput.inputHeight = inputHeight;
+            binInput.kernelWidth = kernelWidth;
+            binInput.kernelHeight = kernelHeight;
+            binInput.inputBuffer = inputBuffer;
+            binInput.kernelBuffer = kernelBuffer;
+
+            // Create the input file
+            std::ofstream inpFile;
+            inpFile.open(inpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+            if (!inpFile.is_open())
+                throw std::exception(
+                    strFormat("Input file \"%s\" could not be created/opened.", inpFilename.c_str()).c_str()
+                );
+
+            // Write operation type
+            uint32_t opType = (uint32_t)GpuHelperOperationType::ConvFFT;
+            stmWriteScalar(inpFile, opType);
+
+            // Write input data
+            binInput.writeTo(inpFile);
+
+            // Close the input file
+            inpFile.flush();
+            inpFile.close();
+
+            // Execute GPU Helper
+            gpuHelper.run();
+
+            // Wait for the output file to be created
+            gpuHelper.waitForOutput(&(m_state.mustCancel));
+
+            // Wait for the GPU Helper to finish its job
+            while (gpuHelper.isRunning())
+            {
+                if (m_state.mustCancel)
+                    throw std::exception(S_CANCELED_BY_USER);
+                std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
+            }
+
+            // Open the output file
+            std::ifstream outFile;
+            outFile.open(outFilename, std::ifstream::in | std::ifstream::binary);
+            if (!outFile.is_open())
+                throw std::exception(
+                    strFormat("Output file \"%s\" could not be opened.", outFilename.c_str()).c_str()
+                );
+            else
+                outFile.seekg(std::ifstream::beg);
+
+            // Parse the output file
+            BinaryConvFftGpuOutput binOutput;
+            binOutput.readFrom(outFile);
+            if (binOutput.status == 1)
+            {
+                // Update the output image
+
+                std::lock_guard<CmImage> lock(m_imgOutput);
+                m_imgOutput.resize(inputWidth, inputHeight, false);
+                float* convBuffer = m_imgOutput.getImageData();
+                uint32_t convBufferSize = m_imgOutput.getImageDataSize();
+
+                if (convBufferSize == binOutput.buffer.size())
+                {
+                    std::copy(binOutput.buffer.data(), binOutput.buffer.data() + binOutput.buffer.size(), convBuffer);
+                }
+                else
+                {
+                    m_state.setError(strFormat(
+                        "Output buffer size (%u) does not match the input buffer size (%u).",
+                        binOutput.buffer.size(), convBufferSize
+                    ));
+                }
+            }
+            else
+            {
+                m_state.setError(binOutput.error);
+            }
+
+            // Close the output file
+            outFile.close();
+        }
+        catch (const std::exception& e)
+        {
+            m_state.setError(e.what());
+        }
+
+        // Clean up
+        gpuHelper.cleanUp();
+    }
+
     void Convolution::convNaiveCPU(
         std::vector<float>& kernelBuffer,
         uint32_t kernelWidth,
@@ -921,7 +1036,6 @@ namespace RealBloom
 
         // Create GpuHelper instance
         GpuHelper gpuHelper;
-
         std::string inpFilename = gpuHelper.getInpFilename();
         std::string outFilename = gpuHelper.getOutFilename();
 
@@ -930,7 +1044,7 @@ namespace RealBloom
 
         try
         {
-            // Prepare input data for GPU convolution
+            // Prepare input data
             BinaryConvNaiveGpuInput binInput;
             binInput.numChunks = numChunks;
             binInput.chunkSleep = chunkSleep;
@@ -983,7 +1097,7 @@ namespace RealBloom
             gpuHelper.waitForOutput(&(m_state.mustCancel));
 
             // Wait for the GPU Helper to finish its job
-            auto t1 = std::chrono::system_clock::now();
+            auto lastProgTime = std::chrono::system_clock::now();
             while (gpuHelper.isRunning())
             {
                 if (m_state.mustCancel)
@@ -994,7 +1108,7 @@ namespace RealBloom
                 bool mustReadStat =
                     !(m_state.mustCancel)
                     && std::filesystem::exists(statFilename)
-                    && (getElapsedMs(t1) > CONV_PROG_TIMESTEP);
+                    && (getElapsedMs(lastProgTime) > CONV_PROG_TIMESTEP);
 
                 if (mustReadStat)
                 {
@@ -1039,7 +1153,7 @@ namespace RealBloom
                     }
 
                     releaseMutex(statMutex);
-                    t1 = std::chrono::system_clock::now();
+                    lastProgTime = std::chrono::system_clock::now();
                 }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
@@ -1060,42 +1174,34 @@ namespace RealBloom
 
             // Parse the output file
             BinaryConvNaiveGpuOutput binOutput;
-            try
+            binOutput.readFrom(outFile);
+            if (binOutput.status == 1)
             {
-                binOutput.readFrom(outFile);
-                if (binOutput.status == 1)
+                // Update the output image
+
+                std::lock_guard<CmImage> lock(m_imgOutput);
+                m_imgOutput.resize(inputWidth, inputHeight, false);
+                float* convBuffer = m_imgOutput.getImageData();
+                uint32_t convBufferSize = m_imgOutput.getImageDataSize();
+
+                if (convBufferSize == binOutput.buffer.size())
                 {
-                    // Update the output image
-
-                    std::lock_guard<CmImage> lock(m_imgOutput);
-                    m_imgOutput.resize(inputWidth, inputHeight, false);
-                    float* convBuffer = m_imgOutput.getImageData();
-                    uint32_t convBufferSize = m_imgOutput.getImageDataSize();
-
-                    if (convBufferSize == binOutput.buffer.size())
-                    {
-                        std::copy(binOutput.buffer.data(), binOutput.buffer.data() + binOutput.buffer.size(), convBuffer);
-                    }
-                    else
-                    {
-                        m_state.setError(strFormat(
-                            "Output buffer size (%u) does not match the input buffer size (%u).",
-                            binOutput.buffer.size(), convBufferSize
-                        ));
-                    }
+                    std::copy(binOutput.buffer.data(), binOutput.buffer.data() + binOutput.buffer.size(), convBuffer);
                 }
                 else
                 {
-                    m_state.setError(binOutput.error);
+                    m_state.setError(strFormat(
+                        "Output buffer size (%u) does not match the input buffer size (%u).",
+                        binOutput.buffer.size(), convBufferSize
+                    ));
                 }
             }
-            catch (const std::exception& e)
+            else
             {
-                m_state.setError(strFormat(
-                    "Could not retrieve data from the output file: %s",
-                    e.what()
-                ));
+                m_state.setError(binOutput.error);
             }
+
+            // Close the output file
             outFile.close();
         }
         catch (const std::exception& e)

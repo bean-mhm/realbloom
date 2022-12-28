@@ -14,6 +14,7 @@
 #include "GpuHelper.h"
 #include "Binary/BinaryData.h"
 #include "Binary/BinaryConvNaiveGpu.h"
+#include "Binary/BinaryConvFftGpu.h"
 
 #include "../ColorManagement/CmImage.h"
 #include "../Utils/NumberHelpers.h"
@@ -31,8 +32,9 @@ namespace RealBloom
     enum class ConvolutionMethod
     {
         FFT_CPU = 0,
-        NAIVE_CPU = 1,
-        NAIVE_GPU = 2
+        FFT_GPU = 1,
+        NAIVE_CPU = 2,
+        NAIVE_GPU = 3
     };
 
     struct ConvolutionMethodInfo
@@ -127,6 +129,15 @@ namespace RealBloom
 
     private:
         void convFftCPU(
+            std::vector<float>& kernelBuffer,
+            uint32_t kernelWidth,
+            uint32_t kernelHeight,
+            std::vector<float>& inputBuffer,
+            uint32_t inputWidth,
+            uint32_t inputHeight,
+            uint32_t inputBufferSize);
+
+        void convFftGPU(
             std::vector<float>& kernelBuffer,
             uint32_t kernelWidth,
             uint32_t kernelHeight,
