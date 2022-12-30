@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <stdint.h>
@@ -62,11 +63,6 @@ namespace RealBloom
 
         const std::vector<float>& getBuffer() const;
 
-        static void calcPadding(
-            uint32_t inputWidth, uint32_t inputHeight,
-            uint32_t kernelWidth, uint32_t kernelHeight,
-            float kernelCenterX, float kernelCenterY,
-            uint32_t& outPaddedWidth, uint32_t& outPaddedHeight);
     };
 
 }

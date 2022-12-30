@@ -28,13 +28,21 @@ GlFrameBuffer::GlFrameBuffer(uint32_t width, uint32_t height)
 
     if (fbStatus != GL_FRAMEBUFFER_COMPLETE)
         throw std::exception(
-            printErr(__FUNCTION__, "", strFormat("Frame buffer was not ready. Status: %s", toHexStr(fbStatus))).c_str()
+            printErr(__FUNCTION__, "", strFormat("Frame buffer was not ready. Status: %s", toHexStr(fbStatus).c_str())).c_str()
         );
 }
 
 GlFrameBuffer::~GlFrameBuffer()
 {
-    unbind();
+    try
+    {
+        unbind();
+    }
+    catch (const std::exception& e)
+    {
+        printErr(__FUNCTION__, "unbind", e.what(), true);
+    }
+
     glDeleteTextures(1, &(m_texColorBuffer));
     glDeleteFramebuffers(1, &(m_frameBuffer));
     checkGlStatus(__FUNCTION__, "Cleanup");

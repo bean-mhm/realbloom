@@ -16,4 +16,10 @@
 #include "Utils/Misc.h"
 #include "Utils/RandomNumber.h"
 
-bool oglOneTimeContext(std::function<void()> job, std::string& outError);
+enum class GlContextVersion
+{
+    GL_3_2,
+    GL_4_3
+};
+
+bool oglOneTimeContext(GlContextVersion glVersion, std::function<void()> job, std::string& outError);

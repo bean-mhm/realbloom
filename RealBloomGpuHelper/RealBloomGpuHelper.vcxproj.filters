@@ -18,7 +18,7 @@
     <ClCompile Include="src\MainGPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\RealBloom\ConvolutionNaiveGPU.cpp">
+    <ClCompile Include="src\RealBloom\ConvNaiveGpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Utils\GlContext.cpp">
@@ -60,6 +60,24 @@
     <ClCompile Include="..\RealBloom\src\Async.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\RealBloom\include\glfft\glfft.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\include\glfft\glfft_gl_interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\include\glfft\glfft_wisdom.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RealBloom\ConvFftGpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\GlShaderStorageBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glew32s.lib" />
@@ -77,7 +95,7 @@
     <ClInclude Include="include\GL\wglew.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\RealBloom\ConvolutionNaiveGPU.h">
+    <ClInclude Include="src\RealBloom\ConvNaiveGpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utils\GlContext.h">
@@ -122,5 +140,58 @@
     <ClInclude Include="..\RealBloom\src\Async.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\RealBloom\include\glfft\glfft.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\include\glfft\glfft_common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\include\glfft\glfft_gl_api_headers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\include\glfft\glfft_gl_interface.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\include\glfft\glfft_interface.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\include\glfft\glfft_wisdom.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RealBloom\ConvFftGpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\Array2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\GlShaderStorageBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\RealBloom\include\glfft\glsl\fft_common.inc">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\RealBloom\include\glfft\glsl\fft_main.inc">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\RealBloom\include\glfft\glsl\fft_radix4.inc">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\RealBloom\include\glfft\glsl\fft_radix8.inc">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\RealBloom\include\glfft\glsl\fft_radix16.inc">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\RealBloom\include\glfft\glsl\fft_radix64.inc">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\RealBloom\include\glfft\glsl\fft_shared.inc">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

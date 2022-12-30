@@ -8,12 +8,15 @@
 #include <chrono>
 #include <locale>
 #include <clocale>
+#include <memory>
 
 #include "RealBloom/GpuHelper.h"
 #include "RealBloom/Binary/BinaryData.h"
 #include "RealBloom/Binary/BinaryConvNaiveGpu.h"
+#include "RealBloom/Binary/BinaryConvFftGpu.h"
 
-#include "RealBloom/ConvolutionNaiveGPU.h"
+#include "RealBloom/ConvNaiveGpu.h"
+#include "RealBloom/ConvFftGpu.h"
 
 #include "Utils/GlContext.h"
 #include "Utils/Misc.h"
@@ -173,13 +176,18 @@ int main(int argc, char* argv[])
 
     // Create OpenGL context
     {
+        bool useGl43 =
+            (opType == GpuHelperOperationType::Diffraction)
+            || (opType == GpuHelperOperationType::ConvFFT);
+
         std::string ctxError;
         bool ctxSuccess = oglOneTimeContext(
+            useGl43 ? GlContextVersion::GL_4_3 : GlContextVersion::GL_3_2,
             [&opType, &opMap, &inpFilename, &outFilename, &inpFile, &outFile]()
             {
                 // Start the operation
                 logAdd(LogLevel::Info, strFormat("Renderer: %s", (const char*)glGetString(GL_RENDERER)));
-                logAdd(LogLevel::Info, strFormat("Operation type: %s", strFromGpuHelperOperationType(opType)));
+                logAdd(LogLevel::Info, strFormat("Operation type: %s", strFromGpuHelperOperationType(opType).c_str()));
                 logAdd(LogLevel::Info, "Starting operation...");
                 opMap[opType](inpFilename, outFilename, inpFile, outFile);
             },
@@ -187,7 +195,7 @@ int main(int argc, char* argv[])
 
         if (!ctxSuccess)
         {
-            logAdd(LogLevel::Fatal, strFormat("OpenGL context initialization error: \"%s\"", ctxError));
+            logAdd(LogLevel::Fatal, strFormat("OpenGL context initialization error: %s", ctxError.c_str()));
             return 1;
         }
     }
@@ -201,6 +209,110 @@ int main(int argc, char* argv[])
         logAdd(LogLevel::Info, "Output was successfully written.");
 
     return 0;
+}
+
+void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)
+{
+    // Read the input
+
+    logAdd(LogLevel::Info, "Attempting to read the input data...");
+
+    bool readInput = false;
+    std::string readInputError = "";
+    RealBloom::BinaryConvFftGpuInput binInput;
+    try
+    {
+        binInput.readFrom(inpFile);
+        readInput = true;
+    }
+    catch (const std::exception& e)
+    {
+        readInputError = e.what();
+        logAdd(LogLevel::Error, e.what());
+    }
+    inpFile.close();
+
+    // ConvFftGpu
+    std::shared_ptr<RealBloom::ConvFftGpu> conv = nullptr;
+
+    // Final status to write into the output
+    bool finalSuccess = true;
+    std::string finalError = "";
+
+    if (readInput)
+    {
+        try
+        {
+            // Initialize
+            logAdd(LogLevel::Info, "Initializing...");
+            conv = std::make_shared<RealBloom::ConvFftGpu>(&binInput);
+
+            // Prepare
+            logAdd(LogLevel::Info, "Preparing...");
+            conv->pad();
+
+            // Repeat for 3 color channels
+            for (uint32_t i = 0; i < 3; i++)
+            {
+                // Input FFT
+                logAdd(LogLevel::Info, strFormat("%s: Input FFT", strFromColorChannelID(i).c_str()));
+                conv->inputFFT(i);
+
+                // Kernel FFT
+                logAdd(LogLevel::Info, strFormat("%s: Kernel FFT", strFromColorChannelID(i).c_str()));
+                conv->kernelFFT(i);
+
+                // Multiply + Inverse FFT
+                logAdd(LogLevel::Info, strFormat("%s: Inverse Convolve", strFromColorChannelID(i).c_str()));
+                conv->inverseConvolve(i);
+            }
+
+            // Get the final output
+            logAdd(LogLevel::Info, "Finalizing...");
+            conv->output();
+
+            logAdd(LogLevel::Info, "Convolution is done.");
+        }
+        catch (const std::exception& e)
+        {
+            logAdd(LogLevel::Error, "Convolution was failed.");
+            logAdd(LogLevel::Error, e.what());
+            finalSuccess = false;
+            finalError = e.what();
+        }
+    }
+
+    // Setup binary output
+    RealBloom::BinaryConvFftGpuOutput binOutput;
+    if (readInput)
+    {
+        if (finalSuccess)
+        {
+            binOutput.status = 1;
+            binOutput.buffer = conv->getBuffer();
+        }
+        else
+        {
+            binOutput.status = 0;
+            binOutput.error = finalError;
+        }
+    }
+    else
+    {
+        binOutput.status = 0;
+        binOutput.error = readInputError;
+    }
+
+    // Write the output
+    logAdd(LogLevel::Info, "Writing the output...");
+    try
+    {
+        binOutput.writeTo(outFile);
+    }
+    catch (const std::exception& e)
+    {
+        logAdd(LogLevel::Error, e.what());
+    }
 }
 
 void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)
@@ -254,10 +366,10 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
 
         logAdd(LogLevel::Info, "Preparing convolution...");
 
-        RealBloom::ConvolutionNaiveGPUData data;
+        RealBloom::ConvNaiveGpuData data;
         data.binInput = &binInput;
 
-        RealBloom::ConvolutionNaiveGPU conv(&data);
+        RealBloom::ConvNaiveGpu conv(&data);
         conv.prepare();
 
         if (!data.success)
@@ -391,9 +503,4 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
     {
         logAdd(LogLevel::Error, e.what());
     }
-}
-
-void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)
-{
-    logAdd(LogLevel::Debug, "Test");
 }

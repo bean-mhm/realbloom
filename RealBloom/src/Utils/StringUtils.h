@@ -21,7 +21,7 @@ std::string strFormat(const std::string& format, Args ... args)
     if (size_s <= 0)
     {
         //throw std::runtime_error("Error during formatting.");
-        return "[formatStr] Error";
+        return "[strFormat failure]";
     }
     auto size = static_cast<size_t>(size_s);
     std::unique_ptr<char[]> buf(new char[size]);

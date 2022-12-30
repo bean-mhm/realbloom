@@ -99,3 +99,32 @@ void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, floa
     outX = ((x - pivotX) * c - (y - pivotY) * s) + pivotX;
     outY = ((x - pivotX) * s + (y - pivotY) * c) + pivotY;
 }
+
+void calcFftConvPadding(
+    bool powerOfTwo,
+    uint32_t inputWidth,
+    uint32_t inputHeight,
+    uint32_t kernelWidth,
+    uint32_t kernelHeight,
+    float kernelCenterX,
+    float kernelCenterY,
+    uint32_t& outPaddedWidth,
+    uint32_t& outPaddedHeight)
+{
+    int kernelExtraPaddingX = (int)fabsf(floorf((float)kernelWidth / 2.0f) - floorf(kernelCenterX * (float)kernelWidth)) + 1;
+    int kernelExtraPaddingY = (int)fabsf(floorf((float)kernelHeight / 2.0f) - floorf(kernelCenterY * (float)kernelHeight)) + 1;
+
+    uint32_t totalWidth = inputWidth + kernelWidth + kernelExtraPaddingX;
+    uint32_t totalHeight = inputHeight + kernelHeight + kernelExtraPaddingY;
+
+    if (powerOfTwo)
+    {
+        outPaddedWidth = upperPowerOf2(totalWidth);
+        outPaddedHeight = upperPowerOf2(totalHeight);
+    }
+    else
+    {
+        outPaddedWidth = totalWidth + 32 - (totalWidth % 32);
+        outPaddedHeight = totalHeight + 32 - (totalHeight % 32);
+    }
+}

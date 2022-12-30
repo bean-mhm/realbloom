@@ -16,7 +16,8 @@ namespace RealBloom
     {
         // Padded size
 
-        calcPadding(
+        calcFftConvPadding(
+            false,
             m_inputWidth, m_inputHeight,
             m_kernelWidth, m_kernelHeight,
             m_params.kernelCenterX, m_params.kernelCenterY,
@@ -235,18 +236,6 @@ namespace RealBloom
     const std::vector<float>& ConvolutionFFT::getBuffer() const
     {
         return m_outputBuffer;
-    }
-
-    void ConvolutionFFT::calcPadding(uint32_t inputWidth, uint32_t inputHeight, uint32_t kernelWidth, uint32_t kernelHeight, float kernelCenterX, float kernelCenterY, uint32_t& outPaddedWidth, uint32_t& outPaddedHeight)
-    {
-        int kernelExtraPaddingX = (int)fabsf(floorf((float)kernelWidth / 2.0f) - floorf(kernelCenterX * (float)kernelWidth)) + 1;
-        int kernelExtraPaddingY = (int)fabsf(floorf((float)kernelHeight / 2.0f) - floorf(kernelCenterY * (float)kernelHeight)) + 1;
-
-        uint32_t totalWidth = inputWidth + kernelWidth + kernelExtraPaddingX;
-        uint32_t totalHeight = inputHeight + kernelHeight + kernelExtraPaddingY;
-
-        outPaddedWidth = totalWidth + 32 - (totalWidth % 32);
-        outPaddedHeight = totalHeight + 32 - (totalHeight % 32);
     }
 
 }

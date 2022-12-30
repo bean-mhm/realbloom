@@ -2,16 +2,18 @@
 
 HGLRC realContext = NULL;
 
+GlContextVersion g_glVersion;
 std::function<void()> g_job;
 bool g_success = false;
 std::string* g_outError = nullptr;
 
 LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-bool oglOneTimeContext(std::function<void()> job, std::string& outError)
+bool oglOneTimeContext(GlContextVersion glVersion, std::function<void()> job, std::string& outError)
 {
     outError = "";
 
+    g_glVersion = glVersion;
     g_job = job;
     g_success = false;
     g_outError = &outError;
@@ -93,10 +95,29 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         bool glewReady = (err == GLEW_OK);
         if (glewReady)
         {
+            // Version
+
+            int versionMajor, versionMinor;
+            if (g_glVersion == GlContextVersion::GL_3_2)
+            {
+                versionMajor = 3;
+                versionMinor = 2;
+            }
+            else if (g_glVersion == GlContextVersion::GL_4_3)
+            {
+                versionMajor = 4;
+                versionMinor = 3;
+            }
+            else
+            {
+                versionMajor = 3;
+                versionMinor = 2;
+            }
+
             // Real context
             static const int ctxAttribs[] = {
-                WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-                WGL_CONTEXT_MINOR_VERSION_ARB, 2,
+                WGL_CONTEXT_MAJOR_VERSION_ARB, versionMajor,
+                WGL_CONTEXT_MINOR_VERSION_ARB, versionMinor,
                 WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
                 0
             };
@@ -111,7 +132,7 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     g_job();
                 } else
                 {
-                    *g_outError = "Failed to activate OpenGL 3.2 rendering context.";
+                    *g_outError = strFormat("Failed to activate OpenGL %d.%d rendering context.", versionMajor, versionMinor);
                 }
 
                 // Delete the rendering context
@@ -119,7 +140,7 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 wglDeleteContext(realContext);
             } else
             {
-                *g_outError = "Failed to create OpenGL 3.2 context.";
+                *g_outError = strFormat("Failed to create OpenGL %d.%d context.", versionMajor, versionMinor);
             }
         } else
         {

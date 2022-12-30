@@ -575,14 +575,14 @@ namespace RealBloom
                     "%u/%u chunks\n%s",
                     m_state.numChunksDone,
                     m_state.methodInfo.numChunks,
-                    strFromElapsed(elapsedSec));
+                    strFromElapsed(elapsedSec).c_str());
             }
             else if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
             {
                 outTime = strFormat(
                     "%s\n%s",
                     m_state.fftStage.c_str(),
-                    strFromElapsed(elapsedSec));
+                    strFromElapsed(elapsedSec).c_str());
             }
         }
         else if (m_state.hasTimestamps && !m_state.mustCancel)
@@ -627,7 +627,8 @@ namespace RealBloom
         if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
         {
             uint32_t paddedWidth, paddedHeight;
-            ConvolutionFFT::calcPadding(
+            calcFftConvPadding(
+                false,
                 inputWidth, inputHeight,
                 kernelWidth, kernelHeight,
                 m_params.kernelCenterX, m_params.kernelCenterY,

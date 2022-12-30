@@ -125,3 +125,10 @@ float linearToSrgb_DEPRECATED(float x);
 float contrastCurve(float v, float contrast);
 double contrastCurve(double v, double contrast);
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY);
+
+void calcFftConvPadding(
+    bool powerOfTwo,
+    uint32_t inputWidth, uint32_t inputHeight,
+    uint32_t kernelWidth, uint32_t kernelHeight,
+    float kernelCenterX, float kernelCenterY,
+    uint32_t& outPaddedWidth, uint32_t& outPaddedHeight);

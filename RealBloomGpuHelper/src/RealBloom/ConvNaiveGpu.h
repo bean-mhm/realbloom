@@ -4,6 +4,7 @@
 #define GLEW_STATIC
 #endif
 #include <GL/glew.h>
+
 #include "../Utils/GlContext.h"
 #include "Utils/GlUtils.h"
 
@@ -24,9 +25,9 @@
 namespace RealBloom
 {
 
-    class ConvolutionNaiveGPU;
+    class ConvNaiveGpu;
 
-    struct ConvolutionNaiveGPUData
+    struct ConvNaiveGpuData
     {
         BinaryConvNaiveGpuInput* binInput;
         uint32_t numPoints = 0;
@@ -42,10 +43,10 @@ namespace RealBloom
         void setError(std::string err);
     };
 
-    class ConvolutionNaiveGPU
+    class ConvNaiveGpu
     {
     private:
-        ConvolutionNaiveGPUData* m_data;
+        ConvNaiveGpuData* m_data;
 
         uint32_t m_width = 0;
         uint32_t m_height = 0;
@@ -71,7 +72,7 @@ namespace RealBloom
         void drawScene(uint32_t numPoints);
 
     public:
-        ConvolutionNaiveGPU(ConvolutionNaiveGPUData* data);
+        ConvNaiveGpu(ConvNaiveGpuData* data);
         void prepare();
         void process(uint32_t chunkIndex);
         void cleanUp();

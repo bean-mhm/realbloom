@@ -151,7 +151,11 @@ std::string strFromColorChannelID(uint32_t ch)
 
 std::string strFromDuration(float seconds)
 {
-    if (seconds < 60.0f)
+    if (seconds < 1.0f)
+    {
+        return strFormat("%.3fs", seconds);
+    }
+    else if (seconds < 60.0f)
     {
         return strFormat("%.1fs", seconds);
     }
@@ -165,24 +169,24 @@ std::string strFromDuration(float seconds)
 
         if (intHr > 0)
         {
-            return strFormat("%dh %dm %ds", intHr, intMin, intSec);
+            return strFormat("%uh %um %us", intHr, intMin, intSec);
         }
         else
         {
-            return strFormat("%dm %ds", intMin, intSec);
+            return strFormat("%um %us", intMin, intSec);
         }
     }
 }
 
 std::string strFromElapsed(float seconds)
 {
-    uint32_t intSec = (int)floorf(seconds);
+    uint32_t intSec = (uint32_t)floorf(seconds);
 
     uint32_t intHr = intSec / 3600;
     uint32_t intMin = (intSec / 60) % 60;
     intSec %= 60;
 
-    return strFormat("%02d:%02d:%02d", intHr, intMin, intSec);
+    return strFormat("%02u:%02u:%02u", intHr, intMin, intSec);
 }
 
 
@@ -196,8 +200,7 @@ std::string strFromTime()
     localtime_s(&timeinfo, &rawtime);
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeinfo);
 
-    std::string result = buffer;
-    return result;
+    return std::string(buffer);
 }
 
 std::array<float, 4> strToRGBA(const std::string& s)
@@ -225,7 +228,7 @@ std::array<float, 4> strToRGBA(const std::string& s)
     }
     catch (const std::exception& e)
     {
-        throw std::exception(strFormat("Failed to parse color from string: %s", e.what()).c_str());
+        throw std::exception(strFormat("Failed to parse color from string \"%s\": %s", s.c_str(), e.what()).c_str());
     }
 }
 
@@ -256,6 +259,6 @@ std::array<float, 2> strToXY(const std::string& s)
     }
     catch (const std::exception& e)
     {
-        throw std::exception(strFormat("Failed to parse XY from string: %s", e.what()).c_str());
+        throw std::exception(strFormat("Failed to parse XY from string \"%s\": %s", s.c_str(), e.what()).c_str());
     }
 }

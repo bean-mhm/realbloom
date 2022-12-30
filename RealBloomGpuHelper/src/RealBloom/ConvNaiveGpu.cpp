@@ -1,4 +1,4 @@
-#include "ConvolutionNaiveGPU.h"
+#include "ConvNaiveGpu.h"
 
 #pragma region Shaders
 const char* vertexSource = R"glsl(
@@ -97,7 +97,8 @@ constexpr float GPU_COORD_SCALE = 2.0f;
 
 namespace RealBloom
 {
-    void ConvolutionNaiveGPUData::reset()
+
+    void ConvNaiveGpuData::reset()
     {
         done = false;
         success = false;
@@ -105,14 +106,14 @@ namespace RealBloom
         numPoints = 0;
     }
 
-    void ConvolutionNaiveGPUData::setError(std::string err)
+    void ConvNaiveGpuData::setError(std::string err)
     {
         success = false;
         error = err;
         done = true;
     }
 
-    void ConvolutionNaiveGPU::makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight)
+    void ConvNaiveGpu::makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight)
     {
         glGenTextures(1, &m_texKernel);
         checkGlStatus(__FUNCTION__, "glGenTextures");
@@ -133,7 +134,7 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "glTexImage2D");
     }
 
-    void ConvolutionNaiveGPU::makeProgram()
+    void ConvNaiveGpu::makeProgram()
     {
         // Create and compile shaders
         std::string shaderLog;
@@ -176,7 +177,7 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "glUseProgram");
     }
 
-    void ConvolutionNaiveGPU::definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs)
+    void ConvNaiveGpu::definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs)
     {
         // Create Vertex Array Object
         glGenVertexArrays(1, &m_vao);
@@ -205,13 +206,13 @@ namespace RealBloom
         }*/
     }
 
-    void ConvolutionNaiveGPU::useProgram()
+    void ConvNaiveGpu::useProgram()
     {
         glUseProgram(m_shaderProgram);
         checkGlStatus(__FUNCTION__, "glUseProgram");
     }
 
-    void ConvolutionNaiveGPU::bindKernelTexture()
+    void ConvNaiveGpu::bindKernelTexture()
     {
         glActiveTexture(GL_TEXTURE0);
         checkGlStatus(__FUNCTION__, "glActiveTexture");
@@ -220,7 +221,7 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "glBindTexture");
     }
 
-    void ConvolutionNaiveGPU::setUniforms(uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize)
+    void ConvNaiveGpu::setUniforms(uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize)
     {
         GLint kernelTopLeftUniform = glGetUniformLocation(m_shaderProgram, "kernelTopLeft");
         checkGlStatus(__FUNCTION__, "glGetUniformLocation(kernelTopLeft)");
@@ -242,7 +243,7 @@ namespace RealBloom
 
     }
 
-    void ConvolutionNaiveGPU::specifyLayout()
+    void ConvNaiveGpu::specifyLayout()
     {
         // Specify vertex data layout
 
@@ -257,7 +258,7 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "color");
     }
 
-    void ConvolutionNaiveGPU::drawScene(uint32_t numPoints)
+    void ConvNaiveGpu::drawScene(uint32_t numPoints)
     {
         // Clear the screen to black
         glClearColor(0.0f, 0.0f, 0.1f, 1.0f);
@@ -275,11 +276,11 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "glDrawArrays");
     }
 
-    ConvolutionNaiveGPU::ConvolutionNaiveGPU(ConvolutionNaiveGPUData* data)
+    ConvNaiveGpu::ConvNaiveGpu(ConvNaiveGpuData* data)
         : m_data(data)
     {}
 
-    void ConvolutionNaiveGPU::prepare()
+    void ConvNaiveGpu::prepare()
     {
         BinaryConvNaiveGpuInput* binInput = m_data->binInput;
 
@@ -306,7 +307,7 @@ namespace RealBloom
         }
     }
 
-    void ConvolutionNaiveGPU::process(uint32_t chunkIndex)
+    void ConvNaiveGpu::process(uint32_t chunkIndex)
     {
         BinaryConvNaiveGpuInput* binInput = m_data->binInput;
 
@@ -491,7 +492,7 @@ namespace RealBloom
         }
     }
 
-    void ConvolutionNaiveGPU::cleanUp()
+    void ConvNaiveGpu::cleanUp()
     {
         try
         {

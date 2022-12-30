@@ -451,7 +451,7 @@ void OcioShader::Uniform::use()
     }
     else
         throw OCIO::Exception(
-            printErr(__FUNCTION__, "", strFormat("Uniform %s is not linked to any value.", m_name.c_str())).c_str()
+            printErr(__FUNCTION__, "", strFormat("Uniform \"%s\" is not linked to any value.", m_name.c_str())).c_str()
         );
     checkGlStatus(__FUNCTION__, strFormat("\"%s\"", m_name.c_str()));
 }
