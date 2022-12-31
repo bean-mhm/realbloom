@@ -75,7 +75,7 @@ void GpuHelper::run()
     }
     else
     {
-        throw std::exception(printErr(
+        throw std::exception(makeError(
             __FUNCTION__, "", strFormat("CreateProcess failed (%lu).", GetLastError())
         ).c_str());
     }
@@ -90,13 +90,13 @@ void GpuHelper::waitForOutput(bool* pMustCancel)
         if (getElapsedMs(t1) > GPU_HELPER_FILE_TIMEOUT)
         {
             killProcess(m_processInfo);
-            throw std::exception(printErr(__FUNCTION__, "", "Timeout").c_str());
+            throw std::exception(makeError(__FUNCTION__, "", "Timeout").c_str());
         }
 
         if ((pMustCancel != nullptr) && (*pMustCancel))
         {
             killProcess(m_processInfo);
-            throw std::exception(printErr(__FUNCTION__, "", "Canceled").c_str());
+            throw std::exception(makeError(__FUNCTION__, "", "Canceled").c_str());
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));

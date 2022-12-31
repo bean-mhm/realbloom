@@ -24,7 +24,7 @@ namespace RealBloom
         // Verify the header
         std::string defaultHeader = getDefaultHeader();
         if (header != defaultHeader)
-            throw std::exception(printErr(makeErrorSource(__FUNCTION__), "", strFormat(
+            throw std::exception(makeError(makeErrorSource(__FUNCTION__), "", strFormat(
                 "Header mismatch. Expected: \"%s\", Read: \"%s\"", defaultHeader.c_str(), header.c_str()
             )).c_str());
 

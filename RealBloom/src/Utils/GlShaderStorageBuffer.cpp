@@ -40,8 +40,8 @@ void GlShaderStorageBuffer::read(float* target, uint32_t size)
 {
     GLint bufferSize = 0;
     glGetNamedBufferParameteriv(m_ssbo, GL_BUFFER_SIZE, &bufferSize);
-    printErr(__FUNCTION__, "bufferSize", std::to_string(bufferSize), true);
     checkGlStatus(__FUNCTION__, "glGetNamedBufferParameteriv(GL_BUFFER_SIZE)");
+    printInfo(__FUNCTION__, "bufferSize", std::to_string(bufferSize));
 
     glGetNamedBufferSubData(
         m_ssbo,                // buffer

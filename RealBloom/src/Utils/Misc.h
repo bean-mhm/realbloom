@@ -27,14 +27,28 @@
 
 constexpr uint32_t WAIT_TIMESTEP_SHORT = 10;
 
-std::string printErr(
+std::string makeError(
     const std::string& source,
     const std::string& stage,
     const std::string& message,
-    bool printAnyway = false);
+    bool print = false);
 
-void setPrintErrEnabled(bool enabled);
-void setPrintErrHandler(std::function<void(std::string)> handler);
+void printError(
+    const std::string& source,
+    const std::string& stage,
+    const std::string& message);
+
+void printWarning(
+    const std::string& source,
+    const std::string& stage,
+    const std::string& message);
+
+void printInfo(
+    const std::string& source,
+    const std::string& stage,
+    const std::string& message);
+
+void setPrintHandler(std::function<void(std::string)> handler);
 
 template <typename T>
 void clearVector(std::vector<T>& v)

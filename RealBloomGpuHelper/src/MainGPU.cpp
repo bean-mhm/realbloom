@@ -119,8 +119,7 @@ int main(int argc, char* argv[])
         logAdd(LogLevel::Warning, strFormat("Couldn't set locale to \"%s\".", Config::S_APP_LOCALE));
 
     // Log printErr
-    setPrintErrEnabled(false);
-    setPrintErrHandler(
+    setPrintHandler(
         [](std::string err)
         {
             logAdd(LogLevel::Error, err);

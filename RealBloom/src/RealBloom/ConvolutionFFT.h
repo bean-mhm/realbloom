@@ -13,6 +13,7 @@
 #include "Convolution.h"
 #include "../Utils/Array2D.h"
 #include "../Utils/NumberHelpers.h"
+#include "../Utils/Misc.h"
 
 namespace RealBloom
 {

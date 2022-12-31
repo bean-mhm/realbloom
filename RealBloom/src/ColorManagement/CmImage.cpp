@@ -233,7 +233,7 @@ void CmImage::moveToGPU_Internal()
         }
         catch (std::exception& e)
         {
-            printErr(__FUNCTION__, "Color Transform (CPU)", e.what(), true);
+            printError(__FUNCTION__, "Color Transform (CPU)", e.what());
         }
     }
 
@@ -250,7 +250,7 @@ void CmImage::moveToGPU_Internal()
         catch (const std::exception&)
         {
             lastTextureFailed = true;
-            printErr(__FUNCTION__, "", "Failed to create texture.", true);
+            printError(__FUNCTION__, "", "Failed to create texture.");
         }
     }
 
@@ -380,7 +380,7 @@ void CmImage::moveToGPU_Internal()
         }
         catch (const std::exception&)
         {
-            printErr(__FUNCTION__, "", "GPU Color Transform failed.", true);
+            printError(__FUNCTION__, "", "GPU Color Transform failed.");
         }
     }
 }

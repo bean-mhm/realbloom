@@ -36,7 +36,7 @@
 template<typename ... Args>
 void glfft_log(const char* fmt, Args ... args)
 {
-    printErr("GLFFT", "", strFormat(fmt, args ...), true);
+    printInfo("GLFFT", "", strFormat(fmt, args ...));
 }
 
 #else

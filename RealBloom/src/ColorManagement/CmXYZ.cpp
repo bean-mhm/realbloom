@@ -63,7 +63,7 @@ bool CmXYZ::init()
     }
     catch (const std::exception& e)
     {
-        S_STATE.setError(printErr(__FUNCTION__, "", e.what()));
+        S_STATE.setError(makeError(__FUNCTION__, "", e.what(), true));
     }
     return S_STATE.ok();
 }

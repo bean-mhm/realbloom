@@ -141,17 +141,17 @@ namespace RealBloom
 
         if (!createShader(GL_VERTEX_SHADER, vertexSource, m_vertexShader, shaderLog))
             throw std::exception(
-                printErr(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
+                makeError(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
         if (!createShader(GL_GEOMETRY_SHADER, geometrySource, m_geometryShader, shaderLog))
             throw std::exception(
-                printErr(__FUNCTION__, "", strFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
+                makeError(__FUNCTION__, "", strFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
         if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, m_fragmentShader, shaderLog))
             throw std::exception(
-                printErr(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
+                makeError(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
         // Link the vertex and fragment shaders
@@ -303,7 +303,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            m_data->setError(printErr(__FUNCTION__, "", e.what()));
+            m_data->setError(makeError(__FUNCTION__, "", e.what()));
         }
     }
 
@@ -466,7 +466,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            m_data->setError(printErr(__FUNCTION__, "", e.what()));
+            m_data->setError(makeError(__FUNCTION__, "", e.what()));
         }
 
         // Clean up
@@ -478,7 +478,7 @@ namespace RealBloom
             }
             catch (const std::exception& e)
             {
-                printErr(__FUNCTION__, "Cleanup", e.what(), true);
+                printError(__FUNCTION__, "Cleanup (frameBuffer)", e.what());
             }
 
             glDeleteBuffers(1, &m_vbo);
@@ -488,7 +488,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            printErr("", "", e.what(), true);
+            printError("", "", e.what());
         }
     }
 
@@ -505,7 +505,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            printErr("", "", e.what(), true);
+            printError("", "", e.what());
         }
     }
 

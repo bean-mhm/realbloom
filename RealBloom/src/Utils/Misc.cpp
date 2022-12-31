@@ -1,9 +1,8 @@
 #include "Misc.h"
 
-bool g_printErrEnbaled = true;
-std::function<void(std::string)> g_printErrHandler = [](std::string) {};
+std::function<void(std::string)> g_printHanlder = [](std::string s) { std::cout << s << "\n"; };
 
-std::string printErr(const std::string& source, const std::string& stage, const std::string& message, bool printAnyway)
+std::string makeError(const std::string& source, const std::string& stage, const std::string& message, bool print)
 {
     std::string s = "";
 
@@ -15,23 +14,29 @@ std::string printErr(const std::string& source, const std::string& stage, const 
 
     s += message;
 
-    if (g_printErrEnbaled || printAnyway)
-    {
-        std::cerr << s << "\n";
-        g_printErrHandler(s);
-    }
+    if (print) g_printHanlder(s);
 
     return s;
 }
 
-void setPrintErrEnabled(bool enabled)
+void printError(const std::string& source, const std::string& stage, const std::string& message)
 {
-    g_printErrEnbaled = enabled;
+    makeError(source, stage, message, true);
 }
 
-void setPrintErrHandler(std::function<void(std::string)> handler)
+void printWarning(const std::string& source, const std::string& stage, const std::string& message)
 {
-    g_printErrHandler = handler;
+    makeError(source, stage, message, true);
+}
+
+void printInfo(const std::string& source, const std::string& stage, const std::string& message)
+{
+    makeError(source, stage, message, true);
+}
+
+void setPrintHandler(std::function<void(std::string)> handler)
+{
+    g_printHanlder = handler;
 }
 
 uint32_t getMaxNumThreads()

@@ -19,7 +19,7 @@ void CMS::CmVars::retrieveColorSpaces()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, "Internal config", e.what(), true);
+        printError(__FUNCTION__, "Internal config", e.what());
     }
 
     colorSpaces.clear();
@@ -31,7 +31,7 @@ void CMS::CmVars::retrieveColorSpaces()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, "User config", e.what(), true);
+        printError(__FUNCTION__, "User config", e.what());
     }
 }
 
@@ -46,7 +46,7 @@ void CMS::CmVars::retrieveDisplays()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, "", e.what(), true);
+        printError(__FUNCTION__, "", e.what());
     }
 }
 
@@ -61,7 +61,7 @@ void CMS::CmVars::retrieveViews()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, "", e.what(), true);
+        printError(__FUNCTION__, "", e.what());
     }
 }
 
@@ -77,7 +77,7 @@ void CMS::CmVars::retrieveLooks()
     }
     catch (OCIO::Exception& e)
     {
-        printErr(__FUNCTION__, "", e.what(), true);
+        printError(__FUNCTION__, "", e.what());
     }
 }
 
@@ -116,7 +116,7 @@ bool CMS::init()
     }
     catch (std::exception& e)
     {
-        S_STATE.setError(printErr(__FUNCTION__, stage, e.what()));
+        S_STATE.setError(makeError(__FUNCTION__, stage, e.what(), true));
     }
 
     if (ok())
@@ -299,7 +299,7 @@ void CMS::updateProcessors()
     }
     catch (const std::exception& e)
     {
-        S_STATE.setError(printErr(__FUNCTION__, "", e.what(), true));
+        S_STATE.setError(makeError(__FUNCTION__, "", e.what(), true));
     }
 }
 

@@ -67,7 +67,7 @@ void checkGlStatus(const std::string& source, const std::string& stage)
 
     if (!status)
     {
-        throw std::exception(printErr(source, stage, errors).c_str());
+        throw std::exception(makeError(source, stage, errors).c_str());
     }
 }
 

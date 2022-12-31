@@ -39,15 +39,15 @@ namespace RealBloom
         // Print the dimensions
         if (0)
         {
-            std::cout << strFormat(
+            printInfo(__FUNCTION__, "", strFormat(
                 "FFT Convolution\n"
                 "Input:          %u x %u\n"
                 "Kernel:         %u x %u\n"
-                "Padded:         %u x %u\n\n",
+                "Padded:         %u x %u\n",
                 m_binInput->inputWidth, m_binInput->inputHeight,
                 m_binInput->kernelWidth, m_binInput->kernelHeight,
                 m_paddedWidth, m_paddedHeight
-            );
+            ));
         }
 
         // Input padding + threshold
@@ -229,7 +229,7 @@ namespace RealBloom
             checkGlStatus(__FUNCTION__, "Readback (map)");
 
             if (data == nullptr)
-                throw std::exception(printErr(__FUNCTION__, "Readback", "data was null.").c_str());
+                throw std::exception(makeError(__FUNCTION__, "Readback", "data was null.").c_str());
 
             // Copy
             memcpy(m_iFFT[ch].getVector().data(), data, outputSizeBytes);

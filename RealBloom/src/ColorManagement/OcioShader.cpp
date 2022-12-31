@@ -67,13 +67,13 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
     // Create and compile the vertex shader
     if (!createShader(GL_VERTEX_SHADER, VERTEX_SOURCE, m_vertShader, shaderLog))
         throw std::exception(
-            printErr(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
+            makeError(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
         );
 
     // Create and compile the fragment shader
     if (!createShader(GL_FRAGMENT_SHADER, fragSource.str().c_str(), m_fragShader, shaderLog))
         throw std::exception(
-            printErr(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
+            makeError(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
         );
 
     // Create program
@@ -155,7 +155,7 @@ void OcioShader::prepareLuts()
             || edgelen == 0)
         {
             throw OCIO::Exception(
-                printErr(__FUNCTION__, "", strFormat("The texture data is corrupted (3D LUTs, idx: %u)", idx)).c_str()
+                makeError(__FUNCTION__, "", strFormat("The texture data is corrupted (3D LUTs, idx: %u)", idx)).c_str()
             );
         }
 
@@ -164,7 +164,7 @@ void OcioShader::prepareLuts()
         if (!values)
         {
             throw OCIO::Exception(
-                printErr(__FUNCTION__, "", strFormat("The texture values are missing (3D LUTs, idx: %u)", idx)).c_str()
+                makeError(__FUNCTION__, "", strFormat("The texture values are missing (3D LUTs, idx: %u)", idx)).c_str()
             );
         }
 
@@ -200,7 +200,7 @@ void OcioShader::prepareLuts()
             || width == 0)
         {
             throw OCIO::Exception(
-                printErr(__FUNCTION__, "", strFormat("The texture data is corrupted (1D LUTs, idx: %u)", idx)).c_str()
+                makeError(__FUNCTION__, "", strFormat("The texture data is corrupted (1D LUTs, idx: %u)", idx)).c_str()
             );
         }
 
@@ -209,7 +209,7 @@ void OcioShader::prepareLuts()
         if (!values)
         {
             throw OCIO::Exception(
-                printErr(__FUNCTION__, "", strFormat("The texture values are missing (1D LUTs, idx: %u)", idx)).c_str()
+                makeError(__FUNCTION__, "", strFormat("The texture values are missing (1D LUTs, idx: %u)", idx)).c_str()
             );
         }
 
@@ -259,7 +259,7 @@ void OcioShader::prepareUniforms()
         if (data.m_type == OCIO::UNIFORM_UNKNOWN)
         {
             throw OCIO::Exception(
-                printErr(__FUNCTION__, "", strFormat("Unknown uniform type (idx: %u)", idx)).c_str()
+                makeError(__FUNCTION__, "", strFormat("Unknown uniform type (idx: %u)", idx)).c_str()
             );
         }
         // Transfer uniform.
@@ -345,7 +345,7 @@ void OcioShader::allocateTexture3D(uint32_t index, uint32_t& texId,
 {
     if (values == 0x0)
         throw OCIO::Exception(
-            printErr(__FUNCTION__, "", strFormat("Missing texture data (idx: %u)", index)).c_str()
+            makeError(__FUNCTION__, "", strFormat("Missing texture data (idx: %u)", index)).c_str()
         );
 
     glGenTextures(1, &texId);
@@ -371,7 +371,7 @@ void OcioShader::allocateTexture2D(uint32_t index, uint32_t& texId,
 {
     if (values == nullptr)
         throw OCIO::Exception(
-            printErr(__FUNCTION__, "", strFormat("Missing texture data (idx: %u)", index)).c_str()
+            makeError(__FUNCTION__, "", strFormat("Missing texture data (idx: %u)", index)).c_str()
         );
 
     GLint internalformat = GL_RGB32F;
@@ -451,7 +451,7 @@ void OcioShader::Uniform::use()
     }
     else
         throw OCIO::Exception(
-            printErr(__FUNCTION__, "", strFormat("Uniform \"%s\" is not linked to any value.", m_name.c_str())).c_str()
+            makeError(__FUNCTION__, "", strFormat("Uniform \"%s\" is not linked to any value.", m_name.c_str())).c_str()
         );
     checkGlStatus(__FUNCTION__, strFormat("\"%s\"", m_name.c_str()));
 }

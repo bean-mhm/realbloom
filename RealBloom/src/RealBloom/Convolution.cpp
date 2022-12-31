@@ -1144,13 +1144,13 @@ namespace RealBloom
                         }
                         catch (const std::exception& e)
                         {
-                            printErr(__FUNCTION__, "", e.what(), true);
+                            printError(__FUNCTION__, "stat", e.what());
                         }
                         statFile.close();
                     }
                     else
                     {
-                        printErr(__FUNCTION__, "", strFormat("Stat file \"%s\" could not be opened.", statFilename.c_str()), true);
+                        printError(__FUNCTION__, "stat", strFormat("Stat file \"%s\" could not be opened.", statFilename.c_str()));
                     }
 
                     releaseMutex(statMutex);

@@ -3,7 +3,7 @@
 void stmCheck(std::ios_base& stream, const std::string& source, const std::string& stage)
 {
     if (stream.fail())
-        throw std::exception(printErr(source, stage, "Stream failure").c_str());
+        throw std::exception(makeError(source, stage, "Stream failure").c_str());
 }
 
 std::string stmReadString(std::istream& stream)

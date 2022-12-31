@@ -225,7 +225,6 @@ int main(int argc, char** argv)
     // Process the command line input
     if (CLI::hasCommands())
     {
-        setPrintErrEnabled(false);
         CLI::proceed();
     }
 
