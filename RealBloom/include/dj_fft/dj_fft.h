@@ -837,7 +837,7 @@ DJGL_LIST
         int cnt2 = (int)xi.size();   // NxN
         int msb = findMSB(cnt2) / 2; // lg2(N) = lg2(sqrt(NxN))
         int cnt = 1 << msb;          // N = 2^lg2(N)
-        float nrm = float(1) / float(cnt);
+        float nrm = 1.0f;//float(1) / float(cnt);
         fft_arg<float> xo(cnt2);
         struct
         {

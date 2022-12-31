@@ -335,30 +335,25 @@ namespace RealBloom
 
         // Collect points
         clearVector(m_data->points);
-        float v;
-        float px, py;
         float color[3]{ 0, 0, 0 };
-        float mul;
-        uint32_t ix, iy;
-        uint32_t redIndex;
         for (uint32_t i = 0; i < inputPixels; i++)
         {
             if (i % numChunks == chunkIndex)
             {
-                redIndex = i * 4;
+                uint32_t redIndex = i * 4;
 
                 color[0] = binInput->inputBuffer[redIndex + 0];
                 color[1] = binInput->inputBuffer[redIndex + 1];
                 color[2] = binInput->inputBuffer[redIndex + 2];
 
-                v = rgbToGrayscale(color[0], color[1], color[2]);
+                float v = rgbToGrayscale(color[0], color[1], color[2]);
                 if (v > threshold)
                 {
-                    ix = i % inputWidth;
-                    iy = (i - ix) / inputWidth;
+                    uint32_t ix = i % inputWidth;
+                    uint32_t iy = (i - ix) / inputWidth;
 
-                    px = (float)ix + offsetX;
-                    py = (float)iy + offsetY;
+                    float px = (float)ix + offsetX;
+                    float py = (float)iy + offsetY;
 
                     // Technically the correct way is (px + 0.5f) / inputWidth but we don't
                     // wanna use bilinear, for performance reasons.
@@ -373,7 +368,7 @@ namespace RealBloom
                     py *= GPU_COORD_SCALE;
 
                     // Smooth Transition
-                    mul = softThreshold(v, threshold, knee);
+                    float mul = softThreshold(v, threshold, knee);
 
                     m_data->points.push_back(px);
                     m_data->points.push_back(py);

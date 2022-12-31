@@ -48,6 +48,9 @@ namespace RealBloom
             ));
         }
 
+        // Scale the values to achieve a normalized output after convolution
+        float fftScale = 1.0f / sqrtf((float)m_paddedWidth * (float)m_paddedHeight);
+
         // Input padding + threshold
         {
             for (uint32_t i = 0; i < 3; i++)
@@ -70,7 +73,7 @@ namespace RealBloom
                     float v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
                     if (v > threshold)
                     {
-                        float mul = softThreshold(v, threshold, m_binInput->cp_convKnee);
+                        float mul = fftScale * softThreshold(v, threshold, m_binInput->cp_convKnee);
 
                         int transX = x + m_inputLeftPadding;
                         int transY = y + m_inputTopPadding;
@@ -82,9 +85,6 @@ namespace RealBloom
                 }
             }
         }
-
-        // Scale the values to achieve a normalized output after convolution
-        float fftScale = sqrtf((float)m_paddedWidth * (float)m_paddedHeight);
 
         // Kernel padding
         {
@@ -185,9 +185,9 @@ namespace RealBloom
 
                 // Get the output
                 redIndex = (y * m_binInput->inputWidth + x) * 4;
-                m_outputBuffer[redIndex + 0] = fmaxf(m_iFFT[0](transY2, transX2).real() * m_binInput->convMultiplier, 0.0f);
-                m_outputBuffer[redIndex + 1] = fmaxf(m_iFFT[1](transY2, transX2).real() * m_binInput->convMultiplier, 0.0f);
-                m_outputBuffer[redIndex + 2] = fmaxf(m_iFFT[2](transY2, transX2).real() * m_binInput->convMultiplier, 0.0f);
+                m_outputBuffer[redIndex + 0] = fmaxf(getMagnitude(m_iFFT[0](transY2, transX2)) * m_binInput->convMultiplier, 0.0f);
+                m_outputBuffer[redIndex + 1] = fmaxf(getMagnitude(m_iFFT[1](transY2, transX2)) * m_binInput->convMultiplier, 0.0f);
+                m_outputBuffer[redIndex + 2] = fmaxf(getMagnitude(m_iFFT[2](transY2, transX2)) * m_binInput->convMultiplier, 0.0f);
                 m_outputBuffer[redIndex + 3] = 1.0f;
             }
         }
