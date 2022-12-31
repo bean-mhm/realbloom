@@ -141,15 +141,6 @@
     <ClCompile Include="src\RealBloom\Binary\BinaryConvFftGpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="include\glfft\glfft.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="include\glfft\glfft_gl_interface.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="include\glfft\glfft_wisdom.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Utils\GlShaderStorageBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -518,51 +509,12 @@
     <ClInclude Include="src\RealBloom\Binary\BinaryConvFftGpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\glfft\glfft.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\glfft\glfft_common.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\glfft\glfft_gl_interface.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\glfft\glfft_interface.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\glfft\glfft_wisdom.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\glfft\glfft_gl_api_headers.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Utils\GlShaderStorageBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="libs\glfw3\glfw3.dll" />
-    <None Include="include\glfft\glsl\fft_common.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="include\glfft\glsl\fft_main.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="include\glfft\glsl\fft_radix4.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="include\glfft\glsl\fft_radix8.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="include\glfft\glsl\fft_radix16.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="include\glfft\glsl\fft_radix64.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="include\glfft\glsl\fft_shared.inc">
-      <Filter>Header Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glfw3\glfw3.lib" />

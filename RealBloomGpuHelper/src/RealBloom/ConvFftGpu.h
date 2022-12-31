@@ -7,9 +7,6 @@
 #include <complex>
 #include <stdint.h>
 
-#include "glfft/glfft.hpp"
-#include "glfft/glfft_gl_interface.hpp"
-
 #include "RealBloom/Binary/BinaryData.h"
 #include "RealBloom/Binary/BinaryConvFftGpu.h"
 
@@ -36,14 +33,9 @@ namespace RealBloom
         Array2D<float> m_inputPadded[3];
         Array2D<float> m_kernelPadded[3];
 
-        std::shared_ptr<GLFFT::GLContext> m_context = nullptr;
-        std::shared_ptr<GLFFT::ProgramCache> m_programCache = nullptr;
-
-        std::shared_ptr<GLFFT::Buffer> m_inputPaddedSSBO[3];
-        std::shared_ptr<GLFFT::Buffer> m_inputFtSSBO[3];
-        std::shared_ptr<GLFFT::Buffer> m_kernelPaddedSSBO[3];
-        std::shared_ptr<GLFFT::Buffer> m_kernelFtSSBO[3];
-        std::shared_ptr<GLFFT::Buffer> m_iFftSSBO[3];
+        Array2D<std::complex<float>> m_inputFT[3];
+        Array2D<std::complex<float>> m_kernelFT[3];
+        Array2D<std::complex<float>> m_mulFT[3];
         Array2D<float> m_iFFT[3];
 
         std::vector<float> m_outputBuffer;
@@ -55,7 +47,8 @@ namespace RealBloom
         void pad();
         void inputFFT(uint32_t ch);
         void kernelFFT(uint32_t ch);
-        void inverseConvolve(uint32_t ch);
+        void multiply(uint32_t ch);
+        void inverse(uint32_t ch);
         void output();
 
         const std::vector<float>& getBuffer() const;

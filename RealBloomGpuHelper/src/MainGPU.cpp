@@ -261,9 +261,13 @@ void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream&
                 logAdd(LogLevel::Info, strFormat("%s: Kernel FFT", strFromColorChannelID(i).c_str()));
                 conv->kernelFFT(i);
 
-                // Multiply + Inverse FFT
+                // Multiply
                 logAdd(LogLevel::Info, strFormat("%s: Inverse Convolve", strFromColorChannelID(i).c_str()));
-                conv->inverseConvolve(i);
+                conv->multiply(i);
+
+                // Multiply
+                logAdd(LogLevel::Info, strFormat("%s: Inverse Convolve", strFromColorChannelID(i).c_str()));
+                conv->inverse(i);
             }
 
             // Get the final output

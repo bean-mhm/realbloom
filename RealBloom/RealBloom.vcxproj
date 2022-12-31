@@ -202,9 +202,6 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="include\glfft\glfft.cpp" />
-    <ClCompile Include="include\glfft\glfft_gl_interface.cpp" />
-    <ClCompile Include="include\glfft\glfft_wisdom.cpp" />
     <ClCompile Include="src\CLI.cpp" />
     <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
     <ClCompile Include="src\ColorManagement\CMF.cpp" />
@@ -250,12 +247,6 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\Utils\StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\glfft\glfft.hpp" />
-    <ClInclude Include="include\glfft\glfft_common.hpp" />
-    <ClInclude Include="include\glfft\glfft_gl_api_headers.hpp" />
-    <ClInclude Include="include\glfft\glfft_gl_interface.hpp" />
-    <ClInclude Include="include\glfft\glfft_interface.hpp" />
-    <ClInclude Include="include\glfft\glfft_wisdom.hpp" />
     <ClInclude Include="include\pocketfft\pocketfft_hdronly.h" />
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
     <ClInclude Include="src\CLI.h" />
@@ -394,13 +385,6 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </CopyFileToFolders>
-    <None Include="include\glfft\glsl\fft_common.inc" />
-    <None Include="include\glfft\glsl\fft_main.inc" />
-    <None Include="include\glfft\glsl\fft_radix16.inc" />
-    <None Include="include\glfft\glsl\fft_radix4.inc" />
-    <None Include="include\glfft\glsl\fft_radix64.inc" />
-    <None Include="include\glfft\glsl\fft_radix8.inc" />
-    <None Include="include\glfft\glsl\fft_shared.inc" />
     <None Include="libs\glfw3\glfw3.dll" />
   </ItemGroup>
   <ItemGroup>

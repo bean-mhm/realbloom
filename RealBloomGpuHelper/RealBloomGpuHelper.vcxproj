@@ -171,9 +171,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\RealBloom\include\glfft\glfft.cpp" />
-    <ClCompile Include="..\RealBloom\include\glfft\glfft_gl_interface.cpp" />
-    <ClCompile Include="..\RealBloom\include\glfft\glfft_wisdom.cpp" />
     <ClCompile Include="..\RealBloom\src\Async.cpp" />
     <ClCompile Include="..\RealBloom\src\Config.cpp" />
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.cpp" />
@@ -197,12 +194,6 @@
     <Library Include="libs\glew32s.lib" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\RealBloom\include\glfft\glfft.hpp" />
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_common.hpp" />
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_gl_api_headers.hpp" />
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_gl_interface.hpp" />
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_interface.hpp" />
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_wisdom.hpp" />
     <ClInclude Include="..\RealBloom\include\inih\INIReader.h" />
     <ClInclude Include="..\RealBloom\src\Async.h" />
     <ClInclude Include="..\RealBloom\src\Config.h" />
@@ -226,15 +217,6 @@
     <ClInclude Include="src\RealBloom\ConvFftGpu.h" />
     <ClInclude Include="src\RealBloom\ConvNaiveGpu.h" />
     <ClInclude Include="src\Utils\GlContext.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\RealBloom\include\glfft\glsl\fft_common.inc" />
-    <None Include="..\RealBloom\include\glfft\glsl\fft_main.inc" />
-    <None Include="..\RealBloom\include\glfft\glsl\fft_radix16.inc" />
-    <None Include="..\RealBloom\include\glfft\glsl\fft_radix4.inc" />
-    <None Include="..\RealBloom\include\glfft\glsl\fft_radix64.inc" />
-    <None Include="..\RealBloom\include\glfft\glsl\fft_radix8.inc" />
-    <None Include="..\RealBloom\include\glfft\glsl\fft_shared.inc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

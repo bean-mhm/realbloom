@@ -4,12 +4,7 @@ namespace RealBloom
 {
     ConvFftGpu::ConvFftGpu(BinaryConvFftGpuInput* binInput)
         : m_binInput(binInput)
-    {
-        m_context = std::make_shared<GLFFT::GLContext>();
-        checkGlStatus(__FUNCTION__, "m_context");
-
-        m_programCache = std::make_shared<GLFFT::ProgramCache>();
-    }
+    {}
 
     ConvFftGpu::~ConvFftGpu()
     {}
@@ -116,136 +111,22 @@ namespace RealBloom
 
     void ConvFftGpu::inputFFT(uint32_t ch)
     {
-        GLFFT::FFTOptions options; // Default initializes to something conservative in terms of performance.
-        options.type.fp16 = false; // Use mediump float (if GLES) in shaders.
-        options.type.input_fp16 = false; // Use FP32 input.
-        options.type.output_fp16 = false; // Use FP16 output.
-        options.type.normalize = true; // Normalized FFT.
-
-        GLFFT::FFT fft(
-            m_context.get(),
-            m_paddedWidth,
-            m_paddedHeight,
-            GLFFT::RealToComplex,
-            GLFFT::Forward,
-            GLFFT::SSBO,
-            GLFFT::SSBO,
-            m_programCache,
-            options);
-
-        size_t inputSizeBytes = m_paddedWidth * m_paddedHeight * sizeof(float);
-        size_t outputSizeBytes = m_paddedWidth * m_paddedHeight * sizeof(float) * 2;
-
-        m_inputPaddedSSBO[ch] = m_context->create_buffer(m_inputPadded[ch].getVector().data(), inputSizeBytes, GLFFT::AccessStreamCopy);
-        checkGlStatus(__FUNCTION__, "Input buffer");
-
-        m_inputFtSSBO[ch] = m_context->create_buffer(nullptr, outputSizeBytes, GLFFT::AccessStreamRead);
-        checkGlStatus(__FUNCTION__, "Output buffer");
-
-        // Do the FFT
-        GLFFT::CommandBuffer* cmd = m_context->request_command_buffer();
-        fft.process(cmd, m_inputFtSSBO[ch].get(), m_inputPaddedSSBO[ch].get(), m_inputPaddedSSBO[ch].get());
-        cmd->barrier();
-        m_context->submit_command_buffer(cmd);
-        m_context->wait_idle();
-        checkGlStatus(__FUNCTION__, "Process");
+        //
     }
 
     void ConvFftGpu::kernelFFT(uint32_t ch)
     {
-        GLFFT::FFTOptions options; // Default initializes to something conservative in terms of performance.
-        options.type.fp16 = false; // Use mediump float (if GLES) in shaders.
-        options.type.input_fp16 = false; // Use FP32 input.
-        options.type.output_fp16 = false; // Use FP16 output.
-        options.type.normalize = false; // Normalized FFT.
-
-        GLFFT::FFT fft(
-            m_context.get(),
-            m_paddedWidth,
-            m_paddedHeight,
-            GLFFT::RealToComplex,
-            GLFFT::Forward,
-            GLFFT::SSBO,
-            GLFFT::SSBO,
-            m_programCache,
-            options);
-
-        size_t inputSizeBytes = m_paddedWidth * m_paddedHeight * sizeof(float);
-        size_t outputSizeBytes = m_paddedWidth * m_paddedHeight * sizeof(float) * 2;
-
-        m_kernelPaddedSSBO[ch] = m_context->create_buffer(m_kernelPadded[ch].getVector().data(), inputSizeBytes, GLFFT::AccessStreamCopy);
-        checkGlStatus(__FUNCTION__, "Input buffer");
-
-        m_kernelFtSSBO[ch] = m_context->create_buffer(nullptr, outputSizeBytes, GLFFT::AccessStreamRead);
-        checkGlStatus(__FUNCTION__, "Output buffer");
-
-        // Do the FFT
-        GLFFT::CommandBuffer* cmd = m_context->request_command_buffer();
-        fft.process(cmd, m_kernelFtSSBO[ch].get(), m_kernelPaddedSSBO[ch].get(), m_kernelPaddedSSBO[ch].get());
-        cmd->barrier();
-        m_context->submit_command_buffer(cmd);
-        m_context->wait_idle();
-        checkGlStatus(__FUNCTION__, "Process");
+        //
     }
 
-    void ConvFftGpu::inverseConvolve(uint32_t ch)
+    void ConvFftGpu::multiply(uint32_t ch)
     {
-        GLFFT::FFTOptions options; // Default initializes to something conservative in terms of performance.
-        options.type.fp16 = false; // Use mediump float (if GLES) in shaders.
-        options.type.input_fp16 = false; // Use FP32 input.
-        options.type.output_fp16 = false; // Use FP16 output.
-        options.type.normalize = false; // Normalized FFT.
+        //
+    }
 
-        GLFFT::FFT fft(
-            m_context.get(),
-            m_paddedWidth,
-            m_paddedHeight,
-            GLFFT::ComplexToReal,
-            GLFFT::InverseConvolve,
-            GLFFT::SSBO,
-            GLFFT::SSBO,
-            m_programCache,
-            options);
-
-        size_t outputSizeBytes = m_paddedWidth * m_paddedHeight * sizeof(float);
-        m_iFftSSBO[ch] = m_context->create_buffer(nullptr, outputSizeBytes, GLFFT::AccessStreamRead);
-        checkGlStatus(__FUNCTION__, "Output buffer");
-
-        // Do the FFT
-        GLFFT::CommandBuffer* cmd = m_context->request_command_buffer();
-        fft.process(cmd, m_iFftSSBO[ch].get(), m_inputFtSSBO[ch].get(), m_kernelFtSSBO[ch].get());
-        cmd->barrier();
-        m_context->submit_command_buffer(cmd);
-        m_context->wait_idle();
-        checkGlStatus(__FUNCTION__, "Process");
-
-        // Read the result back onto the CPU
-        {
-            // Prepare
-            m_iFFT[ch].resize(m_paddedHeight, m_paddedWidth);
-
-            // Map
-            const void* data = m_context->map(m_iFftSSBO[ch].get(), 0, outputSizeBytes);
-            checkGlStatus(__FUNCTION__, "Readback (map)");
-
-            if (data == nullptr)
-                throw std::exception(makeError(__FUNCTION__, "Readback", "data was null.").c_str());
-
-            // Copy
-            memcpy(m_iFFT[ch].getVector().data(), data, outputSizeBytes);
-
-            // Unmap
-            m_context->unmap(m_iFftSSBO[ch].get());
-            checkGlStatus(__FUNCTION__, "Readback (unmap)");
-        }
-
-        // Clean up
-        m_inputPaddedSSBO[ch] = nullptr;
-        m_inputFtSSBO[ch] = nullptr;
-        m_kernelPaddedSSBO[ch] = nullptr;
-        m_kernelFtSSBO[ch] = nullptr;
-        m_iFftSSBO[ch] = nullptr;
-        checkGlStatus(__FUNCTION__, "Cleanup");
+    void ConvFftGpu::inverse(uint32_t ch)
+    {
+        //
     }
 
     void ConvFftGpu::output()

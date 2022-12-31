@@ -60,15 +60,6 @@
     <ClCompile Include="..\RealBloom\src\Async.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RealBloom\include\glfft\glfft.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RealBloom\include\glfft\glfft_gl_interface.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RealBloom\include\glfft\glfft_wisdom.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\RealBloom\ConvFftGpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -140,24 +131,6 @@
     <ClInclude Include="..\RealBloom\src\Async.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloom\include\glfft\glfft.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_common.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_gl_api_headers.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_gl_interface.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_interface.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RealBloom\include\glfft\glfft_wisdom.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\RealBloom\ConvFftGpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -170,28 +143,5 @@
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\RealBloom\include\glfft\glsl\fft_common.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\RealBloom\include\glfft\glsl\fft_main.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\RealBloom\include\glfft\glsl\fft_radix4.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\RealBloom\include\glfft\glsl\fft_radix8.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\RealBloom\include\glfft\glsl\fft_radix16.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\RealBloom\include\glfft\glsl\fft_radix64.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\RealBloom\include\glfft\glsl\fft_shared.inc">
-      <Filter>Header Files</Filter>
-    </None>
   </ItemGroup>
 </Project>
