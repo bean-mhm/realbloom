@@ -17,7 +17,7 @@ namespace RealBloom
         // Padded size
 
         calcFftConvPadding(
-            false,
+            false, false,
             m_inputWidth, m_inputHeight,
             m_kernelWidth, m_kernelHeight,
             m_params.kernelCenterX, m_params.kernelCenterY,

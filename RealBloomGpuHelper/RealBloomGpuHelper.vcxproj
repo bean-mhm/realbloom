@@ -194,6 +194,7 @@
     <Library Include="libs\glew32s.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\RealBloom\include\dj_fft\dj_fft.h" />
     <ClInclude Include="..\RealBloom\include\inih\INIReader.h" />
     <ClInclude Include="..\RealBloom\src\Async.h" />
     <ClInclude Include="..\RealBloom\src\Config.h" />

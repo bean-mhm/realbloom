@@ -247,6 +247,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\Utils\StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\dj_fft\dj_fft.h" />
     <ClInclude Include="include\pocketfft\pocketfft_hdronly.h" />
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
     <ClInclude Include="src\CLI.h" />

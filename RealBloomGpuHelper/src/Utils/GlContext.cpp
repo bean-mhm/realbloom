@@ -2,18 +2,22 @@
 
 HGLRC realContext = NULL;
 
-GlContextVersion g_glVersion;
+int g_glVersionMajor;
+int g_glVersionMinor;
+
 std::function<void()> g_job;
 bool g_success = false;
 std::string* g_outError = nullptr;
 
 LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-bool oglOneTimeContext(GlContextVersion glVersion, std::function<void()> job, std::string& outError)
+bool oglOneTimeContext(int versionMajor, int versionMinor, std::function<void()> job, std::string& outError)
 {
     outError = "";
 
-    g_glVersion = glVersion;
+    g_glVersionMajor = versionMajor;
+    g_glVersionMinor = versionMinor;
+
     g_job = job;
     g_success = false;
     g_outError = &outError;
@@ -95,29 +99,10 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         bool glewReady = (err == GLEW_OK);
         if (glewReady)
         {
-            // Version
-
-            int versionMajor, versionMinor;
-            if (g_glVersion == GlContextVersion::GL_3_2)
-            {
-                versionMajor = 3;
-                versionMinor = 2;
-            }
-            else if (g_glVersion == GlContextVersion::GL_4_3)
-            {
-                versionMajor = 4;
-                versionMinor = 3;
-            }
-            else
-            {
-                versionMajor = 3;
-                versionMinor = 2;
-            }
-
             // Real context
             static const int ctxAttribs[] = {
-                WGL_CONTEXT_MAJOR_VERSION_ARB, versionMajor,
-                WGL_CONTEXT_MINOR_VERSION_ARB, versionMinor,
+                WGL_CONTEXT_MAJOR_VERSION_ARB, g_glVersionMajor,
+                WGL_CONTEXT_MINOR_VERSION_ARB, g_glVersionMinor,
                 WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
                 0
             };
@@ -130,19 +115,22 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
                     //MessageBoxA(0, (char*)glGetString(GL_VERSION), "OPENGL VERSION", 0);
                     g_success = true;
                     g_job();
-                } else
+                }
+                else
                 {
-                    *g_outError = strFormat("Failed to activate OpenGL %d.%d rendering context.", versionMajor, versionMinor);
+                    *g_outError = strFormat("Failed to activate OpenGL %d.%d rendering context.", g_glVersionMajor, g_glVersionMinor);
                 }
 
                 // Delete the rendering context
                 wglMakeCurrent(NULL, NULL);
                 wglDeleteContext(realContext);
-            } else
-            {
-                *g_outError = strFormat("Failed to create OpenGL %d.%d context.", versionMajor, versionMinor);
             }
-        } else
+            else
+            {
+                *g_outError = strFormat("Failed to create OpenGL %d.%d context.", g_glVersionMajor, g_glVersionMinor);
+            }
+        }
+        else
         {
             *g_outError = "GLEW was not initialized.";
         }

@@ -1,5 +1,10 @@
 #pragma once
 
+#ifndef GLEW_STATIC
+#define GLEW_STATIC
+#endif
+#include <GL/glew.h>
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -30,13 +35,12 @@ namespace RealBloom
         uint32_t m_kernelLeftPadding = 0;
         uint32_t m_kernelTopPadding = 0;
 
-        Array2D<float> m_inputPadded[3];
-        Array2D<float> m_kernelPadded[3];
-
+        Array2D<std::complex<float>> m_inputPadded[3];
+        Array2D<std::complex<float>> m_kernelPadded[3];
         Array2D<std::complex<float>> m_inputFT[3];
         Array2D<std::complex<float>> m_kernelFT[3];
         Array2D<std::complex<float>> m_mulFT[3];
-        Array2D<float> m_iFFT[3];
+        Array2D<std::complex<float>> m_iFFT[3];
 
         std::vector<float> m_outputBuffer;
 

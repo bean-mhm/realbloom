@@ -553,7 +553,7 @@ void layout()
         IMGUI_DIV;
         IMGUI_BOLD("CONVOLUTION");
 
-        const char* const convMethodItems[]{ "FFT (CPU)", "FFT (GPU)", "Naive (CPU)", "Naive (GPU)" };
+        const char* const convMethodItems[]{ "FFT (CPU)", "FFT (GPU) (Experimental)", "Naive (CPU)", "Naive (GPU)" };
         if (ImGui::Combo("Method##Conv", &(vars.cv_method), convMethodItems, 4))
             conv.cancelConv();
 

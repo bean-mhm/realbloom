@@ -102,6 +102,7 @@ void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, floa
 
 void calcFftConvPadding(
     bool powerOfTwo,
+    bool square,
     uint32_t inputWidth,
     uint32_t inputHeight,
     uint32_t kernelWidth,
@@ -116,6 +117,12 @@ void calcFftConvPadding(
 
     uint32_t totalWidth = inputWidth + kernelWidth + kernelExtraPaddingX;
     uint32_t totalHeight = inputHeight + kernelHeight + kernelExtraPaddingY;
+
+    if (square)
+    {
+        totalWidth = std::max(totalWidth, totalHeight);
+        totalHeight = totalWidth;
+    }
 
     if (powerOfTwo)
     {

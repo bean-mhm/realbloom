@@ -628,7 +628,7 @@ namespace RealBloom
         {
             uint32_t paddedWidth, paddedHeight;
             calcFftConvPadding(
-                false,
+                false, false,
                 inputWidth, inputHeight,
                 kernelWidth, kernelHeight,
                 m_params.kernelCenterX, m_params.kernelCenterY,

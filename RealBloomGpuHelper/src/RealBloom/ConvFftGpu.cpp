@@ -1,5 +1,8 @@
 #include "ConvFftGpu.h"
 
+#define DJ_FFT_IMPLEMENTATION // define this in exactly *one* .cpp file
+#include "dj_fft/dj_fft.h"
+
 namespace RealBloom
 {
     ConvFftGpu::ConvFftGpu(BinaryConvFftGpuInput* binInput)
@@ -13,7 +16,7 @@ namespace RealBloom
     {
         // Padded size
         calcFftConvPadding(
-            true,
+            true, true,
             m_binInput->inputWidth, m_binInput->inputHeight,
             m_binInput->kernelWidth, m_binInput->kernelHeight,
             m_binInput->cp_kernelCenterX, m_binInput->cp_kernelCenterY,
@@ -32,7 +35,7 @@ namespace RealBloom
         if (m_binInput->kernelHeight % 2 == 1) m_kernelTopPadding += 1;
 
         // Print the dimensions
-        if (0)
+        if (1)
         {
             printInfo(__FUNCTION__, "", strFormat(
                 "FFT Convolution\n"
@@ -50,60 +53,59 @@ namespace RealBloom
             for (uint32_t i = 0; i < 3; i++)
             {
                 m_inputPadded[i].resize(m_paddedHeight, m_paddedWidth);
-                for (auto& v : m_inputPadded[i].getVector()) v = 0;
+                for (auto& v : m_inputPadded[i].getVector()) v = { 0, 0 };
             }
 
             float threshold = m_binInput->cp_convThreshold;
-            float v, mul;
             float inpColor[3];
-            int transX, transY;
-            uint32_t redIndex;
             for (int y = 0; y < m_binInput->inputHeight; y++)
             {
                 for (int x = 0; x < m_binInput->inputWidth; x++)
                 {
-                    redIndex = (y * m_binInput->inputWidth + x) * 4;
+                    uint32_t redIndex = (y * m_binInput->inputWidth + x) * 4;
                     inpColor[0] = m_binInput->inputBuffer[redIndex + 0];
                     inpColor[1] = m_binInput->inputBuffer[redIndex + 1];
                     inpColor[2] = m_binInput->inputBuffer[redIndex + 2];
 
-                    v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
+                    float v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
                     if (v > threshold)
                     {
-                        // Smooth Transition
-                        mul = softThreshold(v, threshold, m_binInput->cp_convKnee);
+                        float mul = softThreshold(v, threshold, m_binInput->cp_convKnee);
 
-                        transX = x + m_inputLeftPadding;
-                        transY = y + m_inputTopPadding;
+                        int transX = x + m_inputLeftPadding;
+                        int transY = y + m_inputTopPadding;
 
-                        m_inputPadded[0](transY, transX) = inpColor[0] * mul;
-                        m_inputPadded[1](transY, transX) = inpColor[1] * mul;
-                        m_inputPadded[2](transY, transX) = inpColor[2] * mul;
+                        m_inputPadded[0](transY, transX) = { inpColor[0] * mul, 0 };
+                        m_inputPadded[1](transY, transX) = { inpColor[1] * mul, 0 };
+                        m_inputPadded[2](transY, transX) = { inpColor[2] * mul, 0 };
                     }
                 }
             }
         }
+
+        // Scale the values to achieve a normalized output after convolution
+        float fftScale = sqrtf((float)m_paddedWidth * (float)m_paddedHeight);
 
         // Kernel padding
         {
             for (uint32_t i = 0; i < 3; i++)
             {
                 m_kernelPadded[i].resize(m_paddedHeight, m_paddedWidth);
-                for (auto& v : m_kernelPadded[i].getVector()) v = 0;
+                for (auto& v : m_kernelPadded[i].getVector()) v = { 0, 0 };
             }
 
-            int transX, transY;
-            uint32_t redIndex;
             for (int y = 0; y < m_binInput->kernelHeight; y++)
             {
                 for (int x = 0; x < m_binInput->kernelWidth; x++)
                 {
-                    redIndex = (y * m_binInput->kernelWidth + x) * 4;
-                    transX = x + m_kernelLeftPadding;
-                    transY = y + m_kernelTopPadding;
-                    m_kernelPadded[0](transY, transX) = m_binInput->kernelBuffer[redIndex + 0];
-                    m_kernelPadded[1](transY, transX) = m_binInput->kernelBuffer[redIndex + 1];
-                    m_kernelPadded[2](transY, transX) = m_binInput->kernelBuffer[redIndex + 2];
+                    uint32_t redIndex = (y * m_binInput->kernelWidth + x) * 4;
+
+                    int transX = x + m_kernelLeftPadding;
+                    int transY = y + m_kernelTopPadding;
+
+                    m_kernelPadded[0](transY, transX) = { fftScale * m_binInput->kernelBuffer[redIndex + 0], 0 };
+                    m_kernelPadded[1](transY, transX) = { fftScale * m_binInput->kernelBuffer[redIndex + 1], 0 };
+                    m_kernelPadded[2](transY, transX) = { fftScale * m_binInput->kernelBuffer[redIndex + 2], 0 };
                 }
             }
         }
@@ -111,22 +113,41 @@ namespace RealBloom
 
     void ConvFftGpu::inputFFT(uint32_t ch)
     {
-        //
+        m_inputFT[ch].resize(m_paddedHeight, m_paddedWidth);
+        m_inputFT[ch].getVector() = dj::fft2d_gpu_glready(m_inputPadded[ch].getVector(), dj::fft_dir::DIR_FWD);
+        checkGlStatus(__FUNCTION__, "");
+
+        m_inputPadded[ch].reset();
     }
 
     void ConvFftGpu::kernelFFT(uint32_t ch)
     {
-        //
+        m_kernelFT[ch].resize(m_paddedHeight, m_paddedWidth);
+        m_kernelFT[ch].getVector() = dj::fft2d_gpu_glready(m_kernelPadded[ch].getVector(), dj::fft_dir::DIR_FWD);
+        checkGlStatus(__FUNCTION__, "");
+
+        m_kernelPadded[ch].reset();
     }
 
     void ConvFftGpu::multiply(uint32_t ch)
     {
-        //
+        m_mulFT[ch].resize(m_paddedHeight, m_paddedWidth);
+
+        for (size_t y = 0; y < m_paddedHeight; y++)
+            for (size_t x = 0; x < m_paddedWidth; x++)
+                m_mulFT[ch](y, x) = m_inputFT[ch](y, x) * m_kernelFT[ch](y, x);
+
+        m_inputFT[ch].reset();
+        m_kernelFT[ch].reset();
     }
 
     void ConvFftGpu::inverse(uint32_t ch)
     {
-        //
+        m_iFFT[ch].resize(m_paddedHeight, m_paddedWidth);
+        m_iFFT[ch].getVector() = dj::fft2d_gpu_glready(m_mulFT[ch].getVector(), dj::fft_dir::DIR_BWD);
+        checkGlStatus(__FUNCTION__, "");
+
+        m_mulFT[ch].reset();
     }
 
     void ConvFftGpu::output()
@@ -155,7 +176,7 @@ namespace RealBloom
                         transX2 = transX1 + (m_paddedWidth / 2);
                     else
                         transX2 = transX1 - (m_paddedWidth / 2);
-                
+
                     if (transY1 < (m_paddedHeight / 2))
                         transY2 = transY1 + (m_paddedHeight / 2);
                     else
@@ -164,9 +185,9 @@ namespace RealBloom
 
                 // Get the output
                 redIndex = (y * m_binInput->inputWidth + x) * 4;
-                m_outputBuffer[redIndex + 0] = fmaxf(m_iFFT[0](transY2, transX2) * m_binInput->convMultiplier, 0.0f);
-                m_outputBuffer[redIndex + 1] = fmaxf(m_iFFT[1](transY2, transX2) * m_binInput->convMultiplier, 0.0f);
-                m_outputBuffer[redIndex + 2] = fmaxf(m_iFFT[2](transY2, transX2) * m_binInput->convMultiplier, 0.0f);
+                m_outputBuffer[redIndex + 0] = fmaxf(m_iFFT[0](transY2, transX2).real() * m_binInput->convMultiplier, 0.0f);
+                m_outputBuffer[redIndex + 1] = fmaxf(m_iFFT[1](transY2, transX2).real() * m_binInput->convMultiplier, 0.0f);
+                m_outputBuffer[redIndex + 2] = fmaxf(m_iFFT[2](transY2, transX2).real() * m_binInput->convMultiplier, 0.0f);
                 m_outputBuffer[redIndex + 3] = 1.0f;
             }
         }

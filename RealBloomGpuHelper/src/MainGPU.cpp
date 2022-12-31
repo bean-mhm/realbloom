@@ -120,9 +120,9 @@ int main(int argc, char* argv[])
 
     // Log printErr
     setPrintHandler(
-        [](std::string err)
+        [](std::string s)
         {
-            logAdd(LogLevel::Error, err);
+            logAdd(LogLevel::Info, s);
         }
     );
 
@@ -175,13 +175,29 @@ int main(int argc, char* argv[])
 
     // Create OpenGL context
     {
-        bool useGl43 =
+        // OpenGL version
+
+        bool useGl45 =
             (opType == GpuHelperOperationType::Diffraction)
             || (opType == GpuHelperOperationType::ConvFFT);
 
+        int glVersionMajor, glVersionMinor;
+        if (useGl45)
+        {
+            glVersionMajor = 4;
+            glVersionMinor = 5;
+        }
+        else
+        {
+            glVersionMajor = 3;
+            glVersionMinor = 2;
+        }
+
+        // Context
+
         std::string ctxError;
         bool ctxSuccess = oglOneTimeContext(
-            useGl43 ? GlContextVersion::GL_4_3 : GlContextVersion::GL_3_2,
+            glVersionMajor, glVersionMinor,
             [&opType, &opMap, &inpFilename, &outFilename, &inpFile, &outFile]()
             {
                 // Start the operation
@@ -262,11 +278,11 @@ void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream&
                 conv->kernelFFT(i);
 
                 // Multiply
-                logAdd(LogLevel::Info, strFormat("%s: Inverse Convolve", strFromColorChannelID(i).c_str()));
+                logAdd(LogLevel::Info, strFormat("%s: Multiplying", strFromColorChannelID(i).c_str()));
                 conv->multiply(i);
 
                 // Multiply
-                logAdd(LogLevel::Info, strFormat("%s: Inverse Convolve", strFromColorChannelID(i).c_str()));
+                logAdd(LogLevel::Info, strFormat("%s: Inverse FFT", strFromColorChannelID(i).c_str()));
                 conv->inverse(i);
             }
 

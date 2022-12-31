@@ -143,5 +143,8 @@
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\RealBloom\include\dj_fft\dj_fft.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

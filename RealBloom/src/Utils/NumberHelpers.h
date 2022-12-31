@@ -128,7 +128,12 @@ void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, floa
 
 void calcFftConvPadding(
     bool powerOfTwo,
-    uint32_t inputWidth, uint32_t inputHeight,
-    uint32_t kernelWidth, uint32_t kernelHeight,
-    float kernelCenterX, float kernelCenterY,
-    uint32_t& outPaddedWidth, uint32_t& outPaddedHeight);
+    bool square,
+    uint32_t inputWidth,
+    uint32_t inputHeight,
+    uint32_t kernelWidth,
+    uint32_t kernelHeight,
+    float kernelCenterX,
+    float kernelCenterY,
+    uint32_t& outPaddedWidth,
+    uint32_t& outPaddedHeight);
