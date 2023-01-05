@@ -26,8 +26,10 @@ void Config::load()
 
     if (reader.ParseError() != 0)
     {
-        std::cout << "Failed to read config from \"" << CFG_FILENAME << "\".\n";
-    } else
+        printWarning(__FUNCTION__, "",
+            strFormat("Failed to read config from \"%s\".", CFG_FILENAME.c_str()));
+    }
+    else
     {
         UI_SCALE = reader.GetFloat("Interface", "Scale", 1.0f);
     }
@@ -39,8 +41,10 @@ void Config::save()
     outFile.open(CFG_FILENAME, ofstream::out | ofstream::trunc);
     if (!outFile)
     {
-        std::cout << "Failed to write config to \"" << CFG_FILENAME << "\".\n";
-    } else
+        printWarning(__FUNCTION__, "",
+            strFormat("Failed to write config to \"%s\".", CFG_FILENAME.c_str()));
+    }
+    else
     {
         string s = strFormat(
             "[Interface]\nScale=%f\n",

@@ -6,12 +6,16 @@ namespace RealBloom
 {
 
     constexpr uint32_t CONV_PROG_TIMESTEP = 1000;
-    constexpr const char* S_CANCELED_BY_USER = "Canceled by user.";
 
     void drawRect(CmImage* image, int rx, int ry, int rw, int rh);
     void fillRect(CmImage* image, int rx, int ry, int rw, int rh);
 
-    void ConvolutionState::setError(std::string err)
+    std::string ConvolutionState::getError() const
+    {
+        return error;
+    }
+
+    void ConvolutionState::setError(const std::string& err)
     {
         error = err;
         failed = true;
@@ -356,7 +360,7 @@ namespace RealBloom
         m_imgKernel->setSourceName(m_imgKernelSrc.getSourceName());
     }
 
-    void Convolution::mixConv(bool additive, float inputMix, float convMix, float mix, float convExposure)
+    void Convolution::mix(bool additive, float inputMix, float convMix, float mix, float convExposure)
     {
         inputMix = fmaxf(inputMix, 0.0f);
         convMix = fmaxf(convMix, 0.0f);
@@ -412,7 +416,10 @@ namespace RealBloom
     void Convolution::convolve()
     {
         // If there's already a convolution process going on
-        cancelConv();
+        cancel();
+
+        // Capture the parameters to avoid changes during the process
+        m_capturedParams = m_params;
 
         // Reset state
         m_state.working = true;
@@ -421,7 +428,6 @@ namespace RealBloom
         m_state.error = "";
         m_state.timeStart = std::chrono::system_clock::now();
         m_state.hasTimestamps = false;
-        m_state.methodInfo = m_params.methodInfo;
         m_state.numChunksDone = 0;
         m_state.fftStage = "";
 
@@ -452,22 +458,22 @@ namespace RealBloom
 
                 // Call the appropriate function
 
-                if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
+                if (m_capturedParams.methodInfo.method == ConvolutionMethod::FFT_CPU)
                     convFftCPU(
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
 
-                if (m_params.methodInfo.method == ConvolutionMethod::FFT_GPU)
+                if (m_capturedParams.methodInfo.method == ConvolutionMethod::FFT_GPU)
                     convFftGPU(
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
 
-                if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
+                if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
                     convNaiveCPU(
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
 
-                if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
+                if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
                     convNaiveGPU(
                         kernelBuffer, kernelWidth, kernelHeight,
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
@@ -489,19 +495,19 @@ namespace RealBloom
         );
     }
 
-    void Convolution::cancelConv()
+    void Convolution::cancel()
     {
         if (m_state.working)
         {
             m_state.mustCancel = true;
-            if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
+            if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
             {
                 // Tell the sub-threads to stop
                 for (auto& ct : m_threads)
                     ct->stop();
             }
 
-            // Wait for the main convolution thread
+            // Wait for the main thread
             threadJoin(m_thread);
             DELPTR(m_thread);
         }
@@ -526,10 +532,10 @@ namespace RealBloom
 
     std::string Convolution::getError() const
     {
-        return m_state.error;
+        return m_state.getError();
     }
 
-    void Convolution::getConvStats(std::string& outTime, std::string& outStatus, uint32_t& outStatType)
+    void Convolution::getStatus(std::string& outTime, std::string& outStatus, uint32_t& outStatType)
     {
         outTime = "";
         outStatus = "";
@@ -543,7 +549,7 @@ namespace RealBloom
         else if (m_state.working && !m_state.mustCancel)
         {
             float elapsedSec = (float)getElapsedMs(m_state.timeStart) / 1000.0f;
-            if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
+            if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
             {
                 uint32_t numThreads = m_threads.size();
                 uint32_t numPixels = 0;
@@ -569,20 +575,24 @@ namespace RealBloom
                     strFromElapsed(elapsedSec).c_str(),
                     strFromElapsed(remainingSec).c_str());
             }
-            else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
+            else if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
             {
                 outTime = strFormat(
                     "%u/%u chunks\n%s",
                     m_state.numChunksDone,
-                    m_state.methodInfo.numChunks,
+                    m_capturedParams.methodInfo.numChunks,
                     strFromElapsed(elapsedSec).c_str());
             }
-            else if (m_params.methodInfo.method == ConvolutionMethod::FFT_CPU)
+            else if (m_capturedParams.methodInfo.method == ConvolutionMethod::FFT_CPU)
             {
                 outTime = strFormat(
                     "%s\n%s",
                     m_state.fftStage.c_str(),
                     strFromElapsed(elapsedSec).c_str());
+            }
+            else if (m_capturedParams.methodInfo.method == ConvolutionMethod::FFT_GPU)
+            {
+                outTime = strFromElapsed(elapsedSec).c_str();
             }
         }
         else if (m_state.hasTimestamps && !m_state.mustCancel)
@@ -657,6 +667,10 @@ namespace RealBloom
                 "Est. Memory: %s",
                 strFromSize(ramUsage).c_str());
         }
+        else if (m_params.methodInfo.method == ConvolutionMethod::FFT_GPU)
+        {
+            return "Undetermined";
+        }
         else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
         {
             return strFormat(
@@ -691,7 +705,7 @@ namespace RealBloom
         {
             // FFT
             ConvolutionFFT fftConv(
-                m_params, inputBuffer.data(), inputWidth, inputHeight,
+                m_capturedParams, inputBuffer.data(), inputWidth, inputHeight,
                 kernelBuffer.data(), kernelWidth, kernelHeight
             );
 
@@ -703,7 +717,7 @@ namespace RealBloom
             m_state.fftStage = strFormat("%u/%u Preparing", currStage, numStages);
             fftConv.pad();
 
-            if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+            if (m_state.mustCancel) throw std::exception();
 
             // Repeat for 3 color channels
             for (uint32_t i = 0; i < 3; i++)
@@ -713,28 +727,28 @@ namespace RealBloom
                 m_state.fftStage = strFormat("%u/%u %s: Input FFT", currStage, numStages, strFromColorChannelID(i).c_str());
                 fftConv.inputFFT(i);
 
-                if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+                if (m_state.mustCancel) throw std::exception();
 
                 // Kernel FFT
                 currStage++;
                 m_state.fftStage = strFormat("%u/%u %s: Kernel FFT", currStage, numStages, strFromColorChannelID(i).c_str());
                 fftConv.kernelFFT(i);
 
-                if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+                if (m_state.mustCancel) throw std::exception();
 
                 // Multiply the Fourier transforms
                 currStage++;
                 m_state.fftStage = strFormat("%u/%u %s: Multiplying", currStage, numStages, strFromColorChannelID(i).c_str());
                 fftConv.multiply(i);
 
-                if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+                if (m_state.mustCancel) throw std::exception();
 
                 // Inverse FFT
                 currStage++;
                 m_state.fftStage = strFormat("%u/%u %s: Inverse FFT", currStage, numStages, strFromColorChannelID(i).c_str());
                 fftConv.inverse(i);
 
-                if (m_state.mustCancel) throw std::exception(S_CANCELED_BY_USER);
+                if (m_state.mustCancel) throw std::exception();
             }
 
             // Get the final output
@@ -778,10 +792,10 @@ namespace RealBloom
         {
             // Prepare input data
             BinaryConvFftGpuInput binInput;
-            binInput.cp_kernelCenterX = m_params.kernelCenterX;
-            binInput.cp_kernelCenterY = m_params.kernelCenterY;
-            binInput.cp_convThreshold = m_params.convThreshold;
-            binInput.cp_convKnee = m_params.convKnee;
+            binInput.cp_kernelCenterX = m_capturedParams.kernelCenterX;
+            binInput.cp_kernelCenterY = m_capturedParams.kernelCenterY;
+            binInput.cp_convThreshold = m_capturedParams.convThreshold;
+            binInput.cp_convKnee = m_capturedParams.convKnee;
             binInput.convMultiplier = CONV_MULTIPLIER;
             binInput.inputWidth = inputWidth;
             binInput.inputHeight = inputHeight;
@@ -819,7 +833,7 @@ namespace RealBloom
             while (gpuHelper.isRunning())
             {
                 if (m_state.mustCancel)
-                    throw std::exception(S_CANCELED_BY_USER);
+                    throw std::exception();
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
             }
 
@@ -885,16 +899,16 @@ namespace RealBloom
     {
         // Clamp the number of threads
         uint32_t maxThreads = std::thread::hardware_concurrency();
-        uint32_t numThreads = m_params.methodInfo.numThreads;
+        uint32_t numThreads = m_capturedParams.methodInfo.numThreads;
         if (numThreads > maxThreads) numThreads = maxThreads;
         if (numThreads < 1) numThreads = 1;
-        m_params.methodInfo.numThreads = numThreads;
+        m_capturedParams.methodInfo.numThreads = numThreads;
 
         // Create and prepare threads
         for (uint32_t i = 0; i < numThreads; i++)
         {
             std::shared_ptr<ConvolutionThread> ct = std::make_shared<ConvolutionThread>(
-                numThreads, i, m_params,
+                numThreads, i, m_capturedParams,
                 inputBuffer.data(), inputWidth, inputHeight,
                 kernelBuffer.data(), kernelWidth, kernelHeight);
 
@@ -1027,13 +1041,13 @@ namespace RealBloom
         uint32_t inputBufferSize)
     {
         // Clamp numChunks
-        if (m_params.methodInfo.numChunks < 1) m_params.methodInfo.numChunks = 1;
-        if (m_params.methodInfo.numChunks > CONV_MAX_CHUNKS) m_params.methodInfo.numChunks = CONV_MAX_CHUNKS;
-        uint32_t numChunks = m_params.methodInfo.numChunks;
+        if (m_capturedParams.methodInfo.numChunks < 1) m_capturedParams.methodInfo.numChunks = 1;
+        if (m_capturedParams.methodInfo.numChunks > CONV_MAX_CHUNKS) m_capturedParams.methodInfo.numChunks = CONV_MAX_CHUNKS;
+        uint32_t numChunks = m_capturedParams.methodInfo.numChunks;
 
         // Clamp chunkSleep
-        if (m_params.methodInfo.chunkSleep > CONV_MAX_SLEEP) m_params.methodInfo.chunkSleep = CONV_MAX_SLEEP;
-        uint32_t chunkSleep = m_params.methodInfo.chunkSleep;
+        if (m_capturedParams.methodInfo.chunkSleep > CONV_MAX_SLEEP) m_capturedParams.methodInfo.chunkSleep = CONV_MAX_SLEEP;
+        uint32_t chunkSleep = m_capturedParams.methodInfo.chunkSleep;
 
         // Create GpuHelper instance
         GpuHelper gpuHelper;
@@ -1049,10 +1063,10 @@ namespace RealBloom
             BinaryConvNaiveGpuInput binInput;
             binInput.numChunks = numChunks;
             binInput.chunkSleep = chunkSleep;
-            binInput.cp_kernelCenterX = m_params.kernelCenterX;
-            binInput.cp_kernelCenterY = m_params.kernelCenterY;
-            binInput.cp_convThreshold = m_params.convThreshold;
-            binInput.cp_convKnee = m_params.convKnee;
+            binInput.cp_kernelCenterX = m_capturedParams.kernelCenterX;
+            binInput.cp_kernelCenterY = m_capturedParams.kernelCenterY;
+            binInput.cp_convThreshold = m_capturedParams.convThreshold;
+            binInput.cp_convKnee = m_capturedParams.convKnee;
             binInput.convMultiplier = CONV_MULTIPLIER;
             binInput.inputWidth = inputWidth;
             binInput.inputHeight = inputHeight;
@@ -1102,7 +1116,7 @@ namespace RealBloom
             while (gpuHelper.isRunning())
             {
                 if (m_state.mustCancel)
-                    throw std::exception(S_CANCELED_BY_USER);
+                    throw std::exception();
 
                 // Read the stat file
 

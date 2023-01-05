@@ -336,38 +336,41 @@ void CLI::proceed()
 
     CliParser& parser = *(S_VARS->parser);
     for (const auto& cmd : g_commands)
-        if (parser.first(cmd.name))
-        {
-            try
-            {
-                StringMap args;
-                for (const auto& arg : cmd.arguments)
-                {
-                    if (arg.required)
-                    {
-                        args[arg.aliases[0]] = parser.get(arg.aliases);
-                    }
-                    else
-                    {
-                        if (parser.hasValue(arg.aliases))
-                            args[arg.aliases[0]] = parser.get(arg.aliases);
-                        else if (parser.exists(arg.aliases))
-                            args[arg.aliases[0]] = "";
-                    }
-                }
+    {
+        if (!(parser.first(cmd.name)))
+            continue;
 
-                bool verbose = parser.exists(std::vector<std::string>{ "--verbose", "-v" });
-                cmd.action(cmd, parser, args, verbose);
-            }
-            catch (const std::exception& e)
+        try
+        {
+            StringMap args;
+            for (const auto& arg : cmd.arguments)
             {
-                std::cerr
-                    << consoleColor(COL_ERR) << e.what() << consoleColor() << "\n"
-                    << "Use " << consoleColor(COL_PRI) << "help " << cmd.name << consoleColor()
-                    << " to see how to use this command.\n";
+                if (arg.required)
+                {
+                    args[arg.aliases[0]] = parser.get(arg.aliases);
+                }
+                else
+                {
+                    if (parser.hasValue(arg.aliases))
+                        args[arg.aliases[0]] = parser.get(arg.aliases);
+                    else if (parser.exists(arg.aliases))
+                        args[arg.aliases[0]] = "";
+                }
             }
-            break;
+
+            bool verbose = parser.exists(std::vector<std::string>{ "--verbose", "-v" });
+            cmd.action(cmd, parser, args, verbose);
         }
+        catch (const std::exception& e)
+        {
+            std::cerr
+                << consoleColor(COL_ERR) << e.what() << consoleColor() << "\n"
+                << "Use " << consoleColor(COL_PRI) << "help " << cmd.name << consoleColor()
+                << " to see how to use this command.\n";
+        }
+
+        break;
+    }
 }
 
 void cmdVersion(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
@@ -524,12 +527,13 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
 
     // Parameters
     RealBloom::DispersionParams* params = disp.getParams();
+    params->methodInfo.method = RealBloom::DispersionMethod::CPU;
+    params->methodInfo.numThreads = numThreads;
     params->exposure = exposure;
     params->contrast = contrast;
     params->steps = steps;
     params->amount = amount;
     params->color = color;
-    params->numThreads = numThreads;
 
     // Compute
     {
@@ -687,11 +691,7 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     // Parameters
 
     RealBloom::ConvolutionParams* params = conv.getParams();
-
-    RealBloom::ConvolutionMethodInfo methodInfo;
-    methodInfo.method = RealBloom::ConvolutionMethod::FFT_CPU;
-    params->methodInfo = methodInfo;
-
+    params->methodInfo.method = RealBloom::ConvolutionMethod::FFT_CPU;
     params->kernelExposure = kernelExposure;
     params->kernelContrast = kernelContrast;
     params->kernelRotation = kernelRotation;
@@ -728,7 +728,7 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     // Blending
     {
         CliStackTimer timer("Blending");
-        conv.mixConv(additive, inputMix, convMix, mix, convExposure);
+        conv.mix(additive, inputMix, convMix, mix, convExposure);
         timer.done(verbose);
     }
 

@@ -18,11 +18,6 @@ inline float squared(float& v)
     return v * v;
 }
 
-inline float clamp(float v, float min, float max)
-{
-    return fminf(fmaxf(v, min), max);
-}
-
 inline float getMagnitude(float a, float b)
 {
     return sqrtf(a * a + b * b);

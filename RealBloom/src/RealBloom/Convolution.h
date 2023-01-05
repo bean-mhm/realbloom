@@ -76,11 +76,11 @@ namespace RealBloom
         std::chrono::time_point<std::chrono::system_clock> timeEnd;
         bool hasTimestamps = false;
 
-        ConvolutionMethodInfo methodInfo;
         uint32_t numChunksDone = 0;
         std::string fftStage = "";
 
-        void setError(std::string err);
+        std::string getError() const;
+        void setError(const std::string& err);
     };
 
     class ConvolutionThread;
@@ -90,6 +90,7 @@ namespace RealBloom
     private:
         ConvolutionState m_state;
         ConvolutionParams m_params;
+        ConvolutionParams m_capturedParams;
 
         CmImage* m_imgInput = nullptr;
         CmImage* m_imgKernel = nullptr;
@@ -115,16 +116,16 @@ namespace RealBloom
 
         void previewThreshold(size_t* outNumPixels = nullptr);
         void kernel(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
-        void mixConv(bool additive, float inputMix, float convMix, float mix, float convExposure);
+        void mix(bool additive, float inputMix, float convMix, float mix, float convExposure);
         void convolve();
-        void cancelConv();
+        void cancel();
 
         bool isWorking() const;
         bool hasFailed() const;
         std::string getError() const;
 
         // outStatType: 0 = normal, 1 = info, 2 = warning, 3 = error
-        void getConvStats(std::string& outTime, std::string& outStatus, uint32_t& outStatType);
+        void getStatus(std::string& outTime, std::string& outStatus, uint32_t& outStatType);
         std::string getResourceInfo();
 
     private:

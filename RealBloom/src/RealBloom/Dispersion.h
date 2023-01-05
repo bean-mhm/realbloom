@@ -19,14 +19,26 @@ namespace RealBloom
 {
     constexpr int DISP_MAX_STEPS = 2048;
 
+    enum class DispersionMethod
+    {
+        CPU = 0,
+        GPU = 1
+    };
+
+    struct DispersionMethodInfo
+    {
+        DispersionMethod method = DispersionMethod::CPU;
+        uint32_t numThreads = 1;
+    };
+
     struct DispersionParams
     {
+        DispersionMethodInfo methodInfo;
         float exposure = 0.0f;
         float contrast = 0.0f;
         std::array<float, 3> color{ 1, 1, 1 };
         float amount = 0.0f;
         uint32_t steps = 32;
-        uint32_t numThreads = 1;
     };
 
     struct DispersionState
@@ -41,7 +53,8 @@ namespace RealBloom
         std::chrono::time_point<std::chrono::system_clock> timeEnd;
         bool hasTimestamps = false;
 
-        uint32_t numSteps = 0;
+        std::string getError() const;
+        void setError(const std::string& err);
     };
 
     class DispersionThread;
@@ -51,6 +64,7 @@ namespace RealBloom
     private:
         DispersionState m_state;
         DispersionParams m_params;
+        DispersionParams m_capturedParams;
 
         CmImage* m_imgInput = nullptr;
         CmImage* m_imgDisp = nullptr;
@@ -58,7 +72,7 @@ namespace RealBloom
         CmImage m_imgInputSrc;
 
         std::thread* m_thread = nullptr;
-        std::vector<DispersionThread*> m_threads;
+        std::vector<std::shared_ptr<DispersionThread>> m_threads;
 
     public:
         Dispersion();
@@ -78,8 +92,24 @@ namespace RealBloom
         bool hasFailed() const;
         std::string getError() const;
 
-        uint32_t getNumDone() const;
-        std::string getStats() const;
+        uint32_t getNumStepsDone() const;
+        std::string getStatus() const;
+
+    private:
+        void dispCPU(
+            std::vector<float>& inputBuffer,
+            uint32_t inputWidth,
+            uint32_t inputHeight,
+            uint32_t inputBufferSize,
+            std::vector<float>& cmfSamples);
+
+        void dispGPU(
+            std::vector<float>& inputBuffer,
+            uint32_t inputWidth,
+            uint32_t inputHeight,
+            uint32_t inputBufferSize,
+            std::vector<float>& cmfSamples);
+
     };
 
 }

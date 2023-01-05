@@ -45,15 +45,18 @@
 #include "CLI.h"
 
 #include "Utils/FileDialogs.h"
+#include "Utils/NumberHelpers.h"
 #include "Utils/Misc.h"
 
 void layout();
 
-void imGuiText(const std::string& text, bool isError, bool newLine);
+void imGuiDiv();
+void imGuiBold(const std::string& s);
+void imGuiText(const std::string& s, bool isError, bool newLine);
 
 bool lb1ItemGetter(void* data, int index, const char** outText);
 bool comboItemGetter(void* data, int index, const char** outText);
-bool imguiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth);
+bool imGuiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth);
 
 void addImage(const std::string& id, const std::string& name);
 CmImage* getImageByID(const std::string& id);
@@ -85,8 +88,11 @@ struct UiVars
     float ds_color[3]{ 1.0f, 1.0f, 1.0f };
     float ds_amount = 0.4f;
     int ds_steps = 32;
-    int ds_numThreads = getDefNumThreads();
     bool dispParamsChanged = false;
+
+    // Dispersion Method
+    int ds_method = 0;
+    int ds_numThreads = getDefNumThreads();
 
     // Convolution Kernel
     float cv_kernelExposure = 0.0f;
