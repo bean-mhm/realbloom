@@ -144,6 +144,9 @@
     <ClCompile Include="src\Utils\GlShaderStorageBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\RealBloom\Binary\BinaryDispGpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RealBloom\DiffractionPattern.h">
@@ -513,6 +516,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\dj_fft\dj_fft.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RealBloom\Binary\BinaryDispGpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

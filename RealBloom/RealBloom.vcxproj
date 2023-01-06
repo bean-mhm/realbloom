@@ -208,6 +208,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\RealBloom\Binary\BinaryConvFftGpu.cpp" />
     <ClCompile Include="src\RealBloom\Binary\BinaryData.cpp" />
     <ClCompile Include="src\RealBloom\Binary\BinaryConvNaiveGpu.cpp" />
+    <ClCompile Include="src\RealBloom\Binary\BinaryDispGpu.cpp" />
     <ClCompile Include="src\RealBloom\ConvolutionFFT.cpp" />
     <ClCompile Include="src\RealBloom\DispersionThread.cpp" />
     <ClCompile Include="src\RealBloom\GpuHelper.cpp" />
@@ -256,6 +257,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\RealBloom\Binary\BinaryConvFftGpu.h" />
     <ClInclude Include="src\RealBloom\Binary\BinaryData.h" />
     <ClInclude Include="src\RealBloom\Binary\BinaryConvNaiveGpu.h" />
+    <ClInclude Include="src\RealBloom\Binary\BinaryDispGpu.h" />
     <ClInclude Include="src\RealBloom\ConvolutionFFT.h" />
     <ClInclude Include="src\RealBloom\DispersionThread.h" />
     <ClInclude Include="src\RealBloom\GpuHelper.h" />

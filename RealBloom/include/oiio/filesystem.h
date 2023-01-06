@@ -34,7 +34,7 @@
 
 #if defined(_WIN32) && defined(__GLIBCXX__)
 #    define OIIO_FILESYSTEM_USE_STDIO_FILEBUF 1
-#    include <OpenImageIO/fstream_mingw.h>
+#    include <oiio/fstream_mingw.h>
 #endif
 
 
