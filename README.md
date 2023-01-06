@@ -62,7 +62,7 @@ The ultimate goal is to achieve more realism in 3D renders that contain bright s
 
 ### How It's Made
 
-RealBloom is written in C++ using Visual Studio 2022. The target platform is Windows. However, considering the fact that all the libraries used and most of the code for RealBloom are platform-independent, it should be fairly easy to port it to another platform.
+RealBloom is written in C++ using Visual Studio 2022. The target platform is Windows. However, considering all the libraries used and most of the code for RealBloom are platform-independent, it should be fairly easy to port to other major desktop platforms.
 
 RealBloom uses the following libraries:
 | Library | Used for |
@@ -101,7 +101,7 @@ RealBloom uses the following libraries:
 <!-- USAGE -->
 ## Using RealBloom
 
-Check out [this page](USAGE.md) for a step-by-step tutorial on getting started with RealBloom, along with more details on the project. This will cover most of what you need to know.
+Check out [this page](USAGE.md) for a step-by-step tutorial on getting started with RealBloom, along with more details and information about the project. This will cover most of what you need to know.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -138,10 +138,10 @@ The project was made for Windows and built with MSVC, so you're going to need a 
 - [x] Command Line Interface
 - [ ] GPU FFT Convolution
 - [ ] GPU Dispersion
-- [ ] GPU Diffraction Pattern
 - [ ] GPU Image Transforms
 - [ ] Node-based workflow
 - [ ] ~~Support for animated apertures, kernels and input images~~ 
+- [ ] ~~GPU Diffraction Pattern~~
 
 See [open issues](https://github.com/bean-mhm/realbloom/issues) for a full list of proposed features (and known issues).
 
