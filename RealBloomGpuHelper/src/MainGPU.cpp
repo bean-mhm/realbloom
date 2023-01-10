@@ -14,9 +14,11 @@
 #include "RealBloom/Binary/BinaryData.h"
 #include "RealBloom/Binary/BinaryConvNaiveGpu.h"
 #include "RealBloom/Binary/BinaryConvFftGpu.h"
+#include "RealBloom/Binary/BinaryDispGpu.h"
 
 #include "RealBloom/ConvNaiveGpu.h"
 #include "RealBloom/ConvFftGpu.h"
+#include "RealBloom/DispGpu.h"
 
 #include "Utils/GlContext.h"
 #include "Utils/Misc.h"
@@ -37,8 +39,9 @@ constexpr const char* APP_TITLE = "RealBloom GPU Helper";
 
 typedef std::function<void(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)> GpuHelperOperation;
 
-void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
+void runDisp(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
 void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
+void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
 
 std::ofstream logFile;
 
@@ -85,15 +88,18 @@ void logAdd(LogLevel level, const std::string& message)
 
 int main(int argc, char* argv[])
 {
+    bool debugMode = false;
+    std::string debugInputFilename = "";
+
     // Check for the argument
-    if (argc < 2)
+    if (!debugMode && (argc < 2))
     {
         std::cout << "An argument for the input filename is required.\n";
         return 1;
     }
 
     // Retrieve input filename
-    std::string inpFilename = argv[1];
+    std::string inpFilename = debugMode ? debugInputFilename : argv[1];
     if (!std::filesystem::exists(inpFilename))
     {
         std::cout << "Input file does not exist.\n";
@@ -163,10 +169,11 @@ int main(int argc, char* argv[])
 
     // Map operation types to functions
     std::unordered_map<GpuHelperOperationType, GpuHelperOperation> opMap;
-    opMap[GpuHelperOperationType::ConvNaive] = runConvNaive;
+    opMap[GpuHelperOperationType::Dispersion] = runDisp;
     opMap[GpuHelperOperationType::ConvFFT] = runConvFFT;
+    opMap[GpuHelperOperationType::ConvNaive] = runConvNaive;
 
-    // Check if operation has a function associated
+    // Check if the operation has a function associated
     if (opMap.count(opType) < 1)
     {
         logAdd(LogLevel::Fatal, "Operation not implemented.");
@@ -224,6 +231,90 @@ int main(int argc, char* argv[])
         logAdd(LogLevel::Info, "Output was successfully written.");
 
     return 0;
+}
+
+void runDisp(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)
+{
+    // Read the input
+
+    logAdd(LogLevel::Info, "Attempting to read the input data...");
+
+    bool readInput = false;
+    std::string readInputError = "";
+    RealBloom::BinaryDispGpuInput binInput;
+    try
+    {
+        binInput.readFrom(inpFile);
+        readInput = true;
+    }
+    catch (const std::exception& e)
+    {
+        readInputError = e.what();
+        logAdd(LogLevel::Error, e.what());
+    }
+    inpFile.close();
+
+    // Final status to write into the output
+    bool finalSuccess = true;
+    std::string finalError = "";
+
+    RealBloom::DispGpuData data;
+    data.binInput = &binInput;
+
+    if (readInput)
+    {
+        // Start
+
+        logAdd(LogLevel::Info, "Starting dispersion...");
+
+        RealBloom::DispGpu disp(&data);
+        disp.process();
+
+        finalSuccess = data.success;
+        finalError = data.error;
+
+        if (data.success)
+        {
+            logAdd(LogLevel::Info, "Dispersion is done.");
+        }
+        else
+        {
+            logAdd(LogLevel::Error, "Dispersion was failed.");
+            logAdd(LogLevel::Error, data.error);
+        }
+    }
+
+    // Setup binary output
+    RealBloom::BinaryDispGpuOutput binOutput;
+    if (readInput)
+    {
+        if (finalSuccess)
+        {
+            binOutput.status = 1;
+            binOutput.buffer = data.outputBuffer;
+        }
+        else
+        {
+            binOutput.status = 0;
+            binOutput.error = finalError;
+        }
+    }
+    else
+    {
+        binOutput.status = 0;
+        binOutput.error = readInputError;
+    }
+
+    // Write the output
+    logAdd(LogLevel::Info, "Writing the output...");
+    try
+    {
+        binOutput.writeTo(outFile);
+    }
+    catch (const std::exception& e)
+    {
+        logAdd(LogLevel::Error, e.what());
+    }
 }
 
 void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)
@@ -417,7 +508,7 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
                             finalBuffer[j] += data.outputBuffer[j];
 
                     logAdd(LogLevel::Info, strFormat(
-                        "Chunk %u/%u (%u points) was successful.", i + 1, binInput.numChunks, data.numPoints));
+                        "Chunk %u/%u (%u points) was successful.", i + 1, binInput.numChunks, data.points.size()));
                 }
                 else
                 {
@@ -426,7 +517,7 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
                     clearVector(finalBuffer);
 
                     logAdd(LogLevel::Error, strFormat(
-                        "Chunk %u/%u (%u points) was failed.", i + 1, binInput.numChunks, data.numPoints));
+                        "Chunk %u/%u (%u points) was failed.", i + 1, binInput.numChunks, data.points.size()));
                     logAdd(LogLevel::Error, data.error);
                     break;
                 }

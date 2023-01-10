@@ -5,7 +5,6 @@
 #endif
 #include <GL/glew.h>
 
-#include <iostream>
 #include <string>
 #include <vector>
 #include <memory>
@@ -56,6 +55,7 @@ namespace RealBloom
         void output();
 
         const std::vector<float>& getBuffer() const;
+
     };
 
 }

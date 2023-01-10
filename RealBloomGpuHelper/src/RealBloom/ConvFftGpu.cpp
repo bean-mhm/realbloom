@@ -5,6 +5,7 @@
 
 namespace RealBloom
 {
+
     ConvFftGpu::ConvFftGpu(BinaryConvFftGpuInput* binInput)
         : m_binInput(binInput)
     {}

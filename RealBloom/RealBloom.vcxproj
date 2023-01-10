@@ -227,7 +227,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\ColorManagement\CMS.cpp" />
     <ClCompile Include="src\Config.cpp" />
     <ClCompile Include="src\Utils\GlUtils.cpp" />
-    <ClCompile Include="src\Utils\RandomNumber.cpp" />
+    <ClCompile Include="src\Utils\Random.cpp" />
     <ClCompile Include="src\RealBloom\ConvolutionThread.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
     <ClCompile Include="src\imgui\imgui_demo.cpp" />
@@ -342,7 +342,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\ColorManagement\CmImageIO.h" />
     <ClInclude Include="src\ColorManagement\CMS.h" />
     <ClInclude Include="src\Utils\GlUtils.h" />
-    <ClInclude Include="src\Utils\RandomNumber.h" />
+    <ClInclude Include="src\Utils\Random.h" />
     <ClInclude Include="include\GL\eglew.h" />
     <ClInclude Include="include\GL\glew.h" />
     <ClInclude Include="include\GL\glxew.h" />

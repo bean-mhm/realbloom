@@ -36,9 +36,6 @@
     <ClCompile Include="..\RealBloom\src\Utils\NumberHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RealBloom\src\Utils\RandomNumber.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\RealBloom\src\Config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -67,6 +64,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\Random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RealBloom\DispGpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryDispGpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -102,9 +108,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\RealBloom\src\Utils\NumberHelpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RealBloom\src\Utils\RandomNumber.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\RealBloom\include\inih\INIReader.h">
@@ -144,6 +147,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\RealBloom\include\dj_fft\dj_fft.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\Random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RealBloom\DispGpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryDispGpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

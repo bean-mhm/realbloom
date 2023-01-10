@@ -12,6 +12,8 @@
 
 #include "Misc.h"
 
+constexpr float GL_COORD_SCALE = 2.0f;
+
 class GlWrapper
 {
 public:

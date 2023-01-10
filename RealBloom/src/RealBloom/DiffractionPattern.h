@@ -10,7 +10,6 @@
 #include "../ColorManagement/CmImage.h"
 #include "../Utils/Array2D.h"
 #include "../Utils/NumberHelpers.h"
-#include "../Utils/RandomNumber.h"
 #include "../Async.h"
 
 namespace RealBloom

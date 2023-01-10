@@ -63,7 +63,7 @@
     <ClCompile Include="src\Utils\Misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils\RandomNumber.cpp">
+    <ClCompile Include="src\Utils\Random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Async.cpp">
@@ -227,7 +227,7 @@
     <ClInclude Include="include\GL\wglew.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utils\RandomNumber.h">
+    <ClInclude Include="src\Utils\Random.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Async.h">

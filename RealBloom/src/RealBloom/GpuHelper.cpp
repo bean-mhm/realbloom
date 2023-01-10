@@ -21,7 +21,7 @@ GpuHelper::GpuHelper()
 {
     std::string tempDir;
     getTempDirectory(tempDir);
-    m_randomNumber = RandomNumber::nextU64();
+    m_randomNumber = Random::nextU64();
 
     m_inpFilename = strFormat(
         "%srealbloom_gpu_operation%llu",

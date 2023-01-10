@@ -520,7 +520,104 @@ namespace RealBloom
         uint32_t inputBufferSize,
         std::vector<float>& cmfSamples)
     {
-        //
+        // Create GpuHelper instance
+        GpuHelper gpuHelper;
+        std::string inpFilename = gpuHelper.getInpFilename();
+        std::string outFilename = gpuHelper.getOutFilename();
+
+        try
+        {
+            // Prepare input data
+            BinaryDispGpuInput binInput;
+            binInput.dp_amount = m_capturedParams.amount;
+            binInput.dp_steps = m_capturedParams.steps;
+            binInput.inputWidth = inputWidth;
+            binInput.inputHeight = inputHeight;
+            binInput.inputBuffer = inputBuffer;
+            binInput.cmfSamples = cmfSamples;
+
+            // Create the input file
+            std::ofstream inpFile;
+            inpFile.open(inpFilename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+            if (!inpFile.is_open())
+                throw std::exception(
+                    strFormat("Input file \"%s\" could not be created/opened.", inpFilename.c_str()).c_str()
+                );
+
+            // Write operation type
+            uint32_t opType = (uint32_t)GpuHelperOperationType::Dispersion;
+            stmWriteScalar(inpFile, opType);
+
+            // Write input data
+            binInput.writeTo(inpFile);
+
+            // Close the input file
+            inpFile.flush();
+            inpFile.close();
+
+            // Execute GPU Helper
+            gpuHelper.run();
+
+            // Wait for the output file to be created
+            gpuHelper.waitForOutput(&(m_state.mustCancel));
+
+            // Wait for the GPU Helper to finish its job
+            while (gpuHelper.isRunning())
+            {
+                if (m_state.mustCancel)
+                    throw std::exception();
+                std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
+            }
+
+            // Open the output file
+            std::ifstream outFile;
+            outFile.open(outFilename, std::ifstream::in | std::ifstream::binary);
+            if (!outFile.is_open())
+                throw std::exception(
+                    strFormat("Output file \"%s\" could not be opened.", outFilename.c_str()).c_str()
+                );
+            else
+                outFile.seekg(std::ifstream::beg);
+
+            // Parse the output file
+            BinaryDispGpuOutput binOutput;
+            binOutput.readFrom(outFile);
+            if (binOutput.status == 1)
+            {
+                // Update the output image
+
+                std::lock_guard<CmImage> lock(*m_imgDisp);
+                m_imgDisp->resize(inputWidth, inputHeight, false);
+                float* dispBuffer = m_imgDisp->getImageData();
+                uint32_t dispBufferSize = m_imgDisp->getImageDataSize();
+
+                if (dispBufferSize == binOutput.buffer.size())
+                {
+                    std::copy(binOutput.buffer.data(), binOutput.buffer.data() + binOutput.buffer.size(), dispBuffer);
+                }
+                else
+                {
+                    m_state.setError(strFormat(
+                        "Output buffer size (%u) does not match the input buffer size (%u).",
+                        binOutput.buffer.size(), dispBuffer
+                    ));
+                }
+            }
+            else
+            {
+                m_state.setError(binOutput.error);
+            }
+
+            // Close the output file
+            outFile.close();
+        }
+        catch (const std::exception& e)
+        {
+            m_state.setError(e.what());
+        }
+
+        // Clean up
+        gpuHelper.cleanUp();
     }
 
 }

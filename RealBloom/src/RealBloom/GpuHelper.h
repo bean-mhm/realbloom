@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "../Utils/RandomNumber.h"
+#include "../Utils/Random.h"
 #include "../Utils/Misc.h"
 #include "../Async.h"
 
@@ -16,8 +16,8 @@ enum class GpuHelperOperationType
 {
     Diffraction = 0,
     Dispersion = 1,
-    ConvNaive = 2,
-    ConvFFT = 3
+    ConvFFT = 2,
+    ConvNaive = 3
 };
 
 // Is this Java? Perhaps not long enough of a name.

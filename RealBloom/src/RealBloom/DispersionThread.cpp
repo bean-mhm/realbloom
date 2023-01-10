@@ -22,15 +22,15 @@ namespace RealBloom
 
         // Parameters
 
-        uint32_t dispSteps = m_params.steps;
+        uint32_t steps = m_params.steps;
 
         m_state.numSteps = 0;
         m_state.numDone = 0;
-        for (uint32_t i = 1; i <= dispSteps; i++)
+        for (uint32_t i = 1; i <= steps; i++)
             if (i % m_numThreads == m_threadIndex)
                 m_state.numSteps++;
 
-        float dispAmount = fminf(fmaxf(m_params.amount, 0.0f), 1.0f);
+        float amount = fminf(fmaxf(m_params.amount, 0.0f), 1.0f);
 
         float centerX = (float)m_inputWidth / 2.0f;
         float centerY = (float)m_inputHeight / 2.0f;
@@ -44,7 +44,7 @@ namespace RealBloom
 
         m_state.state = DispersionThreadState::Working;
 
-        for (uint32_t i = 1; i <= dispSteps; i++)
+        for (uint32_t i = 1; i <= steps; i++)
         {
             if (m_mustStop)
             {
@@ -55,7 +55,7 @@ namespace RealBloom
             if (i % m_numThreads != m_threadIndex)
                 continue;
 
-            float scale = 1.0f - (dispAmount * (1.0f - (i / (float)dispSteps)));
+            float scale = 1.0f - (amount * (1.0f - (i / (float)steps)));
             scale = fmaxf(EPSILON, scale);
 
             float scaledArea = scale * scale;

@@ -176,18 +176,20 @@
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.cpp" />
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvNaiveGpu.cpp" />
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryData.cpp" />
+    <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryDispGpu.cpp" />
     <ClCompile Include="..\RealBloom\src\RealBloom\GpuHelper.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\GlFrameBuffer.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\GlShaderStorageBuffer.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\GlUtils.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\Misc.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\NumberHelpers.cpp" />
-    <ClCompile Include="..\RealBloom\src\Utils\RandomNumber.cpp" />
+    <ClCompile Include="..\RealBloom\src\Utils\Random.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\StreamUtils.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\StringUtils.cpp" />
     <ClCompile Include="src\MainGPU.cpp" />
     <ClCompile Include="src\RealBloom\ConvFftGpu.cpp" />
     <ClCompile Include="src\RealBloom\ConvNaiveGpu.cpp" />
+    <ClCompile Include="src\RealBloom\DispGpu.cpp" />
     <ClCompile Include="src\Utils\GlContext.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -201,6 +203,7 @@
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.h" />
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvNaiveGpu.h" />
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryData.h" />
+    <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryDispGpu.h" />
     <ClInclude Include="..\RealBloom\src\RealBloom\GpuHelper.h" />
     <ClInclude Include="..\RealBloom\src\Utils\Array2D.h" />
     <ClInclude Include="..\RealBloom\src\Utils\GlFrameBuffer.h" />
@@ -208,7 +211,7 @@
     <ClInclude Include="..\RealBloom\src\Utils\GlUtils.h" />
     <ClInclude Include="..\RealBloom\src\Utils\Misc.h" />
     <ClInclude Include="..\RealBloom\src\Utils\NumberHelpers.h" />
-    <ClInclude Include="..\RealBloom\src\Utils\RandomNumber.h" />
+    <ClInclude Include="..\RealBloom\src\Utils\Random.h" />
     <ClInclude Include="..\RealBloom\src\Utils\StreamUtils.h" />
     <ClInclude Include="..\RealBloom\src\Utils\StringUtils.h" />
     <ClInclude Include="include\GL\eglew.h" />
@@ -217,6 +220,7 @@
     <ClInclude Include="include\GL\wglew.h" />
     <ClInclude Include="src\RealBloom\ConvFftGpu.h" />
     <ClInclude Include="src\RealBloom\ConvNaiveGpu.h" />
+    <ClInclude Include="src\RealBloom\DispGpu.h" />
     <ClInclude Include="src\Utils\GlContext.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

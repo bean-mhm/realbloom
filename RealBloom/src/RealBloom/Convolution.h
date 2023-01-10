@@ -17,9 +17,11 @@
 #include "Binary/BinaryConvFftGpu.h"
 
 #include "../ColorManagement/CmImage.h"
+
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/Bilinear.h"
 #include "../Utils/Misc.h"
+
 #include "../Async.h"
 
 namespace RealBloom

@@ -5,14 +5,12 @@
 #endif
 #include <GL/glew.h>
 
-#include <vector>
 #include <string>
-#include <memory>
-#include <chrono>
+#include <vector>
 #include <stdint.h>
 
 #include "RealBloom/Binary/BinaryData.h"
-#include "RealBloom/Binary/BinaryConvNaiveGpu.h"
+#include "RealBloom/Binary/BinaryDispGpu.h"
 
 #include "Utils/GlUtils.h"
 #include "Utils/GlFrameBuffer.h"
@@ -22,13 +20,11 @@
 namespace RealBloom
 {
 
-    class ConvNaiveGpu;
+    class DispGpu;
 
-    struct ConvNaiveGpuData
+    struct DispGpuData
     {
-        BinaryConvNaiveGpuInput* binInput;
-
-        std::vector<float> points; // Each point consists of 2 elements for position and 3 for color: x, y, r, g ,b
+        BinaryDispGpuInput* binInput;
         std::vector<float> outputBuffer;
 
         bool done = false;
@@ -39,10 +35,10 @@ namespace RealBloom
         void setError(const std::string& err);
     };
 
-    class ConvNaiveGpu
+    class DispGpu
     {
     private:
-        ConvNaiveGpuData* m_data;
+        DispGpuData* m_data;
 
         uint32_t m_width = 0;
         uint32_t m_height = 0;
@@ -57,22 +53,20 @@ namespace RealBloom
         GLuint m_geometryShader = 0;
         GLuint m_shaderProgram = 0;
 
-        GLuint m_texKernel = 0;
+        GLuint m_texInput = 0;
 
-        void makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight);
+        void makeInputTexture(float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight);
         void makeProgram();
         void definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs);
         void useProgram();
-        void bindKernelTexture();
-        void setUniforms(uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize);
+        void bindInputTexture();
+        void setUniforms();
         void specifyLayout();
         void drawScene(uint32_t numPoints);
 
     public:
-        ConvNaiveGpu(ConvNaiveGpuData* data);
-        void prepare();
-        void process(uint32_t chunkIndex);
-        void cleanUp();
+        DispGpu(DispGpuData* data);
+        void process();
 
     };
 

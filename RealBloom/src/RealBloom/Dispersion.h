@@ -7,12 +7,17 @@
 #include <math.h>
 #include <stdint.h>
 
-#include "../Utils/NumberHelpers.h"
-#include "../Utils/Bilinear.h"
+#include "GpuHelper.h"
+#include "Binary/BinaryData.h"
+#include "Binary/BinaryDispGpu.h"
 
 #include "../ColorManagement/CmImage.h"
 #include "../ColorManagement/CMF.h"
+
+#include "../Utils/Bilinear.h"
+#include "../Utils/NumberHelpers.h"
 #include "../Utils/Misc.h"
+
 #include "../Async.h"
 
 namespace RealBloom

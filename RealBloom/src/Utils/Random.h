@@ -2,7 +2,7 @@
 
 #include <random>
 
-class RandomNumber
+class Random
 {
 private:
     // Engine
@@ -18,19 +18,22 @@ private:
     static std::uniform_real_distribution<double> s_distDouble;
 
 public:
-    static int32_t nextI32();
-    static uint32_t nextU32();
-    static int64_t nextI64();
-    static uint64_t nextU64();
+    Random() = delete;
+    Random(const Random&) = delete;
+    Random& operator= (const Random&) = delete;
 
+    static int32_t nextI32();
     static int32_t nextI32(int32_t min, int32_t max);
+    static uint32_t nextU32();
     static uint32_t nextU32(uint32_t min, uint32_t max);
+    static int64_t nextI64();
     static int64_t nextI64(int64_t min, int64_t max);
+    static uint64_t nextU64();
     static uint64_t nextU64(uint64_t min, uint64_t max);
 
     static float nextFloat();
-    static double nextDouble();
-
     static float nextFloat(float min, float max);
+    static double nextDouble();
     static double nextDouble(double min, double max);
+
 };
