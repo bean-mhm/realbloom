@@ -61,7 +61,7 @@ namespace RealBloom
 
         void makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight);
         void makeProgram();
-        void definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs);
+        void definePoints(GLfloat* points, uint32_t size);
         void useProgram();
         void bindKernelTexture();
         void setUniforms(uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize);

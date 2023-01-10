@@ -57,7 +57,7 @@ namespace RealBloom
 
         void makeInputTexture(float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight);
         void makeProgram();
-        void definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs);
+        void definePoints(GLfloat* points, uint32_t size);
         void useProgram();
         void bindInputTexture();
         void setUniforms();

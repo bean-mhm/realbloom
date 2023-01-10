@@ -179,7 +179,7 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "glUseProgram");
     }
 
-    void DispGpu::definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs)
+    void DispGpu::definePoints(GLfloat* points, uint32_t size)
     {
         // Create Vertex Array Object
         glGenVertexArrays(1, &m_vao);
@@ -195,16 +195,16 @@ namespace RealBloom
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         checkGlStatus(__FUNCTION__, "glBindBuffer");
 
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numPoints * numAttribs, points, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * size, points, GL_STATIC_DRAW);
         checkGlStatus(__FUNCTION__, "glBufferData");
 
         /*Example:
         {
              Scale   R     G     B
-             0.35f,  1.0f, 1.0f, 1.0f
-             0.40f,  0.0f, 0.0f, 1.0f,
-             0.45f,  0.0f, 1.0f, 0.0f,
-             0.50f,  1.0f, 0.0f, 0.0f,
+             0.5f,  1.0f, 0.0f, 0.0f
+             0.5f,  1.0f, 0.0f, 0.0f,
+             0.5f,  1.0f, 0.0f, 0.0f,
+             0.5f,  1.0f, 0.0f, 0.0f,
         }*/
     }
 
@@ -324,7 +324,7 @@ namespace RealBloom
             makeProgram();
 
             // Upload vertex data
-            definePoints(points.data(), points.size(), 4);
+            definePoints(points.data(), points.size());
 
             // Use the program
             useProgram();

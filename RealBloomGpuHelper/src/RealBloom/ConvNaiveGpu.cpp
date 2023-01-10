@@ -174,7 +174,7 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "glUseProgram");
     }
 
-    void ConvNaiveGpu::definePoints(GLfloat* points, uint32_t numPoints, uint32_t numAttribs)
+    void ConvNaiveGpu::definePoints(GLfloat* points, uint32_t size)
     {
         // Create Vertex Array Object
         glGenVertexArrays(1, &m_vao);
@@ -190,7 +190,7 @@ namespace RealBloom
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         checkGlStatus(__FUNCTION__, "glBindBuffer");
 
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numPoints * numAttribs, points, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * size, points, GL_STATIC_DRAW);
         checkGlStatus(__FUNCTION__, "glBufferData");
 
         /*Example:
@@ -388,7 +388,7 @@ namespace RealBloom
             frameBuffer->viewport();
 
             // Upload vertex data
-            definePoints(m_data->points.data(), m_data->points.size(), 5);
+            definePoints(m_data->points.data(), m_data->points.size());
 
             // Use the program
             useProgram();
