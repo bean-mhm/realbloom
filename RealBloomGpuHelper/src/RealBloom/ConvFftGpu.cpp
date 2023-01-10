@@ -61,6 +61,8 @@ namespace RealBloom
             }
 
             float threshold = m_binInput->cp_convThreshold;
+            float transKnee = transformKnee(m_binInput->cp_convKnee);
+
             float inpColor[3];
             for (int y = 0; y < m_binInput->inputHeight; y++)
             {
@@ -74,7 +76,7 @@ namespace RealBloom
                     float v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
                     if (v > threshold)
                     {
-                        float mul = fftScale * softThreshold(v, threshold, m_binInput->cp_convKnee);
+                        float mul = fftScale * softThreshold(v, threshold, transKnee);
 
                         int transX = x + m_inputLeftPadding;
                         int transY = y + m_inputTopPadding;

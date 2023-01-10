@@ -278,8 +278,11 @@ namespace RealBloom
         float amount = binInput->dp_amount;
 
         // Vertex data
-        std::vector<float> points;
-        points.reserve(steps * 4);
+
+        uint32_t numAttribs = 4;
+        std::vector<float> vertexData;
+        vertexData.reserve(steps * numAttribs);
+
         for (uint32_t i = 1; i <= steps; i++)
         {
             float scale = 1.0f - (amount * (1.0f - (i / (float)steps)));
@@ -293,10 +296,10 @@ namespace RealBloom
             float wlG = binInput->cmfSamples[smpIndex + 1] * scaledMul;
             float wlB = binInput->cmfSamples[smpIndex + 2] * scaledMul;
 
-            points.push_back(scale);
-            points.push_back(wlR);
-            points.push_back(wlG);
-            points.push_back(wlB);
+            vertexData.push_back(scale);
+            vertexData.push_back(wlR);
+            vertexData.push_back(wlG);
+            vertexData.push_back(wlB);
         }
 
         // Draw
@@ -324,7 +327,7 @@ namespace RealBloom
             makeProgram();
 
             // Upload vertex data
-            definePoints(points.data(), points.size());
+            definePoints(vertexData.data(), vertexData.size());
 
             // Use the program
             useProgram();
@@ -339,7 +342,7 @@ namespace RealBloom
             specifyLayout();
 
             // Draw
-            drawScene(points.size());
+            drawScene(vertexData.size() / numAttribs);
             
             // Copy pixel data from the frame buffer
             uint32_t fbSize = m_width * m_height * 4;

@@ -18,12 +18,12 @@ void CliStackTimer::done(bool verbose)
         << consoleColor(COL_PRI)
         << "Total: "
         << consoleColor(COL_SEC)
-        << strFormat("%.3f ms", elapsedMs)
+        << strFormat("%.1f ms", elapsedMs)
         << consoleColor() << "\n";
     else
         std::cout
         << consoleColor(COL_SEC)
-        << strRightPadding(strFormat("%.3f ms", elapsedMs), 12)
+        << strRightPadding(strFormat("%.1f ms", elapsedMs), 11)
         << consoleColor()
         << m_title << "\n";
 }

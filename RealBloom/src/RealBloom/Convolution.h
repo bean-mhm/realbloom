@@ -61,9 +61,9 @@ namespace RealBloom
         bool  kernelPreviewCenter = true;
         float kernelCenterX = 0.5f;
         float kernelCenterY = 0.5f;
-        float convThreshold = 0.0f;
-        float convKnee = 0.0f;
-        bool  kernelAutoExposure = true;
+        float threshold = 0.0f;
+        float knee = 0.0f;
+        bool  autoExposure = true;
     };
 
     struct ConvolutionState

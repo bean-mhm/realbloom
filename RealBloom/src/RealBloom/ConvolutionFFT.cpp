@@ -57,28 +57,27 @@ namespace RealBloom
                 for (auto& v : m_inputPadded[i].getVector()) v = 0;
             }
 
-            float threshold = m_params.convThreshold;
-            float v, mul;
+            float threshold = m_params.threshold;
+            float transKnee = transformKnee(m_params.knee);
+
             float inpColor[3];
-            int transX, transY;
-            uint32_t redIndex;
             for (int y = 0; y < m_inputHeight; y++)
             {
                 for (int x = 0; x < m_inputWidth; x++)
                 {
-                    redIndex = (y * m_inputWidth + x) * 4;
+                    uint32_t redIndex = (y * m_inputWidth + x) * 4;
                     inpColor[0] = m_inputBuffer[redIndex + 0];
                     inpColor[1] = m_inputBuffer[redIndex + 1];
                     inpColor[2] = m_inputBuffer[redIndex + 2];
 
-                    v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
+                    float v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
                     if (v > threshold)
                     {
                         // Smooth Transition
-                        mul = softThreshold(v, threshold, m_params.convKnee);
+                        float mul = softThreshold(v, threshold, transKnee);
 
-                        transX = x + m_inputLeftPadding;
-                        transY = y + m_inputTopPadding;
+                        int transX = x + m_inputLeftPadding;
+                        int transY = y + m_inputTopPadding;
 
                         m_inputPadded[0](transY, transX) = inpColor[0] * mul;
                         m_inputPadded[1](transY, transX) = inpColor[1] * mul;

@@ -320,7 +320,7 @@ namespace RealBloom
         uint32_t kernelHeight = binInput->kernelHeight;
 
         float threshold = binInput->cp_convThreshold;
-        float knee = binInput->cp_convKnee;
+        float transKnee = transformKnee(binInput->cp_convKnee);
 
         float kernelCenterX = (int)floorf(binInput->cp_kernelCenterX * (float)kernelWidth);
         float kernelCenterY = (int)floorf(binInput->cp_kernelCenterY * (float)kernelHeight);
@@ -329,7 +329,7 @@ namespace RealBloom
         float offsetY = floorf((float)kernelHeight / 2.0f) - kernelCenterY;
 
         // Collect points (vertex data)
-        clearVector(m_data->points);
+        clearVector(m_data->vertexData);
         float color[3]{ 0, 0, 0 };
         for (uint32_t i = 0; i < inputPixels; i++)
         {
@@ -350,10 +350,10 @@ namespace RealBloom
                     float px = (float)ix + offsetX;
                     float py = (float)iy + offsetY;
 
-                    px = (px + 0.5f) / m_width;
-                    py = 1.0f - ((py + 0.5f) / m_height);
+                    px = px / m_width;
+                    py = 1.0f - (py / m_height);
 
-                    // 0.0 -> 1.0  to  -1.0 -> +1.0
+                    // [0, 1] -> [-1, 1]
                     px = px * 2.0f - 1.0f;
                     py = py * 2.0f - 1.0f;
 
@@ -361,13 +361,13 @@ namespace RealBloom
                     py *= GL_COORD_SCALE;
 
                     // Smooth Transition
-                    float mul = softThreshold(v, threshold, knee);
+                    float mul = softThreshold(v, threshold, transKnee);
 
-                    m_data->points.push_back(px);
-                    m_data->points.push_back(py);
-                    m_data->points.push_back(color[0] * mul);
-                    m_data->points.push_back(color[1] * mul);
-                    m_data->points.push_back(color[2] * mul);
+                    m_data->vertexData.push_back(px);
+                    m_data->vertexData.push_back(py);
+                    m_data->vertexData.push_back(color[0] * mul);
+                    m_data->vertexData.push_back(color[1] * mul);
+                    m_data->vertexData.push_back(color[2] * mul);
                 }
             }
         }
@@ -388,7 +388,7 @@ namespace RealBloom
             frameBuffer->viewport();
 
             // Upload vertex data
-            definePoints(m_data->points.data(), m_data->points.size());
+            definePoints(m_data->vertexData.data(), m_data->vertexData.size());
 
             // Use the program
             useProgram();
@@ -408,7 +408,7 @@ namespace RealBloom
             specifyLayout();
 
             // Draw
-            drawScene(m_data->points.size());
+            drawScene(m_data->vertexData.size() / m_data->numAttribs);
 
             // Copy pixel data from the frame buffer
             uint32_t fbSize = m_width * m_height * 4;

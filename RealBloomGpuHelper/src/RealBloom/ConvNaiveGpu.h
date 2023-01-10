@@ -28,7 +28,8 @@ namespace RealBloom
     {
         BinaryConvNaiveGpuInput* binInput;
 
-        std::vector<float> points; // Each point consists of 2 elements for position and 3 for color: x, y, r, g ,b
+        uint32_t numAttribs = 5;
+        std::vector<float> vertexData; // Each point consists of 2 elements for position and 3 for color: x, y, r, g ,b
         std::vector<float> outputBuffer;
 
         bool done = false;

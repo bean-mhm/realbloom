@@ -508,7 +508,7 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
                             finalBuffer[j] += data.outputBuffer[j];
 
                     logAdd(LogLevel::Info, strFormat(
-                        "Chunk %u/%u (%u points) was successful.", i + 1, binInput.numChunks, data.points.size()));
+                        "Chunk %u/%u (%u points) was successful.", i + 1, binInput.numChunks, data.vertexData.size() / data.numAttribs));
                 }
                 else
                 {
@@ -517,7 +517,7 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
                     clearVector(finalBuffer);
 
                     logAdd(LogLevel::Error, strFormat(
-                        "Chunk %u/%u (%u points) was failed.", i + 1, binInput.numChunks, data.points.size()));
+                        "Chunk %u/%u (%u points) was failed.", i + 1, binInput.numChunks, data.vertexData.size() / data.numAttribs));
                     logAdd(LogLevel::Error, data.error);
                     break;
                 }

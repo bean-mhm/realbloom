@@ -75,9 +75,16 @@ inline double rgbToGrayscale(double r, double g, double b)
     return (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
 }
 
-inline float softThreshold(float v, float threshold, float knee)
+inline float transformKnee(float v)
 {
-    return knee > 0 ? fminf((v - threshold) / knee, 1.0f) : 1.0f;
+    if (v <= 0.0f)
+        return 0.0f;
+    return powf(2.0f, v) - 1.0f;
+}
+
+inline float softThreshold(float v, float threshold, float transKnee)
+{
+    return transKnee > 0 ? fminf(1.0f, (v - threshold) / transKnee) : 1.0f;
 }
 
 inline bool checkBounds(int x, int y, int w, int h)

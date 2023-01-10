@@ -120,7 +120,7 @@ struct UiVars
     bool convThresholdSwitchImage = false;
 
     // Kernel Auto-Exposure
-    bool cv_kernelAutoExposure = true;
+    bool cv_autoExposure = true;
 
     // Convolution Mix (Layers)
     bool cm_additive = false;

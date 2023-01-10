@@ -56,8 +56,10 @@ namespace RealBloom
 
     void Convolution::previewThreshold(size_t* outNumPixels)
     {
-        float threshold = m_params.convThreshold;
+        float threshold = m_params.threshold;
+        float transKnee = transformKnee(m_params.knee);
         size_t numPixels = 0;
+
         {
             // Input image
             std::lock_guard<CmImage> lock1(*m_imgInput);
@@ -84,7 +86,7 @@ namespace RealBloom
                     if (v > threshold)
                     {
                         numPixels++;
-                        float mul = softThreshold(v, threshold, m_params.convKnee);
+                        float mul = softThreshold(v, threshold, transKnee);
                         blendAddRGB(prevBuffer, redIndex, inputBuffer, redIndex, mul);
                     }
                 }
@@ -124,7 +126,7 @@ namespace RealBloom
         float cropH = fminf(fmaxf(m_params.kernelCropY, 0.1f), 1.0f);
         float rotation = m_params.kernelRotation;
 
-        bool autoExposure = m_params.kernelAutoExposure;
+        bool autoExposure = m_params.autoExposure;
         float expMul = applyExposure(m_params.kernelExposure);
         float contrast = m_params.kernelContrast;
 
@@ -794,8 +796,8 @@ namespace RealBloom
             BinaryConvFftGpuInput binInput;
             binInput.cp_kernelCenterX = m_capturedParams.kernelCenterX;
             binInput.cp_kernelCenterY = m_capturedParams.kernelCenterY;
-            binInput.cp_convThreshold = m_capturedParams.convThreshold;
-            binInput.cp_convKnee = m_capturedParams.convKnee;
+            binInput.cp_convThreshold = m_capturedParams.threshold;
+            binInput.cp_convKnee = m_capturedParams.knee;
             binInput.convMultiplier = CONV_MULTIPLIER;
             binInput.inputWidth = inputWidth;
             binInput.inputHeight = inputHeight;
@@ -1065,8 +1067,8 @@ namespace RealBloom
             binInput.chunkSleep = chunkSleep;
             binInput.cp_kernelCenterX = m_capturedParams.kernelCenterX;
             binInput.cp_kernelCenterY = m_capturedParams.kernelCenterY;
-            binInput.cp_convThreshold = m_capturedParams.convThreshold;
-            binInput.cp_convKnee = m_capturedParams.convKnee;
+            binInput.cp_convThreshold = m_capturedParams.threshold;
+            binInput.cp_convKnee = m_capturedParams.knee;
             binInput.convMultiplier = CONV_MULTIPLIER;
             binInput.inputWidth = inputWidth;
             binInput.inputHeight = inputHeight;

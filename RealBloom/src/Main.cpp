@@ -630,7 +630,7 @@ void layout()
             vars.convThresholdChanged = false;
         }
 
-        ImGui::Checkbox("Auto-Exposure##Kernel", &(vars.cv_kernelAutoExposure));
+        ImGui::Checkbox("Auto-Exposure##Kernel", &(vars.cv_autoExposure));
 
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Adjust the exposure to preserve the overall brightness.");
@@ -1285,9 +1285,9 @@ void updateConvParams()
     params->kernelPreviewCenter = vars.cv_kernelPreviewCenter;
     params->kernelCenterX = vars.cv_kernelCenter[0];
     params->kernelCenterY = vars.cv_kernelCenter[1];
-    params->convThreshold = vars.cv_convThreshold;
-    params->convKnee = vars.cv_convKnee;
-    params->kernelAutoExposure = vars.cv_kernelAutoExposure;
+    params->threshold = vars.cv_convThreshold;
+    params->knee = vars.cv_convKnee;
+    params->autoExposure = vars.cv_autoExposure;
 }
 
 ImVec2 btnSize()

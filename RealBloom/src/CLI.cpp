@@ -234,6 +234,7 @@ void CLI::init(int& argc, char** argv)
                 {{"--contrast", "-c"}, "Contrast", "0", false},
                 {{"--color", "-m"}, "Dispersion color", "1,1,1", false},
                 {{"--threads", "-t"}, "Number of threads to use", "", false},
+                {{"--gpu", "-g"}, "Use the GPU method", "", false},
                 {{"--cmf", "-f"}, "CMF table filename", "", false},
                 {{"--user-space", "-x"}, "XYZ I-E color space in the user config", "", false},
                 {{"--common-internal", "-w"}, "Common XYZ color space in the internal config", "", false},
@@ -483,6 +484,8 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     if (args.count("--threads") > 0)
         numThreads = std::stoi(args["--threads"]);
 
+    bool useGpu = args.count("--gpu") > 0;
+
     if (verbose)
     {
         printParameters({
@@ -496,6 +499,7 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
             "Contrast", strFormat("%.3f", contrast),
             "Color", strFromFloatArray(color),
             "Threads", strFormat("%u", numThreads),
+            "GPU", strFromBool(useGpu)
             });
     }
 
@@ -527,13 +531,14 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
 
     // Parameters
     RealBloom::DispersionParams* params = disp.getParams();
-    params->methodInfo.method = RealBloom::DispersionMethod::CPU;
+    params->methodInfo.method =
+        useGpu ? RealBloom::DispersionMethod::GPU : RealBloom::DispersionMethod::CPU;
     params->methodInfo.numThreads = numThreads;
     params->exposure = exposure;
     params->contrast = contrast;
-    params->steps = steps;
-    params->amount = amount;
     params->color = color;
+    params->amount = amount;
+    params->steps = steps;
 
     // Compute
     {
@@ -611,7 +616,7 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     if (args.count("--knee") > 0)
         knee = std::stof(args["--knee"]);
 
-    bool kernelAutoExposure = args.count("--autoexp") > 0;
+    bool autoExposure = args.count("--autoexp") > 0;
 
     bool additive = false;
     float mix = 1.0f;
@@ -650,7 +655,7 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
             "Kernel Center", strFromFloatArray(kernelCenter),
             "Threshold", strFormat("%.3f", threshold),
             "Knee", strFormat("%.3f", knee),
-            "Auto-Exposure", strFromBool(kernelAutoExposure),
+            "Auto-Exposure", strFromBool(autoExposure),
             "Additive Blending", strFromBool(additive),
             "Input Mix (Additive)", strFormat("%.3f", inputMix),
             "Conv Mix (Additive)", strFormat("%.3f", convMix),
@@ -702,9 +707,9 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     params->kernelPreviewCenter = false;
     params->kernelCenterX = kernelCenter[0];
     params->kernelCenterY = kernelCenter[1];
-    params->convThreshold = threshold;
-    params->convKnee = knee;
-    params->kernelAutoExposure = kernelAutoExposure;
+    params->threshold = threshold;
+    params->knee = knee;
+    params->autoExposure = autoExposure;
 
     // Compute
     {

@@ -23,9 +23,13 @@ namespace RealBloom
         m_mustStop = false;
 
         // Parameters
-        float threshold = m_params.convThreshold;
+
+        float threshold = m_params.threshold;
+        float transKnee = transformKnee(m_params.knee);
+
         int kernelCenterX = (int)floorf(m_params.kernelCenterX * (float)m_kernelWidth);
         int kernelCenterY = (int)floorf(m_params.kernelCenterY * (float)m_kernelHeight);
+
         uint32_t inputPixels = m_inputWidth * m_inputHeight;
 
         // Count the number of pixels that pass the threshold
@@ -88,7 +92,7 @@ namespace RealBloom
                     if (v > threshold)
                     {
                         // Smooth Transition
-                        mul = softThreshold(v, threshold, m_params.convKnee);
+                        mul = softThreshold(v, threshold, transKnee);
                         inpColor[0] *= mul;
                         inpColor[1] *= mul;
                         inpColor[2] *= mul;
@@ -161,7 +165,7 @@ namespace RealBloom
                 if (v > threshold)
                 {
                     // Smooth Transition
-                    mul = softThreshold(v, threshold, m_params.convKnee);
+                    mul = softThreshold(v, threshold, transKnee);
                     inpColor[0] *= mul;
                     inpColor[1] *= mul;
                     inpColor[2] *= mul;
