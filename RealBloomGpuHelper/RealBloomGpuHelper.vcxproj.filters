@@ -21,15 +21,6 @@
     <ClCompile Include="src\RealBloom\ConvNaiveGpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils\GlContext.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RealBloom\src\Utils\GlFrameBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RealBloom\src\Utils\GlUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\RealBloom\src\Utils\Misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -60,9 +51,6 @@
     <ClCompile Include="src\RealBloom\ConvFftGpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RealBloom\src\Utils\GlShaderStorageBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -73,6 +61,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryDispGpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\OpenGL\GlContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\OpenGL\GlFrameBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\OpenGL\GlShaderStorageBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\OpenGL\GlTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\OpenGL\GlUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -93,15 +96,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\RealBloom\ConvNaiveGpu.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Utils\GlContext.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RealBloom\src\Utils\GlFrameBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RealBloom\src\Utils\GlUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\RealBloom\src\Utils\Misc.h">
@@ -140,9 +134,6 @@
     <ClInclude Include="..\RealBloom\src\Utils\Array2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\RealBloom\src\Utils\GlShaderStorageBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -156,6 +147,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryDispGpu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\OpenGL\GlContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\OpenGL\GlFrameBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\OpenGL\GlShaderStorageBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\OpenGL\GlTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\OpenGL\GlUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

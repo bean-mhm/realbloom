@@ -7,7 +7,7 @@
 #endif
 #include <GL/glew.h>
 
-#include "../Utils/GlUtils.h"
+#include "GlUtils.h"
 
 class GlTexture : public GlWrapper
 {

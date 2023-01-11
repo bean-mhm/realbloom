@@ -20,7 +20,7 @@
 #include "RealBloom/ConvFftGpu.h"
 #include "RealBloom/DispGpu.h"
 
-#include "Utils/GlContext.h"
+#include "Utils/OpenGL/GlContext.h"
 #include "Utils/Misc.h"
 #include "Config.h"
 

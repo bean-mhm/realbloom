@@ -9,9 +9,9 @@
 #include <GL/glew.h>
 
 #include "GlUtils.h"
-#include "Misc.h"
+#include "../Misc.h"
 
-class GlShaderStorageBuffer
+class GlShaderStorageBuffer : public GlWrapper
 {
 private:
     GLuint m_ssbo = 0;

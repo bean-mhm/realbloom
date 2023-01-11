@@ -8,7 +8,7 @@
 #include <GL/glew.h>
 
 #include "GlUtils.h"
-#include "Misc.h"
+#include "../Misc.h"
 
 class GlFrameBuffer : public GlWrapper
 {

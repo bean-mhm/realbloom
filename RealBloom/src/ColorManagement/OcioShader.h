@@ -9,7 +9,7 @@
 #endif
 #include <GL/glew.h>
 
-#include "../Utils/GlUtils.h"
+#include "../Utils/OpenGL/GlUtils.h"
 #include "../Utils/Misc.h"
 
 #include <OpenColorIO/OpenColorIO.h>
