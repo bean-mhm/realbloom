@@ -245,6 +245,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClCompile Include="src\Utils\NumberHelpers.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\RealBloom\DiffractionPattern.cpp" />
+    <ClCompile Include="src\Utils\Status.cpp" />
     <ClCompile Include="src\Utils\StreamUtils.cpp" />
     <ClCompile Include="src\Utils\StringUtils.cpp" />
   </ItemGroup>
@@ -371,6 +372,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\Main.h" />
     <ClInclude Include="src\RealBloom\DiffractionPattern.h" />
     <ClInclude Include="src\Utils\Misc.h" />
+    <ClInclude Include="src\Utils\Status.h" />
     <ClInclude Include="src\Utils\StreamUtils.h" />
     <ClInclude Include="src\Utils\StringUtils.h" />
     <ClInclude Include="src\Utils\Array2D.h" />

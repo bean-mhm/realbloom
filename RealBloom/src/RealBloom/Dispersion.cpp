@@ -343,7 +343,7 @@ namespace RealBloom
 
         if (m_state.working)
         {
-            float elapsedSec = (float)getElapsedMs(m_state.timeStart) / 1000.0f;
+            float elapsedSec = getElapsedMs(m_state.timeStart) / 1000.0f;
 
             if (m_capturedParams.methodInfo.method == DispersionMethod::CPU)
             {

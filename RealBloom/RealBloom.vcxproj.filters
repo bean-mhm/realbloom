@@ -150,6 +150,9 @@
     <ClCompile Include="src\Utils\OpenGL\GlUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Utils\Status.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RealBloom\DiffractionPattern.h">
@@ -525,6 +528,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Utils\OpenGL\GlUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\Status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

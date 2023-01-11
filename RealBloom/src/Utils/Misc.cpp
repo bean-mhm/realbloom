@@ -63,9 +63,18 @@ uint32_t getDefNumThreads()
     return v;
 }
 
-uint32_t getElapsedMs(std::chrono::system_clock::time_point startTime)
+float getElapsedMs(std::chrono::system_clock::time_point startTime)
 {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - startTime).count();
+    auto duration = std::chrono::system_clock::now() - startTime;
+    uint64_t elapsedNs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+    return (float)elapsedNs / 1000000.0f;
+}
+
+float getElapsedMs(std::chrono::system_clock::time_point startTime, std::chrono::system_clock::time_point endTime)
+{
+    auto duration = endTime - startTime;
+    uint64_t elapsedNs = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+    return (float)elapsedNs / 1000000.0f;
 }
 
 HANDLE createMutex(const std::string& name)

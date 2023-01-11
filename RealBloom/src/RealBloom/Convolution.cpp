@@ -543,14 +543,17 @@ namespace RealBloom
         outStatus = "";
         outStatType = 0;
 
-        if (m_state.failed && !m_state.mustCancel)
+        if (m_state.mustCancel)
+            return;
+
+        if (m_state.failed)
         {
             outStatus = m_state.error;
             outStatType = 3;
         }
-        else if (m_state.working && !m_state.mustCancel)
+        else if (m_state.working)
         {
-            float elapsedSec = (float)getElapsedMs(m_state.timeStart) / 1000.0f;
+            float elapsedSec = getElapsedMs(m_state.timeStart) / 1000.0f;
             if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
             {
                 uint32_t numThreads = m_threads.size();
@@ -597,7 +600,7 @@ namespace RealBloom
                 outTime = strFromElapsed(elapsedSec).c_str();
             }
         }
-        else if (m_state.hasTimestamps && !m_state.mustCancel)
+        else if (m_state.hasTimestamps)
         {
             std::chrono::milliseconds elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(m_state.timeEnd - m_state.timeStart);
             float elapsedSec = (float)elapsedMs.count() / 1000.0f;

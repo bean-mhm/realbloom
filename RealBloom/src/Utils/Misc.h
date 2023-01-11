@@ -67,7 +67,8 @@ inline void threadJoin(std::thread* t)
 uint32_t getMaxNumThreads();
 uint32_t getDefNumThreads();
 
-uint32_t getElapsedMs(std::chrono::system_clock::time_point startTime);
+float getElapsedMs(std::chrono::system_clock::time_point startTime);
+float getElapsedMs(std::chrono::system_clock::time_point startTime, std::chrono::system_clock::time_point endTime);
 
 HANDLE createMutex(const std::string& name);
 HANDLE openMutex(const std::string& name);
