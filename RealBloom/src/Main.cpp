@@ -444,14 +444,14 @@ void layout()
             disp.compute();
         }
 
-        if (disp.isWorking())
+        if (disp.getStatus().isWorking())
         {
             if (ImGui::Button("Cancel##Disp", btnSize()))
                 disp.cancel();
         }
 
-        std::string dispStats = disp.getStatus();
-        imGuiText(dispStats, disp.hasFailed(), false);
+        std::string dispStats = disp.getStatusText();
+        imGuiText(dispStats, !disp.getStatus().isOK(), false);
 
         ImGui::NewLine();
         imGuiDialogs();

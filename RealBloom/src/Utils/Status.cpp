@@ -27,9 +27,9 @@ bool WorkingStatus::isWorking() const
     return m_working;
 }
 
-bool WorkingStatus::isCanceling() const
+bool WorkingStatus::mustCancel() const
 {
-    return m_canceling;
+    return m_mustCancel;
 }
 
 void WorkingStatus::setWorking()
@@ -40,34 +40,25 @@ void WorkingStatus::setWorking()
 
 void WorkingStatus::setDone()
 {
-    m_canceling = false;
     m_working = false;
-    m_working.notify_all();
 }
 
-void WorkingStatus::cancel()
+void WorkingStatus::setMustCancel()
 {
-    m_canceling = true;
-    m_working.wait(true);
-    reset();
+    m_mustCancel = true;
 }
 
 void WorkingStatus::setError(const std::string& message)
 {
     super::setError(message);
-
-    m_canceling = false;
     m_working = false;
-    m_working.notify_all();
 }
 
 void WorkingStatus::reset()
 {
     super::reset();
-
-    m_canceling = false;
     m_working = false;
-    m_working.notify_all();
+    m_mustCancel = false;
 }
 
 bool TimedWorkingStatus::hasTimestamps() const
@@ -102,8 +93,8 @@ void TimedWorkingStatus::setDone()
 
 void TimedWorkingStatus::setError(const std::string& message)
 {
-    super::setError(message);
     m_hasTimestamps = false;
+    super::setError(message);
 }
 
 void TimedWorkingStatus::reset()

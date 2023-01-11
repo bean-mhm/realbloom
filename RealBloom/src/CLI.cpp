@@ -547,7 +547,7 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
         disp.compute();
 
         // Wait
-        while (disp.isWorking())
+        while (disp.getStatus().isWorking())
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
         }
@@ -556,8 +556,8 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     }
 
     // Print error
-    if (disp.hasFailed())
-        throw std::exception(disp.getError().c_str());
+    if (!disp.getStatus().isOK())
+        throw std::exception(disp.getStatus().getError().c_str());
 
     // Write the output image
     {

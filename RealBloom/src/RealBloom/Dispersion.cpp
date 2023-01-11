@@ -6,17 +6,6 @@ namespace RealBloom
 
     constexpr uint32_t DISP_PROG_TIMESTEP = 33;
 
-    std::string DispersionState::getError() const
-    {
-        return error;
-    }
-
-    void DispersionState::setError(const std::string& err)
-    {
-        error = err;
-        failed = true;
-    }
-
     Dispersion::Dispersion() : m_imgInputSrc("", "")
     {}
 
@@ -187,13 +176,8 @@ namespace RealBloom
         if (m_capturedParams.methodInfo.numThreads > maxThreads) m_capturedParams.methodInfo.numThreads = maxThreads;
         if (m_capturedParams.methodInfo.numThreads < 1) m_capturedParams.methodInfo.numThreads = 1;
 
-        // Reset state
-        m_state.working = true;
-        m_state.mustCancel = false;
-        m_state.failed = false;
-        m_state.error = "";
-        m_state.timeStart = std::chrono::system_clock::now();
-        m_state.hasTimestamps = false;
+        // Reset the status
+        m_status.setWorking();
 
         // Start the thread
         m_thread = new std::thread([this, dispSteps]()
@@ -264,58 +248,42 @@ namespace RealBloom
                             if (pSelImageID != nullptr) *pSelImageID = m_imgDisp->getID();
                         });
 
-                    m_state.working = false;
-                    m_state.timeEnd = std::chrono::system_clock::now();
-                    m_state.hasTimestamps = true;
+                    m_status.setDone();
                 }
                 catch (const std::exception& e)
                 {
-                    m_state.setError(e.what());
+                    m_status.setError(e.what());
                 }
             });
     }
 
     void Dispersion::cancel()
     {
-        if (m_state.working)
+        if (!m_status.isWorking())
         {
-            m_state.mustCancel = true;
-            if (m_capturedParams.methodInfo.method == DispersionMethod::CPU)
-            {
-                // Tell the sub-threads to stop
-                for (auto& ct : m_threads)
-                    ct->stop();
-            }
-
-            // Wait for the main thread
-            threadJoin(m_thread);
-            DELPTR(m_thread);
+            m_status.reset();
+            return;
         }
 
-        m_state.working = false;
-        m_state.mustCancel = false;
-        m_state.failed = false;
-        m_state.hasTimestamps = false;
-    }
+        if (m_capturedParams.methodInfo.method == DispersionMethod::CPU)
+        {
+            // Tell the sub-threads to stop
+            for (auto& ct : m_threads)
+                ct->stop();
+        }
 
-    bool Dispersion::isWorking() const
-    {
-        return m_state.working;
-    }
+        m_status.setMustCancel();
 
-    bool Dispersion::hasFailed() const
-    {
-        return m_state.failed;
-    }
+        // Wait for the main thread
+        threadJoin(m_thread);
+        DELPTR(m_thread);
 
-    std::string Dispersion::getError() const
-    {
-        return m_state.getError();
+        m_status.reset();
     }
 
     uint32_t Dispersion::getNumStepsDone() const
     {
-        if (!(m_state.working && !m_state.failed && !m_state.mustCancel))
+        if (!(m_status.isWorking() && m_status.isOK() && !m_status.mustCancel()))
             return 0;
 
         if (m_capturedParams.methodInfo.method != DispersionMethod::CPU)
@@ -333,17 +301,22 @@ namespace RealBloom
         return numDone;
     }
 
-    std::string Dispersion::getStatus() const
+    const TimedWorkingStatus& Dispersion::getStatus() const
     {
-        if (m_state.mustCancel)
+        return m_status;
+    }
+
+    std::string Dispersion::getStatusText() const
+    {
+        if (m_status.mustCancel())
             return "";
 
-        if (m_state.failed)
-            return m_state.error;
+        if (!m_status.isOK())
+            return m_status.getError();
 
-        if (m_state.working)
+        if (m_status.isWorking())
         {
-            float elapsedSec = getElapsedMs(m_state.timeStart) / 1000.0f;
+            float elapsedSec = m_status.getElapsedSec();
 
             if (m_capturedParams.methodInfo.method == DispersionMethod::CPU)
             {
@@ -363,10 +336,9 @@ namespace RealBloom
                 return strFromElapsed(elapsedSec);
             }
         }
-        else if (m_state.hasTimestamps)
+        else if (m_status.hasTimestamps())
         {
-            std::chrono::milliseconds elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(m_state.timeEnd - m_state.timeStart);
-            float elapsedSec = (float)elapsedMs.count() / 1000.0f;
+            float elapsedSec = m_status.getElapsedSec();
             return strFormat("Done (%s)", strFromDuration(elapsedSec).c_str());
         }
 
@@ -433,7 +405,7 @@ namespace RealBloom
                     uint32_t numDone = getNumStepsDone();
 
                     // Take a snapshot of the current progress
-                    if ((!m_state.mustCancel) && (numThreadsDone < numThreads) && ((numDone - lastNumDone) >= numThreads))
+                    if ((!m_status.mustCancel()) && (numThreadsDone < numThreads) && ((numDone - lastNumDone) >= numThreads))
                     {
                         std::vector<float> progBuffer;
                         progBuffer.resize(inputBufferSize);
@@ -477,7 +449,7 @@ namespace RealBloom
             for (auto& ct : m_threads)
                 threadJoin(ct->getThread().get());
 
-            if (m_state.mustCancel)
+            if (m_status.mustCancel())
                 throw std::exception();
 
             // Add the buffers from each thread
@@ -506,7 +478,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            m_state.setError(e.what());
+            m_status.setError(e.what());
         }
 
         // Clean up
@@ -559,12 +531,12 @@ namespace RealBloom
             gpuHelper.run();
 
             // Wait for the output file to be created
-            gpuHelper.waitForOutput(&(m_state.mustCancel));
+            gpuHelper.waitForOutput([this]() { return m_status.mustCancel(); });
 
             // Wait for the GPU Helper to finish its job
             while (gpuHelper.isRunning())
             {
-                if (m_state.mustCancel)
+                if (m_status.mustCancel())
                     throw std::exception();
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
             }
@@ -597,7 +569,7 @@ namespace RealBloom
                 }
                 else
                 {
-                    m_state.setError(strFormat(
+                    m_status.setError(strFormat(
                         "Output buffer size (%u) does not match the input buffer size (%u).",
                         binOutput.buffer.size(), dispBuffer
                     ));
@@ -605,7 +577,7 @@ namespace RealBloom
             }
             else
             {
-                m_state.setError(binOutput.error);
+                m_status.setError(binOutput.error);
             }
 
             // Close the output file
@@ -613,7 +585,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            m_state.setError(e.what());
+            m_status.setError(e.what());
         }
 
         // Clean up

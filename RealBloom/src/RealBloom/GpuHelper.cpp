@@ -81,7 +81,7 @@ void GpuHelper::run()
     }
 }
 
-void GpuHelper::waitForOutput(bool* pMustCancel)
+void GpuHelper::waitForOutput(std::function<bool()> mustCancel)
 {
     auto t1 = std::chrono::system_clock::now();
 
@@ -93,7 +93,7 @@ void GpuHelper::waitForOutput(bool* pMustCancel)
             throw std::exception(makeError(__FUNCTION__, "", "Timeout").c_str());
         }
 
-        if ((pMustCancel != nullptr) && (*pMustCancel))
+        if (mustCancel())
         {
             killProcess(m_processInfo);
             throw std::exception(makeError(__FUNCTION__, "", "Canceled").c_str());

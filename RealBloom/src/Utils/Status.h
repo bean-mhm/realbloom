@@ -31,20 +31,19 @@ private:
     typedef BaseStatus super;
 
 protected:
-    std::atomic_bool m_working = false;
-    bool m_canceling = false;
+    bool m_working = false;
+    bool m_mustCancel = false;
 
 public:
     WorkingStatus() {};
     ~WorkingStatus() {};
 
     bool isWorking() const;
-    bool isCanceling() const;
+    bool mustCancel() const;
 
     virtual void setWorking();
     virtual void setDone();
-
-    virtual void cancel();
+    virtual void setMustCancel();
 
     virtual void setError(const std::string& message) override;
     virtual void reset() override;

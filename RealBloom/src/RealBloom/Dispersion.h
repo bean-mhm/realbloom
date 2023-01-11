@@ -16,6 +16,7 @@
 
 #include "../Utils/Bilinear.h"
 #include "../Utils/NumberHelpers.h"
+#include "../Utils/Status.h"
 #include "../Utils/Misc.h"
 
 #include "../Async.h"
@@ -46,28 +47,12 @@ namespace RealBloom
         uint32_t steps = 32;
     };
 
-    struct DispersionState
-    {
-        bool working = false;
-        bool mustCancel = false;
-
-        bool failed = false;
-        std::string error = "";
-
-        std::chrono::time_point<std::chrono::system_clock> timeStart;
-        std::chrono::time_point<std::chrono::system_clock> timeEnd;
-        bool hasTimestamps = false;
-
-        std::string getError() const;
-        void setError(const std::string& err);
-    };
-
     class DispersionThread;
 
     class Dispersion
     {
     private:
-        DispersionState m_state;
+        TimedWorkingStatus m_status;
         DispersionParams m_params;
         DispersionParams m_capturedParams;
 
@@ -93,12 +78,10 @@ namespace RealBloom
         void compute();
         void cancel();
 
-        bool isWorking() const;
-        bool hasFailed() const;
-        std::string getError() const;
-
         uint32_t getNumStepsDone() const;
-        std::string getStatus() const;
+
+        const TimedWorkingStatus& getStatus() const;
+        std::string getStatusText() const;
 
     private:
         void dispCPU(

@@ -46,7 +46,7 @@ public:
     const std::string& getOutFilename();
 
     void run();
-    void waitForOutput(bool* pMustCancel);
+    void waitForOutput(std::function<bool()> mustCancel);
     bool isRunning();
     void kill();
     void cleanUp();

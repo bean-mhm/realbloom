@@ -832,7 +832,7 @@ namespace RealBloom
             gpuHelper.run();
 
             // Wait for the output file to be created
-            gpuHelper.waitForOutput(&(m_state.mustCancel));
+            gpuHelper.waitForOutput([this]() { return m_state.mustCancel; });
 
             // Wait for the GPU Helper to finish its job
             while (gpuHelper.isRunning())
@@ -1114,7 +1114,7 @@ namespace RealBloom
             gpuHelper.run();
 
             // Wait for the output file to be created
-            gpuHelper.waitForOutput(&(m_state.mustCancel));
+            gpuHelper.waitForOutput([this]() { return m_state.mustCancel; });
 
             // Wait for the GPU Helper to finish its job
             auto lastProgTime = std::chrono::system_clock::now();
