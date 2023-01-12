@@ -254,12 +254,12 @@ void runDisp(std::string inpFilename, std::string outFilename, std::ifstream& in
     }
     inpFile.close();
 
+    // DispGpu
+    std::shared_ptr<RealBloom::DispGpu> disp = nullptr;
+
     // Final status to write into the output
     bool finalSuccess = true;
     std::string finalError = "";
-
-    RealBloom::DispGpuData data;
-    data.binInput = &binInput;
 
     if (readInput)
     {
@@ -267,20 +267,20 @@ void runDisp(std::string inpFilename, std::string outFilename, std::ifstream& in
 
         logAdd(LogLevel::Info, "Starting dispersion...");
 
-        RealBloom::DispGpu disp(&data);
-        disp.process();
+        disp = std::make_shared<RealBloom::DispGpu>(&binInput);
+        disp->process();
 
-        finalSuccess = data.success;
-        finalError = data.error;
+        finalSuccess = disp->getStatus().isOK();
+        finalError = disp->getStatus().getError();
 
-        if (data.success)
+        if (finalSuccess)
         {
             logAdd(LogLevel::Info, "Dispersion is done.");
         }
         else
         {
             logAdd(LogLevel::Error, "Dispersion was failed.");
-            logAdd(LogLevel::Error, data.error);
+            logAdd(LogLevel::Error, finalError);
         }
     }
 
@@ -291,7 +291,7 @@ void runDisp(std::string inpFilename, std::string outFilename, std::ifstream& in
         if (finalSuccess)
         {
             binOutput.status = 1;
-            binOutput.buffer = data.outputBuffer;
+            binOutput.buffer = disp->getBuffer();
         }
         else
         {

@@ -97,22 +97,8 @@ const char* dispGpuFragmentSource = R"glsl(
 namespace RealBloom
 {
 
-    void DispGpuData::reset()
-    {
-        done = false;
-        success = false;
-        error = "";
-    }
-
-    void DispGpuData::setError(const std::string& err)
-    {
-        success = false;
-        error = err;
-        done = true;
-    }
-
-    DispGpu::DispGpu(DispGpuData* data)
-        : m_data(data)
+    DispGpu::DispGpu(BinaryDispGpuInput* binInput)
+        : m_binInput(binInput)
     {}
 
     void DispGpu::makeInputTexture(float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight)
@@ -267,21 +253,17 @@ namespace RealBloom
 
     void DispGpu::process()
     {
-        BinaryDispGpuInput* binInput = m_data->binInput;
+        m_status.reset();
 
-        m_data->reset();
+        m_width = m_binInput->inputWidth;
+        m_height = m_binInput->inputHeight;
 
-        m_width = binInput->inputWidth;
-        m_height = binInput->inputHeight;
-
-        uint32_t steps = binInput->dp_steps;
-        float amount = binInput->dp_amount;
+        uint32_t steps = m_binInput->dp_steps;
+        float amount = m_binInput->dp_amount;
 
         // Vertex data
-
-        uint32_t numAttribs = 4;
         std::vector<float> vertexData;
-        vertexData.reserve(steps * numAttribs);
+        vertexData.reserve(steps * getNumAttribs());
 
         for (uint32_t i = 1; i <= steps; i++)
         {
@@ -292,9 +274,9 @@ namespace RealBloom
             float scaledMul = 1.0f / scaledArea;
 
             uint32_t smpIndex = (i - 1) * 3;
-            float wlR = binInput->cmfSamples[smpIndex + 0] * scaledMul;
-            float wlG = binInput->cmfSamples[smpIndex + 1] * scaledMul;
-            float wlB = binInput->cmfSamples[smpIndex + 2] * scaledMul;
+            float wlR = m_binInput->cmfSamples[smpIndex + 0] * scaledMul;
+            float wlG = m_binInput->cmfSamples[smpIndex + 1] * scaledMul;
+            float wlB = m_binInput->cmfSamples[smpIndex + 2] * scaledMul;
 
             vertexData.push_back(scale);
             vertexData.push_back(wlR);
@@ -319,9 +301,9 @@ namespace RealBloom
 
             // Upload the input texture to the GPU
             makeInputTexture(
-                binInput->inputBuffer.data(),
-                binInput->inputWidth,
-                binInput->inputHeight);
+                m_binInput->inputBuffer.data(),
+                m_binInput->inputWidth,
+                m_binInput->inputHeight);
 
             // Shader program
             makeProgram();
@@ -342,7 +324,7 @@ namespace RealBloom
             specifyLayout();
 
             // Draw
-            drawScene(vertexData.size() / numAttribs);
+            drawScene(vertexData.size() / getNumAttribs());
             
             // Copy pixel data from the frame buffer
             uint32_t fbSize = m_width * m_height * 4;
@@ -360,7 +342,7 @@ namespace RealBloom
             }
 
             // Copy to output buffer
-            m_data->outputBuffer.resize(fbSize);
+            m_outputBuffer.resize(fbSize);
             for (uint32_t y = 0; y < m_height; y++)
             {
                 for (uint32_t x = 0; x < m_width; x++)
@@ -368,20 +350,16 @@ namespace RealBloom
                     uint32_t redIndexFb = ((m_height - 1 - y) * m_width + x) * 4;
                     uint32_t redIndexOutput = (y * m_width + x) * 4;
 
-                    m_data->outputBuffer[redIndexOutput + 0] = fbData[redIndexFb + 0];
-                    m_data->outputBuffer[redIndexOutput + 1] = fbData[redIndexFb + 1];
-                    m_data->outputBuffer[redIndexOutput + 2] = fbData[redIndexFb + 2];
-                    m_data->outputBuffer[redIndexOutput + 3] = 1.0f;
+                    m_outputBuffer[redIndexOutput + 0] = fbData[redIndexFb + 0];
+                    m_outputBuffer[redIndexOutput + 1] = fbData[redIndexFb + 1];
+                    m_outputBuffer[redIndexOutput + 2] = fbData[redIndexFb + 2];
+                    m_outputBuffer[redIndexOutput + 3] = 1.0f;
                 }
             }
-
-            // Finalize
-            m_data->success = true;
-            m_data->done = true;
         }
         catch (const std::exception& e)
         {
-            m_data->setError(makeError(__FUNCTION__, "", e.what()));
+            m_status.setError(makeError(__FUNCTION__, "", e.what()));
         }
 
         // Clean up
@@ -411,6 +389,21 @@ namespace RealBloom
         {
             printError(__FUNCTION__, "", e.what());
         }
+    }
+
+    const std::vector<float>& DispGpu::getBuffer() const
+    {
+        return m_outputBuffer;
+    }
+
+    const BaseStatus& DispGpu::getStatus() const
+    {
+        return m_status;
+    }
+
+    uint32_t DispGpu::getNumAttribs()
+    {
+        return 4;
     }
 
 }

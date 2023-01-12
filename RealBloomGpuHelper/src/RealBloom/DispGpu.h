@@ -15,30 +15,19 @@
 #include "Utils/OpenGL/GlUtils.h"
 #include "Utils/OpenGL/GlFrameBuffer.h"
 #include "Utils/NumberHelpers.h"
+#include "Utils/Status.h"
 #include "Utils/Misc.h"
 
 namespace RealBloom
 {
 
-    class DispGpu;
-
-    struct DispGpuData
-    {
-        BinaryDispGpuInput* binInput;
-        std::vector<float> outputBuffer;
-
-        bool done = false;
-        bool success = false;
-        std::string error = "";
-
-        void reset();
-        void setError(const std::string& err);
-    };
-
     class DispGpu
     {
     private:
-        DispGpuData* m_data;
+        BaseStatus m_status;
+        BinaryDispGpuInput* m_binInput;
+
+        std::vector<float> m_outputBuffer;
 
         uint32_t m_width = 0;
         uint32_t m_height = 0;
@@ -65,8 +54,13 @@ namespace RealBloom
         void drawScene(uint32_t numPoints);
 
     public:
-        DispGpu(DispGpuData* data);
+        DispGpu(BinaryDispGpuInput* binInput);
         void process();
+
+        const std::vector<float>& getBuffer() const;
+        const BaseStatus& getStatus() const;
+
+        static uint32_t getNumAttribs();
 
     };
 
