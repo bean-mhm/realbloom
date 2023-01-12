@@ -440,8 +440,8 @@ void cmdDiff(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     }
 
     // Print error
-    if (!diff.success())
-        throw std::exception(diff.getError().c_str());
+    if (!diff.getStatus().isOK())
+        throw std::exception(diff.getStatus().getError().c_str());
 
     // Write the output image
     {
@@ -718,7 +718,7 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
         conv.convolve();
 
         // Wait
-        while (conv.isWorking())
+        while (conv.getStatus().isWorking())
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
         }
@@ -727,8 +727,8 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     }
 
     // Print error
-    if (conv.hasFailed())
-        throw std::exception(conv.getError().c_str());
+    if (!conv.getStatus().isOK())
+        throw std::exception(conv.getStatus().getError().c_str());
 
     // Blending
     {

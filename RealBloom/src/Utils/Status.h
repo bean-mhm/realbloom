@@ -61,6 +61,9 @@ protected:
     bool m_hasTimestamps = false;
 
 public:
+    TimedWorkingStatus() {};
+    ~TimedWorkingStatus() {};
+
     bool hasTimestamps() const;
     float getElapsedSec() const;
 

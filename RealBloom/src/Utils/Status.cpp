@@ -34,7 +34,6 @@ bool WorkingStatus::mustCancel() const
 
 void WorkingStatus::setWorking()
 {
-    reset();
     m_working = true;
 }
 

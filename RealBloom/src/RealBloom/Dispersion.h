@@ -78,7 +78,7 @@ namespace RealBloom
         void compute();
         void cancel();
 
-        uint32_t getNumStepsDone() const;
+        uint32_t getNumStepsDoneCpu() const;
 
         const TimedWorkingStatus& getStatus() const;
         std::string getStatusText() const;

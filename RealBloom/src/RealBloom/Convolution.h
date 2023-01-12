@@ -20,6 +20,7 @@
 
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/Bilinear.h"
+#include "../Utils/Status.h"
 #include "../Utils/Misc.h"
 
 #include "../Async.h"
@@ -66,23 +67,27 @@ namespace RealBloom
         bool  autoExposure = true;
     };
 
-    struct ConvolutionState
+    struct ConvolutionStatus : public TimedWorkingStatus
     {
-        bool working = false;
-        bool mustCancel = false;
+    private:
+        typedef TimedWorkingStatus super;
 
-        bool failed = false;
-        std::string error = "";
+    private:
+        uint32_t m_numChunksDone = 0;
+        std::string m_fftStage = "";
 
-        std::chrono::time_point<std::chrono::system_clock> timeStart;
-        std::chrono::time_point<std::chrono::system_clock> timeEnd;
-        bool hasTimestamps = false;
+    public:
+        ConvolutionStatus() {};
+        ~ConvolutionStatus() {};
 
-        uint32_t numChunksDone = 0;
-        std::string fftStage = "";
+        uint32_t getNumChunksDone() const;
+        void setNumChunksDone(uint32_t numChunksDone);
 
-        std::string getError() const;
-        void setError(const std::string& err);
+        const std::string& getFftStage() const;
+        void setFftStage(const std::string& fftStage);
+
+        virtual void reset() override;
+
     };
 
     class ConvolutionThread;
@@ -90,7 +95,7 @@ namespace RealBloom
     class Convolution
     {
     private:
-        ConvolutionState m_state;
+        ConvolutionStatus m_status;
         ConvolutionParams m_params;
         ConvolutionParams m_capturedParams;
 
@@ -122,12 +127,11 @@ namespace RealBloom
         void convolve();
         void cancel();
 
-        bool isWorking() const;
-        bool hasFailed() const;
-        std::string getError() const;
+        const ConvolutionStatus& getStatus() const;
 
-        // outStatType: 0 = normal, 1 = info, 2 = warning, 3 = error
-        void getStatus(std::string& outTime, std::string& outStatus, uint32_t& outStatType);
+        // outMessageType: 0 = normal, 1 = info, 2 = warning, 3 = error
+        void getStatusText(std::string& outStatus, std::string& outMessage, uint32_t& outMessageType) const;
+        
         std::string getResourceInfo();
 
     private:

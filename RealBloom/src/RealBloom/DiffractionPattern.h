@@ -8,8 +8,12 @@
 #include "pocketfft/pocketfft_hdronly.h"
 
 #include "../ColorManagement/CmImage.h"
+
 #include "../Utils/Array2D.h"
 #include "../Utils/NumberHelpers.h"
+#include "../Utils/Status.h"
+#include "../Utils/Misc.h"
+
 #include "../Async.h"
 
 namespace RealBloom
@@ -22,13 +26,11 @@ namespace RealBloom
     class DiffractionPattern
     {
     private:
+        BaseStatus m_status;
         DiffractionPatternParams m_params;
 
         CmImage* m_imgAperture = nullptr;
         CmImage* m_imgDiffPattern = nullptr;
-
-        bool m_success = false;
-        std::string m_error = "";
 
     public:
         DiffractionPattern();
@@ -39,8 +41,7 @@ namespace RealBloom
 
         void compute();
 
-        bool success() const;
-        std::string getError() const;
+        const BaseStatus& getStatus() const;
     };
 
 }

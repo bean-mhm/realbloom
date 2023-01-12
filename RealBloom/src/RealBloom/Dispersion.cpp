@@ -177,6 +177,7 @@ namespace RealBloom
         if (m_capturedParams.methodInfo.numThreads < 1) m_capturedParams.methodInfo.numThreads = 1;
 
         // Reset the status
+        m_status.reset();
         m_status.setWorking();
 
         // Start the thread
@@ -265,14 +266,14 @@ namespace RealBloom
             return;
         }
 
+        m_status.setMustCancel();
+
         if (m_capturedParams.methodInfo.method == DispersionMethod::CPU)
         {
             // Tell the sub-threads to stop
             for (auto& ct : m_threads)
                 ct->stop();
         }
-
-        m_status.setMustCancel();
 
         // Wait for the main thread
         threadJoin(m_thread);
@@ -281,7 +282,7 @@ namespace RealBloom
         m_status.reset();
     }
 
-    uint32_t Dispersion::getNumStepsDone() const
+    uint32_t Dispersion::getNumStepsDoneCpu() const
     {
         if (!(m_status.isWorking() && m_status.isOK() && !m_status.mustCancel()))
             return 0;
@@ -321,7 +322,7 @@ namespace RealBloom
             if (m_capturedParams.methodInfo.method == DispersionMethod::CPU)
             {
                 uint32_t numSteps = m_capturedParams.steps;
-                uint32_t numDone = getNumStepsDone();
+                uint32_t numDone = getNumStepsDoneCpu();
 
                 float remainingSec = (elapsedSec * (float)(numSteps - numDone)) / fmaxf((float)(numDone), EPSILON);
                 return strFormat(
@@ -402,7 +403,7 @@ namespace RealBloom
                     if (numThreadsDone >= numThreads)
                         break;
 
-                    uint32_t numDone = getNumStepsDone();
+                    uint32_t numDone = getNumStepsDoneCpu();
 
                     // Take a snapshot of the current progress
                     if ((!m_status.mustCancel()) && (numThreadsDone < numThreads) && ((numDone - lastNumDone) >= numThreads))

@@ -374,9 +374,9 @@ void layout()
             vars.dispParamsChanged = true;
         }
 
-        if (!diff.success())
+        if (!diff.getStatus().isOK())
         {
-            std::string dpError = diff.getError();
+            std::string dpError = diff.getStatus().getError();
             imGuiText(dpError, true, false);
         }
 
@@ -649,38 +649,38 @@ void layout()
         if (ImGui::IsItemHovered() && !convResUsage.empty())
             ImGui::SetTooltip(convResUsage.c_str());
 
-        if (conv.isWorking())
+        if (conv.getStatus().isWorking())
         {
             if (ImGui::Button("Cancel##Conv", btnSize()))
                 conv.cancel();
         }
 
-        std::string convTime, convStatus;
-        uint32_t convStatType = 1;
-        conv.getStatus(convTime, convStatus, convStatType);
-
-        if (!convTime.empty())
-            ImGui::Text(convTime.c_str());
+        std::string convStatus, convMessage;
+        uint32_t convMessageType = 1;
+        conv.getStatusText(convStatus, convMessage, convMessageType);
 
         if (!convStatus.empty())
+            ImGui::Text(convStatus.c_str());
+
+        if (!convMessage.empty())
         {
-            if (convStatType > 0)
+            if (convMessageType > 0)
             {
                 const ImVec4* textColor = &colorErrorText;
-                if (convStatType == 1)
+                if (convMessageType == 1)
                     textColor = &colorInfoText;
-                else if (convStatType == 2)
+                else if (convMessageType == 2)
                     textColor = &colorWarningText;
-                else if (convStatType == 3)
+                else if (convMessageType == 3)
                     textColor = &colorErrorText;
 
                 ImGui::PushStyleColor(ImGuiCol_Text, *textColor);
-                ImGui::TextWrapped(convStatus.c_str());
+                ImGui::TextWrapped(convMessage.c_str());
                 ImGui::PopStyleColor();
             }
             else
             {
-                ImGui::Text(convStatus.c_str());
+                ImGui::Text(convMessage.c_str());
             }
         }
 

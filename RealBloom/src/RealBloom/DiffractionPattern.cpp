@@ -25,8 +25,7 @@ namespace RealBloom
 
     void DiffractionPattern::compute()
     {
-        m_success = false;
-        m_error = "";
+        m_status.reset();
 
         try
         {
@@ -206,23 +205,15 @@ namespace RealBloom
                 }
             }
             m_imgDiffPattern->moveToGPU();
-
-            m_success = true;
         } catch (const std::exception& e)
         {
-            m_success = false;
-            m_error = e.what();
+            m_status.setError(e.what());
         }
     }
 
-    bool DiffractionPattern::success() const
+    const BaseStatus& DiffractionPattern::getStatus() const
     {
-        return m_success;
-    }
-
-    std::string DiffractionPattern::getError() const
-    {
-        return m_error;
+        return m_status;
     }
 
 }

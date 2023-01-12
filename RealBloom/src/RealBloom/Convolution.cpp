@@ -10,15 +10,31 @@ namespace RealBloom
     void drawRect(CmImage* image, int rx, int ry, int rw, int rh);
     void fillRect(CmImage* image, int rx, int ry, int rw, int rh);
 
-    std::string ConvolutionState::getError() const
+    uint32_t ConvolutionStatus::getNumChunksDone() const
     {
-        return error;
+        return m_numChunksDone;
     }
 
-    void ConvolutionState::setError(const std::string& err)
+    void ConvolutionStatus::setNumChunksDone(uint32_t numChunksDone)
     {
-        error = err;
-        failed = true;
+        m_numChunksDone = numChunksDone;
+    }
+
+    const std::string& ConvolutionStatus::getFftStage() const
+    {
+        return m_fftStage;
+    }
+
+    void ConvolutionStatus::setFftStage(const std::string& fftStage)
+    {
+        m_fftStage = fftStage;
+    }
+
+    void ConvolutionStatus::reset()
+    {
+        super::reset();
+        m_numChunksDone = 0;
+        m_fftStage = "";
     }
 
     Convolution::Convolution() : m_imgKernelSrc("", ""), m_imgOutput("", "")
@@ -423,15 +439,10 @@ namespace RealBloom
         // Capture the parameters to avoid changes during the process
         m_capturedParams = m_params;
 
-        // Reset state
-        m_state.working = true;
-        m_state.mustCancel = false;
-        m_state.failed = false;
-        m_state.error = "";
-        m_state.timeStart = std::chrono::system_clock::now();
-        m_state.hasTimestamps = false;
-        m_state.numChunksDone = 0;
-        m_state.fftStage = "";
+        // Reset the status
+        m_status.reset();
+        m_status.setWorking();
+        m_status.setFftStage("Initializing");
 
         // Start the main thread
         m_thread = new std::thread([this]()
@@ -481,7 +492,7 @@ namespace RealBloom
                         inputBuffer, inputWidth, inputHeight, inputBufferSize);
 
                 // Update convMixParamsChanged
-                if (!m_state.failed && !m_state.mustCancel)
+                if (m_status.isOK() && !m_status.mustCancel())
                 {
                     Async::schedule([this]()
                         {
@@ -490,70 +501,57 @@ namespace RealBloom
                         });
                 }
 
-                m_state.working = false;
-                m_state.timeEnd = std::chrono::system_clock::now();
-                m_state.hasTimestamps = true;
+                m_status.setDone();
             }
         );
     }
 
     void Convolution::cancel()
     {
-        if (m_state.working)
+        if (!m_status.isWorking())
         {
-            m_state.mustCancel = true;
-            if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
-            {
-                // Tell the sub-threads to stop
-                for (auto& ct : m_threads)
-                    ct->stop();
-            }
-
-            // Wait for the main thread
-            threadJoin(m_thread);
-            DELPTR(m_thread);
+            m_status.reset();
+            return;
         }
 
-        m_state.working = false;
-        m_state.mustCancel = false;
-        m_state.failed = false;
-        m_state.hasTimestamps = false;
-        m_state.numChunksDone = 0;
-        m_state.fftStage = "";
+        m_status.setMustCancel();
+
+        if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
+        {
+            // Tell the sub-threads to stop
+            for (auto& ct : m_threads)
+                ct->stop();
+        }
+
+        // Wait for the main thread
+        threadJoin(m_thread);
+        DELPTR(m_thread);
+
+        m_status.reset();
     }
 
-    bool Convolution::isWorking() const
+    const ConvolutionStatus& Convolution::getStatus() const
     {
-        return m_state.working;
+        return m_status;
     }
 
-    bool Convolution::hasFailed() const
+    void Convolution::getStatusText(std::string& outStatus, std::string& outMessage, uint32_t& outMessageType) const
     {
-        return m_state.failed;
-    }
-
-    std::string Convolution::getError() const
-    {
-        return m_state.getError();
-    }
-
-    void Convolution::getStatus(std::string& outTime, std::string& outStatus, uint32_t& outStatType)
-    {
-        outTime = "";
         outStatus = "";
-        outStatType = 0;
+        outMessage = "";
+        outMessageType = 0;
 
-        if (m_state.mustCancel)
+        if (m_status.mustCancel())
             return;
 
-        if (m_state.failed)
+        if (!m_status.isOK())
         {
-            outStatus = m_state.error;
-            outStatType = 3;
+            outMessage = m_status.getError();
+            outMessageType = 3;
         }
-        else if (m_state.working)
+        else if (m_status.isWorking())
         {
-            float elapsedSec = getElapsedMs(m_state.timeStart) / 1000.0f;
+            float elapsedSec = m_status.getElapsedSec();
             if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
             {
                 uint32_t numThreads = m_threads.size();
@@ -572,7 +570,7 @@ namespace RealBloom
 
                 float progress = (numPixels > 0) ? (float)numDone / (float)numPixels : 1.0f;
                 float remainingSec = (elapsedSec * (float)(numPixels - numDone)) / fmaxf((float)(numDone), EPSILON);
-                outTime = strFormat(
+                outStatus = strFormat(
                     "%.1f%%%% (%u/%u)\n%s / %s",
                     progress * 100.0f,
                     numDone,
@@ -582,29 +580,28 @@ namespace RealBloom
             }
             else if (m_capturedParams.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
             {
-                outTime = strFormat(
+                outStatus = strFormat(
                     "%u/%u chunks\n%s",
-                    m_state.numChunksDone,
+                    m_status.getNumChunksDone(),
                     m_capturedParams.methodInfo.numChunks,
                     strFromElapsed(elapsedSec).c_str());
             }
             else if (m_capturedParams.methodInfo.method == ConvolutionMethod::FFT_CPU)
             {
-                outTime = strFormat(
+                outStatus = strFormat(
                     "%s\n%s",
-                    m_state.fftStage.c_str(),
+                    m_status.getFftStage().c_str(),
                     strFromElapsed(elapsedSec).c_str());
             }
             else if (m_capturedParams.methodInfo.method == ConvolutionMethod::FFT_GPU)
             {
-                outTime = strFromElapsed(elapsedSec).c_str();
+                outStatus = strFromElapsed(elapsedSec).c_str();
             }
         }
-        else if (m_state.hasTimestamps)
+        else if (m_status.hasTimestamps())
         {
-            std::chrono::milliseconds elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(m_state.timeEnd - m_state.timeStart);
-            float elapsedSec = (float)elapsedMs.count() / 1000.0f;
-            outTime = strFormat("Done (%s)", strFromDuration(elapsedSec).c_str());
+            float elapsedSec = m_status.getElapsedSec();
+            outStatus = strFormat("Done (%s)", strFromDuration(elapsedSec).c_str());
         }
     }
 
@@ -719,46 +716,46 @@ namespace RealBloom
 
             // Prepare padded buffers
             currStage++;
-            m_state.fftStage = strFormat("%u/%u Preparing", currStage, numStages);
+            m_status.setFftStage(strFormat("%u/%u Preparing", currStage, numStages));
             fftConv.pad();
 
-            if (m_state.mustCancel) throw std::exception();
+            if (m_status.mustCancel()) throw std::exception();
 
             // Repeat for 3 color channels
             for (uint32_t i = 0; i < 3; i++)
             {
                 // Input FFT
                 currStage++;
-                m_state.fftStage = strFormat("%u/%u %s: Input FFT", currStage, numStages, strFromColorChannelID(i).c_str());
+                m_status.setFftStage(strFormat("%u/%u %s: Input FFT", currStage, numStages, strFromColorChannelID(i).c_str()));
                 fftConv.inputFFT(i);
 
-                if (m_state.mustCancel) throw std::exception();
+                if (m_status.mustCancel()) throw std::exception();
 
                 // Kernel FFT
                 currStage++;
-                m_state.fftStage = strFormat("%u/%u %s: Kernel FFT", currStage, numStages, strFromColorChannelID(i).c_str());
+                m_status.setFftStage(strFormat("%u/%u %s: Kernel FFT", currStage, numStages, strFromColorChannelID(i).c_str()));
                 fftConv.kernelFFT(i);
 
-                if (m_state.mustCancel) throw std::exception();
+                if (m_status.mustCancel()) throw std::exception();
 
                 // Multiply the Fourier transforms
                 currStage++;
-                m_state.fftStage = strFormat("%u/%u %s: Multiplying", currStage, numStages, strFromColorChannelID(i).c_str());
+                m_status.setFftStage(strFormat("%u/%u %s: Multiplying", currStage, numStages, strFromColorChannelID(i).c_str()));
                 fftConv.multiply(i);
 
-                if (m_state.mustCancel) throw std::exception();
+                if (m_status.mustCancel()) throw std::exception();
 
                 // Inverse FFT
                 currStage++;
-                m_state.fftStage = strFormat("%u/%u %s: Inverse FFT", currStage, numStages, strFromColorChannelID(i).c_str());
+                m_status.setFftStage(strFormat("%u/%u %s: Inverse FFT", currStage, numStages, strFromColorChannelID(i).c_str()));
                 fftConv.inverse(i);
 
-                if (m_state.mustCancel) throw std::exception();
+                if (m_status.mustCancel()) throw std::exception();
             }
 
             // Get the final output
             currStage++;
-            m_state.fftStage = strFormat("%u/%u Finalizing", currStage, numStages);
+            m_status.setFftStage(strFormat("%u/%u Finalizing", currStage, numStages));
             fftConv.output();
 
             // Update the output image
@@ -775,7 +772,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            m_state.setError(e.what());
+            m_status.setError(e.what());
         }
     }
 
@@ -832,12 +829,12 @@ namespace RealBloom
             gpuHelper.run();
 
             // Wait for the output file to be created
-            gpuHelper.waitForOutput([this]() { return m_state.mustCancel; });
+            gpuHelper.waitForOutput([this]() { return m_status.mustCancel(); });
 
             // Wait for the GPU Helper to finish its job
             while (gpuHelper.isRunning())
             {
-                if (m_state.mustCancel)
+                if (m_status.mustCancel())
                     throw std::exception();
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP_SHORT));
             }
@@ -870,7 +867,7 @@ namespace RealBloom
                 }
                 else
                 {
-                    m_state.setError(strFormat(
+                    m_status.setError(strFormat(
                         "Output buffer size (%u) does not match the input buffer size (%u).",
                         binOutput.buffer.size(), convBufferSize
                     ));
@@ -878,7 +875,7 @@ namespace RealBloom
             }
             else
             {
-                m_state.setError(binOutput.error);
+                m_status.setError(binOutput.error);
             }
 
             // Close the output file
@@ -886,7 +883,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            m_state.setError(e.what());
+            m_status.setError(e.what());
         }
 
         // Clean up
@@ -959,7 +956,7 @@ namespace RealBloom
             // Take a snapshot of the current progress
 
             bool mustUpdateProg =
-                (!m_state.mustCancel)
+                (!m_status.mustCancel())
                 && (getElapsedMs(lastProgTime) > CONV_PROG_TIMESTEP)
                 && (numThreadsDone < numThreads);
 
@@ -1114,19 +1111,19 @@ namespace RealBloom
             gpuHelper.run();
 
             // Wait for the output file to be created
-            gpuHelper.waitForOutput([this]() { return m_state.mustCancel; });
+            gpuHelper.waitForOutput([this]() { return m_status.mustCancel(); });
 
             // Wait for the GPU Helper to finish its job
             auto lastProgTime = std::chrono::system_clock::now();
             while (gpuHelper.isRunning())
             {
-                if (m_state.mustCancel)
+                if (m_status.mustCancel())
                     throw std::exception();
 
                 // Read the stat file
 
                 bool mustReadStat =
-                    !(m_state.mustCancel)
+                    !(m_status.mustCancel())
                     && std::filesystem::exists(statFilename)
                     && (getElapsedMs(lastProgTime) > CONV_PROG_TIMESTEP);
 
@@ -1146,9 +1143,9 @@ namespace RealBloom
                             binStat.readFrom(statFile);
 
                             // If numChunksDone has increased
-                            if (binStat.numChunksDone > m_state.numChunksDone)
+                            if (binStat.numChunksDone > m_status.getNumChunksDone())
                             {
-                                m_state.numChunksDone = binStat.numChunksDone;
+                                m_status.setNumChunksDone(binStat.numChunksDone);
 
                                 // Update Conv. Mix
                                 if (binStat.buffer.size() == (inputWidth * inputHeight * 4))
@@ -1210,7 +1207,7 @@ namespace RealBloom
                 }
                 else
                 {
-                    m_state.setError(strFormat(
+                    m_status.setError(strFormat(
                         "Output buffer size (%u) does not match the input buffer size (%u).",
                         binOutput.buffer.size(), convBufferSize
                     ));
@@ -1218,7 +1215,7 @@ namespace RealBloom
             }
             else
             {
-                m_state.setError(binOutput.error);
+                m_status.setError(binOutput.error);
             }
 
             // Close the output file
@@ -1226,7 +1223,7 @@ namespace RealBloom
         }
         catch (const std::exception& e)
         {
-            m_state.setError(e.what());
+            m_status.setError(e.what());
         }
 
         // Clean up
