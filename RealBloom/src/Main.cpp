@@ -277,6 +277,14 @@ void layout()
                 else selImageID = "cv-input";
             }
         }
+        else if ((selImage.getID() == "disp-input") || (selImage.getID() == "disp-result"))
+        {
+            if (ImGui::Button("Compare", btnSize()))
+            {
+                if (selImage.getID() == "disp-input") selImageID = "disp-result";
+                else selImageID = "disp-input";
+            }
+        }
 
         // Save
         {
