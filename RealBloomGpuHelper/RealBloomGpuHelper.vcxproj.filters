@@ -78,6 +78,9 @@
     <ClCompile Include="..\RealBloom\src\Utils\OpenGL\GlUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\RealBloom\src\Utils\Status.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="libs\glew32s.lib" />
@@ -162,6 +165,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\RealBloom\src\Utils\OpenGL\GlUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RealBloom\src\Utils\Status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

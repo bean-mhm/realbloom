@@ -96,20 +96,6 @@ const char* convNaiveGpuFragmentSource = R"glsl(
 namespace RealBloom
 {
 
-    void ConvNaiveGpuData::reset()
-    {
-        done = false;
-        success = false;
-        error = "";
-    }
-
-    void ConvNaiveGpuData::setError(const std::string& err)
-    {
-        success = false;
-        error = err;
-        done = true;
-    }
-
     void ConvNaiveGpu::makeKernelTexture(float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight)
     {
         glGenTextures(1, &m_texKernel);
@@ -273,63 +259,57 @@ namespace RealBloom
         checkGlStatus(__FUNCTION__, "glDrawArrays");
     }
 
-    ConvNaiveGpu::ConvNaiveGpu(ConvNaiveGpuData* data)
-        : m_data(data)
+    ConvNaiveGpu::ConvNaiveGpu(BinaryConvNaiveGpuInput* binInput)
+        : m_binInput(binInput)
     {}
 
     void ConvNaiveGpu::prepare()
     {
-        BinaryConvNaiveGpuInput* binInput = m_data->binInput;
+        m_status.reset();
 
-        m_data->reset();
+        m_width = m_binInput->inputWidth;
+        m_height = m_binInput->inputHeight;
 
         try
         {
             // Upload the kernel texture to the GPU
             makeKernelTexture(
-                binInput->kernelBuffer.data(),
-                binInput->kernelWidth,
-                binInput->kernelHeight);
+                m_binInput->kernelBuffer.data(),
+                m_binInput->kernelWidth,
+                m_binInput->kernelHeight);
 
             // Shader program
             makeProgram();
-
-            // Finalize
-            m_data->success = true;
-            m_data->done = true;
         }
         catch (const std::exception& e)
         {
-            m_data->setError(makeError(__FUNCTION__, "", e.what()));
+            m_status.setError(makeError(__FUNCTION__, "", e.what()));
         }
     }
 
     void ConvNaiveGpu::process(uint32_t chunkIndex)
     {
-        BinaryConvNaiveGpuInput* binInput = m_data->binInput;
+        if (!m_status.isOK())
+            return;
 
-        m_data->reset();
-
-        m_width = binInput->inputWidth;
-        m_height = binInput->inputHeight;
         uint32_t inputPixels = m_width * m_height;
 
-        uint32_t numChunks = binInput->numChunks;
+        uint32_t numChunks = m_binInput->numChunks;
 
-        uint32_t kernelWidth = binInput->kernelWidth;
-        uint32_t kernelHeight = binInput->kernelHeight;
+        uint32_t kernelWidth = m_binInput->kernelWidth;
+        uint32_t kernelHeight = m_binInput->kernelHeight;
 
-        float threshold = binInput->cp_convThreshold;
-        float transKnee = transformKnee(binInput->cp_convKnee);
+        float threshold = m_binInput->cp_convThreshold;
+        float transKnee = transformKnee(m_binInput->cp_convKnee);
 
-        float kernelCenterX = (int)floorf(binInput->cp_kernelCenterX * (float)kernelWidth);
-        float kernelCenterY = (int)floorf(binInput->cp_kernelCenterY * (float)kernelHeight);
+        float kernelCenterX = (int)floorf(m_binInput->cp_kernelCenterX * (float)kernelWidth);
+        float kernelCenterY = (int)floorf(m_binInput->cp_kernelCenterY * (float)kernelHeight);
 
         float offsetX = floorf((float)kernelWidth / 2.0f) - kernelCenterX;
         float offsetY = floorf((float)kernelHeight / 2.0f) - kernelCenterY;
 
         // Collect points (vertex data)
-        clearVector(m_data->vertexData);
+        clearVector(m_vertexData);
         float color[3]{ 0, 0, 0 };
         for (uint32_t i = 0; i < inputPixels; i++)
         {
@@ -337,9 +317,9 @@ namespace RealBloom
             {
                 uint32_t redIndex = i * 4;
 
-                color[0] = binInput->inputBuffer[redIndex + 0];
-                color[1] = binInput->inputBuffer[redIndex + 1];
-                color[2] = binInput->inputBuffer[redIndex + 2];
+                color[0] = m_binInput->inputBuffer[redIndex + 0];
+                color[1] = m_binInput->inputBuffer[redIndex + 1];
+                color[2] = m_binInput->inputBuffer[redIndex + 2];
 
                 float v = rgbToGrayscale(color[0], color[1], color[2]);
                 if (v > threshold)
@@ -363,11 +343,11 @@ namespace RealBloom
                     // Smooth Transition
                     float mul = softThreshold(v, threshold, transKnee);
 
-                    m_data->vertexData.push_back(px);
-                    m_data->vertexData.push_back(py);
-                    m_data->vertexData.push_back(color[0] * mul);
-                    m_data->vertexData.push_back(color[1] * mul);
-                    m_data->vertexData.push_back(color[2] * mul);
+                    m_vertexData.push_back(px);
+                    m_vertexData.push_back(py);
+                    m_vertexData.push_back(color[0] * mul);
+                    m_vertexData.push_back(color[1] * mul);
+                    m_vertexData.push_back(color[2] * mul);
                 }
             }
         }
@@ -388,7 +368,7 @@ namespace RealBloom
             frameBuffer->viewport();
 
             // Upload vertex data
-            definePoints(m_data->vertexData.data(), m_data->vertexData.size());
+            definePoints(m_vertexData.data(), m_vertexData.size());
 
             // Use the program
             useProgram();
@@ -398,17 +378,17 @@ namespace RealBloom
 
             // Set uniforms
             float kernelTopLeft[2], kernelSize[2];
-            kernelTopLeft[0] = GL_COORD_SCALE * 2 * (floorf((float)binInput->kernelWidth / 2.0f) / (float)binInput->inputWidth);
-            kernelTopLeft[1] = GL_COORD_SCALE * 2 * (floorf((float)binInput->kernelHeight / 2.0f) / (float)binInput->inputHeight);
-            kernelSize[0] = GL_COORD_SCALE * 2 * (float)binInput->kernelWidth / (float)binInput->inputWidth;
-            kernelSize[1] = GL_COORD_SCALE * 2 * (float)binInput->kernelHeight / (float)binInput->inputHeight;
+            kernelTopLeft[0] = GL_COORD_SCALE * 2 * (floorf((float)m_binInput->kernelWidth / 2.0f) / (float)m_binInput->inputWidth);
+            kernelTopLeft[1] = GL_COORD_SCALE * 2 * (floorf((float)m_binInput->kernelHeight / 2.0f) / (float)m_binInput->inputHeight);
+            kernelSize[0] = GL_COORD_SCALE * 2 * (float)m_binInput->kernelWidth / (float)m_binInput->inputWidth;
+            kernelSize[1] = GL_COORD_SCALE * 2 * (float)m_binInput->kernelHeight / (float)m_binInput->inputHeight;
             setUniforms(kernelWidth, kernelHeight, kernelTopLeft, kernelSize);
 
             // Specify vertex data layout
             specifyLayout();
 
             // Draw
-            drawScene(m_data->vertexData.size() / m_data->numAttribs);
+            drawScene(m_vertexData.size() / getNumAttribs());
 
             // Copy pixel data from the frame buffer
             uint32_t fbSize = m_width * m_height * 4;
@@ -426,8 +406,8 @@ namespace RealBloom
             }
 
             // Copy to output buffer
-            m_data->outputBuffer.resize(fbSize);
-            float convMultiplier = m_data->binInput->convMultiplier;
+            m_outputBuffer.resize(fbSize);
+            float convMultiplier = m_binInput->convMultiplier;
             for (uint32_t y = 0; y < m_height; y++)
             {
                 for (uint32_t x = 0; x < m_width; x++)
@@ -435,20 +415,16 @@ namespace RealBloom
                     uint32_t redIndexFb = ((m_height - 1 - y) * m_width + x) * 4;
                     uint32_t redIndexOutput = (y * m_width + x) * 4;
 
-                    m_data->outputBuffer[redIndexOutput + 0] = fbData[redIndexFb + 0] * convMultiplier;
-                    m_data->outputBuffer[redIndexOutput + 1] = fbData[redIndexFb + 1] * convMultiplier;
-                    m_data->outputBuffer[redIndexOutput + 2] = fbData[redIndexFb + 2] * convMultiplier;
-                    m_data->outputBuffer[redIndexOutput + 3] = 1.0f;
+                    m_outputBuffer[redIndexOutput + 0] = fbData[redIndexFb + 0] * convMultiplier;
+                    m_outputBuffer[redIndexOutput + 1] = fbData[redIndexFb + 1] * convMultiplier;
+                    m_outputBuffer[redIndexOutput + 2] = fbData[redIndexFb + 2] * convMultiplier;
+                    m_outputBuffer[redIndexOutput + 3] = 1.0f;
                 }
             }
-
-            // Finalize
-            m_data->success = true;
-            m_data->done = true;
         }
         catch (const std::exception& e)
         {
-            m_data->setError(makeError(__FUNCTION__, "", e.what()));
+            m_status.setError(makeError(__FUNCTION__, "", e.what()));
         }
 
         // Clean up
@@ -489,6 +465,26 @@ namespace RealBloom
         {
             printError(__FUNCTION__, "", e.what());
         }
+    }
+
+    uint32_t ConvNaiveGpu::getNumVertices() const
+    {
+        return m_vertexData.size() / getNumAttribs();
+    }
+
+    const std::vector<float>& ConvNaiveGpu::getBuffer() const
+    {
+        return m_outputBuffer;
+    }
+
+    const BaseStatus& ConvNaiveGpu::getStatus() const
+    {
+        return m_status;
+    }
+
+    uint32_t ConvNaiveGpu::getNumAttribs()
+    {
+        return 5;
     }
 
 }

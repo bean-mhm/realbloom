@@ -476,22 +476,19 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
 
         logAdd(LogLevel::Info, "Preparing convolution...");
 
-        RealBloom::ConvNaiveGpuData data;
-        data.binInput = &binInput;
-
-        RealBloom::ConvNaiveGpu conv(&data);
+        RealBloom::ConvNaiveGpu conv(&binInput);
         conv.prepare();
 
-        if (!data.success)
+        if (!conv.getStatus().isOK())
         {
             conv.cleanUp();
 
             finalSuccess = false;
-            finalError = data.error;
+            finalError = conv.getStatus().getError();
             clearVector(finalBuffer);
 
             logAdd(LogLevel::Error, "Failed to prepare convolution.");
-            logAdd(LogLevel::Error, data.error);
+            logAdd(LogLevel::Error, finalError);
         }
         else
         {
@@ -501,24 +498,24 @@ void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstrea
             {
                 conv.process(i);
 
-                if (data.success)
+                if (conv.getStatus().isOK())
                 {
                     for (uint32_t j = 0; j < inputSize; j++)
                         if (j % 4 != 3) // if not alpha channel
-                            finalBuffer[j] += data.outputBuffer[j];
+                            finalBuffer[j] += conv.getBuffer()[j];
 
                     logAdd(LogLevel::Info, strFormat(
-                        "Chunk %u/%u (%u points) was successful.", i + 1, binInput.numChunks, data.vertexData.size() / data.numAttribs));
+                        "Chunk %u/%u (%u points) was successful.", i + 1, binInput.numChunks, conv.getNumVertices()));
                 }
                 else
                 {
                     finalSuccess = false;
-                    finalError = data.error;
+                    finalError = conv.getStatus().getError();
                     clearVector(finalBuffer);
 
                     logAdd(LogLevel::Error, strFormat(
-                        "Chunk %u/%u (%u points) was failed.", i + 1, binInput.numChunks, data.vertexData.size() / data.numAttribs));
-                    logAdd(LogLevel::Error, data.error);
+                        "Chunk %u/%u (%u points) was failed.", i + 1, binInput.numChunks, conv.getNumVertices()));
+                    logAdd(LogLevel::Error, finalError);
                     break;
                 }
 

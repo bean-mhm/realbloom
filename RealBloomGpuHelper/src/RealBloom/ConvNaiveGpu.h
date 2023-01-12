@@ -17,33 +17,20 @@
 #include "Utils/OpenGL/GlUtils.h"
 #include "Utils/OpenGL/GlFrameBuffer.h"
 #include "Utils/NumberHelpers.h"
+#include "Utils/Status.h"
 #include "Utils/Misc.h"
 
 namespace RealBloom
 {
 
-    class ConvNaiveGpu;
-
-    struct ConvNaiveGpuData
-    {
-        BinaryConvNaiveGpuInput* binInput;
-
-        uint32_t numAttribs = 5;
-        std::vector<float> vertexData; // Each point consists of 2 elements for position and 3 for color: x, y, r, g ,b
-        std::vector<float> outputBuffer;
-
-        bool done = false;
-        bool success = false;
-        std::string error = "";
-
-        void reset();
-        void setError(const std::string& err);
-    };
-
     class ConvNaiveGpu
     {
     private:
-        ConvNaiveGpuData* m_data;
+        BaseStatus m_status;
+        BinaryConvNaiveGpuInput* m_binInput;
+
+        std::vector<float> m_vertexData; // Each point consists of 2 elements for position and 3 for color: x, y, r, g ,b
+        std::vector<float> m_outputBuffer;
 
         uint32_t m_width = 0;
         uint32_t m_height = 0;
@@ -70,10 +57,16 @@ namespace RealBloom
         void drawScene(uint32_t numPoints);
 
     public:
-        ConvNaiveGpu(ConvNaiveGpuData* data);
+        ConvNaiveGpu(BinaryConvNaiveGpuInput* binInput);
         void prepare();
         void process(uint32_t chunkIndex);
         void cleanUp();
+
+        uint32_t getNumVertices() const;
+        const std::vector<float>& getBuffer() const;
+        const BaseStatus& getStatus() const;
+
+        static uint32_t getNumAttribs();
 
     };
 

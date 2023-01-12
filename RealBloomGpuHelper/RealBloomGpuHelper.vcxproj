@@ -186,6 +186,7 @@
     <ClCompile Include="..\RealBloom\src\Utils\OpenGL\GlTexture.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\OpenGL\GlUtils.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\Random.cpp" />
+    <ClCompile Include="..\RealBloom\src\Utils\Status.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\StreamUtils.cpp" />
     <ClCompile Include="..\RealBloom\src\Utils\StringUtils.cpp" />
     <ClCompile Include="src\MainGPU.cpp" />
@@ -215,6 +216,7 @@
     <ClInclude Include="..\RealBloom\src\Utils\OpenGL\GlTexture.h" />
     <ClInclude Include="..\RealBloom\src\Utils\OpenGL\GlUtils.h" />
     <ClInclude Include="..\RealBloom\src\Utils\Random.h" />
+    <ClInclude Include="..\RealBloom\src\Utils\Status.h" />
     <ClInclude Include="..\RealBloom\src\Utils\StreamUtils.h" />
     <ClInclude Include="..\RealBloom\src\Utils\StringUtils.h" />
     <ClInclude Include="include\GL\eglew.h" />
