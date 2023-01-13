@@ -309,6 +309,14 @@ namespace RealBloom
             }
         }
 
+        // Copy to kernel preview image
+        {
+            std::lock_guard<CmImage> lock(*m_imgKernel);
+            m_imgKernel->resize(croppedWidth, croppedHeight, false);
+            float* prevBuffer = m_imgKernel->getImageData();
+            std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, prevBuffer);
+        }
+
         bool outerRequest = (!previewMode && (outBuffer != nullptr));
 
         // Auto-adjust the exposure
@@ -346,14 +354,6 @@ namespace RealBloom
             *outHeight = croppedHeight;
             outBuffer->resize(croppedBufferSize);
             *outBuffer = croppedBuffer;
-        }
-
-        // Copy to kernel preview image
-        {
-            std::lock_guard<CmImage> lock(*m_imgKernel);
-            m_imgKernel->resize(croppedWidth, croppedHeight, false);
-            float* prevBuffer = m_imgKernel->getImageData();
-            std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, prevBuffer);
         }
 
         // Preview center point
