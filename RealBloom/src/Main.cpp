@@ -188,7 +188,7 @@ int main(int argc, char** argv)
 
             // UI Layout
             ImGui::PushFont(fontRoboto);
-            layout();
+            layoutAll();
             ImGui::PopFont();
 
             // Rendering
@@ -231,7 +231,16 @@ int main(int argc, char** argv)
     return 0;
 }
 
-void layout()
+void layoutAll()
+{
+    layoutImageControls();
+    layoutColorManagement();
+    layoutMisc();
+    layoutDiffractionPattern();
+    layoutConvolution();
+}
+
+void layoutImageControls()
 {
     // Selected image
 
@@ -257,14 +266,22 @@ void layout()
         lastSelImageIndex = selImageIndex;
     }
 
-    // Image Selector
+    // Image List
     {
         ImGui::Begin("Image List");
 
         imGuiBold("SLOTS");
 
         ImGui::PushItemWidth(-1);
-        ImGui::ListBox("##Slots", &selImageIndex, &lb1ItemGetter, nullptr, images.size(), images.size());
+        ImGui::ListBox(
+            "##Slots",
+            &selImageIndex,
+            [](void* data, int index, const char** outText)
+            {
+                *outText = imageNames[index].c_str();
+                return true;
+            },
+            nullptr, images.size(), images.size());
         ImGui::PopItemWidth();
 
         // For comparing conv. input and result
@@ -349,730 +366,744 @@ void layout()
 
         ImGui::End();
     }
+}
 
-    // Controls
+void layoutColorManagement()
+{
+    ImGui::Begin("Color Management");
+
+    imGuiBold("VIEW");
+
+    {
+
+        // Exposure
+        if (ImGui::SliderFloat("Exposure##CMS", &(vars.cms_exposure), -10, 10))
+        {
+            CMS::setExposure(vars.cms_exposure);
+            vars.cmsParamsChanged = true;
+        }
+
+        const std::vector<std::string>& displays = CMS::getAvailableDisplays();
+        const std::vector<std::string>& views = CMS::getAvailableViews();
+        const std::vector<std::string>& looks = CMS::getAvailableLooks();
+        const std::string& activeDisplay = CMS::getActiveDisplay();
+        const std::string& activeView = CMS::getActiveView();
+        const std::string& activeLook = CMS::getActiveLook();
+
+        static int selDisplay = -1;
+        static int selView = -1;
+        static int selLook = -1;
+
+        // selDisplay
+        for (size_t i = 0; i < displays.size(); i++)
+            if (activeDisplay == displays[i])
+            {
+                selDisplay = i;
+                break;
+            }
+
+        // selView
+        for (size_t i = 0; i < views.size(); i++)
+            if (activeView == views[i])
+            {
+                selView = i;
+                break;
+            }
+
+        // selLook
+        for (size_t i = 0; i < looks.size(); i++)
+            if (activeLook == looks[i])
+            {
+                selLook = i;
+                break;
+            }
+        if (activeLook.empty()) selLook = 0;
+
+        // Display
+        if (imGuiCombo("Display##CMS", displays, &selDisplay, false))
+        {
+            CMS::setActiveDisplay(displays[selDisplay]);
+            vars.cmsParamsChanged = true;
+
+            // Update selView
+            ptrdiff_t activeViewIndex = std::distance(views.begin(), std::find(views.begin(), views.end(), activeView));
+            if (activeViewIndex < views.size())
+                selView = activeViewIndex;
+        }
+
+        // View
+        if (imGuiCombo("View##CMS", views, &selView, false))
+        {
+            CMS::setActiveView(views[selView]);
+            vars.cmsParamsChanged = true;
+        }
+
+        // Look
+        if (imGuiCombo("Look##CMS", looks, &selLook, false))
+        {
+            CMS::setActiveLook(looks[selLook]);
+            vars.cmsParamsChanged = true;
+        }
+
+        // Update
+        if (vars.cmsParamsChanged)
+        {
+            vars.cmsParamsChanged = false;
+            for (auto& img : images)
+                img->moveToGPU();
+        }
+
+    }
+
+    imGuiDiv();
+    imGuiBold("INFO");
+
+    {
+
+        // Working Space
+        static std::string workingSpace = CMS::getWorkingSpace();
+        static std::string workingSpaceDesc = CMS::getWorkingSpaceDesc();
+        ImGui::TextWrapped("Working Space: %s", workingSpace.c_str());
+        if (ImGui::IsItemHovered() && !workingSpaceDesc.empty())
+            ImGui::SetTooltip(workingSpaceDesc.c_str());
+
+        // CMS Error
+        if (!CMS::getStatus().isOK())
+            imGuiText(CMS::getStatus().getError(), true, false);
+
+    }
+
+    imGuiDiv();
+    imGuiBold("IMAGE IO");
+
+    {
+
+        //
+
+    }
+
+    imGuiDiv();
+    imGuiBold("COLOR MATCHING");
+
+    {
+
+        // Get the available CMF Tables
+        std::vector<CmfTableInfo> cmfTables = CMF::getAvailableTables();
+
+        // Convert to a string vector
+        std::vector<std::string> cmfTableNames;
+        for (const auto& tbl : cmfTables)
+            cmfTableNames.push_back(tbl.name);
+
+        // Get the active table index
+        static int selCmfTable = -1;
+        if (CMF::hasTable())
+        {
+            CmfTableInfo activeTable = CMF::getActiveTableInfo();
+            for (size_t i = 0; i < cmfTables.size(); i++)
+                if ((cmfTables[i].name == activeTable.name) && (cmfTables[i].path == activeTable.path))
+                {
+                    selCmfTable = i;
+                    break;
+                }
+        }
+
+        // CMF Table
+        static bool tableChanged = false;
+        if (imGuiCombo("CMF##CMF", cmfTableNames, &selCmfTable, false))
+        {
+            CMF::setActiveTable(cmfTables[selCmfTable]);
+            tableChanged = true;
+        }
+
+        // CMF Details
+        std::string cmfTableDetails = CMF::getActiveTableDetails();
+        if (ImGui::IsItemHovered() && CMF::hasTable() && !cmfTableDetails.empty())
+            ImGui::SetTooltip(cmfTableDetails.c_str());
+
+        // CMF Error
+        if (!CMF::getStatus().isOK())
+            imGuiText(CMF::getStatus().getError(), true, false);
+
+        // CMF Preview
+        static std::string cmfPreviewError = "";
+        if (ImGui::Button("Preview##CMF", btnSize()) || tableChanged)
+        {
+            tableChanged = false;
+            cmfPreviewError = "";
+            selImageID = "disp-result";
+
+            disp.cancel();
+            try
+            {
+                disp.previewCmf(CMF::getActiveTable().get());
+            }
+            catch (const std::exception& e)
+            {
+                cmfPreviewError = e.what();
+            }
+        }
+        imGuiText(cmfPreviewError, true, false);
+
+    }
+
+    imGuiDiv();
+    imGuiBold("XYZ CONVERSION");
+
+    {
+
+        const std::vector<std::string>& internalSpaces = CMS::getInternalColorSpaces();
+        const std::vector<std::string>& userSpaces = CMS::getAvailableColorSpaces();
+        XyzConversionInfo currentInfo = CmXYZ::getConversionInfo();
+
+        static int selUserSpace = -1;
+        static int selCommonInternal = -1;
+        static int selCommonUser = -1;
+        static int selMethod = 0;
+        static bool xcParamsChanged = false;
+
+        selMethod = (int)currentInfo.method;
+
+        // selUserSpace
+        for (size_t i = 0; i < userSpaces.size(); i++)
+            if (currentInfo.userSpace == userSpaces[i])
+            {
+                selUserSpace = i;
+                break;
+            }
+
+        // selCommonInternal
+        for (size_t i = 0; i < internalSpaces.size(); i++)
+            if (currentInfo.commonInternal == internalSpaces[i])
+            {
+                selCommonInternal = i;
+                break;
+            }
+
+        // selCommonUser
+        for (size_t i = 0; i < userSpaces.size(); i++)
+            if (currentInfo.commonUser == userSpaces[i])
+            {
+                selCommonUser = i;
+                break;
+            }
+
+        // Method
+        static std::vector<std::string> methodNames;
+        {
+            static bool methodNamesInit = false;
+            if (!methodNamesInit)
+            {
+                methodNamesInit = true;
+                methodNames.push_back("None");
+                methodNames.push_back("User Config");
+                methodNames.push_back("Common Space");
+            }
+        }
+        if (imGuiCombo("Method##XC", methodNames, &selMethod, false))
+            xcParamsChanged = true;
+
+        // Color spaces
+        if (selMethod == (int)XyzConversionMethod::UserConfig)
+        {
+            // XYZ space
+            if (imGuiCombo("XYZ I-E##XC", userSpaces, &selUserSpace, false))
+                xcParamsChanged = true;
+            if (ImGui::IsItemHovered() && selUserSpace >= 0)
+            {
+                std::string desc = CMS::getColorSpaceDesc(CMS::getConfig(), userSpaces[selUserSpace]);
+                if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
+            }
+        }
+        else if (selMethod == (int)XyzConversionMethod::CommonSpace)
+        {
+            // Internal space
+            if (imGuiCombo("Internal##XC", internalSpaces, &selCommonInternal, false))
+                xcParamsChanged = true;
+            if (ImGui::IsItemHovered() && selCommonInternal >= 0)
+            {
+                std::string desc = CMS::getColorSpaceDesc(CMS::getInternalConfig(), internalSpaces[selCommonInternal]);
+                if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
+            }
+
+            // User space
+            if (imGuiCombo("User##XC", userSpaces, &selCommonUser, false))
+                xcParamsChanged = true;
+            if (ImGui::IsItemHovered() && selCommonUser >= 0)
+            {
+                std::string desc = CMS::getColorSpaceDesc(CMS::getConfig(), userSpaces[selCommonUser]);
+                if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
+            }
+        }
+
+        // Update
+        if (xcParamsChanged)
+        {
+            xcParamsChanged = false;
+
+            XyzConversionInfo info;
+            info.method = (XyzConversionMethod)selMethod;
+
+            if (selUserSpace >= 0)
+                info.userSpace = userSpaces[selUserSpace];
+
+            if (selCommonInternal >= 0)
+                info.commonInternal = internalSpaces[selCommonInternal];
+
+            if (selCommonUser >= 0)
+                info.commonUser = userSpaces[selCommonUser];
+
+            CmXYZ::setConversionInfo(info);
+        }
+
+        // CmXYZ Error
+        if (!CmXYZ::getStatus().isOK())
+            imGuiText(CmXYZ::getStatus().getError(), true, false);
+
+    }
+
+    ImGui::NewLine();
+    imGuiDialogs();
+    ImGui::End();
+}
+
+void layoutMisc()
+{
+    ImGui::Begin("Misc");
+
+    imGuiBold("INTERFACE");
+
+    if (ImGui::InputFloat("Scale", &(Config::UI_SCALE), 0.125f, 0.125f, "%.3f"))
+    {
+        Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
+        io->FontGlobalScale = Config::UI_SCALE / Config::S_UI_MAX_SCALE;
+    }
+
+    // UI Renderer
+    static std::string uiRenderer = strFormat("UI Renderer:\n%s", (const char*)glGetString(GL_RENDERER));
+
+    // FPS
+    ImGui::TextWrapped(
+        "%.3f ms (%.1f FPS)",
+        1000.0f / ImGui::GetIO().Framerate,
+        ImGui::GetIO().Framerate);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(uiRenderer.c_str());
+    ImGui::NewLine();
+
+    imGuiBold("INFO");
+
+    // Version
+    ImGui::TextWrapped("%s v%s", Config::S_APP_TITLE, Config::S_APP_VERSION);
+
+    // GitHub
+    if (ImGui::Button("GitHub", btnSize()))
+        openURL(Config::S_GITHUB_URL);
+    if (ImGui::Button("Tutorial", btnSize()))
+        openURL(Config::S_DOCS_URL);
+
+    ImGui::End();
+}
+
+void layoutDiffractionPattern()
+{
     CmImage& imgAperture = *getImageByID("aperture");
     CmImage& imgDispInput = *getImageByID("disp-input");
     CmImage& imgDispResult = *getImageByID("disp-result");
+
+    ImGui::Begin("Diffraction Pattern");
+
+    imGuiBold("APERTURE");
+
+    {
+        static std::string loadError;
+        if (ImGui::Button("Browse Aperture##DP", btnSize()))
+            loadImage(imgAperture, imgAperture.getID(), []() {}, loadError);
+        imGuiText(loadError, true, false);
+    }
+
+    imGuiDiv();
+    imGuiBold("DIFFRACTION");
+
+    ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
+
+    if (ImGui::Button("Compute##DP", btnSize()))
+    {
+        updateDiffParams();
+        diff.compute();
+        vars.dispParamsChanged = true;
+    }
+
+    if (!diff.getStatus().isOK())
+    {
+        std::string dpError = diff.getStatus().getError();
+        imGuiText(dpError, true, false);
+    }
+
+    imGuiDiv();
+    imGuiBold("DISPERSION");
+
+    {
+        static std::string loadError;
+        if (ImGui::Button("Browse Input##Disp", btnSize()))
+        {
+            CmImage* inputSrc = disp.getImgInputSrc();
+            loadImage(*inputSrc, imgDispInput.getID(), []() { vars.dispParamsChanged = true; }, loadError);
+        }
+        imGuiText(loadError, true, false);
+    }
+
+    if (ImGui::SliderFloat("Exposure##Disp", &(vars.ds_exposure), -10, 10))
+        vars.dispParamsChanged = true;
+
+    if (ImGui::SliderFloat("Contrast##Disp", &(vars.ds_contrast), -1, 1))
+        vars.dispParamsChanged = true;
+
+    if (ImGui::ColorEdit3("Color##Disp", vars.ds_color,
+        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+    {
+        vars.dispParamsChanged = true;
+    }
+
+    if (vars.dispParamsChanged)
+    {
+        vars.dispParamsChanged = false;
+        updateDispParams();
+        disp.previewInput();
+        selImageID = "disp-input";
+    }
+
+    if (ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1))
+        vars.ds_amount = std::clamp(vars.ds_amount, 0.0f, 1.0f);
+
+    if (ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024))
+        vars.ds_steps = std::clamp(vars.ds_steps, 1, RealBloom::DISP_MAX_STEPS);
+
+    const char* const dispMethodItems[]{ "CPU", "GPU" };
+    if (ImGui::Combo("Method##Disp", &(vars.ds_method), dispMethodItems, 2))
+        disp.cancel();
+
+    if (vars.ds_method == (int)RealBloom::DispersionMethod::CPU)
+    {
+        if (ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads()))
+            vars.ds_numThreads = std::clamp(vars.ds_numThreads, 1, (int)getMaxNumThreads());
+    }
+    else if (vars.ds_method == (int)RealBloom::DispersionMethod::GPU)
+    {
+        // No parameters yet
+    }
+
+    if (ImGui::Button("Apply Dispersion##Disp", btnSize()))
+    {
+        imgDispResult.resize(imgDispInput.getWidth(), imgDispInput.getHeight(), true);
+        imgDispResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
+        imgDispResult.moveToGPU();
+        selImageID = "disp-result";
+
+        updateDispParams();
+        disp.compute();
+    }
+
+    if (disp.getStatus().isWorking())
+    {
+        if (ImGui::Button("Cancel##Disp", btnSize()))
+            disp.cancel();
+    }
+
+    std::string dispStats = disp.getStatusText();
+    imGuiText(dispStats, !disp.getStatus().isOK(), false);
+
+    ImGui::NewLine();
+    imGuiDialogs();
+    ImGui::End(); // Diffraction Pattern
+}
+
+void layoutConvolution()
+{
     CmImage& imgConvInput = *getImageByID("cv-input");
     CmImage& imgConvKernel = *getImageByID("cv-kernel");
     CmImage& imgConvResult = *getImageByID("cv-result");
+
+    ImGui::Begin("Convolution");
+
+    imGuiBold("INPUT");
+
     {
-        ImGui::Begin("Diffraction Pattern");
+        static std::string loadError;
+        if (ImGui::Button("Browse Input##Conv", btnSize()))
+            loadImage(imgConvInput, imgConvInput.getID(), []() { vars.convThresholdChanged = true; }, loadError);
+        imGuiText(loadError, true, false);
+    }
 
-        imGuiBold("APERTURE");
-
+    {
+        static std::string loadError;
+        if (ImGui::Button("Browse Kernel##Conv", btnSize()))
         {
-            static std::string loadError;
-            if (ImGui::Button("Browse Aperture##DP", btnSize()))
-                loadImage(imgAperture, imgAperture.getID(), []() {}, loadError);
-            imGuiText(loadError, true, false);
+            CmImage* kernelSrc = conv.getImgKernelSrc();
+            loadImage(*kernelSrc, imgConvKernel.getID(), []() { vars.convParamsChanged = true; }, loadError);
         }
+        imGuiText(loadError, true, false);
+    }
 
-        imGuiDiv();
-        imGuiBold("DIFFRACTION");
+    imGuiDiv();
+    imGuiBold("KERNEL");
 
-        ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
+    if (ImGui::SliderFloat("Exposure##Kernel", &(vars.cv_kernelExposure), -10, 10))
+        vars.convParamsChanged = true;
 
-        if (ImGui::Button("Compute##DP", btnSize()))
+    if (ImGui::SliderFloat("Contrast##Kernel", &(vars.cv_kernelContrast), -1, 1))
+        vars.convParamsChanged = true;
+
+    if (ImGui::ColorEdit3("Color##Kernel", vars.cv_kernelColor,
+        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+    {
+        vars.convParamsChanged = true;
+    }
+
+    if (ImGui::SliderFloat("Rotation##Kernel", &(vars.cv_kernelRotation), -180.0f, 180.0f))
+        vars.convParamsChanged = true;
+
+    // Scale
+    {
+        if (ImGui::Checkbox("Lock Scale##Kernel", &(vars.cv_kernelLockScale)))
         {
-            updateDiffParams();
-            diff.compute();
-            vars.dispParamsChanged = true;
-        }
-
-        if (!diff.getStatus().isOK())
-        {
-            std::string dpError = diff.getStatus().getError();
-            imGuiText(dpError, true, false);
-        }
-
-        imGuiDiv();
-        imGuiBold("DISPERSION");
-
-        {
-            static std::string loadError;
-            if (ImGui::Button("Browse Input##Disp", btnSize()))
-            {
-                CmImage* inputSrc = disp.getImgInputSrc();
-                loadImage(*inputSrc, imgDispInput.getID(), []() { vars.dispParamsChanged = true; }, loadError);
-            }
-            imGuiText(loadError, true, false);
-        }
-
-        if (ImGui::SliderFloat("Exposure##Disp", &(vars.ds_exposure), -10, 10))
-            vars.dispParamsChanged = true;
-
-        if (ImGui::SliderFloat("Contrast##Disp", &(vars.ds_contrast), -1, 1))
-            vars.dispParamsChanged = true;
-
-        if (ImGui::ColorEdit3("Color##Disp", vars.ds_color,
-            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
-        {
-            vars.dispParamsChanged = true;
-        }
-
-        if (vars.dispParamsChanged)
-        {
-            vars.dispParamsChanged = false;
-            updateDispParams();
-            disp.previewInput();
-            selImageID = "disp-input";
-        }
-
-        if (ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1))
-            vars.ds_amount = std::clamp(vars.ds_amount, 0.0f, 1.0f);
-
-        if (ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024))
-            vars.ds_steps = std::clamp(vars.ds_steps, 1, RealBloom::DISP_MAX_STEPS);
-
-        const char* const dispMethodItems[]{ "CPU", "GPU" };
-        if (ImGui::Combo("Method##Disp", &(vars.ds_method), dispMethodItems, 2))
-            disp.cancel();
-
-        if (vars.ds_method == (int)RealBloom::DispersionMethod::CPU)
-        {
-            if (ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads()))
-                vars.ds_numThreads = std::clamp(vars.ds_numThreads, 1, (int)getMaxNumThreads());
-        }
-        else if (vars.ds_method == (int)RealBloom::DispersionMethod::GPU)
-        {
-            // No parameters yet
-        }
-
-        if (ImGui::Button("Apply Dispersion##Disp", btnSize()))
-        {
-            imgDispResult.resize(imgDispInput.getWidth(), imgDispInput.getHeight(), true);
-            imgDispResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
-            imgDispResult.moveToGPU();
-            selImageID = "disp-result";
-
-            updateDispParams();
-            disp.compute();
-        }
-
-        if (disp.getStatus().isWorking())
-        {
-            if (ImGui::Button("Cancel##Disp", btnSize()))
-                disp.cancel();
-        }
-
-        std::string dispStats = disp.getStatusText();
-        imGuiText(dispStats, !disp.getStatus().isOK(), false);
-
-        ImGui::NewLine();
-        imGuiDialogs();
-        ImGui::End(); // Diffraction Pattern
-
-        ImGui::Begin("Convolution");
-
-        imGuiBold("INPUT");
-
-        {
-            static std::string loadError;
-            if (ImGui::Button("Browse Input##Conv", btnSize()))
-                loadImage(imgConvInput, imgConvInput.getID(), []() { vars.convThresholdChanged = true; }, loadError);
-            imGuiText(loadError, true, false);
-        }
-
-        {
-            static std::string loadError;
-            if (ImGui::Button("Browse Kernel##Conv", btnSize()))
-            {
-                CmImage* kernelSrc = conv.getImgKernelSrc();
-                loadImage(*kernelSrc, imgConvKernel.getID(), []() { vars.convParamsChanged = true; }, loadError);
-            }
-            imGuiText(loadError, true, false);
-        }
-
-        imGuiDiv();
-        imGuiBold("KERNEL");
-
-        if (ImGui::SliderFloat("Exposure##Kernel", &(vars.cv_kernelExposure), -10, 10))
-            vars.convParamsChanged = true;
-
-        if (ImGui::SliderFloat("Contrast##Kernel", &(vars.cv_kernelContrast), -1, 1))
-            vars.convParamsChanged = true;
-
-        if (ImGui::ColorEdit3("Color##Kernel", vars.cv_kernelColor,
-            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
-        {
-            vars.convParamsChanged = true;
-        }
-
-        if (ImGui::SliderFloat("Rotation##Kernel", &(vars.cv_kernelRotation), -180.0f, 180.0f))
-            vars.convParamsChanged = true;
-
-        // Scale
-        {
-            if (ImGui::Checkbox("Lock Scale##Kernel", &(vars.cv_kernelLockScale)))
-            {
-                if (vars.cv_kernelLockScale)
-                {
-                    vars.cv_kernelScale[0] = (vars.cv_kernelScale[0] + vars.cv_kernelScale[1]) / 2.0f;
-                    vars.cv_kernelScale[1] = vars.cv_kernelScale[0];
-                }
-                vars.convParamsChanged = true;
-            }
             if (vars.cv_kernelLockScale)
             {
-                if (ImGui::SliderFloat("Scale##Kernel", &(vars.cv_kernelScale[0]), 0.1f, 2))
-                {
-                    vars.cv_kernelScale[0] = std::max(vars.cv_kernelScale[0], 0.01f);
-                    vars.cv_kernelScale[1] = vars.cv_kernelScale[0];
-                    vars.convParamsChanged = true;
-                }
+                vars.cv_kernelScale[0] = (vars.cv_kernelScale[0] + vars.cv_kernelScale[1]) / 2.0f;
+                vars.cv_kernelScale[1] = vars.cv_kernelScale[0];
             }
-            else
-            {
-                if (ImGui::SliderFloat2("Scale##Kernel", vars.cv_kernelScale, 0.1f, 2))
-                {
-                    vars.cv_kernelScale[0] = std::max(vars.cv_kernelScale[0], 0.01f);
-                    vars.cv_kernelScale[1] = std::max(vars.cv_kernelScale[1], 0.01f);
-                    vars.convParamsChanged = true;
-                }
-            }
+            vars.convParamsChanged = true;
         }
-
-        // Crop
+        if (vars.cv_kernelLockScale)
         {
-            if (ImGui::Checkbox("Lock Crop##Kernel", &(vars.cv_kernelLockCrop)))
+            if (ImGui::SliderFloat("Scale##Kernel", &(vars.cv_kernelScale[0]), 0.1f, 2))
             {
-                if (vars.cv_kernelLockCrop)
-                {
-                    vars.cv_kernelCrop[0] = (vars.cv_kernelCrop[0] + vars.cv_kernelCrop[1]) / 2.0f;
-                    vars.cv_kernelCrop[1] = vars.cv_kernelCrop[0];
-                }
+                vars.cv_kernelScale[0] = std::max(vars.cv_kernelScale[0], 0.01f);
+                vars.cv_kernelScale[1] = vars.cv_kernelScale[0];
                 vars.convParamsChanged = true;
             }
-            if (vars.cv_kernelLockCrop)
-            {
-                if (ImGui::SliderFloat("Crop##Kernel", &(vars.cv_kernelCrop[0]), 0.1f, 1.0f))
-                {
-                    vars.cv_kernelCrop[0] = std::clamp(vars.cv_kernelCrop[0], 0.1f, 1.0f);
-                    vars.cv_kernelCrop[1] = vars.cv_kernelCrop[0];
-                    vars.convParamsChanged = true;
-                }
-            }
-            else
-            {
-                if (ImGui::SliderFloat2("Crop##Kernel", vars.cv_kernelCrop, 0.1f, 1.0f))
-                {
-                    vars.cv_kernelCrop[0] = std::clamp(vars.cv_kernelCrop[0], 0.1f, 1.0f);
-                    vars.cv_kernelCrop[1] = std::clamp(vars.cv_kernelCrop[1], 0.1f, 1.0f);
-                    vars.convParamsChanged = true;
-                }
-            }
-        }
-
-        if (ImGui::Checkbox("Preview Center##Kernel", &(vars.cv_kernelPreviewCenter)))
-            vars.convParamsChanged = true;
-
-        if (ImGui::SliderFloat2("Center##Kernel", vars.cv_kernelCenter, 0, 1))
-        {
-            vars.cv_kernelCenter[0] = std::clamp(vars.cv_kernelCenter[0], 0.0f, 1.0f);
-            vars.cv_kernelCenter[1] = std::clamp(vars.cv_kernelCenter[1], 0.0f, 1.0f);
-            vars.convParamsChanged = true;
-        }
-
-        if (vars.convParamsChanged)
-        {
-            vars.convParamsChanged = false;
-            updateConvParams();
-            conv.kernel();
-            selImageID = "cv-kernel";
-        }
-
-        imGuiDiv();
-        imGuiBold("CONVOLUTION");
-
-        const char* const convMethodItems[]{ "FFT CPU", "FFT GPU (Experimental)", "Naive CPU", "Naive GPU" };
-        if (ImGui::Combo("Method##Conv", &(vars.cv_method), convMethodItems, 4))
-            conv.cancel();
-
-        if (vars.cv_method == (int)RealBloom::ConvolutionMethod::FFT_CPU)
-        {
-            // No parameters yet
-        }
-        else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_CPU)
-        {
-            // Threads
-            if (ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, getMaxNumThreads()))
-                vars.cv_numThreads = std::clamp(vars.cv_numThreads, 1, (int)getMaxNumThreads());
-        }
-        else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_GPU)
-        {
-            // Chunks
-            if (ImGui::InputInt("Chunks##Conv", &(vars.cv_numChunks)))
-                vars.cv_numChunks = std::clamp(vars.cv_numChunks, 1, RealBloom::CONV_MAX_CHUNKS);
-
-            // Chunk Sleep Time
-            if (ImGui::InputInt("Sleep (ms)##Conv", &(vars.cv_chunkSleep)))
-                vars.cv_chunkSleep = std::clamp(vars.cv_chunkSleep, 0, RealBloom::CONV_MAX_SLEEP);
-        }
-
-        if (ImGui::SliderFloat("Threshold##Conv", &(vars.cv_convThreshold), 0, 2))
-        {
-            vars.cv_convThreshold = std::max(vars.cv_convThreshold, 0.0f);
-            vars.convThresholdChanged = true;
-            vars.convThresholdSwitchImage = true;
-        }
-
-        if (ImGui::SliderFloat("Knee##Conv", &(vars.cv_convKnee), 0, 2))
-        {
-            vars.cv_convKnee = std::max(vars.cv_convKnee, 0.0f);
-            vars.convThresholdChanged = true;
-            vars.convThresholdSwitchImage = true;
-        }
-
-        if (vars.convThresholdChanged)
-        {
-            updateConvParams();
-            conv.previewThreshold();
-            if (vars.convThresholdSwitchImage)
-            {
-                selImageID = "cv-prev";
-                vars.convThresholdSwitchImage = false;
-            }
-            vars.convThresholdChanged = false;
-        }
-
-        ImGui::Checkbox("Auto-Exposure##Kernel", &(vars.cv_autoExposure));
-
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Adjust the exposure to preserve the overall brightness.");
-
-        if (ImGui::Button("Convolve##Conv", btnSize()))
-        {
-            imgConvResult.resize(imgConvInput.getWidth(), imgConvInput.getHeight(), true);
-            imgConvResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
-            imgConvResult.moveToGPU();
-            selImageID = "cv-result";
-
-            updateConvParams();
-            conv.convolve();
-        }
-
-        if (ImGui::IsItemHovered() && !convResUsage.empty())
-            ImGui::SetTooltip(convResUsage.c_str());
-
-        if (conv.getStatus().isWorking())
-        {
-            if (ImGui::Button("Cancel##Conv", btnSize()))
-                conv.cancel();
-        }
-
-        std::string convStatus, convMessage;
-        uint32_t convMessageType = 1;
-        conv.getStatusText(convStatus, convMessage, convMessageType);
-
-        if (!convStatus.empty())
-            ImGui::Text(convStatus.c_str());
-
-        if (!convMessage.empty())
-        {
-            if (convMessageType > 0)
-            {
-                const ImVec4* textColor = &colorErrorText;
-                if (convMessageType == 1)
-                    textColor = &colorInfoText;
-                else if (convMessageType == 2)
-                    textColor = &colorWarningText;
-                else if (convMessageType == 3)
-                    textColor = &colorErrorText;
-
-                ImGui::PushStyleColor(ImGuiCol_Text, *textColor);
-                ImGui::TextWrapped(convMessage.c_str());
-                ImGui::PopStyleColor();
-            }
-            else
-            {
-                ImGui::Text(convMessage.c_str());
-            }
-        }
-
-        imGuiDiv();
-        imGuiBold("LAYERS");
-
-        if (ImGui::Checkbox("Additive##Conv", &(vars.cm_additive)))
-            vars.convMixParamsChanged = true;
-
-        if (vars.cm_additive)
-        {
-            if (ImGui::SliderFloat("Input##Conv", &(vars.cm_inputMix), 0, 1))
-            {
-                vars.cm_inputMix = std::max(vars.cm_inputMix, 0.0f);
-                vars.convMixParamsChanged = true;
-            }
-
-            if (ImGui::SliderFloat("Conv.##Conv", &(vars.cm_convMix), 0, 1))
-            {
-                vars.cm_convMix = std::max(vars.cm_convMix, 0.0f);
-                vars.convMixParamsChanged = true;
-            }
-
-            if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
-                vars.convMixParamsChanged = true;
         }
         else
         {
-            if (ImGui::SliderFloat("Mix##Conv", &(vars.cm_mix), 0, 1))
+            if (ImGui::SliderFloat2("Scale##Kernel", vars.cv_kernelScale, 0.1f, 2))
             {
-                vars.cm_mix = std::clamp(vars.cm_mix, 0.0f, 1.0f);
-                vars.convMixParamsChanged = true;
+                vars.cv_kernelScale[0] = std::max(vars.cv_kernelScale[0], 0.01f);
+                vars.cv_kernelScale[1] = std::max(vars.cv_kernelScale[1], 0.01f);
+                vars.convParamsChanged = true;
             }
-
-            if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
-                vars.convMixParamsChanged = true;
         }
+    }
 
-        if (ImGui::Button("Show Conv. Layer##Conv", btnSize()))
+    // Crop
+    {
+        if (ImGui::Checkbox("Lock Crop##Kernel", &(vars.cv_kernelLockCrop)))
         {
-            vars.cm_additive = false;
-            vars.cm_mix = 1.0f;
-            vars.cm_convExposure = 0.0f;
+            if (vars.cv_kernelLockCrop)
+            {
+                vars.cv_kernelCrop[0] = (vars.cv_kernelCrop[0] + vars.cv_kernelCrop[1]) / 2.0f;
+                vars.cv_kernelCrop[1] = vars.cv_kernelCrop[0];
+            }
+            vars.convParamsChanged = true;
+        }
+        if (vars.cv_kernelLockCrop)
+        {
+            if (ImGui::SliderFloat("Crop##Kernel", &(vars.cv_kernelCrop[0]), 0.1f, 1.0f))
+            {
+                vars.cv_kernelCrop[0] = std::clamp(vars.cv_kernelCrop[0], 0.1f, 1.0f);
+                vars.cv_kernelCrop[1] = vars.cv_kernelCrop[0];
+                vars.convParamsChanged = true;
+            }
+        }
+        else
+        {
+            if (ImGui::SliderFloat2("Crop##Kernel", vars.cv_kernelCrop, 0.1f, 1.0f))
+            {
+                vars.cv_kernelCrop[0] = std::clamp(vars.cv_kernelCrop[0], 0.1f, 1.0f);
+                vars.cv_kernelCrop[1] = std::clamp(vars.cv_kernelCrop[1], 0.1f, 1.0f);
+                vars.convParamsChanged = true;
+            }
+        }
+    }
+
+    if (ImGui::Checkbox("Preview Center##Kernel", &(vars.cv_kernelPreviewCenter)))
+        vars.convParamsChanged = true;
+
+    if (ImGui::SliderFloat2("Center##Kernel", vars.cv_kernelCenter, 0, 1))
+    {
+        vars.cv_kernelCenter[0] = std::clamp(vars.cv_kernelCenter[0], 0.0f, 1.0f);
+        vars.cv_kernelCenter[1] = std::clamp(vars.cv_kernelCenter[1], 0.0f, 1.0f);
+        vars.convParamsChanged = true;
+    }
+
+    if (vars.convParamsChanged)
+    {
+        vars.convParamsChanged = false;
+        updateConvParams();
+        conv.kernel();
+        selImageID = "cv-kernel";
+    }
+
+    imGuiDiv();
+    imGuiBold("CONVOLUTION");
+
+    const char* const convMethodItems[]{ "FFT CPU", "FFT GPU (Experimental)", "Naive CPU", "Naive GPU" };
+    if (ImGui::Combo("Method##Conv", &(vars.cv_method), convMethodItems, 4))
+        conv.cancel();
+
+    if (vars.cv_method == (int)RealBloom::ConvolutionMethod::FFT_CPU)
+    {
+        // No parameters yet
+    }
+    else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_CPU)
+    {
+        // Threads
+        if (ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, getMaxNumThreads()))
+            vars.cv_numThreads = std::clamp(vars.cv_numThreads, 1, (int)getMaxNumThreads());
+    }
+    else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_GPU)
+    {
+        // Chunks
+        if (ImGui::InputInt("Chunks##Conv", &(vars.cv_numChunks)))
+            vars.cv_numChunks = std::clamp(vars.cv_numChunks, 1, RealBloom::CONV_MAX_CHUNKS);
+
+        // Chunk Sleep Time
+        if (ImGui::InputInt("Sleep (ms)##Conv", &(vars.cv_chunkSleep)))
+            vars.cv_chunkSleep = std::clamp(vars.cv_chunkSleep, 0, RealBloom::CONV_MAX_SLEEP);
+    }
+
+    if (ImGui::SliderFloat("Threshold##Conv", &(vars.cv_convThreshold), 0, 2))
+    {
+        vars.cv_convThreshold = std::max(vars.cv_convThreshold, 0.0f);
+        vars.convThresholdChanged = true;
+        vars.convThresholdSwitchImage = true;
+    }
+
+    if (ImGui::SliderFloat("Knee##Conv", &(vars.cv_convKnee), 0, 2))
+    {
+        vars.cv_convKnee = std::max(vars.cv_convKnee, 0.0f);
+        vars.convThresholdChanged = true;
+        vars.convThresholdSwitchImage = true;
+    }
+
+    if (vars.convThresholdChanged)
+    {
+        updateConvParams();
+        conv.previewThreshold();
+        if (vars.convThresholdSwitchImage)
+        {
+            selImageID = "cv-prev";
+            vars.convThresholdSwitchImage = false;
+        }
+        vars.convThresholdChanged = false;
+    }
+
+    ImGui::Checkbox("Auto-Exposure##Kernel", &(vars.cv_autoExposure));
+
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Adjust the exposure to preserve the overall brightness.");
+
+    if (ImGui::Button("Convolve##Conv", btnSize()))
+    {
+        imgConvResult.resize(imgConvInput.getWidth(), imgConvInput.getHeight(), true);
+        imgConvResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
+        imgConvResult.moveToGPU();
+        selImageID = "cv-result";
+
+        updateConvParams();
+        conv.convolve();
+    }
+
+    if (ImGui::IsItemHovered() && !convResUsage.empty())
+        ImGui::SetTooltip(convResUsage.c_str());
+
+    if (conv.getStatus().isWorking())
+    {
+        if (ImGui::Button("Cancel##Conv", btnSize()))
+            conv.cancel();
+    }
+
+    std::string convStatus, convMessage;
+    uint32_t convMessageType = 1;
+    conv.getStatusText(convStatus, convMessage, convMessageType);
+
+    if (!convStatus.empty())
+        ImGui::Text(convStatus.c_str());
+
+    if (!convMessage.empty())
+    {
+        if (convMessageType > 0)
+        {
+            const ImVec4* textColor = &colorErrorText;
+            if (convMessageType == 1)
+                textColor = &colorInfoText;
+            else if (convMessageType == 2)
+                textColor = &colorWarningText;
+            else if (convMessageType == 3)
+                textColor = &colorErrorText;
+
+            ImGui::PushStyleColor(ImGuiCol_Text, *textColor);
+            ImGui::TextWrapped(convMessage.c_str());
+            ImGui::PopStyleColor();
+        }
+        else
+        {
+            ImGui::Text(convMessage.c_str());
+        }
+    }
+
+    imGuiDiv();
+    imGuiBold("LAYERS");
+
+    if (ImGui::Checkbox("Additive##Conv", &(vars.cm_additive)))
+        vars.convMixParamsChanged = true;
+
+    if (vars.cm_additive)
+    {
+        if (ImGui::SliderFloat("Input##Conv", &(vars.cm_inputMix), 0, 1))
+        {
+            vars.cm_inputMix = std::max(vars.cm_inputMix, 0.0f);
             vars.convMixParamsChanged = true;
         }
 
-        if (vars.convMixParamsChanged)
+        if (ImGui::SliderFloat("Conv.##Conv", &(vars.cm_convMix), 0, 1))
         {
-            vars.convMixParamsChanged = false;
-            conv.mix(vars.cm_additive, vars.cm_inputMix, vars.cm_convMix, vars.cm_mix, vars.cm_convExposure);
-            selImageID = "cv-result";
+            vars.cm_convMix = std::max(vars.cm_convMix, 0.0f);
+            vars.convMixParamsChanged = true;
         }
 
-        ImGui::NewLine();
-        imGuiDialogs();
-        ImGui::End(); // Convolution
+        if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
+            vars.convMixParamsChanged = true;
     }
-
-    // Color Management
+    else
     {
-        ImGui::Begin("Color Management");
-
-        imGuiBold("VIEW");
-
+        if (ImGui::SliderFloat("Mix##Conv", &(vars.cm_mix), 0, 1))
         {
-
-            // Exposure
-            if (ImGui::SliderFloat("Exposure##CMS", &(vars.cms_exposure), -10, 10))
-            {
-                CMS::setExposure(vars.cms_exposure);
-                vars.cmsParamsChanged = true;
-            }
-
-            const std::vector<std::string>& displays = CMS::getAvailableDisplays();
-            const std::vector<std::string>& views = CMS::getAvailableViews();
-            const std::vector<std::string>& looks = CMS::getAvailableLooks();
-            const std::string& activeDisplay = CMS::getActiveDisplay();
-            const std::string& activeView = CMS::getActiveView();
-            const std::string& activeLook = CMS::getActiveLook();
-
-            static int selDisplay = -1;
-            static int selView = -1;
-            static int selLook = -1;
-
-            // selDisplay
-            for (size_t i = 0; i < displays.size(); i++)
-                if (activeDisplay == displays[i])
-                {
-                    selDisplay = i;
-                    break;
-                }
-
-            // selView
-            for (size_t i = 0; i < views.size(); i++)
-                if (activeView == views[i])
-                {
-                    selView = i;
-                    break;
-                }
-
-            // selLook
-            for (size_t i = 0; i < looks.size(); i++)
-                if (activeLook == looks[i])
-                {
-                    selLook = i;
-                    break;
-                }
-            if (activeLook.empty()) selLook = 0;
-
-            // Display
-            if (imGuiCombo("Display##CMS", displays, &selDisplay, false))
-            {
-                CMS::setActiveDisplay(displays[selDisplay]);
-                vars.cmsParamsChanged = true;
-
-                // Update selView
-                ptrdiff_t activeViewIndex = std::distance(views.begin(), std::find(views.begin(), views.end(), activeView));
-                if (activeViewIndex < views.size())
-                    selView = activeViewIndex;
-            }
-
-            // View
-            if (imGuiCombo("View##CMS", views, &selView, false))
-            {
-                CMS::setActiveView(views[selView]);
-                vars.cmsParamsChanged = true;
-            }
-
-            // Look
-            if (imGuiCombo("Look##CMS", looks, &selLook, false))
-            {
-                CMS::setActiveLook(looks[selLook]);
-                vars.cmsParamsChanged = true;
-            }
-
-            // Update
-            if (vars.cmsParamsChanged)
-            {
-                vars.cmsParamsChanged = false;
-                for (auto& img : images)
-                    img->moveToGPU();
-            }
-
+            vars.cm_mix = std::clamp(vars.cm_mix, 0.0f, 1.0f);
+            vars.convMixParamsChanged = true;
         }
 
-        imGuiDiv();
-        imGuiBold("INFO");
-
-        {
-
-            // Working Space
-            static std::string workingSpace = CMS::getWorkingSpace();
-            static std::string workingSpaceDesc = CMS::getWorkingSpaceDesc();
-            ImGui::TextWrapped("Working Space: %s", workingSpace.c_str());
-            if (ImGui::IsItemHovered() && !workingSpaceDesc.empty())
-                ImGui::SetTooltip(workingSpaceDesc.c_str());
-
-            // CMS Error
-            if (!CMS::ok())
-                imGuiText(CMS::getError(), true, false);
-
-        }
-
-        imGuiDiv();
-        imGuiBold("COLOR MATCHING");
-
-        {
-
-            // Get available CMF Tables
-            std::vector<CmfTableInfo> cmfTables = CMF::getAvailableTables();
-
-            // Convert to a string vector
-            std::vector<std::string> cmfTableNames;
-            for (const auto& tbl : cmfTables)
-                cmfTableNames.push_back(tbl.name);
-
-            // Get the active table index
-            static int selCmfTable = -1;
-            if (CMF::hasTable())
-            {
-                CmfTableInfo activeTable = CMF::getActiveTableInfo();
-                for (size_t i = 0; i < cmfTables.size(); i++)
-                    if ((cmfTables[i].name == activeTable.name) && (cmfTables[i].path == activeTable.path))
-                    {
-                        selCmfTable = i;
-                        break;
-                    }
-            }
-
-            // CMF Table
-            static bool tableChanged = false;
-            if (imGuiCombo("CMF##CMF", cmfTableNames, &selCmfTable, false))
-            {
-                CMF::setActiveTable(cmfTables[selCmfTable]);
-                tableChanged = true;
-            }
-
-            // CMF Details
-            std::string cmfTableDetails = CMF::getActiveTableDetails();
-            if (ImGui::IsItemHovered() && CMF::hasTable() && !cmfTableDetails.empty())
-                ImGui::SetTooltip(cmfTableDetails.c_str());
-
-            // CMF Error
-            if (!CMF::ok())
-                imGuiText(CMF::getError(), true, false);
-
-            // CMF Preview
-            static std::string cmfPreviewError = "";
-            if (ImGui::Button("Preview##CMF", btnSize()) || tableChanged)
-            {
-                tableChanged = false;
-                cmfPreviewError = "";
-                selImageID = "disp-result";
-
-                disp.cancel();
-                try
-                {
-                    disp.previewCmf(CMF::getActiveTable().get());
-                }
-                catch (const std::exception& e)
-                {
-                    cmfPreviewError = e.what();
-                }
-            }
-            imGuiText(cmfPreviewError, true, false);
-
-        }
-
-        imGuiDiv();
-        imGuiBold("XYZ CONVERSION");
-
-        {
-
-            const std::vector<std::string>& internalSpaces = CMS::getInternalColorSpaces();
-            const std::vector<std::string>& userSpaces = CMS::getAvailableColorSpaces();
-            XyzConversionInfo currentInfo = CmXYZ::getConversionInfo();
-
-            static int selUserSpace = -1;
-            static int selCommonInternal = -1;
-            static int selCommonUser = -1;
-            static int selMethod = 0;
-            static bool xcParamsChanged = false;
-
-            selMethod = (int)currentInfo.method;
-
-            // selUserSpace
-            for (size_t i = 0; i < userSpaces.size(); i++)
-                if (currentInfo.userSpace == userSpaces[i])
-                {
-                    selUserSpace = i;
-                    break;
-                }
-
-            // selCommonInternal
-            for (size_t i = 0; i < internalSpaces.size(); i++)
-                if (currentInfo.commonInternal == internalSpaces[i])
-                {
-                    selCommonInternal = i;
-                    break;
-                }
-
-            // selCommonUser
-            for (size_t i = 0; i < userSpaces.size(); i++)
-                if (currentInfo.commonUser == userSpaces[i])
-                {
-                    selCommonUser = i;
-                    break;
-                }
-
-            // Method
-            static std::vector<std::string> methodNames;
-            {
-                static bool methodNamesInit = false;
-                if (!methodNamesInit)
-                {
-                    methodNamesInit = true;
-                    methodNames.push_back("None");
-                    methodNames.push_back("User Config");
-                    methodNames.push_back("Common Space");
-                }
-            }
-            if (imGuiCombo("Method##XC", methodNames, &selMethod, false))
-                xcParamsChanged = true;
-
-            // Color spaces
-            if (selMethod == (int)XyzConversionMethod::UserConfig)
-            {
-                // XYZ space
-                if (imGuiCombo("XYZ I-E##XC", userSpaces, &selUserSpace, false))
-                    xcParamsChanged = true;
-                if (ImGui::IsItemHovered() && selUserSpace >= 0)
-                {
-                    std::string desc = CMS::getColorSpaceDesc(CMS::getConfig(), userSpaces[selUserSpace]);
-                    if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
-                }
-            }
-            else if (selMethod == (int)XyzConversionMethod::CommonSpace)
-            {
-                // Internal space
-                if (imGuiCombo("Internal##XC", internalSpaces, &selCommonInternal, false))
-                    xcParamsChanged = true;
-                if (ImGui::IsItemHovered() && selCommonInternal >= 0)
-                {
-                    std::string desc = CMS::getColorSpaceDesc(CMS::getInternalConfig(), internalSpaces[selCommonInternal]);
-                    if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
-                }
-
-                // User space
-                if (imGuiCombo("User##XC", userSpaces, &selCommonUser, false))
-                    xcParamsChanged = true;
-                if (ImGui::IsItemHovered() && selCommonUser >= 0)
-                {
-                    std::string desc = CMS::getColorSpaceDesc(CMS::getConfig(), userSpaces[selCommonUser]);
-                    if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
-                }
-            }
-
-            // Update
-            if (xcParamsChanged)
-            {
-                xcParamsChanged = false;
-
-                XyzConversionInfo info;
-                info.method = (XyzConversionMethod)selMethod;
-
-                if (selUserSpace >= 0)
-                    info.userSpace = userSpaces[selUserSpace];
-
-                if (selCommonInternal >= 0)
-                    info.commonInternal = internalSpaces[selCommonInternal];
-
-                if (selCommonUser >= 0)
-                    info.commonUser = userSpaces[selCommonUser];
-
-                CmXYZ::setConversionInfo(info);
-            }
-
-            // CmXYZ Error
-            if (!CmXYZ::ok())
-                imGuiText(CmXYZ::getError(), true, false);
-
-        }
-
-        ImGui::NewLine();
-        imGuiDialogs();
-        ImGui::End();
+        if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
+            vars.convMixParamsChanged = true;
     }
 
-    // Misc
+    if (ImGui::Button("Show Conv. Layer##Conv", btnSize()))
     {
-        ImGui::Begin("Misc");
-
-        imGuiBold("INTERFACE");
-
-        if (ImGui::InputFloat("Scale", &(Config::UI_SCALE), 0.125f, 0.125f, "%.3f"))
-        {
-            Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
-            io->FontGlobalScale = Config::UI_SCALE / Config::S_UI_MAX_SCALE;
-        }
-
-        // UI Renderer
-        static std::string uiRenderer = strFormat("UI Renderer:\n%s", (const char*)glGetString(GL_RENDERER));
-
-        // FPS
-        ImGui::TextWrapped(
-            "%.3f ms (%.1f FPS)",
-            1000.0f / ImGui::GetIO().Framerate,
-            ImGui::GetIO().Framerate);
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip(uiRenderer.c_str());
-        ImGui::NewLine();
-
-        imGuiBold("INFO");
-
-        // Version
-        ImGui::TextWrapped("%s v%s", Config::S_APP_TITLE, Config::S_APP_VERSION);
-
-        // GitHub
-        if (ImGui::Button("GitHub", btnSize()))
-            openURL(Config::S_GITHUB_URL);
-        if (ImGui::Button("Tutorial", btnSize()))
-            openURL(Config::S_DOCS_URL);
-
-        ImGui::End();
+        vars.cm_additive = false;
+        vars.cm_mix = 1.0f;
+        vars.cm_convExposure = 0.0f;
+        vars.convMixParamsChanged = true;
     }
+
+    if (vars.convMixParamsChanged)
+    {
+        vars.convMixParamsChanged = false;
+        conv.mix(vars.cm_additive, vars.cm_inputMix, vars.cm_convMix, vars.cm_mix, vars.cm_convExposure);
+        selImageID = "cv-result";
+    }
+
+    ImGui::NewLine();
+    imGuiDialogs();
+    ImGui::End();
 }
 
 void imGuiDiv()
@@ -1106,18 +1137,6 @@ void imGuiText(const std::string& s, bool isError, bool newLine)
     }
 }
 
-bool lb1ItemGetter(void* data, int index, const char** outText)
-{
-    *outText = imageNames[index].c_str();
-    return true;
-}
-
-bool comboItemGetter(void* data, int index, const char** outText)
-{
-    *outText = activeComboList[index].c_str();
-    return true;
-}
-
 bool imGuiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth)
 {
     activeComboList = items;
@@ -1125,11 +1144,76 @@ bool imGuiCombo(const std::string& label, const std::vector<std::string>& items,
 
     if (fullWidth)
         ImGui::PushItemWidth(-1);
-    result = ImGui::Combo(label.c_str(), selectedIndex, comboItemGetter, nullptr, activeComboList.size());
+
+    result = ImGui::Combo(
+        label.c_str(),
+        selectedIndex,
+        [](void* data, int index, const char** outText)
+        {
+            *outText = activeComboList[index].c_str();
+            return true;
+        },
+        nullptr, activeComboList.size());
+
     if (fullWidth)
         ImGui::PopItemWidth();
 
     return result;
+}
+
+void imGuiDialogs()
+{
+    const std::vector<std::string>& userSpaces = CMS::getAvailableColorSpaces();
+
+    if (ImGui::BeginPopupModal(DIALOG_COLORSPACE, 0, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Color space of the file:");
+
+        static int selReadSpace = 0;
+        static int selWriteSpace = 0;
+
+        if (dlgParam_colorSpace_init)
+        {
+            dlgParam_colorSpace_init = false;
+            if (!dlgParam_colorSpace_writing)
+            {
+                if (!(dlgParam_colorSpace_readSpace.empty()))
+                {
+                    for (size_t i = 0; i < userSpaces.size(); i++)
+                        if (userSpaces[i] == dlgParam_colorSpace_readSpace)
+                        {
+                            selReadSpace = i;
+                            break;
+                        }
+                }
+            }
+        }
+
+        int* selSpace = (dlgParam_colorSpace_writing ? (&selWriteSpace) : (&selReadSpace));
+
+        if (dlgParam_colorSpace_writing)
+            imGuiCombo("##WriteColorSpace", userSpaces, selSpace, true);
+        else
+            imGuiCombo("##ReadColorSpace", userSpaces, selSpace, true);
+
+        if (ImGui::IsItemHovered() && *selSpace >= 0)
+        {
+            std::string colorSpaceDesc = CMS::getConfig()
+                ->getColorSpace(userSpaces[*selSpace].c_str())
+                ->getDescription();
+            ImGui::SetTooltip(colorSpaceDesc.c_str());
+        }
+
+        if (ImGui::Button("OK", dlgBtnSize()))
+        {
+            dialogResult_colorSpace = userSpaces[*selSpace];
+            dialogAction_colorSpace();
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Button("Cancel", dlgBtnSize()))
+            ImGui::CloseCurrentPopup();
+        ImGui::NewLine();
+    }
 }
 
 void addImage(const std::string& id, const std::string& name)
@@ -1198,61 +1282,6 @@ void saveImage(CmImage& image, const std::string& dlgID, std::string& outError)
         dlgParam_colorSpace_writing = true;
         dlgParam_colorSpace_readSpace = "";
         ImGui::OpenPopup(DIALOG_COLORSPACE);
-    }
-}
-
-void imGuiDialogs()
-{
-    const std::vector<std::string>& userSpaces = CMS::getAvailableColorSpaces();
-
-    if (ImGui::BeginPopupModal(DIALOG_COLORSPACE, 0, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        ImGui::Text("Color space of the file:");
-
-        static int selReadSpace = 0;
-        static int selWriteSpace = 0;
-
-        if (dlgParam_colorSpace_init)
-        {
-            dlgParam_colorSpace_init = false;
-            if (!dlgParam_colorSpace_writing)
-            {
-                if (!(dlgParam_colorSpace_readSpace.empty()))
-                {
-                    for (size_t i = 0; i < userSpaces.size(); i++)
-                        if (userSpaces[i] == dlgParam_colorSpace_readSpace)
-                        {
-                            selReadSpace = i;
-                            break;
-                        }
-                }
-            }
-        }
-
-        int* selSpace = (dlgParam_colorSpace_writing ? (&selWriteSpace) : (&selReadSpace));
-
-        if (dlgParam_colorSpace_writing)
-            imGuiCombo("##WriteColorSpace", userSpaces, selSpace, true);
-        else
-            imGuiCombo("##ReadColorSpace", userSpaces, selSpace, true);
-
-        if (ImGui::IsItemHovered() && *selSpace >= 0)
-        {
-            std::string colorSpaceDesc = CMS::getConfig()
-                ->getColorSpace(userSpaces[*selSpace].c_str())
-                ->getDescription();
-            ImGui::SetTooltip(colorSpaceDesc.c_str());
-        }
-
-        if (ImGui::Button("OK", dlgBtnSize()))
-        {
-            dialogResult_colorSpace = userSpaces[*selSpace];
-            dialogAction_colorSpace();
-            ImGui::CloseCurrentPopup();
-        }
-        if (ImGui::Button("Cancel", dlgBtnSize()))
-            ImGui::CloseCurrentPopup();
-        ImGui::NewLine();
     }
 }
 

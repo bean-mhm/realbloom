@@ -179,25 +179,3 @@ void openURL(std::string url)
 {
     ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
-
-void SimpleState::setError(const std::string& message)
-{
-    m_ok = false;
-    m_error = message;
-}
-
-void SimpleState::setOk()
-{
-    m_ok = true;
-    m_error = "";
-}
-
-bool SimpleState::ok() const
-{
-    return m_ok;
-}
-
-std::string SimpleState::getError() const
-{
-    return m_error;
-}

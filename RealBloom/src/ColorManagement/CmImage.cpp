@@ -209,7 +209,7 @@ void CmImage::moveToGPU_Internal()
     float* transData = nullptr;
 
     // Color Transform (CPU)
-    if (!CMS::usingGPU() && CMS::ok())
+    if (!CMS::usingGPU() && CMS::getStatus().isOK())
     {
         transData = new float[m_imageDataSize];
         std::copy(m_imageData, m_imageData + m_imageDataSize, transData);
@@ -268,7 +268,7 @@ void CmImage::moveToGPU_Internal()
     static bool fbFailed = true;
 
     // Color Transform (GPU)
-    if (CMS::usingGPU() && CMS::ok() && !lastTextureFailed)
+    if (CMS::usingGPU() && CMS::getStatus().isOK() && !lastTextureFailed)
     {
         try
         {

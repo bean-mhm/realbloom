@@ -1,7 +1,7 @@
 #include "CmXYZ.h"
 
 XyzConversionInfo CmXYZ::S_INFO;
-SimpleState CmXYZ::S_STATE;
+BaseStatus CmXYZ::S_STATUS;
 
 bool CmXYZ::init()
 {
@@ -58,14 +58,13 @@ bool CmXYZ::init()
                 "custom config. Note that using D65 as the white-point will "
                 "produce incorrect results."
             );
-
-        S_STATE.setOk();
     }
     catch (const std::exception& e)
     {
-        S_STATE.setError(makeError(__FUNCTION__, "", e.what(), true));
+        S_STATUS.setError(makeError(__FUNCTION__, "", e.what(), true));
     }
-    return S_STATE.ok();
+
+    return S_STATUS.isOK();
 }
 
 XyzConversionInfo CmXYZ::getConversionInfo()
@@ -75,22 +74,17 @@ XyzConversionInfo CmXYZ::getConversionInfo()
 
 void CmXYZ::setConversionInfo(const XyzConversionInfo& conversionInfo)
 {
+    S_STATUS.reset();
     S_INFO = conversionInfo;
-    S_STATE.setOk();
 }
 
-bool CmXYZ::ok()
+const BaseStatus& CmXYZ::getStatus()
 {
-    return S_STATE.ok();
-}
-
-std::string CmXYZ::getError()
-{
-    return S_STATE.getError();
+    return S_STATUS;
 }
 
 void CmXYZ::ensureOK()
 {
-    if (!ok())
-        throw std::exception(strFormat("CmXYZ failure: %s", getError().c_str()).c_str());
+    if (!S_STATUS.isOK())
+        throw std::exception(strFormat("CmXYZ failure: %s", S_STATUS.getError().c_str()).c_str());
 }

@@ -258,7 +258,7 @@ CmfTableInfo::CmfTableInfo(const std::string& name, const std::string& path)
 #pragma region CMF
 
 CMF::CmfVars* CMF::S_VARS = nullptr;
-SimpleState CMF::S_STATE;
+BaseStatus CMF::S_STATUS;
 
 void CMF::retrieveTables()
 {
@@ -287,15 +287,14 @@ bool CMF::init()
     try
     {
         retrieveTables();
-        S_STATE.setOk();
     }
     catch (const std::exception& e)
     {
-        S_STATE.setError(makeError(__FUNCTION__, "", e.what(), true));
+        S_STATUS.setError(makeError(__FUNCTION__, "", e.what(), true));
     }
 
     // Load the default table if it is found
-    if (ok())
+    if (S_STATUS.isOK())
     {
         for (const auto& tbl : S_VARS->tables)
         {
@@ -311,7 +310,7 @@ bool CMF::init()
             setActiveTable(S_VARS->tables[0]);
     }
 
-    return S_STATE.ok();
+    return S_STATUS.isOK();
 }
 
 void CMF::cleanUp()
@@ -341,6 +340,8 @@ std::string CMF::getActiveTableDetails()
 
 void CMF::setActiveTable(const CmfTableInfo& tableInfo)
 {
+    S_STATUS.reset();
+
     S_VARS->activeTable = nullptr;
     try
     {
@@ -361,11 +362,10 @@ void CMF::setActiveTable(const CmfTableInfo& tableInfo)
                 S_VARS->activeTable->getStep()
             );
         }
-        S_STATE.setOk();
     }
     catch (const std::exception& e)
     {
-        S_STATE.setError(e.what());
+        S_STATUS.setError(e.what());
     }
 }
 
@@ -374,14 +374,9 @@ bool CMF::hasTable()
     return (S_VARS->activeTable.get() != nullptr);
 }
 
-bool CMF::ok()
+const BaseStatus& CMF::getStatus()
 {
-    return S_STATE.ok();
-}
-
-std::string CMF::getError()
-{
-    return S_STATE.getError();
+    return S_STATUS;
 }
 
 #pragma endregion

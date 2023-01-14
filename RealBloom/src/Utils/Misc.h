@@ -85,17 +85,3 @@ bool processIsRunning(PROCESS_INFORMATION pi);
 bool deleteFile(const std::string& filename);
 void getTempDirectory(std::string& outDir);
 void openURL(std::string url);
-
-class SimpleState
-{
-private:
-    bool m_ok = true;
-    std::string m_error = "";
-
-public:
-    void setError(const std::string& message);
-    void setOk();
-
-    bool ok() const;
-    std::string getError() const;
-};

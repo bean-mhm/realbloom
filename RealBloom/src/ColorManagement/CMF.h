@@ -11,6 +11,8 @@
 
 #include "CMS.h"
 #include "CmXYZ.h"
+
+#include "../Utils/Status.h"
 #include "../Utils/Misc.h"
 #include "../Utils/NumberHelpers.h"
 
@@ -58,7 +60,7 @@ private:
         std::string activeTableDetails = "";
     };
     static CmfVars* S_VARS;
-    static SimpleState S_STATE;
+    static BaseStatus S_STATUS;
 
     static void retrieveTables();
 
@@ -78,6 +80,5 @@ public:
     static void setActiveTable(const CmfTableInfo& tableInfo);
 
     static bool hasTable();
-    static bool ok();
-    static std::string getError();
+    static const BaseStatus& getStatus();
 };

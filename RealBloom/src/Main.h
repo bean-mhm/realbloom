@@ -48,15 +48,19 @@
 #include "Utils/NumberHelpers.h"
 #include "Utils/Misc.h"
 
-void layout();
+void layoutAll();
+
+void layoutImageControls();
+void layoutColorManagement();
+void layoutMisc();
+void layoutDiffractionPattern();
+void layoutConvolution();
 
 void imGuiDiv();
 void imGuiBold(const std::string& s);
 void imGuiText(const std::string& s, bool isError, bool newLine);
-
-bool lb1ItemGetter(void* data, int index, const char** outText);
-bool comboItemGetter(void* data, int index, const char** outText);
 bool imGuiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth);
+void imGuiDialogs();
 
 void addImage(const std::string& id, const std::string& name);
 CmImage* getImageByID(const std::string& id);
@@ -64,7 +68,6 @@ CmImage* getImageByID(const std::string& id);
 void loadImage(CmImage& image, const std::string& dlgID, std::function<void()> onLoad, std::string& outError);
 void saveImage(CmImage& image, const std::string& dlgID, std::string& outError);
 
-void imGuiDialogs();
 void updateDiffParams();
 void updateDispParams();
 void updateConvParams();

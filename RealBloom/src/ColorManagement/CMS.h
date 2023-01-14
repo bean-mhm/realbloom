@@ -12,6 +12,7 @@ namespace OCIO = OpenColorIO_v2_1;
 
 #include "OcioShader.h"
 #include "../Utils/OpenGL/GlUtils.h"
+#include "../Utils/Status.h"
 #include "../Utils/Misc.h"
 #include "../CLI.h"
 
@@ -57,7 +58,7 @@ private:
         void retrieveLooks();
     };
     static CmVars* S_VARS;
-    static SimpleState S_STATE;
+    static BaseStatus S_STATUS;
 
     static void updateProcessors();
 
@@ -93,8 +94,7 @@ public:
     static float getExposure();
     static void setExposure(float newExposure);
 
-    static bool ok();
-    static std::string getError();
+    static const BaseStatus& getStatus();
     static void ensureOK();
 
     static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();

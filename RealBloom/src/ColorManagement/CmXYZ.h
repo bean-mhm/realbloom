@@ -9,6 +9,8 @@
 namespace OCIO = OpenColorIO_v2_1;
 
 #include "CMS.h"
+
+#include "../Utils/Status.h"
 #include "../Utils/Misc.h"
 
 enum class XyzConversionMethod
@@ -38,7 +40,7 @@ class CmXYZ
 {
 private:
     static XyzConversionInfo S_INFO;
-    static SimpleState S_STATE;
+    static BaseStatus S_STATUS;
 
 public:
     CmXYZ() = delete;
@@ -50,7 +52,6 @@ public:
     static XyzConversionInfo getConversionInfo();
     static void setConversionInfo(const XyzConversionInfo& conversionInfo);
 
-    static bool ok();
-    static std::string getError();
+    static const BaseStatus& getStatus();
     static void ensureOK();
 };

@@ -6,7 +6,7 @@ std::string CMS::INTERNAL_XYZ_IE = "Linear CIE-XYZ I-E";
 bool CMS::USE_GPU = true;
 
 CMS::CmVars* CMS::S_VARS = nullptr;
-SimpleState CMS::S_STATE;
+BaseStatus CMS::S_STATUS;
 
 void CMS::CmVars::retrieveColorSpaces()
 {
@@ -111,18 +111,16 @@ bool CMS::init()
         S_VARS->retrieveDisplays();
         S_VARS->retrieveViews();
         S_VARS->retrieveLooks();
-
-        S_STATE.setOk();
     }
     catch (std::exception& e)
     {
-        S_STATE.setError(makeError(__FUNCTION__, stage, e.what(), true));
+        S_STATUS.setError(makeError(__FUNCTION__, stage, e.what(), true));
     }
 
-    if (ok())
+    if (S_STATUS.isOK())
         updateProcessors();
 
-    return S_STATE.ok();
+    return S_STATUS.isOK();
 }
 
 void CMS::cleanUp()
@@ -232,6 +230,8 @@ void CMS::updateProcessors()
     if (CLI::hasCommands())
         return;
 
+    S_STATUS.reset();
+
     try
     {
         // Config
@@ -294,41 +294,34 @@ void CMS::updateProcessors()
             // Recreate the OCIO shader
             S_VARS->shader = std::make_shared<OcioShader>(shaderDesc);
         }
-
-        S_STATE.setOk();
     }
     catch (const std::exception& e)
     {
-        S_STATE.setError(makeError(__FUNCTION__, "", e.what(), true));
+        S_STATUS.setError(makeError(__FUNCTION__, "", e.what(), true));
     }
 }
 
-bool CMS::ok()
+const BaseStatus& CMS::getStatus()
 {
-    return S_STATE.ok();
-}
-
-std::string CMS::getError()
-{
-    return S_STATE.getError();
+    return S_STATUS;
 }
 
 void CMS::ensureOK()
 {
-    if (!ok())
-        throw std::exception(strFormat("CMS failure: %s", getError().c_str()).c_str());
+    if (!S_STATUS.isOK())
+        throw std::exception(strFormat("CMS failure: %s", S_STATUS.getError().c_str()).c_str());
 }
 
 OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()
 {
-    if (ok())
+    if (S_STATUS.isOK())
         return S_VARS->cpuProcessor;
     return nullptr;
 }
 
 OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
 {
-    if (ok())
+    if (S_STATUS.isOK())
         return S_VARS->gpuProcessor;
     return nullptr;
 }
