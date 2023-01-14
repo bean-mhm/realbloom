@@ -122,10 +122,11 @@ std::string getPathSeparator()
 std::string getExecDir()
 {
     static std::string execDir = "";
+
     if (execDir.empty())
     {
-        char path_cstr[1024] = { 0 };
-        GetModuleFileNameA(NULL, path_cstr, 1024);
+        char path_cstr[2048] = { 0 };
+        GetModuleFileNameA(NULL, path_cstr, 2048);
 
         auto path = std::filesystem::path(std::string(path_cstr)).parent_path();
         execDir = std::filesystem::canonical(path).string();
@@ -135,6 +136,7 @@ std::string getExecDir()
 
         execDir = std::filesystem::path(execDir).make_preferred().string();
     }
+
     return execDir;
 }
 

@@ -159,11 +159,9 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
 {
     sample(numSamples, outSamples);
 
-    std::string stage;
+    std::string stage = "";
     try
     {
-        stage = "init";
-
         CMS::ensureOK();
         CmXYZ::ensureOK();
 

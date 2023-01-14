@@ -171,6 +171,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\RealBloom\include\pugixml\pugixml.cpp" />
     <ClCompile Include="..\RealBloom\src\Async.cpp" />
     <ClCompile Include="..\RealBloom\src\Config.cpp" />
     <ClCompile Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.cpp" />
@@ -199,7 +200,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\RealBloom\include\dj_fft\dj_fft.h" />
-    <ClInclude Include="..\RealBloom\include\inih\INIReader.h" />
+    <ClInclude Include="..\RealBloom\include\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="..\RealBloom\include\pugixml\pugixml.hpp" />
     <ClInclude Include="..\RealBloom\src\Async.h" />
     <ClInclude Include="..\RealBloom\src\Config.h" />
     <ClInclude Include="..\RealBloom\src\RealBloom\Binary\BinaryConvFftGpu.h" />

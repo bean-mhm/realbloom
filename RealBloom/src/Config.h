@@ -1,19 +1,22 @@
 #pragma once
 
-#include <fstream>
 #include <iostream>
+#include <fstream>
+#include <filesystem>
 #include <string>
 #include <stdint.h>
 
-#include <inih/INIReader.h>
+#include <pugixml/pugixml.hpp>
+
 #include "Utils/Misc.h"
 
 class Config
 {
-public:
+private:
     static std::string CFG_FILENAME;
 
-    // const
+public:
+    // Const
     static const char* S_APP_TITLE;
     static const char* S_APP_VERSION;
     static const char* S_APP_LOCALE;
@@ -24,9 +27,10 @@ public:
     static const char* S_GITHUB_URL;
     static const char* S_DOCS_URL;
 
-    // variable
+    // Variable
     static float UI_SCALE;
 
     static void load();
     static void save();
+
 };

@@ -54,7 +54,6 @@ int main(int argc, char** argv)
 
     // Load config
     Config::load();
-    Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
 
     // CLI
     CLI::init(argc, argv);

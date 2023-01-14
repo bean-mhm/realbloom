@@ -202,6 +202,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="include\pugixml\pugixml.cpp" />
     <ClCompile Include="src\CLI.cpp" />
     <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
     <ClCompile Include="src\ColorManagement\CMF.cpp" />
@@ -252,6 +253,8 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
   <ItemGroup>
     <ClInclude Include="include\dj_fft\dj_fft.h" />
     <ClInclude Include="include\pocketfft\pocketfft_hdronly.h" />
+    <ClInclude Include="include\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="include\pugixml\pugixml.hpp" />
     <ClInclude Include="include\rapidcsv\rapidcsv.h" />
     <ClInclude Include="src\CLI.h" />
     <ClInclude Include="src\ColorManagement\CMF.h" />
@@ -267,7 +270,6 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="src\Utils\ConsoleColors.h" />
     <ClInclude Include="src\Utils\CliParser.h" />
     <ClInclude Include="src\Utils\FileDialogs.h" />
-    <ClInclude Include="include\inih\INIReader.h" />
     <ClInclude Include="include\ocio\OpenColorABI.h" />
     <ClInclude Include="include\ocio\OpenColorAppHelpers.h" />
     <ClInclude Include="include\ocio\OpenColorIO.h" />
@@ -385,13 +387,6 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="config.ini">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
-      <FileType>Document</FileType>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-    </CopyFileToFolders>
     <None Include="libs\glfw3\glfw3.dll" />
   </ItemGroup>
   <ItemGroup>
@@ -423,6 +418,14 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="config.xml">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </CopyFileToFolders>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -153,6 +153,9 @@
     <ClCompile Include="src\Utils\Status.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="include\pugixml\pugixml.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RealBloom\DiffractionPattern.h">
@@ -237,9 +240,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Async.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\inih\INIReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
@@ -533,6 +533,12 @@
     <ClInclude Include="src\Utils\Status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\pugixml\pugiconfig.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\pugixml\pugixml.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="libs\glfw3\glfw3.dll" />
@@ -549,7 +555,7 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="imgui.ini" />
-    <CopyFileToFolders Include="config.ini" />
+    <CopyFileToFolders Include="config.xml" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RealBloom.rc">
