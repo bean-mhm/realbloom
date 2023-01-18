@@ -30,6 +30,8 @@
 #include "imgui/imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
+#include <nfde/nfd.h>
+
 #include "ColorManagement/CMS.h"
 #include "ColorManagement/CMF.h"
 #include "ColorManagement/CmXYZ.h"
@@ -65,8 +67,8 @@ void imGuiDialogs();
 void addImage(const std::string& id, const std::string& name);
 CmImage* getImageByID(const std::string& id);
 
-void loadImage(CmImage& image, const std::string& dlgID, std::function<void()> onLoad, std::string& outError);
-void saveImage(CmImage& image, const std::string& dlgID, std::string& outError);
+bool openImage(CmImage& image, const std::string& dlgID, std::string& outError);
+bool saveImage(CmImage& image, const std::string& dlgID, std::string& outError);
 
 void updateDiffParams();
 void updateDispParams();
@@ -82,6 +84,10 @@ void cleanUp();
 
 struct UiVars
 {
+    // Color Management (CMS)
+    float cms_exposure = 0.0f;
+    bool cmsParamsChanged = false;
+
     // Diffraction Pattern
     bool dp_grayscale = false;
 
@@ -132,8 +138,4 @@ struct UiVars
     float cm_mix = 0.2f;            // for normal blending
     float cm_convExposure = 0.0f;
     bool convMixParamsChanged = false;
-
-    // Color Management
-    float cms_exposure = 0.0f;
-    bool cmsParamsChanged = false;
 };

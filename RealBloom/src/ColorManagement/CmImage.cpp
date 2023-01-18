@@ -1,7 +1,5 @@
 #include "CmImage.h"
 
-using namespace std;
-
 std::shared_ptr<GlFrameBuffer> CmImage::s_frameBuffer = nullptr;
 
 CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor, bool useExposure, bool useGlobalFB)
@@ -15,7 +13,7 @@ CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width,
 
 CmImage::~CmImage()
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     m_localFrameBuffer = nullptr;
 
@@ -23,22 +21,17 @@ CmImage::~CmImage()
         delete[] m_imageData;
 }
 
-void CmImage::cleanUp()
-{
-    s_frameBuffer = nullptr;
-}
-
-std::string CmImage::getID()
+const std::string& CmImage::getID() const
 {
     return m_id;
 }
 
-std::string CmImage::getName()
+const std::string& CmImage::getName() const
 {
     return m_name;
 }
 
-std::string CmImage::getSourceName()
+const std::string& CmImage::getSourceName() const
 {
     return m_sourceName;
 }
@@ -46,6 +39,68 @@ std::string CmImage::getSourceName()
 void CmImage::setSourceName(const std::string& sourceName)
 {
     m_sourceName = sourceName;
+}
+
+uint32_t CmImage::getWidth() const
+{
+    return m_width;
+}
+
+uint32_t CmImage::getHeight() const
+{
+    return m_height;
+}
+
+uint32_t CmImage::getImageDataSize() const
+{
+    return m_imageDataSize;
+}
+
+float* CmImage::getImageData()
+{
+    return m_imageData;
+}
+
+uint32_t CmImage::getGlTexture()
+{
+    if (m_moveToGpu)
+    {
+        m_moveToGpu = false;
+        moveToGPU_Internal();
+    }
+
+    if (CMS::usingGPU())
+    {
+        if (m_useGlobalFB && (s_frameBuffer.get() != nullptr))
+        {
+            return s_frameBuffer->getColorBuffer();
+        }
+        else if (!m_useGlobalFB && (m_localFrameBuffer.get() != nullptr))
+        {
+            return m_localFrameBuffer->getColorBuffer();
+        }
+    }
+    else if (m_texture.get())
+    {
+        return m_texture->getTexture();
+    }
+
+    return 0;
+}
+
+void CmImage::lock()
+{
+    m_mutex.lock();
+}
+
+void CmImage::unlock()
+{
+    m_mutex.unlock();
+}
+
+void CmImage::moveToGPU()
+{
+    m_moveToGpu = true;
 }
 
 void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
@@ -127,7 +182,7 @@ void CmImage::fill(float* buffer, bool shouldLock)
 
 void CmImage::renderUV()
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     if (!m_imageData)
         return;
@@ -151,171 +206,169 @@ void CmImage::renderUV()
     }
 }
 
-void CmImage::lock()
-{
-    m_mutex.lock();
-}
-
-void CmImage::unlock()
-{
-    m_mutex.unlock();
-}
-
-uint32_t CmImage::getWidth() const
-{
-    return m_width;
-}
-
-uint32_t CmImage::getHeight() const
-{
-    return m_height;
-}
-
-uint32_t CmImage::getImageDataSize() const
-{
-    return m_imageDataSize;
-}
-
-float* CmImage::getImageData()
-{
-    return m_imageData;
-}
-
-void CmImage::moveToGPU()
-{
-    m_moveToGpu = true;
-}
-
 void CmImage::moveToGPU_Internal()
 {
-    lock_guard<mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_mutex);
 
     if (!m_imageData)
         return;
 
-    bool sizeChanged = false;
-    if ((m_oldWidth != m_width) || (m_oldHeight != m_height))
+    // Apply View Transform
+    static bool lastResult = false;
+    try
     {
-        m_oldWidth = m_width;
-        m_oldHeight = m_height;
-        sizeChanged = true;
+        applyViewTransform(
+            m_imageData,
+            m_width,
+            m_height,
+            m_useExposure ? CMS::getExposure() : 0.0f,
+            m_texture,
+            m_useGlobalFB ? s_frameBuffer : m_localFrameBuffer,
+            !lastResult,
+            true,
+            false);
+        lastResult = true;
+    }
+    catch (const std::exception& e)
+    {
+        printError(__FUNCTION__, "", e.what());
+        lastResult = false;
+    }
+}
+
+void CmImage::applyViewTransform(
+    float* buffer,
+    uint32_t width,
+    uint32_t height,
+    float exposure,
+    std::shared_ptr<GlTexture>& texture,
+    std::shared_ptr<GlFrameBuffer>& frameBuffer,
+    bool recreate,
+    bool uploadToGPU,
+    bool readback,
+    std::vector<float>* outBuffer)
+{
+    try
+    {
+        CMS::ensureOK();
+    }
+    catch (const std::exception& e)
+    {
+        throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
     }
 
-    // Exposure
-    float exposure = CMS::getExposure();
-    float exposureMul = m_useExposure ? powf(2, exposure) : 1.0f;
+    uint32_t size = width * height * 4;
+    float exposureMul = powf(2, exposure);
+    bool gpuMode = CMS::usingGPU() && uploadToGPU;
 
     // Temporary buffer to apply transforms on (CPU)
-    float* transData = nullptr;
+    std::vector<float> transBuffer;
 
     // Color Transform (CPU)
-    if (!CMS::usingGPU() && CMS::getStatus().isOK())
+    if (!gpuMode)
     {
-        transData = new float[m_imageDataSize];
-        std::copy(m_imageData, m_imageData + m_imageDataSize, transData);
+        transBuffer.resize(size);
+        std::copy(buffer, buffer + size, transBuffer.data());
 
-        if (exposure != 0)
-            for (uint32_t i = 0; i < m_imageDataSize; i++)
-                if (i % 4 != 3) transData[i] *= exposureMul;
+        if (exposure != 0.0f)
+            for (uint32_t i = 0; i < size; i++)
+                if (i % 4 != 3) transBuffer[i] *= exposureMul;
+
         try
         {
             OCIO::PackedImageDesc img(
-                transData,
-                m_width,
-                m_height,
+                transBuffer.data(),
+                width,
+                height,
                 OCIO::ChannelOrdering::CHANNEL_ORDERING_RGBA,
                 OCIO::BitDepth::BIT_DEPTH_F32,
                 4,                 // 4 bytes to go to the next color channel
                 4 * 4,             // 4 color channels * 4 bytes per channel (till the next pixel)
-                m_width * 4 * 4);  // width * 4 channels * 4 bytes (till the next row)
+                width * 4 * 4);  // width * 4 channels * 4 bytes (till the next row)
 
             CMS::getCpuProcessor()->apply(img);
         }
         catch (std::exception& e)
         {
-            printError(__FUNCTION__, "Color Transform (CPU)", e.what());
+            throw std::exception(makeError(__FUNCTION__, "Color Transform (CPU)", e.what()).c_str());
         }
     }
 
-    static bool lastTextureFailed = true;
+    // Recreate the texture if needed
+    if (uploadToGPU)
+    {
+        bool mustRecreate = false;
 
-    // Recreate the texture if the size has changed or if it's in error state
-    if (sizeChanged || lastTextureFailed)
+        if (texture.get() == nullptr)
+            mustRecreate = true;
+        else if ((texture->getWidth() != width) || (texture->getHeight() != height))
+            mustRecreate = true;
+
+        mustRecreate |= recreate;
+
+        if (mustRecreate)
+        {
+            try
+            {
+                texture = std::make_shared<GlTexture>(width, height, GL_CLAMP, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
+            }
+            catch (const std::exception& e)
+            {
+                throw std::exception(makeError(__FUNCTION__, "Create texture", e.what()).c_str());
+            }
+        }
+    }
+
+    // Upload the texture to the GPU
+    if (uploadToGPU)
     {
         try
         {
-            m_texture = std::make_shared<GlTexture>(m_width, m_height, GL_CLAMP, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
-            lastTextureFailed = false;
+            if (!gpuMode && (transBuffer.size() > 0))
+                texture->upload(transBuffer.data());
+            else
+                texture->upload(buffer);
         }
-        catch (const std::exception&)
+        catch (const std::exception& e)
         {
-            lastTextureFailed = true;
-            printError(__FUNCTION__, "", "Failed to create texture.");
+            throw std::exception(makeError(__FUNCTION__, "Upload texture", e.what()).c_str());
         }
     }
-
-    if (!lastTextureFailed)
-    {
-        if (!CMS::usingGPU() && (transData != nullptr))
-            m_texture->upload(transData);
-        else
-            m_texture->upload(m_imageData);
-    }
-
-    // Clean up
-    DELARR(transData);
-
-    static bool fbFailed = true;
 
     // Color Transform (GPU)
-    if (CMS::usingGPU() && CMS::getStatus().isOK() && !lastTextureFailed)
+    if (gpuMode)
     {
         try
         {
-            std::shared_ptr<GlFrameBuffer>& fb = m_useGlobalFB ? s_frameBuffer : m_localFrameBuffer;
-
-            // Recreate our frame buffer if needed
+            // Recreate the frame buffer if needed
             {
                 bool mustRecreate = false;
-                if (fb.get() == nullptr)
-                {
+
+                if (frameBuffer.get() == nullptr)
                     mustRecreate = true;
-                }
-                else
-                {
-                    if ((fb->getWidth() != m_width) || (fb->getHeight() != m_height))
-                        mustRecreate = true;
-                    else if (fbFailed)
-                        mustRecreate = true;
-                }
+                else if ((frameBuffer->getWidth() != width) || (frameBuffer->getHeight() != height))
+                    mustRecreate = true;
+
+                mustRecreate |= recreate;
 
                 if (mustRecreate)
                 {
-                    try
-                    {
-                        fb = std::make_shared<GlFrameBuffer>(m_width, m_height);
-                        fbFailed = false;
-                    }
-                    catch (const std::exception& e)
-                    {
-                        fbFailed = true;
-                        throw e;
-                    }
+                    frameBuffer = std::make_shared<GlFrameBuffer>(width, height);
                 }
             }
 
             // Bind the frame buffer so we can render the transformed image into it
-            fb->bind();
+            frameBuffer->bind();
 
             // Set the viewport
-            fb->viewport();
+            frameBuffer->viewport();
 
             // Use the shader program
             std::shared_ptr<OcioShader> shader = CMS::getShader();
             shader->useProgram();
 
             // Set the input uniforms
-            m_texture->bind(GL_TEXTURE0);
+            texture->bind(GL_TEXTURE0);
             shader->setInputTexture(0);
             shader->setExposureMul(exposureMul);
 
@@ -340,73 +393,77 @@ void CmImage::moveToGPU_Internal()
                 // Create Vertex Array Object
                 glGenVertexArrays(1, &vao);
                 glBindVertexArray(vao);
-                checkGlStatus(__FUNCTION__, "VAO");
+                checkGlStatus("", "VAO");
 
                 // Create a Vertex Buffer Object and copy the vertex data to it
                 glGenBuffers(1, &vbo);
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
                 glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-                checkGlStatus(__FUNCTION__, "VBO");
+                checkGlStatus("", "VBO");
             }
 
             // Clear the buffer
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-            checkGlStatus(__FUNCTION__, "Clear");
+            checkGlStatus("", "Clear");
 
             // Draw
             {
                 glBindVertexArray(vao);
-                checkGlStatus(__FUNCTION__, "glBindVertexArray(vao)");
+                checkGlStatus("", "glBindVertexArray(vao)");
 
                 shader->enableAttribs();
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
-                checkGlStatus(__FUNCTION__, "glDrawArrays");
+                checkGlStatus("", "glDrawArrays");
 
                 shader->disableAttribs();
 
                 glBindVertexArray(0);
-                checkGlStatus(__FUNCTION__, "glBindVertexArray(0)");
+                checkGlStatus("", "glBindVertexArray(0)");
             }
 
             // Unbind the frame buffer so we can continue rendering to the screen
-            fb->unbind();
+            frameBuffer->unbind();
 
             // Clean up
             glDeleteBuffers(1, &vbo);
             glDeleteVertexArrays(1, &vao);
-            checkGlStatus(__FUNCTION__, "Cleanup");
+            checkGlStatus("", "Cleanup");
         }
-        catch (const std::exception&)
+        catch (const std::exception& e)
         {
-            printError(__FUNCTION__, "", "GPU Color Transform failed.");
+            throw std::exception(makeError(__FUNCTION__, "Color Transform (GPU)", e.what()).c_str());
         }
+    }
+
+    // Read back the result
+
+    if (!readback || (outBuffer == nullptr)) return;
+
+    if (!gpuMode)
+    {
+        *outBuffer = transBuffer;
+        return;
+    }
+
+    try
+    {
+        outBuffer->resize(size);
+
+        glBindTexture(GL_TEXTURE_2D, frameBuffer->getColorBuffer());
+        checkGlStatus("", "glBindTexture");
+
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, outBuffer->data());
+        checkGlStatus("", "glGetTexImage");
+    }
+    catch (const std::exception& e)
+    {
+        throw std::exception(makeError(__FUNCTION__, "Read back (GPU)", e.what()).c_str());
     }
 }
 
-uint32_t CmImage::getGlTexture()
+void CmImage::cleanUp()
 {
-    if (m_moveToGpu)
-    {
-        m_moveToGpu = false;
-        moveToGPU_Internal();
-    }
-
-    if (CMS::usingGPU())
-    {
-        if (m_useGlobalFB && (s_frameBuffer.get() != nullptr))
-        {
-            return s_frameBuffer->getColorBuffer();
-        }
-        else if (!m_useGlobalFB && (m_localFrameBuffer.get() != nullptr))
-        {
-            return m_localFrameBuffer->getColorBuffer();
-        }
-    }
-
-    if (m_texture.get())
-        return m_texture->getTexture();
-
-    return 0;
+    s_frameBuffer = nullptr;
 }

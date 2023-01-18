@@ -61,9 +61,9 @@ namespace RealBloom
             float transKnee = transformKnee(m_params.knee);
 
             float inpColor[3];
-            for (int y = 0; y < m_inputHeight; y++)
+            for (int y = 0; y < (int)m_inputHeight; y++)
             {
-                for (int x = 0; x < m_inputWidth; x++)
+                for (int x = 0; x < (int)m_inputWidth; x++)
                 {
                     uint32_t redIndex = (y * m_inputWidth + x) * 4;
                     inpColor[0] = m_inputBuffer[redIndex + 0];
@@ -97,9 +97,9 @@ namespace RealBloom
 
             int transX, transY;
             uint32_t redIndex;
-            for (int y = 0; y < m_kernelHeight; y++)
+            for (int y = 0; y < (int)m_kernelHeight; y++)
             {
-                for (int x = 0; x < m_kernelWidth; x++)
+                for (int x = 0; x < (int)m_kernelWidth; x++)
                 {
                     redIndex = (y * m_kernelWidth + x) * 4;
                     transX = x + m_kernelLeftPadding;
@@ -208,12 +208,12 @@ namespace RealBloom
 
                 // Fix the coordinates
                 {
-                    if (transX1 < (m_paddedWidth / 2))
+                    if (transX1 < ((int)m_paddedWidth / 2))
                         transX2 = transX1 + (m_paddedWidth / 2);
                     else
                         transX2 = transX1 - (m_paddedWidth / 2);
 
-                    if (transY1 < (m_paddedHeight / 2))
+                    if (transY1 < ((int)m_paddedHeight / 2))
                         transY2 = transY1 + (m_paddedHeight / 2);
                     else
                         transY2 = transY1 - (m_paddedHeight / 2);

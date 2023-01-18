@@ -57,16 +57,12 @@ public:
         bool useGlobalFB = true
     );
     ~CmImage();
-    static void cleanUp();
 
-    std::string getID();
-    std::string getName();
+    const std::string& getID() const;
+    const std::string& getName() const;
 
-    std::string getSourceName();
+    const std::string& getSourceName() const;
     void setSourceName(const std::string& sourceName);
-
-    void lock();
-    void unlock();
 
     uint32_t getWidth() const;
     uint32_t getHeight() const;
@@ -77,8 +73,12 @@ public:
     // RGBA. Every 4 elements represent a pixel.
     float* getImageData();
 
-    void moveToGPU();
     GLuint getGlTexture();
+
+    void lock();
+    void unlock();
+
+    void moveToGPU();
 
     // shouldLock must be false if the image is already locked.
     void resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock);
@@ -87,4 +87,32 @@ public:
     void fill(std::vector<float> buffer, bool shouldLock);
     void fill(float* buffer, bool shouldLock);
     void renderUV();
+
+    /// <summary>
+    ///     Apply view transform on a given buffer
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    /// <param name="exposure"></param>
+    /// <param name="texture">GlTexture instance to use for storing the output in CPU mode, or doing color transforms in GPU mode</param>
+    /// <param name="frameBuffer">GlFrameBuffer instance to store the color transform output in GPU mode</param>
+    /// <param name="recreate">Force recreate the texture and the frame buffer, even if they have the right size and aren't null</param>
+    /// <param name="uploadToGpu">Use the texture and the frame buffer to store the result. Disabling this will force enable CPU mode and leave texture and frameBuffer untouched</param>
+    /// <param name="readback">Read back the result to outBuffer</param>
+    /// <param name="outBuffer">Buffer for storing the result</param>
+    static void applyViewTransform(
+        float* buffer,
+        uint32_t width,
+        uint32_t height,
+        float exposure,
+        std::shared_ptr<GlTexture>& texture,
+        std::shared_ptr<GlFrameBuffer>& frameBuffer,
+        bool recreate,
+        bool uploadToGPU = true,
+        bool readback = false,
+        std::vector<float>* outBuffer = nullptr);
+
+    static void cleanUp();
+
 };

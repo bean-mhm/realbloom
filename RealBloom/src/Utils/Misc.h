@@ -57,6 +57,23 @@ void clearVector(std::vector<T>& v)
     std::vector<T>().swap(v);
 }
 
+template <typename T>
+int findIndex(const std::vector<T>& vector, const T& value)
+{
+    for (size_t i = 0; i < vector.size(); i++)
+        if (value == vector[i])
+        {
+            return i;
+        }
+    return -1;
+}
+
+template <typename T>
+bool contains(const std::vector<T>& vector, const T& value)
+{
+    return findIndex(vector, value) >= 0;
+}
+
 inline void threadJoin(std::thread* t)
 {
     if (t)

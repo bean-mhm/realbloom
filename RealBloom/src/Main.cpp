@@ -5,6 +5,7 @@ const char* glslVersion = "#version 130";
 GLFWwindow* window = nullptr;
 ImGuiIO* io = nullptr;
 bool appRunning = true;
+bool showFPS = false;
 
 // Fonts
 ImFont* fontRoboto = nullptr;
@@ -34,17 +35,9 @@ RealBloom::DiffractionPattern diff;
 RealBloom::Dispersion disp;
 RealBloom::Convolution conv;
 
-// Variables used in controls and sliders
+// Variables used for controls
 UiVars vars;
 std::string convResUsage = "";
-
-// Color Space Dialog
-constexpr const char* DIALOG_COLORSPACE = "Color Space";
-bool dlgParam_colorSpace_init = false;
-bool dlgParam_colorSpace_writing = false;
-std::string dlgParam_colorSpace_readSpace = "";
-std::packaged_task<void()> dialogAction_colorSpace;
-std::string dialogResult_colorSpace = "";
 
 int main(int argc, char** argv)
 {
@@ -85,11 +78,17 @@ int main(int argc, char** argv)
     // XYZ Utility
     CmXYZ::init();
 
+    // Color Managed Image IO
+    CmImageIO::init();
+
     // GUI-specific
     if (!CLI::hasCommands())
     {
         // Hide the console window
         ShowWindow(GetConsoleWindow(), SW_HIDE);
+
+        // Native File Dialog Extended
+        NFD_Init();
 
         // Create images to be used throughout the program
         addImage("aperture", "Aperture");
@@ -370,6 +369,9 @@ void layoutImageControls()
 
 void layoutColorManagement()
 {
+    const std::vector<std::string>& internalSpaces = CMS::getInternalColorSpaces();
+    const std::vector<std::string>& userSpaces = CMS::getColorSpaces();
+
     ImGui::Begin("Color Management");
 
     imGuiBold("VIEW");
@@ -383,40 +385,17 @@ void layoutColorManagement()
             vars.cmsParamsChanged = true;
         }
 
-        const std::vector<std::string>& displays = CMS::getAvailableDisplays();
-        const std::vector<std::string>& views = CMS::getAvailableViews();
-        const std::vector<std::string>& looks = CMS::getAvailableLooks();
+        const std::vector<std::string>& displays = CMS::getDisplays();
+        const std::vector<std::string>& views = CMS::getViews();
+        const std::vector<std::string>& looks = CMS::getLooks();
         const std::string& activeDisplay = CMS::getActiveDisplay();
         const std::string& activeView = CMS::getActiveView();
         const std::string& activeLook = CMS::getActiveLook();
 
-        static int selDisplay = -1;
-        static int selView = -1;
-        static int selLook = -1;
+        int selDisplay = findIndex(displays, activeDisplay);
+        int selView = findIndex(views, activeView);
+        int selLook = findIndex(looks, activeLook);
 
-        // selDisplay
-        for (size_t i = 0; i < displays.size(); i++)
-            if (activeDisplay == displays[i])
-            {
-                selDisplay = i;
-                break;
-            }
-
-        // selView
-        for (size_t i = 0; i < views.size(); i++)
-            if (activeView == views[i])
-            {
-                selView = i;
-                break;
-            }
-
-        // selLook
-        for (size_t i = 0; i < looks.size(); i++)
-            if (activeLook == looks[i])
-            {
-                selLook = i;
-                break;
-            }
         if (activeLook.empty()) selLook = 0;
 
         // Display
@@ -427,7 +406,7 @@ void layoutColorManagement()
 
             // Update selView
             ptrdiff_t activeViewIndex = std::distance(views.begin(), std::find(views.begin(), views.end(), activeView));
-            if (activeViewIndex < views.size())
+            if (activeViewIndex < (int)(views.size()))
                 selView = activeViewIndex;
         }
 
@@ -478,7 +457,41 @@ void layoutColorManagement()
 
     {
 
-        //
+        int selInputSpace = findIndex(userSpaces, CmImageIO::getInputSpace());
+        int selOutputSpace = findIndex(userSpaces, CmImageIO::getOutputSpace());
+        int selNonLinearSpace = findIndex(userSpaces, CmImageIO::getNonLinearSpace());
+
+        // Input Color Space
+        if (imGuiCombo("Input##IIO", userSpaces, &selInputSpace, false))
+            CmImageIO::setInputSpace(userSpaces[selInputSpace]);
+        if (ImGui::IsItemHovered() && selInputSpace >= 0)
+        {
+            std::string desc = CMS::getColorSpaceDesc(CMS::getConfig(), userSpaces[selInputSpace]);
+            if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
+        }
+
+        // Output Color Space
+        if (imGuiCombo("Output##IIO", userSpaces, &selOutputSpace, false))
+            CmImageIO::setOutputSpace(userSpaces[selOutputSpace]);
+        if (ImGui::IsItemHovered() && selOutputSpace >= 0)
+        {
+            std::string desc = CMS::getColorSpaceDesc(CMS::getConfig(), userSpaces[selOutputSpace]);
+            if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
+        }
+
+        // Non-Linear Color Space
+        if (imGuiCombo("Non-Linear##IIO", userSpaces, &selNonLinearSpace, false))
+            CmImageIO::setNonLinearSpace(userSpaces[selNonLinearSpace]);
+        if (ImGui::IsItemHovered() && selNonLinearSpace >= 0)
+        {
+            std::string desc = CMS::getColorSpaceDesc(CMS::getConfig(), userSpaces[selNonLinearSpace]);
+            if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
+        }
+
+        // Apply View Transform
+        bool applyViewTransform = CmImageIO::getApplyViewTransform();
+        if (ImGui::Checkbox("Apply View Transform", &applyViewTransform))
+            CmImageIO::setApplyViewTransform(applyViewTransform);
 
     }
 
@@ -488,7 +501,7 @@ void layoutColorManagement()
     {
 
         // Get the available CMF Tables
-        std::vector<CmfTableInfo> cmfTables = CMF::getAvailableTables();
+        std::vector<CmfTableInfo> cmfTables = CMF::getTables();
 
         // Convert to a string vector
         std::vector<std::string> cmfTableNames;
@@ -552,41 +565,14 @@ void layoutColorManagement()
 
     {
 
-        const std::vector<std::string>& internalSpaces = CMS::getInternalColorSpaces();
-        const std::vector<std::string>& userSpaces = CMS::getAvailableColorSpaces();
         XyzConversionInfo currentInfo = CmXYZ::getConversionInfo();
 
-        static int selUserSpace = -1;
-        static int selCommonInternal = -1;
-        static int selCommonUser = -1;
-        static int selMethod = 0;
+        int selUserSpace = findIndex(userSpaces, currentInfo.userSpace);
+        int selCommonInternal = findIndex(internalSpaces, currentInfo.commonInternal);
+        int selCommonUser = findIndex(userSpaces, currentInfo.commonUser);
+        int selMethod = (int)currentInfo.method;
+
         static bool xcParamsChanged = false;
-
-        selMethod = (int)currentInfo.method;
-
-        // selUserSpace
-        for (size_t i = 0; i < userSpaces.size(); i++)
-            if (currentInfo.userSpace == userSpaces[i])
-            {
-                selUserSpace = i;
-                break;
-            }
-
-        // selCommonInternal
-        for (size_t i = 0; i < internalSpaces.size(); i++)
-            if (currentInfo.commonInternal == internalSpaces[i])
-            {
-                selCommonInternal = i;
-                break;
-            }
-
-        // selCommonUser
-        for (size_t i = 0; i < userSpaces.size(); i++)
-            if (currentInfo.commonUser == userSpaces[i])
-            {
-                selCommonUser = i;
-                break;
-            }
 
         // Method
         static std::vector<std::string> methodNames;
@@ -683,14 +669,17 @@ void layoutMisc()
     static std::string uiRenderer = strFormat("UI Renderer:\n%s", (const char*)glGetString(GL_RENDERER));
 
     // FPS
-    ImGui::TextWrapped(
-        "%.3f ms (%.1f FPS)",
-        1000.0f / ImGui::GetIO().Framerate,
-        ImGui::GetIO().Framerate);
-    if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(uiRenderer.c_str());
-    ImGui::NewLine();
+    if (showFPS)
+    {
+        ImGui::TextWrapped(
+            "%.3f ms (%.1f FPS)",
+            1000.0f / ImGui::GetIO().Framerate,
+            ImGui::GetIO().Framerate);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(uiRenderer.c_str());
+    }
 
+    imGuiDiv();
     imGuiBold("INFO");
 
     // Version
@@ -716,9 +705,9 @@ void layoutDiffractionPattern()
     imGuiBold("APERTURE");
 
     {
-        static std::string loadError;
+        static std::string loadError = "";
         if (ImGui::Button("Browse Aperture##DP", btnSize()))
-            loadImage(imgAperture, imgAperture.getID(), []() {}, loadError);
+            openImage(imgAperture, imgAperture.getID(), loadError);
         imGuiText(loadError, true, false);
     }
 
@@ -748,7 +737,8 @@ void layoutDiffractionPattern()
         if (ImGui::Button("Browse Input##Disp", btnSize()))
         {
             CmImage* inputSrc = disp.getImgInputSrc();
-            loadImage(*inputSrc, imgDispInput.getID(), []() { vars.dispParamsChanged = true; }, loadError);
+            if (openImage(*inputSrc, imgDispInput.getID(), loadError))
+                vars.dispParamsChanged = true;
         }
         imGuiText(loadError, true, false);
     }
@@ -831,7 +821,10 @@ void layoutConvolution()
     {
         static std::string loadError;
         if (ImGui::Button("Browse Input##Conv", btnSize()))
-            loadImage(imgConvInput, imgConvInput.getID(), []() { vars.convThresholdChanged = true; }, loadError);
+        {
+            if (openImage(imgConvInput, imgConvInput.getID(), loadError))
+                vars.convThresholdChanged = true;
+        }
         imGuiText(loadError, true, false);
     }
 
@@ -840,7 +833,8 @@ void layoutConvolution()
         if (ImGui::Button("Browse Kernel##Conv", btnSize()))
         {
             CmImage* kernelSrc = conv.getImgKernelSrc();
-            loadImage(*kernelSrc, imgConvKernel.getID(), []() { vars.convParamsChanged = true; }, loadError);
+            if (openImage(*kernelSrc, imgConvKernel.getID(), loadError))
+                vars.convParamsChanged = true;
         }
         imGuiText(loadError, true, false);
     }
@@ -1163,57 +1157,7 @@ bool imGuiCombo(const std::string& label, const std::vector<std::string>& items,
 
 void imGuiDialogs()
 {
-    const std::vector<std::string>& userSpaces = CMS::getAvailableColorSpaces();
-
-    if (ImGui::BeginPopupModal(DIALOG_COLORSPACE, 0, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        ImGui::Text("Color space of the file:");
-
-        static int selReadSpace = 0;
-        static int selWriteSpace = 0;
-
-        if (dlgParam_colorSpace_init)
-        {
-            dlgParam_colorSpace_init = false;
-            if (!dlgParam_colorSpace_writing)
-            {
-                if (!(dlgParam_colorSpace_readSpace.empty()))
-                {
-                    for (size_t i = 0; i < userSpaces.size(); i++)
-                        if (userSpaces[i] == dlgParam_colorSpace_readSpace)
-                        {
-                            selReadSpace = i;
-                            break;
-                        }
-                }
-            }
-        }
-
-        int* selSpace = (dlgParam_colorSpace_writing ? (&selWriteSpace) : (&selReadSpace));
-
-        if (dlgParam_colorSpace_writing)
-            imGuiCombo("##WriteColorSpace", userSpaces, selSpace, true);
-        else
-            imGuiCombo("##ReadColorSpace", userSpaces, selSpace, true);
-
-        if (ImGui::IsItemHovered() && *selSpace >= 0)
-        {
-            std::string colorSpaceDesc = CMS::getConfig()
-                ->getColorSpace(userSpaces[*selSpace].c_str())
-                ->getDescription();
-            ImGui::SetTooltip(colorSpaceDesc.c_str());
-        }
-
-        if (ImGui::Button("OK", dlgBtnSize()))
-        {
-            dialogResult_colorSpace = userSpaces[*selSpace];
-            dialogAction_colorSpace();
-            ImGui::CloseCurrentPopup();
-        }
-        if (ImGui::Button("Cancel", dlgBtnSize()))
-            ImGui::CloseCurrentPopup();
-        ImGui::NewLine();
-    }
+    //
 }
 
 void addImage(const std::string& id, const std::string& name)
@@ -1231,58 +1175,43 @@ CmImage* getImageByID(const std::string& id)
     return nullptr;
 }
 
-void loadImage(CmImage& image, const std::string& dlgID, std::function<void()> onLoad, std::string& outError)
+bool openImage(CmImage& image, const std::string& dlgID, std::string& outError)
 {
     std::string filename;
-    if (FileDialogs::openDialog(dlgID, filename))
+    if (FileDialogs::openDialog(dlgID, CmImageIO::getOpenFilterList(), filename))
     {
-        dialogAction_colorSpace = std::packaged_task<void()>(
-            [&image, onLoad, filename, &outError]()
-            {
-                outError = "";
-                try
-                {
-                    CmImageIO::readImage(image, filename, dialogResult_colorSpace);
-                    selImageID = image.getID();
-                    onLoad();
-                }
-                catch (const std::exception& e)
-                {
-                    outError = e.what();
-                }
-            });
-
-        dlgParam_colorSpace_init = true;
-        dlgParam_colorSpace_writing = false;
-        CmImageIO::readImageColorSpace(filename, dlgParam_colorSpace_readSpace);
-        ImGui::OpenPopup(DIALOG_COLORSPACE);
+        outError = "";
+        try
+        {
+            CmImageIO::readImage(image, filename);
+            selImageID = image.getID();
+            return true;
+        }
+        catch (const std::exception& e)
+        {
+            outError = e.what();
+        }
     }
+    return false;
 }
 
-void saveImage(CmImage& image, const std::string& dlgID, std::string& outError)
+bool saveImage(CmImage& image, const std::string& dlgID, std::string& outError)
 {
     std::string filename;
-    if (FileDialogs::saveDialog(dlgID, "exr", filename))
+    if (FileDialogs::saveDialog(dlgID, CmImageIO::getSaveFilterList(), CmImageIO::getDefaultFilename(), filename))
     {
-        dialogAction_colorSpace = std::packaged_task<void()>(
-            [&image, filename, &outError]()
-            {
-                outError = "";
-                try
-                {
-                    CmImageIO::writeImage(image, filename, dialogResult_colorSpace);
-                }
-                catch (const std::exception& e)
-                {
-                    outError = e.what();
-                }
-            });
-
-        dlgParam_colorSpace_init = true;
-        dlgParam_colorSpace_writing = true;
-        dlgParam_colorSpace_readSpace = "";
-        ImGui::OpenPopup(DIALOG_COLORSPACE);
+        outError = "";
+        try
+        {
+            CmImageIO::writeImage(image, filename);
+            return true;
+        }
+        catch (const std::exception& e)
+        {
+            outError = e.what();
+        }
     }
+    return false;
 }
 
 void updateDiffParams()
@@ -1541,11 +1470,14 @@ void cleanUp()
     }
 
     CmImage::cleanUp();
+    CmImageIO::cleanUp();
     CMF::cleanUp();
     CMS::cleanUp();
 
     if (!CLI::hasCommands())
     {
+        NFD_Quit();
+
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();

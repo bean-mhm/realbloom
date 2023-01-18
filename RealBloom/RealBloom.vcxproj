@@ -202,6 +202,7 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="include\nfde\nfd_win.cpp" />
     <ClCompile Include="include\pugixml\pugixml.cpp" />
     <ClCompile Include="src\CLI.cpp" />
     <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
@@ -252,6 +253,8 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dj_fft\dj_fft.h" />
+    <ClInclude Include="include\nfde\nfd.h" />
+    <ClInclude Include="include\nfde\nfd.hpp" />
     <ClInclude Include="include\pocketfft\pocketfft_hdronly.h" />
     <ClInclude Include="include\pugixml\pugiconfig.hpp" />
     <ClInclude Include="include\pugixml\pugixml.hpp" />
@@ -352,7 +355,6 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
     <ClInclude Include="include\GL\glew.h" />
     <ClInclude Include="include\GL\glxew.h" />
     <ClInclude Include="include\GL\wglew.h" />
-    <ClInclude Include="include\nfd\nfd.h" />
     <ClInclude Include="src\RealBloom\ConvolutionThread.h" />
     <ClInclude Include="src\imgui\imconfig.h" />
     <ClInclude Include="src\imgui\imgui.h" />

@@ -122,8 +122,6 @@ inline double applyExposure(double v)
 }
 
 uint8_t doubleTo8bit(double v);
-float srgbToLinear_DEPRECATED(float x);
-float linearToSrgb_DEPRECATED(float x);
 float contrastCurve(float v, float contrast);
 double contrastCurve(double v, double contrast);
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY);
@@ -139,3 +137,6 @@ void calcFftConvPadding(
     float kernelCenterY,
     uint32_t& outPaddedWidth,
     uint32_t& outPaddedHeight);
+
+float srgbToLinear_DEPRECATED(float x);
+float linearToSrgb_DEPRECATED(float x);

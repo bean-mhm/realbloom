@@ -318,7 +318,7 @@ void CMF::cleanUp()
     DELPTR(S_VARS);
 }
 
-const std::vector<CmfTableInfo>& CMF::getAvailableTables()
+const std::vector<CmfTableInfo>& CMF::getTables()
 {
     return S_VARS->tables;
 }
@@ -328,12 +328,12 @@ std::shared_ptr<CmfTable> CMF::getActiveTable()
     return S_VARS->activeTable;
 }
 
-CmfTableInfo CMF::getActiveTableInfo()
+const CmfTableInfo& CMF::getActiveTableInfo()
 {
     return S_VARS->activeTableInfo;
 }
 
-std::string CMF::getActiveTableDetails()
+const std::string& CMF::getActiveTableDetails()
 {
     return S_VARS->activeTableDetails;
 }
@@ -365,6 +365,7 @@ void CMF::setActiveTable(const CmfTableInfo& tableInfo)
     }
     catch (const std::exception& e)
     {
+        S_VARS->activeTable = nullptr;
         S_STATUS.setError(e.what());
     }
 }

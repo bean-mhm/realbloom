@@ -22,12 +22,14 @@ public:
     GlTexture(
         uint32_t width,
         uint32_t height,
-        GLenum wrap = GL_CLAMP,
+        GLenum wrap = GL_CLAMP_TO_BORDER,
         GLenum minFilter = GL_LINEAR,
         GLenum magFilter = GL_LINEAR,
         GLint internalFormat = GL_RGBA32F);
     ~GlTexture();
 
+    uint32_t getWidth() const;
+    uint32_t getHeight() const;
     GLuint getTexture() const;
 
     // RGBA32F
@@ -35,4 +37,3 @@ public:
     void bind(GLenum texUnit);
     void bind();
 };
-

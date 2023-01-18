@@ -84,7 +84,8 @@ void CMS::CmVars::retrieveLooks()
 bool CMS::init()
 {
     S_VARS = new CmVars();
-    std::string stage;
+    std::string stage = "";
+
     try
     {
         // Internal config
@@ -158,22 +159,22 @@ const std::vector<std::string>& CMS::getInternalColorSpaces()
     return S_VARS->internalColorSpaces;
 }
 
-const std::vector<std::string>& CMS::getAvailableColorSpaces()
+const std::vector<std::string>& CMS::getColorSpaces()
 {
     return S_VARS->colorSpaces;
 }
 
-const std::vector<std::string>& CMS::getAvailableDisplays()
+const std::vector<std::string>& CMS::getDisplays()
 {
     return S_VARS->displays;
 }
 
-const std::vector<std::string>& CMS::getAvailableViews()
+const std::vector<std::string>& CMS::getViews()
 {
     return S_VARS->views;
 }
 
-const std::vector<std::string>& CMS::getAvailableLooks()
+const std::vector<std::string>& CMS::getLooks()
 {
     return S_VARS->looks;
 }
@@ -193,24 +194,24 @@ const std::string& CMS::getActiveLook()
     return S_VARS->activeLook;
 }
 
-void CMS::setActiveDisplay(const std::string& newDisplay)
+void CMS::setActiveDisplay(const std::string& display)
 {
-    S_VARS->activeDisplay = newDisplay;
+    S_VARS->activeDisplay = display;
     S_VARS->activeView = S_VARS->config->getDefaultView(S_VARS->activeDisplay.c_str());
     S_VARS->retrieveViews();
 
     updateProcessors();
 }
 
-void CMS::setActiveView(const std::string& newView)
+void CMS::setActiveView(const std::string& view)
 {
-    S_VARS->activeView = newView;
+    S_VARS->activeView = view;
     updateProcessors();
 }
 
-void CMS::setActiveLook(const std::string& newLook)
+void CMS::setActiveLook(const std::string& look)
 {
-    S_VARS->activeLook = newLook;
+    S_VARS->activeLook = look;
     updateProcessors();
 }
 
@@ -219,9 +220,9 @@ float CMS::getExposure()
     return S_VARS->exposure;
 }
 
-void CMS::setExposure(float newExposure)
+void CMS::setExposure(float exposure)
 {
-    S_VARS->exposure = newExposure;
+    S_VARS->exposure = exposure;
 }
 
 void CMS::updateProcessors()

@@ -7,30 +7,6 @@ uint8_t doubleTo8bit(double v)
     return (uint8_t)(round(v * 255.0));
 }
 
-float srgbToLinear_DEPRECATED(float x)
-{
-    if (x <= 0.0f)
-        return 0.0f;
-    else if (x >= 1.0f)
-        return 1.0f;
-    else if (x < 0.04045f)
-        return x / 12.92f;
-    else
-        return powf((x + 0.055f) / 1.055f, 2.4f);
-}
-
-float linearToSrgb_DEPRECATED(float x)
-{
-    if (x <= 0.0f)
-        return 0.0f;
-    else if (x >= 1.0f)
-        return 1.0f;
-    else if (x < 0.0031308f)
-        return x * 12.92f;
-    else
-        return powf(x, 1.0f / 2.4f) * 1.055f - 0.055f;
-}
-
 float contrastCurve(float v, float contrast)
 {
     if (v == 0.0f)
@@ -134,4 +110,28 @@ void calcFftConvPadding(
         outPaddedWidth = totalWidth + 32 - (totalWidth % 32);
         outPaddedHeight = totalHeight + 32 - (totalHeight % 32);
     }
+}
+
+float srgbToLinear_DEPRECATED(float x)
+{
+    if (x <= 0.0f)
+        return 0.0f;
+    else if (x >= 1.0f)
+        return 1.0f;
+    else if (x < 0.04045f)
+        return x / 12.92f;
+    else
+        return powf((x + 0.055f) / 1.055f, 2.4f);
+}
+
+float linearToSrgb_DEPRECATED(float x)
+{
+    if (x <= 0.0f)
+        return 0.0f;
+    else if (x >= 1.0f)
+        return 1.0f;
+    else if (x < 0.0031308f)
+        return x * 12.92f;
+    else
+        return powf(x, 1.0f / 2.4f) * 1.055f - 0.055f;
 }

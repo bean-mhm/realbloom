@@ -78,21 +78,21 @@ public:
     static const std::string& getWorkingSpaceDesc();
 
     static const std::vector<std::string>& getInternalColorSpaces();
-    static const std::vector<std::string>& getAvailableColorSpaces();
-    static const std::vector<std::string>& getAvailableDisplays();
-    static const std::vector<std::string>& getAvailableViews();
-    static const std::vector<std::string>& getAvailableLooks();
+    static const std::vector<std::string>& getColorSpaces();
+    static const std::vector<std::string>& getDisplays();
+    static const std::vector<std::string>& getViews();
+    static const std::vector<std::string>& getLooks();
 
     static const std::string& getActiveDisplay();
     static const std::string& getActiveView();
     static const std::string& getActiveLook();
 
-    static void setActiveDisplay(const std::string& newDisplay);
-    static void setActiveView(const std::string& newView);
-    static void setActiveLook(const std::string& newLook);
+    static void setActiveDisplay(const std::string& display);
+    static void setActiveView(const std::string& view);
+    static void setActiveLook(const std::string& look);
 
     static float getExposure();
-    static void setExposure(float newExposure);
+    static void setExposure(float exposure);
 
     static const BaseStatus& getStatus();
     static void ensureOK();

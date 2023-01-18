@@ -18,7 +18,7 @@ bool CmXYZ::init()
         };
 
         bool found = false;
-        std::vector<std::string> userSpaces = CMS::getAvailableColorSpaces();
+        std::vector<std::string> userSpaces = CMS::getColorSpaces();
         for (const auto& space : userSpaces)
         {
             for (const auto& xyzName : xyzNames)

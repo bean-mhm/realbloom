@@ -417,7 +417,7 @@ void cmdDiff(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     CmImage imgInput("", "", 1, 1);
     {
         CliStackTimer timer("Read the input image");
-        CmImageIO::readImage(imgInput, inpFilename, inpColorspace);
+        CmImageIO::readImage(imgInput, inpFilename);
         timer.done(verbose);
     }
 
@@ -446,7 +446,7 @@ void cmdDiff(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     // Write the output image
     {
         CliStackTimer timer("Write the output image");
-        CmImageIO::writeImage(imgOutput, outFilename, outColorspace);
+        CmImageIO::writeImage(imgOutput, outFilename);
         timer.done(verbose);
     }
 
@@ -525,7 +525,7 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     // Read the input image
     {
         CliStackTimer timer("Read the input image");
-        CmImageIO::readImage(*(disp.getImgInputSrc()), inpFilename, inpColorspace);
+        CmImageIO::readImage(*(disp.getImgInputSrc()), inpFilename);
         timer.done(verbose);
     }
 
@@ -562,7 +562,7 @@ void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     // Write the output image
     {
         CliStackTimer timer("Write the output image");
-        CmImageIO::writeImage(imgOutput, outFilename, outColorspace);
+        CmImageIO::writeImage(imgOutput, outFilename);
         timer.done(verbose);
     }
 
@@ -682,14 +682,14 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     // Read the input image
     {
         CliStackTimer timer("Read the input image");
-        CmImageIO::readImage(imgInput, inpFilename, inpColorspace);
+        CmImageIO::readImage(imgInput, inpFilename);
         timer.done(verbose);
     }
 
     // Read the kernel image
     {
         CliStackTimer timer("Read the kernel image");
-        CmImageIO::readImage(*(conv.getImgKernelSrc()), knlFilename, knlColorspace);
+        CmImageIO::readImage(*(conv.getImgKernelSrc()), knlFilename);
         timer.done(verbose);
     }
 
@@ -740,7 +740,7 @@ void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bo
     // Write the output image
     {
         CliStackTimer timer("Write the output image");
-        CmImageIO::writeImage(imgConvMix, outFilename, outColorspace);
+        CmImageIO::writeImage(imgConvMix, outFilename);
         timer.done(verbose);
     }
 
@@ -789,13 +789,13 @@ void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, StringMap& ar
     disp.previewCmf(&table);
 
     // Write output image
-    CmImageIO::writeImage(img, outFilename, outColorspace);
+    CmImageIO::writeImage(img, outFilename);
 }
 
 void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
     bool useInternal = args.count("--internal") > 0;
-    std::vector<std::string> spaces = useInternal ? CMS::getInternalColorSpaces() : CMS::getAvailableColorSpaces();
+    std::vector<std::string> spaces = useInternal ? CMS::getInternalColorSpaces() : CMS::getColorSpaces();
     OCIO::ConstConfigRcPtr config = useInternal ? CMS::getInternalConfig() : CMS::getConfig();
 
     bool compact = args.count("--compact") > 0;

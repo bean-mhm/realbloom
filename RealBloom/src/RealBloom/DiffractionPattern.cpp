@@ -135,8 +135,16 @@ namespace RealBloom
                 for (uint32_t x = 0; x < fftWidth; x++)
                 {
                     // Shift and mirror
-                    transX = shiftIndex((y < shiftY) ? (fftWidth - x) : x, shiftX, fftWidth);
-                    transY = shiftIndex((y <= shiftY) ? (fftHeight - y) : y, shiftY, fftHeight);
+
+                    transX = shiftIndex(
+                        ((int)y < shiftY) ? (fftWidth - x) : x,
+                        shiftX,
+                        fftWidth);
+
+                    transY = shiftIndex(
+                        ((int)y <= shiftY) ? (fftHeight - y) : y,
+                        shiftY,
+                        fftHeight);
 
                     // Save the results while finding the maximum magnitudes
                     {

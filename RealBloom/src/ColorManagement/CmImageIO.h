@@ -15,18 +15,51 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "CMS.h"
 #include "CmImage.h"
 
+#include "../Utils/OpenGL/GlTexture.h"
+#include "../Utils/OpenGL/GlFrameBuffer.h"
+#include "../Utils/OpenGL/GlUtils.h"
 #include "../Utils/Misc.h"
 
 class CmImageIO
 {
+private:
+    struct CmImageIoVars
+    {
+        std::string inputSpace = "";
+        std::string outputSpace = "";
+        std::string nonLinearSpace = "";
+        bool applyViewTransform = false;
+    };
+    static CmImageIoVars* S_VARS;
+
 public:
     CmImageIO() = delete;
     CmImageIO(const CmImageIO&) = delete;
     CmImageIO& operator= (const CmImageIO&) = delete;
 
-    static bool readImageColorSpace(const std::string& filename, std::string& outColorSpace);
-    static void readImage(CmImage& target, const std::string& filename, const std::string& colorSpace);
+    static bool init();
+    static void cleanUp();
 
-    // Save as OpenEXR in RGB32F
-    static void writeImage(CmImage& source, const std::string& filename, const std::string& colorSpace);
+    static const std::string& getInputSpace();
+    static const std::string& getOutputSpace();
+    static const std::string& getNonLinearSpace();
+    static bool getApplyViewTransform();
+
+    static void setInputSpace(const std::string& colorSpace);
+    static void setOutputSpace(const std::string& colorSpace);
+    static void setNonLinearSpace(const std::string& colorSpace);
+    static void setApplyViewTransform(bool applyViewTransform);
+
+    static void readImage(CmImage& target, const std::string& filename);
+    static void writeImage(CmImage& source, const std::string& filename);
+    static bool readImageColorSpace(const std::string& filename, std::string& outColorSpace);
+
+    static const std::vector<std::string>& getLinearExtensions();
+    static const std::vector<std::string>& getNonLinearExtensions();
+    static const std::vector<std::string>& getAllExtensions();
+
+    static const std::vector<std::string>& getOpenFilterList();
+    static const std::vector<std::string>& getSaveFilterList();
+    static std::string getDefaultFilename();
+
 };

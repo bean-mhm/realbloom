@@ -29,6 +29,8 @@ private:
     std::vector<float> m_valuesZ;
 
 public:
+    CmfTable(std::string filename);
+
     size_t getCount() const;
     float getStart() const;
     float getEnd() const;
@@ -38,7 +40,6 @@ public:
     void sample(size_t numSamples, std::vector<float>& outSamples) const;
     void sampleRGB(size_t numSamples, std::vector<float>& outSamples) const;
 
-    CmfTable(std::string filename);
 };
 
 struct CmfTableInfo
@@ -72,11 +73,11 @@ public:
     static bool init();
     static void cleanUp();
 
-    static const std::vector<CmfTableInfo>& getAvailableTables();
+    static const std::vector<CmfTableInfo>& getTables();
 
     static std::shared_ptr<CmfTable> getActiveTable();
-    static CmfTableInfo getActiveTableInfo();
-    static std::string getActiveTableDetails();
+    static const CmfTableInfo& getActiveTableInfo();
+    static const std::string& getActiveTableDetails();
     static void setActiveTable(const CmfTableInfo& tableInfo);
 
     static bool hasTable();

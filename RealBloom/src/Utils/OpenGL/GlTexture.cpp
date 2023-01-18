@@ -28,6 +28,16 @@ GlTexture::~GlTexture()
     checkGlStatus(__FUNCTION__, "glDeleteTextures");
 }
 
+uint32_t GlTexture::getWidth() const
+{
+    return m_width;
+}
+
+uint32_t GlTexture::getHeight() const
+{
+    return m_height;
+}
+
 GLuint GlTexture::getTexture() const
 {
     return m_texture;
