@@ -3,23 +3,21 @@
 #include <iostream>
 #include <math.h>
 
-namespace Bilinear
+struct Bilinear
 {
-    struct Result
-    {
-        float topLeftWeight;
-        float topRightWeight;
-        float bottomLeftWeight;
-        float bottomRightWeight;
+    int topLeftPos[2]{ 0, 0 };
+    int topRightPos[2]{ 0, 0 };
+    int bottomLeftPos[2]{ 0, 0 };
+    int bottomRightPos[2]{ 0, 0 };
 
-        int topLeftPos[2];
-        int topRightPos[2];
-        int bottomLeftPos[2];
-        int bottomRightPos[2];
+    float topLeftWeight = 0.0f;
+    float topRightWeight = 0.0f;
+    float bottomLeftWeight = 0.0f;
+    float bottomRightWeight = 0.0f;
 
-        float util_alongX;
-        float util_alongY;
-    };
+    float alongX = 0;
+    float alongY = 0;
 
-    void calculate(float px, float py, Result& outResult);
-}
+    void calc(float px, float py);
+
+};

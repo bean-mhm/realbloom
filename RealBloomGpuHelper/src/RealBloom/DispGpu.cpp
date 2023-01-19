@@ -265,15 +265,17 @@ namespace RealBloom
         std::vector<float> vertexData;
         vertexData.reserve(steps * getNumAttribs());
 
-        for (uint32_t i = 1; i <= steps; i++)
+        for (uint32_t i = 0; i < steps; i++)
         {
-            float scale = 1.0f - (amount * (1.0f - (i / (float)steps)));
-            scale = fmaxf(EPSILON, scale);
+            float scale = lerp(
+                1.0f - (amount / 2.0f),
+                1.0f + (amount / 2.0f),
+                (i + 1.0f) / (float)steps);
 
             float scaledArea = scale * scale;
             float scaledMul = 1.0f / scaledArea;
 
-            uint32_t smpIndex = (i - 1) * 3;
+            uint32_t smpIndex = i * 3;
             float wlR = m_binInput->cmfSamples[smpIndex + 0] * scaledMul;
             float wlG = m_binInput->cmfSamples[smpIndex + 1] * scaledMul;
             float wlB = m_binInput->cmfSamples[smpIndex + 2] * scaledMul;

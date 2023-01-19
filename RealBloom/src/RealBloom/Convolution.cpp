@@ -185,16 +185,16 @@ namespace RealBloom
             uint32_t redIndexKernel, redIndexScaled;
             float transX, transY;
             float transX_rot = 0, transY_rot = 0;
-            float targetColor[3];
-            Bilinear::Result bil;
+            float targetColor[4]{ 0.0f, 0.0f, 0.0f, 1.0f };
+            Bilinear bil;
             for (uint32_t y = 0; y < scaledHeight; y++)
             {
                 for (uint32_t x = 0; x < scaledWidth; x++)
                 {
-                    transX = ((float)x + 0.5f) / scaleW;
-                    transY = ((float)y + 0.5f) / scaleH;
+                    transX = (x + 0.5f) / scaleW;
+                    transY = (y + 0.5f) / scaleH;
                     rotatePoint(transX, transY, centerX, centerY, -rotation, transX_rot, transY_rot);
-                    Bilinear::calculate(transX_rot, transY_rot, bil);
+                    bil.calc(transX_rot, transY_rot);
 
                     // CURRENT COLOR = (KERNEL[TOPLEFT] * TOPLEFTMIX) + (KERNEL[TOPRIGHT] * TOPRIGHTMIX) + ...
 
@@ -224,10 +224,7 @@ namespace RealBloom
                     }
 
                     redIndexScaled = (y * scaledWidth + x) * 4;
-                    scaledBuffer[redIndexScaled + 0] = targetColor[0];
-                    scaledBuffer[redIndexScaled + 1] = targetColor[1];
-                    scaledBuffer[redIndexScaled + 2] = targetColor[2];
-                    scaledBuffer[redIndexScaled + 3] = 1.0f;
+                    std::copy(targetColor, targetColor + 4, &(scaledBuffer[redIndexScaled]));
                 }
             }
         }
