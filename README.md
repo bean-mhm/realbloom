@@ -136,8 +136,8 @@ The project was made for Windows and built with MSVC, so you're going to need a 
 - [x] Color Management System
 - [x] OpenEXR support
 - [x] Command Line Interface
+- [x] GPU Dispersion
 - [ ] GPU FFT Convolution
-- [ ] GPU Dispersion
 - [ ] GPU Image Transforms
 - [ ] Node-based workflow
 - [ ] ~~Support for animated apertures, kernels and input images~~ 
