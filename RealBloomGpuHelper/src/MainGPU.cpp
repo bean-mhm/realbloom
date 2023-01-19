@@ -184,12 +184,12 @@ int main(int argc, char* argv[])
     {
         // OpenGL version
 
-        bool useGl45 =
+        bool useCompute =
             (opType == GpuHelperOperationType::Diffraction)
             || (opType == GpuHelperOperationType::ConvFFT);
 
         int glVersionMajor, glVersionMinor;
-        if (useGl45)
+        if (useCompute)
         {
             glVersionMajor = 4;
             glVersionMinor = 5;

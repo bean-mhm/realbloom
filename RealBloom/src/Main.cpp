@@ -1,7 +1,9 @@
 ﻿#include "Main.h"
 
 // GUI
-const char* glslVersion = "#version 130";
+int glVersionMajor = 3;
+int glVersionMinor = 2;
+const char* glslVersion = "#version 150";
 GLFWwindow* window = nullptr;
 ImGuiIO* io = nullptr;
 bool appRunning = true;
@@ -217,7 +219,19 @@ int main(int argc, char** argv)
     // Process the command line input
     if (CLI::hasCommands())
     {
-        CLI::proceed();
+        // Create OpenGL context
+
+        std::string ctxError;
+        bool ctxSuccess = oglOneTimeContext(
+            glVersionMajor, glVersionMinor,
+            []()
+            {
+                CLI::proceed();
+            },
+            ctxError);
+
+        if (!ctxSuccess)
+            printError(__FUNCTION__, "", strFormat("OpenGL context initialization error: %s", ctxError.c_str()));
     }
 
     // Quit
@@ -1278,8 +1292,8 @@ bool setupGLFW()
     if (!glfwInit())
         return false;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, glVersionMajor);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, glVersionMinor);
 
     // Create window with graphics context
     window = glfwCreateWindow(Config::S_WINDOW_WIDTH, Config::S_WINDOW_HEIGHT, Config::S_APP_TITLE, NULL, NULL);

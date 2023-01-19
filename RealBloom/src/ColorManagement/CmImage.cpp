@@ -310,7 +310,7 @@ void CmImage::applyViewTransform(
         {
             try
             {
-                texture = std::make_shared<GlTexture>(width, height, GL_CLAMP, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
+                texture = std::make_shared<GlTexture>(width, height, GL_CLAMP_TO_BORDER, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
             }
             catch (const std::exception& e)
             {

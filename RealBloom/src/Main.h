@@ -32,6 +32,10 @@
 
 #include <nfde/nfd.h>
 
+#include "Async.h"
+#include "Config.h"
+#include "CLI.h"
+
 #include "ColorManagement/CMS.h"
 #include "ColorManagement/CMF.h"
 #include "ColorManagement/CmXYZ.h"
@@ -42,12 +46,9 @@
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
-#include "Async.h"
-#include "Config.h"
-#include "CLI.h"
-
 #include "Utils/FileDialogs.h"
 #include "Utils/NumberHelpers.h"
+#include "Utils/OpenGL/GlContext.h"
 #include "Utils/Misc.h"
 
 void layoutAll();
