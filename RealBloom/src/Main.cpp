@@ -416,6 +416,7 @@ void layoutColorManagement()
         if (imGuiCombo("Display##CMS", displays, &selDisplay, false))
         {
             CMS::setActiveDisplay(displays[selDisplay]);
+            CMS::updateProcessors();
             vars.cmsParamsChanged = true;
 
             // Update selView
@@ -428,6 +429,7 @@ void layoutColorManagement()
         if (imGuiCombo("View##CMS", views, &selView, false))
         {
             CMS::setActiveView(views[selView]);
+            CMS::updateProcessors();
             vars.cmsParamsChanged = true;
         }
 
@@ -435,6 +437,7 @@ void layoutColorManagement()
         if (imGuiCombo("Look##CMS", looks, &selLook, false))
         {
             CMS::setActiveLook(looks[selLook]);
+            CMS::updateProcessors();
             vars.cmsParamsChanged = true;
         }
 

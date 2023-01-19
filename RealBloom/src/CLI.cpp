@@ -25,14 +25,21 @@ CLI::CliVars* CLI::S_VARS = nullptr;
 std::vector<CliCommand> g_commands;
 
 // Command actions
+
 void cmdVersion(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
 void cmdHelp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+
 void cmdDiff(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
 void cmdDisp(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
 void cmdConv(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+
 void cmdCmfDetails(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
 void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+
 void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdDisplays(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdViews(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
+void cmdLooks(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose);
 
 // Print the arguments of a command
 void printArguments(CliCommand& command)
@@ -303,10 +310,36 @@ void CLI::init(int& argc, char** argv)
             "Print the available color spaces",
             "",
             {
-                {{"--internal", "-i"}, "Use the internal config", "", false},
-                {{"--compact", "-c"}, "Compact mode", "", false}
+                {{"--internal", "-i"}, "Use the internal config", "", false}
             },
-            cmdColorspaces }
+            cmdColorspaces,
+            true }
+        );
+
+        g_commands.push_back(CliCommand{
+            "displays",
+            "Print the available displays",
+            "",
+            {},
+            cmdDisplays }
+        );
+
+        g_commands.push_back(CliCommand{
+            "views",
+            "Print the available views for a given display",
+            "",
+            {
+                {{"--display", "-d"}, "Display name", "", true}
+            },
+            cmdViews }
+        );
+
+        g_commands.push_back(CliCommand{
+            "looks",
+            "Print the available looks",
+            "",
+            {},
+            cmdLooks }
         );
     }
 
@@ -795,24 +828,19 @@ void cmdCmfPreview(const CliCommand& cmd, const CliParser& parser, StringMap& ar
 void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
 {
     bool useInternal = args.count("--internal") > 0;
-    std::vector<std::string> spaces = useInternal ? CMS::getInternalColorSpaces() : CMS::getColorSpaces();
+    const std::vector<std::string>& spaces = useInternal ? CMS::getInternalColorSpaces() : CMS::getColorSpaces();
     OCIO::ConstConfigRcPtr config = useInternal ? CMS::getInternalConfig() : CMS::getConfig();
 
-    bool compact = args.count("--compact") > 0;
-
-    std::cout
+    if (verbose)
+        std::cout
         << consoleColor(COL_SEC)
         << spaces.size()
         << (useInternal ? " internal color spaces" : " color spaces")
-        << consoleColor() << (compact ? "\n" : "\n\n");
+        << consoleColor() << "\n\n";
 
     for (const auto& space : spaces)
     {
-        if (compact)
-        {
-            std::cout << space << "\n";
-        }
-        else
+        if (verbose)
         {
             std::string desc = CMS::getColorSpaceDesc(config, space);
             std::cout
@@ -821,5 +849,39 @@ void cmdColorspaces(const CliCommand& cmd, const CliParser& parser, StringMap& a
                 << consoleColor(COL_PRI) << "Desc: " << consoleColor()
                 << consoleColor(COL_SEC) << strWordWrap(desc, CLI_LINE_LENGTH, 6) << consoleColor() << "\n\n";
         }
+        else
+        {
+            std::cout << space << "\n";
+        }
+    }
+}
+
+void cmdDisplays(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
+{
+    const std::vector<std::string>& displays = CMS::getDisplays();
+    for (const auto& display : displays)
+    {
+        std::cout << display << "\n";
+    }
+}
+
+void cmdViews(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
+{
+    std::string display = args["--display"];
+    CMS::setActiveDisplay(display);
+
+    const std::vector<std::string>& views = CMS::getViews();
+    for (const auto& view : views)
+    {
+        std::cout << view << "\n";
+    }
+}
+
+void cmdLooks(const CliCommand& cmd, const CliParser& parser, StringMap& args, bool verbose)
+{
+    const std::vector<std::string>& looks = CMS::getLooks();
+    for (const auto& look : looks)
+    {
+        std::cout << look << "\n";
     }
 }

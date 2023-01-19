@@ -60,8 +60,6 @@ private:
     static CmVars* S_VARS;
     static BaseStatus S_STATUS;
 
-    static void updateProcessors();
-
 public:
     CMS() = delete;
     CMS(const CMS&) = delete;
@@ -94,12 +92,13 @@ public:
     static float getExposure();
     static void setExposure(float exposure);
 
-    static const BaseStatus& getStatus();
-    static void ensureOK();
-
+    static void updateProcessors();
     static OCIO::ConstCPUProcessorRcPtr getCpuProcessor();
     static OCIO::ConstGPUProcessorRcPtr getGpuProcessor();
     static std::shared_ptr<OcioShader> getShader();
+
+    static const BaseStatus& getStatus();
+    static void ensureOK();
 
     static bool usingGPU();
 

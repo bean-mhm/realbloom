@@ -199,20 +199,16 @@ void CMS::setActiveDisplay(const std::string& display)
     S_VARS->activeDisplay = display;
     S_VARS->activeView = S_VARS->config->getDefaultView(S_VARS->activeDisplay.c_str());
     S_VARS->retrieveViews();
-
-    updateProcessors();
 }
 
 void CMS::setActiveView(const std::string& view)
 {
     S_VARS->activeView = view;
-    updateProcessors();
 }
 
 void CMS::setActiveLook(const std::string& look)
 {
     S_VARS->activeLook = look;
-    updateProcessors();
 }
 
 float CMS::getExposure()
@@ -302,17 +298,6 @@ void CMS::updateProcessors()
     }
 }
 
-const BaseStatus& CMS::getStatus()
-{
-    return S_STATUS;
-}
-
-void CMS::ensureOK()
-{
-    if (!S_STATUS.isOK())
-        throw std::exception(strFormat("CMS failure: %s", S_STATUS.getError().c_str()).c_str());
-}
-
 OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()
 {
     if (S_STATUS.isOK())
@@ -330,6 +315,17 @@ OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
 std::shared_ptr<OcioShader> CMS::getShader()
 {
     return S_VARS->shader;
+}
+
+const BaseStatus& CMS::getStatus()
+{
+    return S_STATUS;
+}
+
+void CMS::ensureOK()
+{
+    if (!S_STATUS.isOK())
+        throw std::exception(strFormat("CMS failure: %s", S_STATUS.getError().c_str()).c_str());
 }
 
 bool CMS::usingGPU()
