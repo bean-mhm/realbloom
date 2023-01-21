@@ -19,13 +19,11 @@ std::string strFromGpuHelperOperationType(GpuHelperOperationType opType)
 
 GpuHelper::GpuHelper()
 {
-    std::string tempDir;
-    getTempDirectory(tempDir);
     m_randomNumber = Random::nextU64();
 
     m_inpFilename = strFormat(
         "%srealbloom_gpu_operation%llu",
-        tempDir.c_str(),
+        getTempDirectory().c_str(),
         m_randomNumber);
 
     m_outFilename = m_inpFilename + "out";

@@ -93,12 +93,16 @@ void waitForMutex(HANDLE hMutex);
 void releaseMutex(HANDLE hMutex);
 void closeMutex(HANDLE& hMutex);
 
-std::string getPathSeparator();
-std::string getExecDir();
+const std::string& getPathSeparator();
+const std::string& getExecDir();
+const std::string& getTempDirectory();
+
 std::string getLocalPath(const std::string& path);
+std::string getFileExtension(const std::string& filename);
+bool deleteFile(const std::string& filename);
+
+
 
 void killProcess(PROCESS_INFORMATION pi);
 bool processIsRunning(PROCESS_INFORMATION pi);
-bool deleteFile(const std::string& filename);
-void getTempDirectory(std::string& outDir);
 void openURL(std::string url);

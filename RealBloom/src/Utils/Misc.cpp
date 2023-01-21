@@ -114,12 +114,13 @@ void closeMutex(HANDLE& hMutex)
     }
 }
 
-std::string getPathSeparator()
+const std::string& getPathSeparator()
 {
-    return "\\";
+    static std::string pathSeparator = "\\";
+    return pathSeparator;
 }
 
-std::string getExecDir()
+const std::string& getExecDir()
 {
     static std::string execDir = "";
 
@@ -140,9 +141,38 @@ std::string getExecDir()
     return execDir;
 }
 
+const std::string& getTempDirectory()
+{
+    static std::string tempDir = "";
+
+    if (tempDir.empty())
+    {
+        char path_cstr[2048] = { 0 };
+        if (GetTempPathA(2048, path_cstr))
+            tempDir = path_cstr;
+        else
+            tempDir = std::filesystem::temp_directory_path().string();
+    }
+
+    return tempDir;
+}
+
 std::string getLocalPath(const std::string& path)
 {
     return getExecDir() + path;
+}
+
+std::string getFileExtension(const std::string& filename)
+{
+    return strLowercase(std::filesystem::path(filename).extension().string());
+}
+
+
+bool deleteFile(const std::string& filename)
+{
+    if (std::filesystem::exists(filename))
+        return std::filesystem::remove(filename);
+    return true;
 }
 
 void killProcess(PROCESS_INFORMATION pi)
@@ -157,22 +187,6 @@ bool processIsRunning(PROCESS_INFORMATION pi)
     if (GetExitCodeProcess(pi.hProcess, &exitCode))
         return exitCode == STILL_ACTIVE;
     return false;
-}
-
-bool deleteFile(const std::string& filename)
-{
-    if (std::filesystem::exists(filename))
-        return std::filesystem::remove(filename);
-    return true;
-}
-
-void getTempDirectory(std::string& outDir)
-{
-    char buf[1024];
-    if (GetTempPathA(sizeof(buf), buf))
-        outDir = buf;
-    else
-        outDir = std::filesystem::temp_directory_path().string();
 }
 
 void openURL(std::string url)

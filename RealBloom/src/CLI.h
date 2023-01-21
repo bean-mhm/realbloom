@@ -65,6 +65,21 @@ namespace CLI
     };
 
     void handleXyzArgs(StringMap& args);
-    void handleViewTransformArgs(const CliParser& parser, StringMap& args, const std::string& filename);
+
+    struct OutputColorManagement
+    {
+        bool applyViewTransform = false;
+        std::string colorSpace = "";
+        std::string display = "";
+        std::string view = "";
+        std::string look = "";
+        float exposure = 0.0f;
+
+        OutputColorManagement(StringMap& args, const std::string& filename);
+        void apply();
+    };
+
+    // Called before CmImageIO::readImage()
+    void setInputColorSpace(const std::string& colorSpace);
 
 }

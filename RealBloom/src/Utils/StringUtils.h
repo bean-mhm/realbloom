@@ -118,6 +118,12 @@ std::string strFromFloatArray(const std::array<float, Size>& arr)
     return result;
 }
 
+std::string strFromInt(int64_t v);
+std::string strFromFloat(float v);
+
+int64_t strToInt(const std::string& s);
+float strToFloat(const std::string& s);
+
 std::array<float, 4> strToRGBA(const std::string& s);
 std::array<float, 3> strToRGB(const std::string& s);
 std::array<float, 2> strToXY(const std::string& s);

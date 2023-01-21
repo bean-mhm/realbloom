@@ -75,7 +75,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
             throw std::exception("Filename was empty.");
 
         // Get the extension
-        std::string extension = strLowercase(std::filesystem::path(filename).extension().string());
+        std::string extension = getFileExtension(filename);
 
         // Determine the color space
         std::string colorSpace;
@@ -220,7 +220,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
             throw std::exception("Filename was empty.");
 
         // Get the extension
-        std::string extension = strLowercase(std::filesystem::path(filename).extension().string());
+        std::string extension = getFileExtension(filename);
         if (!contains(getAllExtensions(), extension))
             throw std::exception(strFormat("File extension \"%s\" isn't supported.", extension.c_str()).c_str());
 
@@ -401,6 +401,7 @@ const std::vector<std::string>& CmImageIO::getLinearExtensions()
     {
         ".exr",
         ".hdr",
+        ".tif",
         ".tiff"
     };
     return exts;

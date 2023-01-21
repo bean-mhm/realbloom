@@ -31,7 +31,7 @@ bool FileDialogs::genericDialog(
 {
     // Get the default path based on id
     std::string defaultPath = "";
-    if (S_PATHS.count(id) > 0)
+    if (S_PATHS.contains(id))
         defaultPath = S_PATHS[id];
 
     // Default filter list

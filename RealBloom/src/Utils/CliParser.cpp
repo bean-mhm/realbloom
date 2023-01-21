@@ -40,7 +40,7 @@ bool CliParser::hasValue(const std::string& argument) const
             if (itr->starts_with("-"))
             {
                 if (itr->size() > 1)
-                    if (isdigit(itr->c_str()[1]) || (itr[1] == "."))
+                    if (isdigit(itr->c_str()[1]) || (itr->c_str()[1] == '.'))
                         return true;
             }
             else

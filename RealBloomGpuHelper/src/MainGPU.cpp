@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
     opMap[GpuHelperOperationType::ConvNaive] = runConvNaive;
 
     // Check if the operation has a function associated
-    if (opMap.count(opType) < 1)
+    if (!opMap.contains(opType))
     {
         logAdd(LogLevel::Fatal, "Operation not implemented.");
         return 1;

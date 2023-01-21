@@ -50,22 +50,30 @@ std::string strWordWrap(const std::string& s, size_t lineLength, size_t leftPadd
     std::istringstream i(s);
     std::ostringstream o("");
     size_t lineLnegth = 0;
+    size_t numWords = 0;
+
     std::string word;
     while (i >> word)
     {
-        if ((lineLnegth + word.size()) > length)
+        if (((lineLnegth + word.size()) > length) && (numWords > 0))
         {
             o << '\n';
+
             for (size_t i = 0; i < leftPadding; i++)
                 o << ' ';
+
             lineLnegth = 0;
         }
+
         if (word.size() > length)
         {
             o << word.substr(0, length - 1) << "-\n";
+
             for (size_t i = 0; i < leftPadding; i++)
                 o << ' ';
+
             o << word.substr(length - 1) << ' ';
+
             lineLnegth = (word.size() - length + 1) + 1;
         }
         else
@@ -73,7 +81,10 @@ std::string strWordWrap(const std::string& s, size_t lineLength, size_t leftPadd
             o << word << ' ';
             lineLnegth += word.size() + 1;
         }
+
+        numWords++;
     }
+
     std::string result = o.str();
     result = result.substr(0, result.size() - 1);
     return result;
@@ -201,6 +212,40 @@ std::string strFromTime()
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeinfo);
 
     return std::string(buffer);
+}
+
+std::string strFromInt(int64_t v)
+{
+    return std::to_string(v);
+}
+
+std::string strFromFloat(float v)
+{
+    return strFormat("%.3f", v);
+}
+
+int64_t strToInt(const std::string& s)
+{
+    try
+    {
+        return std::stoll(s);
+    }
+    catch (const std::exception& e)
+    {
+        throw std::exception(strFormat("Couldn't parse an integer from \"%s\".", s.c_str()).c_str());
+    }
+}
+
+float strToFloat(const std::string& s)
+{
+    try
+    {
+        return std::stof(s);
+    }
+    catch (const std::exception& e)
+    {
+        throw std::exception(strFormat("Couldn't parse a float from \"%s\".", s.c_str()).c_str());
+    }
 }
 
 std::array<float, 4> strToRGBA(const std::string& s)

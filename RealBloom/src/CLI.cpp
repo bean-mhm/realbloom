@@ -13,9 +13,10 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
-#include "Utils/Misc.h"
 #include "Utils/ConsoleColors.h"
 #include "Utils/CliStackTimer.h"
+#include "Utils/Misc.h"
+
 #include "Config.h"
 
 namespace CLI
@@ -39,7 +40,7 @@ namespace CLI
     void cmdCmfDetails(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
     void cmdCmfPreview(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
 
-    void cmdColorspaces(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
+    void cmdColorSpaces(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
     void cmdDisplays(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
     void cmdViews(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
     void cmdLooks(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
@@ -81,10 +82,10 @@ namespace CLI
     {
         std::cout << consoleColor(COL_PRI) << "Parameters:" << consoleColor() << "\n";
 
-        for (size_t i = 0; i < (params.size() / 2); i++)
+        for (size_t i = 0; i < params.size(); i += 2)
         {
-            std::string key = params[i * 2];
-            std::string val = params[i * 2 + 1];
+            std::string key = params[i];
+            std::string val = params[i + 1];
 
             std::cout
                 << "  "
@@ -196,10 +197,11 @@ namespace CLI
                     {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
 
                     {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
-                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Conditional},
-                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Conditional},
-                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Conditional},
-                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Conditional},
+                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
+                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
+                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
+                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
+                    {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional},
 
                     {{"--grayscale", "-g"}, "Grayscale", "", ArgumentType::Optional}
                 },
@@ -217,10 +219,11 @@ namespace CLI
                     {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
 
                     {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
-                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Conditional},
-                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Conditional},
-                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Conditional},
-                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Conditional},
+                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
+                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
+                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
+                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
+                    {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional},
 
                     {{"--amount", "-d"}, "Amount of dispersion", "", ArgumentType::Required},
                     {{"--steps", "-s"}, "Number of wavelengths to sample", "", ArgumentType::Required},
@@ -252,13 +255,15 @@ namespace CLI
                     {{"--kernel-space", "-b"}, "Kernel color space", "", ArgumentType::Required},
 
                     {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
-                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Conditional},
-                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Conditional},
-                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Conditional},
-                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Conditional},
+                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
+                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
+                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
+                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
+                    {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional},
 
                     {{"--kernel-exposure", "-e"}, "Kernel exposure", "0", ArgumentType::Optional},
-                    {{"--kernel-contrast", "-f"}, "Kernel contrast", "0", ArgumentType::Optional},
+                    {{"--kernel-contrast", "-c"}, "Kernel contrast", "0", ArgumentType::Optional},
+                    {{"--kernel-color", "-f"}, "Kernel color", "1,1,1", ArgumentType::Optional},
                     {{"--kernel-rotation", "-r"}, "Kernel rotation", "0", ArgumentType::Optional},
                     {{"--kernel-scale", "-s"}, "Kernel scale", "1", ArgumentType::Optional},
                     {{"--kernel-crop", "-q"}, "Kernel crop", "1", ArgumentType::Optional},
@@ -293,10 +298,11 @@ namespace CLI
                     {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Required},
 
                     {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
-                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Conditional},
-                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Conditional},
-                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Conditional},
-                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Conditional},
+                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
+                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
+                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
+                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
+                    {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional},
 
                     {{"--user-space", "-x"}, "XYZ I-E color space in the user config", "", ArgumentType::Optional},
                     {{"--common-internal", "-w"}, "Common XYZ color space in the internal config", "", ArgumentType::Optional},
@@ -312,7 +318,7 @@ namespace CLI
                 {
                     {{"--internal", "-i"}, "Use the internal config", "", ArgumentType::Optional}
                 },
-                cmdColorspaces,
+                cmdColorSpaces,
                 true }
             );
 
@@ -427,20 +433,27 @@ namespace CLI
         // Arguments
 
         std::string inpFilename = args["--input"];
-        std::string inpColorspace = CMS::resolveColorSpace(args["--input-space"]);
+        std::string inpColorSpace = CMS::resolveColorSpace(args["--input-space"]);
 
         std::string outFilename = args["--output"];
-        std::string outColorspace = CMS::resolveColorSpace(args["--output-space"]);
+        OutputColorManagement outCm(args, outFilename);
 
-        bool grayscale = args.count("--grayscale") > 0;
+        bool grayscale = args.contains("--grayscale");
 
         if (verbose)
         {
             printParameters({
                 "Input Filename", inpFilename,
-                "Input Color Space", inpColorspace,
+                "Input Color Space", inpColorSpace,
+
                 "Output Filename", outFilename,
-                "Output Color Space", outColorspace,
+                "Apply View Transform", strFromBool(outCm.applyViewTransform),
+                "Output Color Space", outCm.colorSpace,
+                "Output Display", outCm.display,
+                "Output View", outCm.view,
+                "Output Look", outCm.look,
+                "Output Exposure", strFromFloat(outCm.exposure),
+
                 "Grayscale", strFromBool(grayscale)
                 });
         }
@@ -450,6 +463,7 @@ namespace CLI
         CmImage imgInput("", "", 1, 1);
         {
             CliStackTimer timer("Read the input image");
+            setInputColorSpace(inpColorSpace);
             CmImageIO::readImage(imgInput, inpFilename);
             timer.done(verbose);
         }
@@ -479,9 +493,13 @@ namespace CLI
         // Write the output image
         {
             CliStackTimer timer("Write the output image");
+            outCm.apply();
             CmImageIO::writeImage(imgOutput, outFilename);
             timer.done(verbose);
         }
+
+        // Free OpenGL objects
+        CMS::cleanUp();
 
         totalTimer.done(verbose);
     }
@@ -493,43 +511,50 @@ namespace CLI
         // Arguments
 
         std::string inpFilename = args["--input"];
-        std::string inpColorspace = CMS::resolveColorSpace(args["--input-space"]);
+        std::string inpColorSpace = CMS::resolveColorSpace(args["--input-space"]);
 
         std::string outFilename = args["--output"];
-        std::string outColorspace = CMS::resolveColorSpace(args["--output-space"]);
+        OutputColorManagement outCm(args, outFilename);
 
-        float amount = std::stof(args["--amount"]);
-        uint32_t steps = std::stoi(args["--steps"]);
+        float amount = strToFloat(args["--amount"]);
+        uint32_t steps = strToInt(args["--steps"]);
 
         float exposure = 0;
-        if (args.count("--exposure") > 0)
-            exposure = std::stof(args["--exposure"]);
+        if (args.contains("--exposure"))
+            exposure = strToFloat(args["--exposure"]);
 
         float contrast = 0;
-        if (args.count("--contrast") > 0)
-            contrast = std::stof(args["--contrast"]);
+        if (args.contains("--contrast"))
+            contrast = strToFloat(args["--contrast"]);
 
         std::array<float, 3> color{ 1, 1, 1 };
-        if (args.count("--color") > 0)
+        if (args.contains("--color"))
             color = strToRGB(args["--color"]);
 
         uint32_t numThreads = getDefNumThreads();
-        if (args.count("--threads") > 0)
-            numThreads = std::stoi(args["--threads"]);
+        if (args.contains("--threads"))
+            numThreads = strToInt(args["--threads"]);
 
-        bool useGpu = args.count("--gpu") > 0;
+        bool useGpu = args.contains("--gpu");
 
         if (verbose)
         {
             printParameters({
                 "Input Filename", inpFilename,
-                "Input Color Space", inpColorspace,
+                "Input Color Space", inpColorSpace,
+
                 "Output Filename", outFilename,
-                "Output Color Space", outColorspace,
+                "Apply View Transform", strFromBool(outCm.applyViewTransform),
+                "Output Color Space", outCm.colorSpace,
+                "Output Display", outCm.display,
+                "Output View", outCm.view,
+                "Output Look", outCm.look,
+                "Output Exposure", strFromFloat(outCm.exposure),
+
+                "Amount", strFromFloat(amount),
                 "Steps", strFormat("%u", steps),
-                "Amount", strFormat("%.3f", amount),
-                "Exposure", strFormat("%.3f", exposure),
-                "Contrast", strFormat("%.3f", contrast),
+                "Exposure", strFromFloat(exposure),
+                "Contrast", strFromFloat(contrast),
                 "Color", strFromFloatArray(color),
                 "Threads", strFormat("%u", numThreads),
                 "GPU", strFromBool(useGpu)
@@ -537,7 +562,7 @@ namespace CLI
         }
 
         // CMF table
-        if (args.count("--cmf") > 0)
+        if (args.contains("--cmf"))
         {
             CmfTableInfo info("", args["--cmf"]);
             CMF::setActiveTable(info);
@@ -558,6 +583,7 @@ namespace CLI
         // Read the input image
         {
             CliStackTimer timer("Read the input image");
+            setInputColorSpace(inpColorSpace);
             CmImageIO::readImage(*(disp.getImgInputSrc()), inpFilename);
             timer.done(verbose);
         }
@@ -595,9 +621,13 @@ namespace CLI
         // Write the output image
         {
             CliStackTimer timer("Write the output image");
+            outCm.apply();
             CmImageIO::writeImage(imgOutput, outFilename);
             timer.done(verbose);
         }
+
+        // Free OpenGL objects
+        CMS::cleanUp();
 
         totalTimer.done(verbose);
     }
@@ -609,91 +639,104 @@ namespace CLI
         // Arguments
 
         std::string inpFilename = args["--input"];
-        std::string inpColorspace = CMS::resolveColorSpace(args["--input-space"]);
+        std::string inpColorSpace = CMS::resolveColorSpace(args["--input-space"]);
 
         std::string knlFilename = args["--kernel"];
-        std::string knlColorspace = CMS::resolveColorSpace(args["--kernel-space"]);
+        std::string knlColorSpace = CMS::resolveColorSpace(args["--kernel-space"]);
 
         std::string outFilename = args["--output"];
-        std::string outColorspace = CMS::resolveColorSpace(args["--output-space"]);
+        OutputColorManagement outCm(args, outFilename);
 
         float kernelExposure = 0;
-        if (args.count("--kernel-exposure") > 0)
-            kernelExposure = std::stof(args["--kernel-exposure"]);
+        if (args.contains("--kernel-exposure"))
+            kernelExposure = strToFloat(args["--kernel-exposure"]);
 
         float kernelContrast = 0;
-        if (args.count("--kernel-contrast") > 0)
-            kernelContrast = std::stof(args["--kernel-contrast"]);
+        if (args.contains("--kernel-contrast"))
+            kernelContrast = strToFloat(args["--kernel-contrast"]);
+
+        std::array<float, 3> kernelColor{ 1, 1, 1 };
+        if (args.contains("--kernel-color"))
+            kernelColor = strToRGB(args["--kernel-color"]);
 
         float kernelRotation = 0;
-        if (args.count("--kernel-rotation") > 0)
-            kernelRotation = std::stof(args["--kernel-rotation"]);
+        if (args.contains("--kernel-rotation"))
+            kernelRotation = strToFloat(args["--kernel-rotation"]);
 
         std::array<float, 2> kernelScale{ 1, 1 };
-        if (args.count("--kernel-scale") > 0)
+        if (args.contains("--kernel-scale"))
             kernelScale = strToXY(args["--kernel-scale"]);
 
         std::array<float, 2> kernelCrop{ 1, 1 };
-        if (args.count("--kernel-crop") > 0)
+        if (args.contains("--kernel-crop"))
             kernelCrop = strToXY(args["--kernel-crop"]);
 
         std::array<float, 2> kernelCenter{ 0.5f, 0.5f };
-        if (args.count("--kernel-center") > 0)
+        if (args.contains("--kernel-center"))
             kernelCenter = strToXY(args["--kernel-center"]);
 
         float threshold = 0;
-        if (args.count("--threshold") > 0)
-            threshold = std::stof(args["--threshold"]);
+        if (args.contains("--threshold"))
+            threshold = strToFloat(args["--threshold"]);
 
         float knee = 0;
-        if (args.count("--knee") > 0)
-            knee = std::stof(args["--knee"]);
+        if (args.contains("--knee"))
+            knee = strToFloat(args["--knee"]);
 
-        bool autoExposure = args.count("--autoexp") > 0;
+        bool autoExposure = args.contains("--autoexp");
 
         bool additive = false;
         float mix = 1.0f;
         float inputMix = 1.0f;
         float convMix = 0.2f;
 
-        if (args.count("--mix") > 0)
+        if (args.contains("--mix"))
         {
-            mix = std::stof(args["--mix"]);
+            mix = strToFloat(args["--mix"]);
         }
-        else if ((args.count("--input-mix") > 0) && (args.count("--conv-mix") > 0))
+        else if (args.contains("--input-mix") && args.contains("--conv-mix"))
         {
             additive = true;
-            inputMix = std::stof(args["--input-mix"]);
-            convMix = std::stof(args["--conv-mix"]);
+            inputMix = strToFloat(args["--input-mix"]);
+            convMix = strToFloat(args["--conv-mix"]);
         }
 
         float convExposure = 0;
-        if (args.count("--conv-exposure") > 0)
-            convExposure = std::stof(args["--conv-exposure"]);
+        if (args.contains("--conv-exposure"))
+            convExposure = strToFloat(args["--conv-exposure"]);
 
         if (verbose)
         {
             printParameters({
                 "Input Filename", inpFilename,
-                "Input Color Space", inpColorspace,
+                "Input Color Space", inpColorSpace,
+
                 "Kernel Filename", knlFilename,
-                "Kernel Color Space", knlColorspace,
+                "Kernel Color Space", knlColorSpace,
+
                 "Output Filename", outFilename,
-                "Output Color Space", outColorspace,
-                "Kernel Exposure", strFormat("%.3f", kernelExposure),
-                "Kernel Contrast", strFormat("%.3f", kernelContrast),
-                "Kernel Rotation", strFormat("%.3f", kernelRotation),
+                "Apply View Transform", strFromBool(outCm.applyViewTransform),
+                "Output Color Space", outCm.colorSpace,
+                "Output Display", outCm.display,
+                "Output View", outCm.view,
+                "Output Look", outCm.look,
+                "Output Exposure", strFromFloat(outCm.exposure),
+
+                "Kernel Exposure", strFromFloat(kernelExposure),
+                "Kernel Contrast", strFromFloat(kernelContrast),
+                "Kernel Color", strFromFloatArray(kernelColor),
+                "Kernel Rotation", strFromFloat(kernelRotation),
                 "Kernel Scale", strFromFloatArray(kernelScale),
                 "Kernel Crop", strFromFloatArray(kernelCrop),
                 "Kernel Center", strFromFloatArray(kernelCenter),
-                "Threshold", strFormat("%.3f", threshold),
-                "Knee", strFormat("%.3f", knee),
+                "Threshold", strFromFloat(threshold),
+                "Knee", strFromFloat(knee),
                 "Auto-Exposure", strFromBool(autoExposure),
                 "Additive Blending", strFromBool(additive),
-                "Input Mix (Additive)", strFormat("%.3f", inputMix),
-                "Conv Mix (Additive)", strFormat("%.3f", convMix),
-                "Mix", strFormat("%.3f", mix),
-                "Conv. Exposure", strFormat("%.3f", convExposure)
+                "Input Mix (Additive)", strFromFloat(inputMix),
+                "Conv Mix (Additive)", strFromFloat(convMix),
+                "Mix", strFromFloat(mix),
+                "Conv. Exposure", strFromFloat(convExposure)
                 });
         }
 
@@ -715,6 +758,7 @@ namespace CLI
         // Read the input image
         {
             CliStackTimer timer("Read the input image");
+            setInputColorSpace(inpColorSpace);
             CmImageIO::readImage(imgInput, inpFilename);
             timer.done(verbose);
         }
@@ -722,6 +766,7 @@ namespace CLI
         // Read the kernel image
         {
             CliStackTimer timer("Read the kernel image");
+            setInputColorSpace(knlColorSpace);
             CmImageIO::readImage(*(conv.getImgKernelSrc()), knlFilename);
             timer.done(verbose);
         }
@@ -732,6 +777,7 @@ namespace CLI
         params->methodInfo.method = RealBloom::ConvolutionMethod::FFT_CPU;
         params->kernelExposure = kernelExposure;
         params->kernelContrast = kernelContrast;
+        params->kernelColor = kernelColor;
         params->kernelRotation = kernelRotation;
         params->kernelScaleX = kernelScale[0];
         params->kernelScaleY = kernelScale[1];
@@ -773,9 +819,13 @@ namespace CLI
         // Write the output image
         {
             CliStackTimer timer("Write the output image");
+            outCm.apply();
             CmImageIO::writeImage(imgConvMix, outFilename);
             timer.done(verbose);
         }
+
+        // Free OpenGL objects
+        CMS::cleanUp();
 
         totalTimer.done(verbose);
     }
@@ -790,13 +840,13 @@ namespace CLI
             << table.getCount()
             << "\n"
             << consoleColor(COL_PRI) << strRightPadding("Start:", 7) << consoleColor()
-            << strFormat("%.3f", table.getStart())
+            << strFromFloat(table.getStart())
             << "\n"
             << consoleColor(COL_PRI) << strRightPadding("End:", 7) << consoleColor()
-            << strFormat("%.3f", table.getEnd())
+            << strFromFloat(table.getEnd())
             << "\n"
             << consoleColor(COL_PRI) << strRightPadding("Step:", 7) << consoleColor()
-            << strFormat("%.3f", table.getStep())
+            << strFromFloat(table.getStep())
             << "\n";
     }
 
@@ -808,7 +858,7 @@ namespace CLI
 
         // Output info
         std::string outFilename = args["--output"];
-        std::string outColorspace = CMS::resolveColorSpace(args["--output-space"]);
+        OutputColorManagement outCm(args, outFilename);
 
         // XYZ conversions
         handleXyzArgs(args);
@@ -822,12 +872,16 @@ namespace CLI
         disp.previewCmf(&table);
 
         // Write output image
+        outCm.apply();
         CmImageIO::writeImage(img, outFilename);
+
+        // Free OpenGL objects
+        CMS::cleanUp();
     }
 
-    void cmdColorspaces(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose)
+    void cmdColorSpaces(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose)
     {
-        bool useInternal = args.count("--internal") > 0;
+        bool useInternal = args.contains("--internal");
         const std::vector<std::string>& spaces = useInternal ? CMS::getInternalColorSpaces() : CMS::getColorSpaces();
         OCIO::ConstConfigRcPtr config = useInternal ? CMS::getInternalConfig() : CMS::getConfig();
 
@@ -888,14 +942,14 @@ namespace CLI
 
     void handleXyzArgs(StringMap& args)
     {
-        if (args.count("--user-space") > 0)
+        if (args.contains("--user-space"))
         {
             XyzConversionInfo info;
             info.method = XyzConversionMethod::UserConfig;
             info.userSpace = args["--user-space"];
             CmXYZ::setConversionInfo(info);
         }
-        else if ((args.count("--common-internal") > 0) && (args.count("--common-user") > 0))
+        else if (args.contains("--common-internal") && args.contains("--common-user"))
         {
             XyzConversionInfo info;
             info.method = XyzConversionMethod::CommonSpace;
@@ -905,32 +959,103 @@ namespace CLI
         }
     }
 
-    void handleViewTransformArgs(const CliParser& parser, StringMap& args, const std::string& filename)
+    OutputColorManagement::OutputColorManagement(StringMap& args, const std::string& filename)
     {
+        std::string extension = getFileExtension(filename);
+
+        applyViewTransform = false;
+        colorSpace = CmImageIO::getOutputSpace();
+        display = CMS::getActiveDisplay();
+        view = CMS::getActiveView();
+        look = CMS::getActiveLook();
+
+        if (args.contains("--display"))
+            display = args["--display"];
+
+        if (args.contains("--view"))
+            view = args["--view"];
+
+        if (args.contains("--look"))
+            look = args["--look"];
+
+        if (args.contains("--view-exp"))
+            exposure = strToFloat(args["--view-exp"]);
+
         /*
-        
-            {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
-            {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Conditional},
-            {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Conditional},
-            {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Conditional},
-            {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Conditional},
-        
+        *    Arguments:
+        *
+        *    {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
+        *    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Conditional},
+        *    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
+        *    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
+        *    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
+        *    {{"--view-exp"}, "Exposure for view transform", "", ArgumentType::Optional},
         */
 
-        // is filename linear?
-        //     is output space defined?
-        //         use it
-        //     else: are display and view defined?
-        //         use them
-        //     else
-        //         throw error
-        // else: is non-linear?
-        //     are display and view defined?
-        //         use them
-        //     else
-        //         throw error
-        // else
-        //     throw error (unsupported format)
+        /*
+        *    Logic:
+        *
+        *    is the extension linear?
+        *        is output space defined?
+        *            use it
+        *        else: is any view transform argument defined?
+        *            enable view transform
+        *    else: is it non-linear?
+        *        enable view transform
+        *    else
+        *        throw error (unsupported format)
+        */
+
+        if (contains(CmImageIO::getLinearExtensions(), extension))
+        {
+            if (args.contains("--output-space"))
+            {
+                applyViewTransform = false;
+                colorSpace = CMS::resolveColorSpace(args["--output-space"]);
+            }
+            else if (args.contains("--display")
+                || args.contains("--view")
+                || args.contains("--look")
+                || args.contains("--view-exp"))
+            {
+                applyViewTransform = true;
+            }
+            else
+            {
+                applyViewTransform = false;
+            }
+        }
+        else if (contains(CmImageIO::getNonLinearExtensions(), extension))
+        {
+            applyViewTransform = true;
+        }
+        else
+        {
+            throw std::exception(strFormat("File extension \"%s\" isn't supported.", extension.c_str()).c_str());
+        }
+    }
+
+    void OutputColorManagement::apply()
+    {
+        // Set CmImageIO parameters
+        CmImageIO::setOutputSpace(colorSpace);
+        CmImageIO::setApplyViewTransform(applyViewTransform);
+
+        // Set view transform parameters
+        CMS::setActiveDisplay(display);
+        CMS::setActiveView(view);
+        CMS::setActiveLook(look);
+        CMS::setExposure(exposure);
+
+        // Update the view transform processors if needed
+        if (applyViewTransform)
+            CMS::updateProcessors();
+    }
+
+    void setInputColorSpace(const std::string& colorSpace)
+    {
+        CmImageIO::setInputSpace(colorSpace);
+        CmImageIO::setNonLinearSpace(colorSpace);
     }
 
 }
