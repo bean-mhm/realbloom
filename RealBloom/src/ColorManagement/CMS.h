@@ -45,6 +45,7 @@ private:
 
         float exposure = 0.0f;
 
+        bool initProcessors = false;
         OCIO::GroupTransformRcPtr groupTransform;
         OCIO::ConstProcessorRcPtr processor;
         OCIO::ConstCPUProcessorRcPtr cpuProcessor;
@@ -59,6 +60,8 @@ private:
     };
     static CmVars* S_VARS;
     static BaseStatus S_STATUS;
+
+    static void ensureProcessors();
 
 public:
     CMS() = delete;
@@ -102,6 +105,7 @@ public:
 
     static bool usingGPU();
 
+    static std::string resolveColorSpace(const std::string& s);
     static std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace);
     static std::array<float, 4> getDisplayColor(std::array<float, 4> v);
     static std::array<float, 3> getDisplayColor(const std::array<float, 3>& v);

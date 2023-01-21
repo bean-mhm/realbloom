@@ -12,44 +12,59 @@
 
 #include "Utils/CliParser.h"
 
-typedef std::unordered_map<std::string, std::string> StringMap;
-
-struct CliArgument
+namespace CLI
 {
-    std::vector<std::string> aliases;
-    std::string desc;
-    std::string defaultValue;
-    bool required;
-};
 
-struct CliCommand
-{
-    std::string name;
-    std::string desc;
-    std::string example;
-    std::vector<CliArgument> arguments;
-    std::function<void(const CliCommand&, const CliParser&, StringMap&, bool)> action;
-    bool hasVerbose = false;
-};
+    typedef std::unordered_map<std::string, std::string> StringMap;
 
-class CLI
-{
-private:
-    struct CliVars
+    enum class ArgumentType
     {
-        std::shared_ptr<CliParser> parser = nullptr;
-        bool hasCommands = false;
+        Optional,
+        Conditional,
+        Required
     };
-    static CliVars* S_VARS;
 
-public:
-    CLI() = delete;
-    CLI(const CLI&) = delete;
-    CLI& operator= (const CLI&) = delete;
+    struct Argument
+    {
+        std::vector<std::string> aliases;
+        std::string desc;
+        std::string defaultValue;
+        ArgumentType type;
+    };
 
-    static void init(int& argc, char** argv);
-    static void cleanUp();
+    struct Command
+    {
+        std::string name;
+        std::string desc;
+        std::string example;
+        std::vector<Argument> arguments;
+        std::function<void(const Command&, const CliParser&, StringMap&, bool)> action;
+        bool hasVerbose = false;
+    };
 
-    static bool hasCommands();
-    static void proceed();
-};
+    class Interface
+    {
+    private:
+        struct CliVars
+        {
+            std::shared_ptr<CliParser> parser = nullptr;
+            bool hasCommands = false;
+        };
+        static CliVars* S_VARS;
+
+    public:
+        Interface() = delete;
+        Interface(const Interface&) = delete;
+        Interface& operator= (const Interface&) = delete;
+
+        static void init(int& argc, char** argv);
+        static void cleanUp();
+
+        static bool hasCommands();
+        static void proceed();
+    };
+
+    void handleXyzArgs(StringMap& args);
+    void handleViewTransformArgs(const CliParser& parser, StringMap& args, const std::string& filename);
+
+}

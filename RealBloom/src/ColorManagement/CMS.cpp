@@ -81,6 +81,14 @@ void CMS::CmVars::retrieveLooks()
     }
 }
 
+void CMS::ensureProcessors()
+{
+    if (S_VARS->initProcessors)
+        return;
+    S_VARS->initProcessors = true;
+    updateProcessors();
+}
+
 bool CMS::init()
 {
     S_VARS = new CmVars();
@@ -117,9 +125,6 @@ bool CMS::init()
     {
         S_STATUS.setError(makeError(__FUNCTION__, stage, e.what(), true));
     }
-
-    if (S_STATUS.isOK())
-        updateProcessors();
 
     return S_STATUS.isOK();
 }
@@ -223,10 +228,6 @@ void CMS::setExposure(float exposure)
 
 void CMS::updateProcessors()
 {
-    // View transforms aren't needed in CLI mode
-    if (CLI::hasCommands())
-        return;
-
     S_STATUS.reset();
 
     try
@@ -300,20 +301,27 @@ void CMS::updateProcessors()
 
 OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()
 {
+    ensureProcessors();
+
     if (S_STATUS.isOK())
         return S_VARS->cpuProcessor;
+
     return nullptr;
 }
 
 OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
 {
+    ensureProcessors();
+
     if (S_STATUS.isOK())
         return S_VARS->gpuProcessor;
+
     return nullptr;
 }
 
 std::shared_ptr<OcioShader> CMS::getShader()
 {
+    ensureProcessors();
     return S_VARS->shader;
 }
 
@@ -331,6 +339,20 @@ void CMS::ensureOK()
 bool CMS::usingGPU()
 {
     return USE_GPU;
+}
+
+std::string CMS::resolveColorSpace(const std::string& s)
+{
+    std::string csName = s;
+
+    if ((strLowercase(s) == "working") || (strLowercase(s) == "w"))
+        csName = OCIO::ROLE_SCENE_LINEAR;
+
+    OCIO::ConstColorSpaceRcPtr cs = S_VARS->config->getColorSpace(csName.c_str());
+    if (cs.get())
+        csName = cs->getName();
+
+    return csName;
 }
 
 std::string CMS::getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace)

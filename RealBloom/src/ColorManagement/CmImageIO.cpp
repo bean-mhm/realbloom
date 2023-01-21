@@ -247,10 +247,7 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
         OCIO::ConstConfigRcPtr config = CMS::getConfig();
 
         // Resolve the output color space name
-        OCIO::ConstColorSpaceRcPtr cs = config->getColorSpace(S_VARS->outputSpace.c_str());
-        if (cs.get() == nullptr)
-            throw std::exception(strFormat("Color space \"%s\" was not found.", S_VARS->outputSpace.c_str()).c_str());
-        std::string csName = cs->getName();
+        std::string csName = CMS::resolveColorSpace(S_VARS->outputSpace);
 
         bool viewTransform = S_VARS->applyViewTransform || nonLinear;
 
@@ -424,11 +421,11 @@ const std::vector<std::string>& CmImageIO::getNonLinearExtensions()
 const std::vector<std::string>& CmImageIO::getAllExtensions()
 {
     static std::vector<std::string> exts;
-    static bool init = true;
+    static bool init = false;
 
-    if (init)
+    if (!init)
     {
-        init = false;
+        init = true;
 
         const std::vector<std::string>& linearExts = getLinearExtensions();
         const std::vector<std::string>& nonLinearExts = getNonLinearExtensions();

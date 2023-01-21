@@ -51,10 +51,10 @@ int main(int argc, char** argv)
     Config::load();
 
     // CLI
-    CLI::init(argc, argv);
+    CLI::Interface::init(argc, argv);
 
     // No GUI if there is command line input
-    if (!CLI::hasCommands())
+    if (!CLI::Interface::hasCommands())
     {
         // Change the working directory so ImGui can load its
         // config properly
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     CmImageIO::init();
 
     // GUI-specific
-    if (!CLI::hasCommands())
+    if (!CLI::Interface::hasCommands())
     {
         // Hide the console window
         ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
 
     // Update resource usage info for convolution
     std::shared_ptr<std::thread> convResUsageThread = nullptr;
-    if (!CLI::hasCommands())
+    if (!CLI::Interface::hasCommands())
     {
         convResUsageThread = std::make_shared<std::thread>([]()
             {
@@ -152,7 +152,7 @@ int main(int argc, char** argv)
     }
 
     // Main loop
-    if (!CLI::hasCommands())
+    if (!CLI::Interface::hasCommands())
     {
         appRunning = !glfwWindowShouldClose(window);
         while (appRunning)
@@ -217,7 +217,7 @@ int main(int argc, char** argv)
     }
 
     // Process the command line input
-    if (CLI::hasCommands())
+    if (CLI::Interface::hasCommands())
     {
         // Create OpenGL context
 
@@ -226,7 +226,7 @@ int main(int argc, char** argv)
             glVersionMajor, glVersionMinor,
             []()
             {
-                CLI::proceed();
+                CLI::Interface::proceed();
             },
             ctxError);
 
@@ -236,7 +236,7 @@ int main(int argc, char** argv)
 
     // Quit
     Config::save();
-    if (!CLI::hasCommands())
+    if (!CLI::Interface::hasCommands())
         convResUsageThread->join();
     disp.cancel();
     conv.cancel();
@@ -1480,7 +1480,7 @@ void applyStyle_RealBloomGray()
 
 void cleanUp()
 {
-    if (!CLI::hasCommands())
+    if (!CLI::Interface::hasCommands())
     {
         clearVector(images);
         imgui_widgets_cleanup_cmimages();
@@ -1491,7 +1491,7 @@ void cleanUp()
     CMF::cleanUp();
     CMS::cleanUp();
 
-    if (!CLI::hasCommands())
+    if (!CLI::Interface::hasCommands())
     {
         NFD_Quit();
 
@@ -1503,5 +1503,5 @@ void cleanUp()
         glfwTerminate();
     }
 
-    CLI::cleanUp();
+    CLI::Interface::cleanUp();
 }
