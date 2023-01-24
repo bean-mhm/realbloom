@@ -90,6 +90,7 @@ std::string strList(const std::vector<std::string>& list, const std::string& sep
 std::string strLeftPadding(const std::string& s, size_t length, bool addSpace = true);
 std::string strRightPadding(const std::string& s, size_t length, bool addSpace = true);
 std::string strWordWrap(const std::string& s, size_t lineLength, size_t leftPadding = 0);
+void strSplit(const std::string& s, char delimiter, std::vector<std::string>& outElements);
 
 std::string strFromSize(uint64_t sizeBytes);
 std::string strFromBigNumber(uint64_t bigNumber);

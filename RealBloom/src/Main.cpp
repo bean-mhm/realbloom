@@ -53,8 +53,8 @@ int main(int argc, char** argv)
     // CLI
     CLI::Interface::init(argc, argv);
 
-    // No GUI if there is command line input
-    if (!CLI::Interface::hasCommands())
+    // GUI-specific
+    if (!CLI::Interface::active())
     {
         // Change the working directory so ImGui can load its
         // config properly
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     CmImageIO::init();
 
     // GUI-specific
-    if (!CLI::Interface::hasCommands())
+    if (!CLI::Interface::active())
     {
         // Hide the console window
         ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -131,9 +131,9 @@ int main(int argc, char** argv)
         Async::putShared("hJobObject", hJobObject);
     }
 
-    // Update resource usage info for convolution
+    // Update resource usage info for convolution (GUI)
     std::shared_ptr<std::thread> convResUsageThread = nullptr;
-    if (!CLI::Interface::hasCommands())
+    if (!CLI::Interface::active())
     {
         convResUsageThread = std::make_shared<std::thread>([]()
             {
@@ -151,8 +151,8 @@ int main(int argc, char** argv)
             });
     }
 
-    // Main loop
-    if (!CLI::Interface::hasCommands())
+    // Main loop (GUI)
+    if (!CLI::Interface::active())
     {
         appRunning = !glfwWindowShouldClose(window);
         while (appRunning)
@@ -216,8 +216,8 @@ int main(int argc, char** argv)
         }
     }
 
-    // Process the command line input
-    if (CLI::Interface::hasCommands())
+    // CLI-specific
+    if (CLI::Interface::active())
     {
         // Create OpenGL context
 
@@ -226,6 +226,7 @@ int main(int argc, char** argv)
             glVersionMajor, glVersionMinor,
             []()
             {
+                // Start the CLI
                 CLI::Interface::proceed();
             },
             ctxError);
@@ -236,7 +237,7 @@ int main(int argc, char** argv)
 
     // Quit
     Config::save();
-    if (!CLI::Interface::hasCommands())
+    if (!CLI::Interface::active())
         convResUsageThread->join();
     disp.cancel();
     conv.cancel();
@@ -1480,7 +1481,7 @@ void applyStyle_RealBloomGray()
 
 void cleanUp()
 {
-    if (!CLI::Interface::hasCommands())
+    if (!CLI::Interface::active())
     {
         clearVector(images);
         imgui_widgets_cleanup_cmimages();
@@ -1491,7 +1492,7 @@ void cleanUp()
     CMF::cleanUp();
     CMS::cleanUp();
 
-    if (!CLI::Interface::hasCommands())
+    if (!CLI::Interface::active())
     {
         NFD_Quit();
 

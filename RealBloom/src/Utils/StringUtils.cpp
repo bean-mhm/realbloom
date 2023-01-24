@@ -90,23 +90,21 @@ std::string strWordWrap(const std::string& s, size_t lineLength, size_t leftPadd
     return result;
 }
 
-std::vector<std::string> strSplit(const std::string& s, char delimiter)
+void strSplit(const std::string& s, char delimiter, std::vector<std::string>& outElements)
 {
-    std::vector<std::string> elements;
+    outElements.clear();
 
     std::size_t from = 0;
     for (std::size_t i = 0; i < s.size(); ++i)
     {
         if (s[i] == delimiter)
         {
-            elements.push_back(strTrim(s.substr(from, i - from)));
+            outElements.push_back(strTrim(s.substr(from, i - from)));
             from = i + 1;
         }
     }
     if (from <= s.size())
-        elements.push_back(strTrim(s.substr(from, s.size() - from)));
-
-    return elements;
+        outElements.push_back(strTrim(s.substr(from, s.size() - from)));
 }
 
 std::string strFromSize(uint64_t sizeBytes)
@@ -255,7 +253,9 @@ std::array<float, 4> strToRGBA(const std::string& s)
         if (s.empty())
             throw std::exception("empty string");
 
-        std::vector<std::string> elements = strSplit(s, ',');
+        std::vector<std::string> elements;
+        strSplit(s, ',', elements);
+
         if (elements.size() == 1)
         {
             float v = std::stof(elements[0]);
@@ -290,7 +290,9 @@ std::array<float, 2> strToXY(const std::string& s)
         if (s.empty())
             throw std::exception("empty string");
 
-        std::vector<std::string> elements = strSplit(s, ',');
+        std::vector<std::string> elements;
+        strSplit(s, ',', elements);
+
         if (elements.size() == 1)
         {
             float v = std::stof(elements[0]);

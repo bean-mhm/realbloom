@@ -22,11 +22,15 @@ namespace OCIO = OpenColorIO_v2_1;
 namespace CLI
 {
 
-    constexpr uint32_t CLI_LINE_LENGTH = 80;
-    constexpr uint32_t CLI_WAIT_TIMESTEP = 5;
+    constexpr uint32_t LINE_LENGTH = 80;
+    constexpr uint32_t WAIT_TIMESTEP = 5;
 
-    Interface::CliVars* Interface::S_VARS = nullptr;
-    std::vector<Command> g_commands;
+    constexpr const char* INIT_WORD = "cli";
+    constexpr const char* QUIT_WORD = "quit";
+
+    bool Interface::S_ACTIVE = false;
+
+    std::vector<Command> commands;
 
     // Command actions
 
@@ -46,7 +50,7 @@ namespace CLI
     void cmdLooks(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
 
     // Print the arguments of a command
-    void printArguments(Command& command)
+    void printArguments(const Command& command)
     {
         std::vector<Argument> args = command.arguments;
 
@@ -65,14 +69,14 @@ namespace CLI
                 std::cout
                 << "  "
                 << consoleColor(COL_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
-                << strWordWrap(desc, CLI_LINE_LENGTH, 26)
+                << strWordWrap(desc, LINE_LENGTH, 26)
                 << consoleColor() << "\n";
             else
                 std::cout
                 << "  "
                 << consoleColor(COL_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
                 << consoleColor(arg.type == ArgumentType::Required ? COL_ERR : COL_PRI) << "* " << consoleColor()
-                << strWordWrap(desc, CLI_LINE_LENGTH, 28)
+                << strWordWrap(desc, LINE_LENGTH, 28)
                 << consoleColor() << "\n";
         }
     }
@@ -90,7 +94,7 @@ namespace CLI
             std::cout
                 << "  "
                 << consoleColor(COL_SEC) << strRightPadding(key, 24) << consoleColor()
-                << strWordWrap(val, CLI_LINE_LENGTH, 26)
+                << strWordWrap(val, LINE_LENGTH, 26)
                 << "\n";
         }
 
@@ -102,10 +106,9 @@ namespace CLI
         std::cout << Config::S_APP_VERSION << "\n";
     }
 
-    void printHelp(const std::string& cmdName = "")
+    void printHelp(const std::string& commandName = "")
     {
-
-        if (cmdName.empty())
+        if (commandName.empty())
         {
             // Header
             std::cout
@@ -115,24 +118,26 @@ namespace CLI
                 << consoleColor();
 
             // Commands
-            for (const auto& cmd : g_commands)
+            for (const auto& cmd : commands)
                 std::cout
                 << "  "
                 << consoleColor(COL_SEC) << strRightPadding(cmd.name, 16) << consoleColor()
-                << strWordWrap(cmd.desc, CLI_LINE_LENGTH, 18) << "\n";
+                << strWordWrap(cmd.desc, LINE_LENGTH, 18) << "\n";
 
             // Footer
             std::cout
                 << "\n"
                 << "Use " << consoleColor(COL_PRI) << "help <command>" << consoleColor()
-                << " to see how to use a specific command.\n";
+                << " to see how to use a specific command.\n"
+                << "Use " << consoleColor(COL_PRI) << QUIT_WORD << consoleColor()
+                << " to quit the program.\n";
         }
         else
         {
             // Find the command
-            Command* cmdPtr = nullptr;
-            for (auto& c : g_commands)
-                if (c.name == cmdName)
+            const Command* cmdPtr = nullptr;
+            for (auto& c : commands)
+                if (c.name == commandName)
                 {
                     cmdPtr = &c;
                     break;
@@ -145,12 +150,12 @@ namespace CLI
                     << consoleColor(COL_PRI) << strRightPadding("Command:", 18) << consoleColor()
                     << cmdPtr->name << "\n"
                     << consoleColor(COL_PRI) << strRightPadding("Description:", 18) << consoleColor()
-                    << strWordWrap(cmdPtr->desc, CLI_LINE_LENGTH, 18) << "\n";
+                    << strWordWrap(cmdPtr->desc, LINE_LENGTH, 18) << "\n";
 
                 if (!(cmdPtr->example.empty()))
                     std::cout
                     << consoleColor(COL_PRI) << strRightPadding("Example:", 18) << consoleColor()
-                    << strWordWrap(cmdPtr->example, CLI_LINE_LENGTH, 18) << "\n";
+                    << strWordWrap(cmdPtr->example, LINE_LENGTH, 18) << "\n";
 
                 if (cmdPtr->arguments.size() > 0)
                 {
@@ -162,17 +167,25 @@ namespace CLI
             }
             else
             {
-                std::cout << "This command doesn't exist.\n";
+                std::cout << "No such command was found.\n";
             }
         }
     }
 
     void Interface::init(int& argc, char** argv)
     {
+        if (argc < 2)
+            return;
+
+        if (strLowercase(std::string(argv[1])) == INIT_WORD)
+            S_ACTIVE = true;
+        else
+            return;
+
         // Define the supported commands
-        g_commands.clear();
+        commands.clear();
         {
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "version",
                 "Print the current version",
                 "",
@@ -180,7 +193,7 @@ namespace CLI
                 cmdVersion }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "help",
                 "Print guide for all commands or a specific command",
                 "help <command>",
@@ -188,10 +201,10 @@ namespace CLI
                 cmdHelp }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "diff",
                 "Generate diffraction pattern",
-                "diff -i aperture.png -a sRGB -o output.exr -p Linear",
+                "diff -i aperture.png -a sRGB -o output.exr -p w",
                 {
                     {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
                     {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
@@ -209,10 +222,10 @@ namespace CLI
                 true }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "disp",
                 "Apply dispersion",
-                "disp -i input.exr -a Linear -o output.exr -p Linear "
+                "disp -i input.exr -a Linear -o output.exr -p w "
                 "-s 128 -d 0.4",
                 {
                     {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
@@ -235,18 +248,18 @@ namespace CLI
                     {{"--gpu", "-g"}, "Use the GPU method", "", ArgumentType::Optional},
 
                     {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Optional},
-                    {{"--user-space", "-x"}, "XYZ I-E color space in the user config", "", ArgumentType::Optional},
-                    {{"--common-internal", "-w"}, "Common XYZ color space in the internal config", "", ArgumentType::Optional},
-                    {{"--common-user", "-u"}, "Common XYZ color space in the user config", "", ArgumentType::Optional}
+                    {{"--user-space", "-x"}, "XYZ I-E color space in the user config (UserConfig)", "", ArgumentType::Optional},
+                    {{"--common-internal", "-w"}, "Common XYZ color space in the internal config (CommonSpace)", "", ArgumentType::Optional},
+                    {{"--common-user", "-u"}, "Common XYZ color space in the user config (CommonSpace)", "", ArgumentType::Optional}
                 },
                 cmdDisp,
                 true }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "conv",
                 "Perform convolution (FFT)",
-                "conv -i input.exr -a Linear -k kernel.exr -b Linear -o conv.exr -p Linear",
+                "conv -i input.exr -a Linear -k kernel.exr -b w -o conv.png -j AgX",
                 {
                     {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
                     {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
@@ -280,7 +293,7 @@ namespace CLI
                 true }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "cmf-details",
                 "Print CMF table details",
                 "cmf-details -f \"CIE 1931 2-deg.csv\"",
@@ -290,10 +303,10 @@ namespace CLI
                 cmdCmfDetails }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "cmf-preview",
                 "Preview CMF",
-                "cmf-preview -f \"CIE 1931 2-deg.csv\" -o cmf.exr -p Linear",
+                "cmf-preview -f \"CIE 1931 2-deg.csv\" -o cmf.exr -p w",
                 {
                     {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Required},
 
@@ -304,14 +317,14 @@ namespace CLI
                     {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
                     {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional},
 
-                    {{"--user-space", "-x"}, "XYZ I-E color space in the user config", "", ArgumentType::Optional},
-                    {{"--common-internal", "-w"}, "Common XYZ color space in the internal config", "", ArgumentType::Optional},
-                    {{"--common-user", "-u"}, "Common XYZ color space in the user config", "", ArgumentType::Optional}
+                    {{"--user-space", "-x"}, "XYZ I-E color space in the user config (UserConfig)", "", ArgumentType::Optional},
+                    {{"--common-internal", "-w"}, "Common XYZ color space in the internal config (CommonSpace)", "", ArgumentType::Optional},
+                    {{"--common-user", "-u"}, "Common XYZ color space in the user config (CommonSpace)", "", ArgumentType::Optional}
                 },
                 cmdCmfPreview }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "colorspaces",
                 "Print the available color spaces",
                 "",
@@ -322,7 +335,7 @@ namespace CLI
                 true }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "displays",
                 "Print the available displays",
                 "",
@@ -330,7 +343,7 @@ namespace CLI
                 cmdDisplays }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "views",
                 "Print the available views for a given display",
                 "",
@@ -340,7 +353,7 @@ namespace CLI
                 cmdViews }
             );
 
-            g_commands.push_back(Command{
+            commands.push_back(Command{
                 "looks",
                 "Print the available looks",
                 "",
@@ -348,69 +361,88 @@ namespace CLI
                 cmdLooks }
             );
         }
-
-        // Parse
-        S_VARS = new CliVars();
-        S_VARS->parser = std::make_shared<CliParser>(argc, argv);
-
-        // Check if any of the commands are passed in
-        std::vector<std::string> cmdNames;
-        for (const auto& cmd : g_commands)
-            cmdNames.push_back(cmd.name);
-        S_VARS->hasCommands = S_VARS->parser->first(cmdNames);
     }
 
     void Interface::cleanUp()
     {
-        DELPTR(S_VARS);
+        //
     }
 
-    bool Interface::hasCommands()
+    bool Interface::active()
     {
-        return S_VARS->hasCommands;
+        return S_ACTIVE;
     }
 
     void Interface::proceed()
     {
         activateVirtualTerminal();
 
-        CliParser& parser = *(S_VARS->parser);
-        for (const auto& cmd : g_commands)
+        std::string line = "";
+        while (1)
         {
-            if (!(parser.first(cmd.name)))
-                continue;
+            // Read a line
+            std::cout << "> ";
+            std::getline(std::cin, line);
+            line = strTrim(line);
 
-            try
+            // Check if it's the quit word
+            if (strLowercase(line) == QUIT_WORD)
+                break;
+            
+            // Create a parser
+            CliParser parser(line);
+            bool found = false;
+
+            // Find the command
+            for (const auto& cmd : commands)
             {
-                StringMap args;
-                for (const auto& arg : cmd.arguments)
+                if (!(parser.first(cmd.name)))
+                    continue;
+
+                try
                 {
-                    if (arg.type == ArgumentType::Required)
+                    found = true;
+
+                    // Get the arguments
+                    StringMap args;
+                    for (const auto& arg : cmd.arguments)
                     {
-                        args[arg.aliases[0]] = parser.get(arg.aliases);
-                    }
-                    else
-                    {
-                        if (parser.hasValue(arg.aliases))
+                        if (arg.type == ArgumentType::Required)
+                        {
                             args[arg.aliases[0]] = parser.get(arg.aliases);
-                        else if (parser.exists(arg.aliases))
-                            args[arg.aliases[0]] = "";
+                        }
+                        else
+                        {
+                            if (parser.hasValue(arg.aliases))
+                                args[arg.aliases[0]] = parser.get(arg.aliases);
+                            else if (parser.exists(arg.aliases))
+                                args[arg.aliases[0]] = "";
+                        }
                     }
+
+                    // Run the command
+                    bool verbose = parser.exists(std::vector<std::string>{ "--verbose", "-v" });
+                    cmd.action(cmd, parser, args, verbose);
+                }
+                catch (const std::exception& e)
+                {
+                    // Handle errors
+                    std::cerr
+                        << consoleColor(COL_ERR) << e.what() << consoleColor() << "\n"
+                        << "Use " << consoleColor(COL_PRI) << "help " << cmd.name << consoleColor()
+                        << " to see how to use this command.\n";
                 }
 
-                bool verbose = parser.exists(std::vector<std::string>{ "--verbose", "-v" });
-                cmd.action(cmd, parser, args, verbose);
-            }
-            catch (const std::exception& e)
-            {
-                std::cerr
-                    << consoleColor(COL_ERR) << e.what() << consoleColor() << "\n"
-                    << "Use " << consoleColor(COL_PRI) << "help " << cmd.name << consoleColor()
-                    << " to see how to use this command.\n";
+                break;
             }
 
-            break;
+            if (!found)
+                std::cout << "No such command was found.\n";
+
+            std::cout << '\n';
         }
+
+        CMS::cleanUp();
     }
 
     void cmdVersion(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose)
@@ -497,9 +529,6 @@ namespace CLI
             CmImageIO::writeImage(imgOutput, outFilename);
             timer.done(verbose);
         }
-
-        // Free OpenGL objects
-        CMS::cleanUp();
 
         totalTimer.done(verbose);
     }
@@ -608,7 +637,7 @@ namespace CLI
             // Wait
             while (disp.getStatus().isWorking())
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
+                std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP));
             }
 
             timer.done(verbose);
@@ -625,9 +654,6 @@ namespace CLI
             CmImageIO::writeImage(imgOutput, outFilename);
             timer.done(verbose);
         }
-
-        // Free OpenGL objects
-        CMS::cleanUp();
 
         totalTimer.done(verbose);
     }
@@ -799,7 +825,7 @@ namespace CLI
             // Wait
             while (conv.getStatus().isWorking())
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(CLI_WAIT_TIMESTEP));
+                std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP));
             }
 
             timer.done(verbose);
@@ -823,9 +849,6 @@ namespace CLI
             CmImageIO::writeImage(imgConvMix, outFilename);
             timer.done(verbose);
         }
-
-        // Free OpenGL objects
-        CMS::cleanUp();
 
         totalTimer.done(verbose);
     }
@@ -874,9 +897,6 @@ namespace CLI
         // Write output image
         outCm.apply();
         CmImageIO::writeImage(img, outFilename);
-
-        // Free OpenGL objects
-        CMS::cleanUp();
     }
 
     void cmdColorSpaces(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose)
@@ -899,9 +919,9 @@ namespace CLI
                 std::string desc = CMS::getColorSpaceDesc(config, space);
                 std::cout
                     << consoleColor(COL_PRI) << "Name: " << consoleColor()
-                    << strWordWrap(space, CLI_LINE_LENGTH, 6) << "\n"
+                    << strWordWrap(space, LINE_LENGTH, 6) << "\n"
                     << consoleColor(COL_PRI) << "Desc: " << consoleColor()
-                    << consoleColor(COL_SEC) << strWordWrap(desc, CLI_LINE_LENGTH, 6) << consoleColor() << "\n\n";
+                    << consoleColor(COL_SEC) << strWordWrap(desc, LINE_LENGTH, 6) << consoleColor() << "\n\n";
             }
             else
             {

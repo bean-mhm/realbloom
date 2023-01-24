@@ -45,12 +45,7 @@ namespace CLI
     class Interface
     {
     private:
-        struct CliVars
-        {
-            std::shared_ptr<CliParser> parser = nullptr;
-            bool hasCommands = false;
-        };
-        static CliVars* S_VARS;
+        static bool S_ACTIVE;
 
     public:
         Interface() = delete;
@@ -60,7 +55,7 @@ namespace CLI
         static void init(int& argc, char** argv);
         static void cleanUp();
 
-        static bool hasCommands();
+        static bool active();
         static void proceed();
     };
 

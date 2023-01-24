@@ -5,6 +5,8 @@
 #include <vector>
 #include <algorithm>
 
+#include "Misc.h"
+
 // Source:
 // https://stackoverflow.com/a/868894/18049911
 
@@ -15,6 +17,7 @@ private:
 
 public:
     CliParser(int& argc, char** argv);
+    CliParser(std::string line);
 
     size_t num() const;
 
@@ -30,4 +33,5 @@ public:
 
     bool first(const std::string& command) const;
     bool first(const std::vector<std::string>& commands) const;
+
 };

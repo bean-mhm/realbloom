@@ -9,6 +9,12 @@ CliParser::CliParser(int& argc, char** argv)
         this->m_tokens.push_back(std::string(argv[i]));
 }
 
+CliParser::CliParser(std::string line)
+{
+    line = strTrim(line);
+    strSplit(line, ' ', m_tokens);
+}
+
 size_t CliParser::num() const
 {
     return m_tokens.size();
