@@ -395,6 +395,10 @@ namespace CLI
             std::getline(std::cin, line);
             line = strTrim(line);
 
+            // Check the stream status
+            if (std::cin.fail() || std::cin.eof())
+                break;
+
             // Interruption signal (Ctrl-C)
             if (interrupt)
                 break;
