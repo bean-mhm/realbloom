@@ -88,7 +88,7 @@ void logAdd(LogLevel level, const std::string& message)
 
 int main(int argc, char* argv[])
 {
-    bool debugMode = false;
+    const bool debugMode = false;
     std::string debugInputFilename = "";
 
     // Check for the argument

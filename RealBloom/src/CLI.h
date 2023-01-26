@@ -77,4 +77,6 @@ namespace CLI
     // Called before CmImageIO::readImage()
     void setInputColorSpace(const std::string& colorSpace);
 
+    BOOL WINAPI CtrlHandler(_In_ DWORD dwCtrlType);
+
 }

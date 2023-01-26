@@ -242,6 +242,7 @@ int main(int argc, char** argv)
     disp.cancel();
     conv.cancel();
     cleanUp();
+
     return 0;
 }
 

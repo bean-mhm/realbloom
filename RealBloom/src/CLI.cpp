@@ -1,5 +1,8 @@
 #include "CLI.h"
 
+#define NOMINMAX
+#include <Windows.h>
+
 #include <OpenColorIO/OpenColorIO.h>
 namespace OCIO = OpenColorIO_v2_1;
 
@@ -30,7 +33,8 @@ namespace CLI
 
     bool Interface::S_ACTIVE = false;
 
-    std::vector<Command> commands;
+    static std::vector<Command> commands;
+    static bool interrupt = false;
 
     // Command actions
 
@@ -375,20 +379,34 @@ namespace CLI
 
     void Interface::proceed()
     {
+        // Enable console colors
         activateVirtualTerminal();
 
+        // Handle Ctrl-C
+        // https://learn.microsoft.com/en-us/windows/console/registering-a-control-handler-function
+        if (!SetConsoleCtrlHandler(CtrlHandler, TRUE))
+            printWarning(__FUNCTION__, "", "Couldn't set control handler.");
+
         std::string line = "";
-        while (1)
+        while (!interrupt)
         {
             // Read a line
-            std::cout << "> ";
+            std::cout << "> " << std::flush;
             std::getline(std::cin, line);
             line = strTrim(line);
 
-            // Check if it's the quit word
+            // Interruption signal (Ctrl-C)
+            if (interrupt)
+                break;
+
+            // Quit word
             if (strLowercase(line) == QUIT_WORD)
                 break;
-            
+
+            // Empty line
+            if (line.empty())
+                continue;
+
             // Create a parser
             CliParser parser(line);
             bool found = false;
@@ -637,6 +655,11 @@ namespace CLI
             // Wait
             while (disp.getStatus().isWorking())
             {
+                if (interrupt)
+                {
+                    disp.cancel();
+                    return;
+                }
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP));
             }
 
@@ -825,6 +848,11 @@ namespace CLI
             // Wait
             while (conv.getStatus().isWorking())
             {
+                if (interrupt)
+                {
+                    conv.cancel();
+                    return;
+                }
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP));
             }
 
@@ -1076,6 +1104,29 @@ namespace CLI
     {
         CmImageIO::setInputSpace(colorSpace);
         CmImageIO::setNonLinearSpace(colorSpace);
+    }
+
+    // https://learn.microsoft.com/en-us/windows/console/handlerroutine
+    BOOL WINAPI CtrlHandler(DWORD dwCtrlType)
+    {
+        switch (dwCtrlType)
+        {
+        case CTRL_C_EVENT:
+            break;
+        case CTRL_BREAK_EVENT:
+            break;
+        case CTRL_CLOSE_EVENT:
+            break;
+        case CTRL_LOGOFF_EVENT:
+            break;
+        case CTRL_SHUTDOWN_EVENT:
+            break;
+        default:
+            return FALSE;
+        }
+
+        interrupt = true;
+        return TRUE;
     }
 
 }
