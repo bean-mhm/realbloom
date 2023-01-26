@@ -3,10 +3,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <stdint.h>
-#include <math.h>
 #include <complex>
 #include <memory>
+#include <cstdint>
+#include <cmath>
 
 #include "pocketfft/pocketfft_hdronly.h"
 

@@ -7,7 +7,7 @@
 
 #include <string>
 #include <vector>
-#include <stdint.h>
+#include <cstdint>
 
 #include "RealBloom/Binary/BinaryData.h"
 #include "RealBloom/Binary/BinaryDispGpu.h"

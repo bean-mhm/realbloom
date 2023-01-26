@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <stdint.h>
+#include <cstdint>
 
 #include "BinaryData.h"
 

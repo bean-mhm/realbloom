@@ -9,7 +9,7 @@
 #include <string>
 #include <memory>
 #include <chrono>
-#include <stdint.h>
+#include <cstdint>
 
 #include "RealBloom/Binary/BinaryData.h"
 #include "RealBloom/Binary/BinaryConvNaiveGpu.h"

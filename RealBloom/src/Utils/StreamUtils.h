@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <stdint.h>
+#include <cstdint>
 
 #include "Misc.h"
 

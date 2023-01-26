@@ -9,7 +9,7 @@
 #include <vector>
 #include <memory>
 #include <complex>
-#include <stdint.h>
+#include <cstdint>
 
 #include "RealBloom/Binary/BinaryData.h"
 #include "RealBloom/Binary/BinaryConvFftGpu.h"

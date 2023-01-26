@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <stdint.h>
+#include <cstdint>
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC

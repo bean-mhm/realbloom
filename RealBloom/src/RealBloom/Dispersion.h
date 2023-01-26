@@ -4,8 +4,8 @@
 #include <vector>
 #include <array>
 #include <memory>
-#include <math.h>
-#include <stdint.h>
+#include <cstdint>
+#include <cmath>
 
 #include "GpuHelper.h"
 #include "Binary/BinaryData.h"

@@ -11,7 +11,7 @@
 
 #include <string>
 #include <functional>
-#include <stdint.h>
+#include <cstdint>
 
 #include "../Misc.h"
 

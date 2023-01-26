@@ -12,7 +12,7 @@
 #include <locale>
 #include <clocale>
 #include <ctime>
-#include <stdint.h>
+#include <cstdint>
 
 template<typename ... Args>
 std::string strFormat(const std::string& format, Args ... args)

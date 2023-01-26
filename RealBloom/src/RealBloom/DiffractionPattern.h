@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <string>
-#include <math.h>
 #include <complex>
+#include <cmath>
 
 #include "pocketfft/pocketfft_hdronly.h"
 

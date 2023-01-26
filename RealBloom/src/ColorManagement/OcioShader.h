@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdint.h>
 #include <vector>
 #include <string>
+#include <cstdint>
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC

@@ -16,9 +16,9 @@
 #include <future>
 #include <functional>
 #include <algorithm>
-#include <stdint.h>
 #include <locale>
 #include <clocale>
+#include <cstdint>
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC

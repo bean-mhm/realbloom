@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vector>
-#include <stdint.h>
 #include <atomic>
 #include <thread>
 #include <memory>
+#include <cstdint>
 
 #include "Convolution.h"
 #include "../Utils/NumberHelpers.h"

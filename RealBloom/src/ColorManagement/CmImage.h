@@ -1,11 +1,11 @@
 #pragma once
 
 #include <string>
-#include <stdint.h>
 #include <mutex>
 #include <array>
 #include <vector>
 #include <memory>
+#include <cstdint>
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <stdint.h>
-#include <math.h>
 #include <numbers>
 #include <complex>
+#include <cstdint>
+#include <cmath>
 
 constexpr float DEG_TO_RAD = (float)std::numbers::pi / 180.0f;
 constexpr float EPSILON = 0.000001f;

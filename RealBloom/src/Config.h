@@ -4,7 +4,7 @@
 #include <fstream>
 #include <filesystem>
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 
 #include <pugixml/pugixml.hpp>
 

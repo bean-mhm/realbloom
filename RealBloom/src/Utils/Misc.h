@@ -7,11 +7,11 @@
 #include <chrono>
 #include <string>
 #include <vector>
-#include <math.h>
-#include <stdint.h>
 #include <filesystem>
 #include <algorithm>
 #include <functional>
+#include <cstdint>
+#include <cmath>
 
 #include "StringUtils.h"
 #include "StreamUtils.h"
