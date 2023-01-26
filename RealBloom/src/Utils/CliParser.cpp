@@ -1,7 +1,14 @@
 #include "CliParser.h"
 
-// Source:
+// Base source:
 // https://stackoverflow.com/a/868894/18049911
+
+void CliParser::addToken(std::string s)
+{
+    s = strTrim(s);
+    if (!s.empty())
+        m_tokens.push_back(s);
+}
 
 CliParser::CliParser(int& argc, char** argv)
 {
@@ -12,7 +19,45 @@ CliParser::CliParser(int& argc, char** argv)
 CliParser::CliParser(std::string line)
 {
     line = strTrim(line);
-    strSplit(line, ' ', m_tokens);
+    m_tokens.clear();
+
+    bool quotation = false;
+
+    std::size_t from = 0;
+    for (std::size_t i = 0; i < line.size(); ++i)
+    {
+        if (line[i] == '"')
+        {
+            quotation = !quotation;
+            if (quotation)
+            {
+                addToken(line.substr(from, i - from));
+                from = i + 1;
+            }
+            else
+            {
+                addToken(line.substr(from, i - from));
+                from = i + 1;
+            }
+        }
+        else if (line[i] == ' ' && !quotation)
+        {
+            addToken(line.substr(from, i - from));
+            from = i + 1;
+        }
+    }
+
+    if (from < line.size())
+        addToken(line.substr(from, line.size() - from));
+
+    // Test
+    if (0)
+    {
+        std::cout << "Tokens:\n";
+        for (const auto& token : m_tokens)
+            std::cout << "  '" << token << "'\n";
+        std::cout << "\n";
+    }
 }
 
 size_t CliParser::num() const

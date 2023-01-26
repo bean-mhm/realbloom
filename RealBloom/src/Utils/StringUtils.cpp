@@ -103,7 +103,8 @@ void strSplit(const std::string& s, char delimiter, std::vector<std::string>& ou
             from = i + 1;
         }
     }
-    if (from <= s.size())
+
+    if (from < s.size())
         outElements.push_back(strTrim(s.substr(from, s.size() - from)));
 }
 

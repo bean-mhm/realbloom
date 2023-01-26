@@ -15,6 +15,8 @@ class CliParser
 private:
     std::vector<std::string> m_tokens;
 
+    void addToken(std::string s);
+
 public:
     CliParser(int& argc, char** argv);
     CliParser(std::string line);
