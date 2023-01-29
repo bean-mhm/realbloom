@@ -1304,7 +1304,7 @@ bool setupGLFW()
     window = glfwCreateWindow(Config::S_WINDOW_WIDTH, Config::S_WINDOW_HEIGHT, Config::S_APP_TITLE, NULL, NULL);
     if (window == NULL)
     {
-        std::cerr << "Failed to create a window.\n";
+        std::cout << "Failed to create a window.\n";
         return false;
     }
     glfwMakeContextCurrent(window);
@@ -1374,7 +1374,7 @@ bool setupImGui()
         return true;
     else
     {
-        std::cerr << "The required fonts could not be loaded.\n";
+        std::cout << "The required fonts could not be loaded.\n";
         return false;
     }
 }

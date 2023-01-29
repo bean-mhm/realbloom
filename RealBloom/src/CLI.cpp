@@ -449,7 +449,7 @@ namespace CLI
                 catch (const std::exception& e)
                 {
                     // Handle errors
-                    std::cerr
+                    std::cout
                         << consoleColor(COL_ERR) << e.what() << consoleColor() << "\n"
                         << "Use " << consoleColor(COL_PRI) << "help " << cmd.name << consoleColor()
                         << " to see how to use this command.\n";
