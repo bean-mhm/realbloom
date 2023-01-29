@@ -28,6 +28,7 @@ private:
         std::string inputSpace = "";
         std::string outputSpace = "";
         std::string nonLinearSpace = "";
+        bool autoDetect = true;
         bool applyViewTransform = false;
     };
     static CmImageIoVars* S_VARS;
@@ -43,11 +44,13 @@ public:
     static const std::string& getInputSpace();
     static const std::string& getOutputSpace();
     static const std::string& getNonLinearSpace();
+    static bool getAutoDetect();
     static bool getApplyViewTransform();
 
     static void setInputSpace(const std::string& colorSpace);
     static void setOutputSpace(const std::string& colorSpace);
     static void setNonLinearSpace(const std::string& colorSpace);
+    static void setAutoDetect(bool autoDetect);
     static void setApplyViewTransform(bool applyViewTransform);
 
     static void readImage(CmImage& target, const std::string& filename);
@@ -57,6 +60,9 @@ public:
     static const std::vector<std::string>& getLinearExtensions();
     static const std::vector<std::string>& getNonLinearExtensions();
     static const std::vector<std::string>& getAllExtensions();
+
+    // Formats in which we can embed the color space name
+    static const std::vector<std::string>& getMetaExtensions();
 
     static const std::vector<std::string>& getOpenFilterList();
     static const std::vector<std::string>& getSaveFilterList();

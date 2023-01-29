@@ -42,6 +42,11 @@ const std::string& CmImageIO::getNonLinearSpace()
     return S_VARS->nonLinearSpace;
 }
 
+bool CmImageIO::getAutoDetect()
+{
+    return S_VARS->autoDetect;
+}
+
 bool CmImageIO::getApplyViewTransform()
 {
     return S_VARS->applyViewTransform;
@@ -62,9 +67,22 @@ void CmImageIO::setNonLinearSpace(const std::string& colorSpace)
     S_VARS->nonLinearSpace = colorSpace;
 }
 
+void CmImageIO::setAutoDetect(bool autoDetect)
+{
+    S_VARS->autoDetect = autoDetect;
+}
+
 void CmImageIO::setApplyViewTransform(bool applyViewTransform)
 {
     S_VARS->applyViewTransform = applyViewTransform;
+}
+
+std::string makeIoError(const std::string& message, bool hasError, const std::string& error)
+{
+    if (hasError)
+        return strFormat("%s: %s", message.c_str(), error.c_str());
+    else
+        return strFormat("%s.", message.c_str());
 }
 
 void CmImageIO::readImage(CmImage& target, const std::string& filename)
@@ -95,7 +113,9 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         // Open the file
         OIIO::ImageInput::unique_ptr inp = OIIO::ImageInput::open(filename);
         if (!inp)
+        {
             throw std::exception(strFormat("Couldn't open input file \"%s\".", filename.c_str()).c_str());
+        }
 
         // Read the specs
         const OIIO::ImageSpec& spec = inp->spec();
@@ -106,7 +126,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         if ((channels != 1) && (channels != 3) && (channels != 4))
         {
             inp->close();
-            throw std::exception(strFormat("Image must have 1, 3, or 4 color channels. (%d)", channels).c_str());
+            throw std::exception(strFormat("Input image must have 1, 3, or 4 color channels, not %d.", channels).c_str());
         }
 
         // Prepare buffer
@@ -117,7 +137,11 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         if (!inp->read_image(0, 0, 0, -1, OIIO::TypeDesc::FLOAT, buffer.data()))
         {
             inp->close();
-            throw std::exception(strFormat("Couldn't read image from file \"%s\".", filename.c_str()).c_str());
+            throw std::exception(makeIoError(
+                strFormat("Couldn't read image from file \"%s\"", filename.c_str()),
+                inp->has_error(),
+                inp->geterror()
+            ).c_str());
         }
         inp->close();
 
@@ -325,12 +349,20 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
             else
             {
                 out->close();
-                throw std::exception(strFormat("Couldn't write image to file \"%s\".", filename.c_str()).c_str());
+                throw std::exception(makeIoError(
+                    strFormat("Couldn't write image to file \"%s\"", filename.c_str()),
+                    out->has_error(),
+                    out->geterror()
+                ).c_str());
             }
         }
         else
         {
-            throw std::exception(strFormat("Couldn't open output file \"%s\".", filename.c_str()).c_str());
+            throw std::exception(makeIoError(
+                strFormat("Couldn't open output file \"%s\"", filename.c_str()),
+                out->has_error(),
+                out->geterror()
+            ).c_str());
         }
 
         // Update target source name
@@ -400,7 +432,6 @@ const std::vector<std::string>& CmImageIO::getLinearExtensions()
     static std::vector<std::string> exts
     {
         ".exr",
-        ".hdr",
         ".tif",
         ".tiff"
     };
@@ -439,15 +470,24 @@ const std::vector<std::string>& CmImageIO::getAllExtensions()
     return exts;
 }
 
+const std::vector<std::string>& CmImageIO::getMetaExtensions()
+{
+    static std::vector<std::string> exts
+    {
+        ".exr"
+    };
+    return exts;
+}
+
 const std::vector<std::string>& CmImageIO::getOpenFilterList()
 {
     static std::vector<std::string> filterList
     {
         "All Images",
-        "exr,hdr,tif,tiff,png,jpg,jpeg,bmp",
+        "exr,tif,tiff,png,jpg,jpeg,bmp",
 
         "Linear",
-        "exr,hdr,tif,tiff",
+        "exr,tif,tiff",
 
         "Non-Linear",
         "png,jpg,jpeg,bmp"
@@ -461,9 +501,6 @@ const std::vector<std::string>& CmImageIO::getSaveFilterList()
     {
         "OpenEXR",
         "exr",
-
-        "Radiance HDR",
-        "hdr",
 
         "TIFF",
         "tif,tiff",

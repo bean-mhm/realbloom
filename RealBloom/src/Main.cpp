@@ -507,10 +507,19 @@ void layoutColorManagement()
             if (!desc.empty()) ImGui::SetTooltip(desc.c_str());
         }
 
+        // Auto-Detect
+        bool autoDetect = CmImageIO::getAutoDetect();
+        if (ImGui::Checkbox("Auto-Detect##IIO", &autoDetect))
+            CmImageIO::setAutoDetect(autoDetect);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Attempt to detect the input color space for images exported by RealBloom");
+
         // Apply View Transform
         bool applyViewTransform = CmImageIO::getApplyViewTransform();
-        if (ImGui::Checkbox("Apply View Transform", &applyViewTransform))
+        if (ImGui::Checkbox("Apply View Transform##IIO", &applyViewTransform))
             CmImageIO::setApplyViewTransform(applyViewTransform);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Apply view transform on linear images");
 
     }
 
@@ -1013,7 +1022,7 @@ void layoutConvolution()
     ImGui::Checkbox("Auto-Exposure##Kernel", &(vars.cv_autoExposure));
 
     if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Adjust the exposure to preserve the overall brightness.");
+        ImGui::SetTooltip("Adjust the exposure to preserve the overall brightness");
 
     if (ImGui::Button("Convolve##Conv", btnSize()))
     {
