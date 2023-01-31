@@ -553,7 +553,6 @@
     <Library Include="libs\glfw3\glfw3.lib" />
     <Library Include="libs\glfw3\glfw3_mt.lib" />
     <Library Include="libs\glfw3\glfw3dll.lib" />
-    <Library Include="libs\nfd\nfd.lib" />
     <Library Include="libs\glew\glew32s.lib" />
     <Library Include="libs\ocio\OpenColorIO.lib" />
     <Library Include="libs\oiio\OpenImageIO_Util.lib" />
