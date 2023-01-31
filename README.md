@@ -17,7 +17,7 @@
   </a>
 <h3 align="center">RealBloom</h3>
   <p align="center">
-    Physically Accurate Bloom Simulation Software for Windows
+    Physically Accurate Bloom Simulation Software
     <br />
     <a href="https://github.com/bean-mhm/realbloom/releases">Latest Release</a>
     ·
@@ -50,7 +50,7 @@
 <!-- INTRODUCTION -->
 ## Introduction
 
-RealBloom is a sophisticated bloom simulation tool for adding more realism to 3D renders and HDR images in general.
+RealBloom is a sophisticated bloom simulation tool for achieving more realism in 3D renders and HDR images.
 
 ![RealBloom Screenshot](images/1-main.png)
 
@@ -121,9 +121,9 @@ The project was made for Windows and built with MSVC, so you're going to need Wi
    git clone https://github.com/bean-mhm/realbloom.git
    ```
 
-2. Open the solution `RealBloom.sln` in Visual Studio.
+2. Open the solution (`RealBloom.sln`) in Visual Studio.
 
-3. `RealBloom` is the main project, while `RealBloomGpuHelper` is a GPU helper program that gets used by the main program.
+3. `RealBloom` is the main project, while `RealBloomGpuHelper` is a GPU helper that gets used by the main program.
 
 4. Build the solution and run `RealBloom.exe`. Feel free to explore and play with the code!
 
