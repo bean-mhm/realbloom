@@ -55,13 +55,12 @@ public:
 
     static void readImage(CmImage& target, const std::string& filename);
     static void writeImage(CmImage& source, const std::string& filename);
-    static bool readImageColorSpace(const std::string& filename, std::string& outColorSpace);
 
     static const std::vector<std::string>& getLinearExtensions();
     static const std::vector<std::string>& getNonLinearExtensions();
     static const std::vector<std::string>& getAllExtensions();
 
-    // Formats in which we can embed the color space name
+    // Linear extensions that support custom metadata
     static const std::vector<std::string>& getMetaExtensions();
 
     static const std::vector<std::string>& getOpenFilterList();

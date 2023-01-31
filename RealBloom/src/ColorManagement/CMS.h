@@ -105,7 +105,7 @@ public:
 
     static bool usingGPU();
 
-    static std::string resolveColorSpace(const std::string& s);
+    static std::string resolveColorSpace(const std::string& name, bool preserve = true);
     static std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace);
     static std::array<float, 4> getDisplayColor(std::array<float, 4> v);
     static std::array<float, 3> getDisplayColor(const std::array<float, 3>& v);

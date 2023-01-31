@@ -2,6 +2,8 @@
 
 CmImageIO::CmImageIoVars* CmImageIO::S_VARS = nullptr;
 
+static const std::string attribNameColorSpace = "colorspace";
+
 bool CmImageIO::init()
 {
     S_VARS = new CmImageIoVars();
@@ -96,14 +98,14 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         std::string extension = getFileExtension(filename);
 
         // Determine the color space
-        std::string colorSpace;
+        std::string csName;
         if (contains(getLinearExtensions(), extension))
         {
-            colorSpace = S_VARS->inputSpace;
+            csName = CMS::resolveColorSpace(S_VARS->inputSpace);
         }
         else if (contains(getNonLinearExtensions(), extension))
         {
-            colorSpace = S_VARS->nonLinearSpace;
+            csName = CMS::resolveColorSpace(S_VARS->nonLinearSpace);
         }
         else
         {
@@ -122,6 +124,25 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         uint32_t width = spec.width;
         uint32_t height = spec.height;
         uint32_t channels = spec.nchannels;
+
+        // Attempt to read the color space name
+        if (S_VARS->autoDetect && contains(getMetaExtensions(), extension))
+        {
+            std::string attribColorSpace = spec.get_string_attribute(attribNameColorSpace, "");
+            if (!attribColorSpace.empty())
+            {
+                std::string resolvedColorSpace = CMS::resolveColorSpace(attribColorSpace, false);
+                if (resolvedColorSpace.empty())
+                {
+                    printWarning(__FUNCTION__, "Auto-Detect", strFormat("The read color space \"%s\" wasn't found.", attribColorSpace.c_str()));
+                }
+                else
+                {
+                    csName = resolvedColorSpace;
+                    printInfo(__FUNCTION__, "Auto-Detect", strFormat("Detected color space \"%s\".", resolvedColorSpace.c_str()));
+                }
+            }
+        }
 
         if ((channels != 1) && (channels != 3) && (channels != 4))
         {
@@ -205,7 +226,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
                     width * 4 * 4);     // width * 4 channels * 4 bytes
 
                 OCIO::ColorSpaceTransformRcPtr transform = OCIO::ColorSpaceTransform::Create();
-                transform->setSrc(colorSpace.c_str());
+                transform->setSrc(csName.c_str());
                 transform->setDst(OCIO::ROLE_SCENE_LINEAR);
 
                 OCIO::ConstProcessorRcPtr proc = config->getProcessor(transform);
@@ -244,11 +265,12 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
             throw std::exception("Filename was empty.");
 
         // Get the extension
+
         std::string extension = getFileExtension(filename);
+
         if (!contains(getAllExtensions(), extension))
             throw std::exception(strFormat("File extension \"%s\" isn't supported.", extension.c_str()).c_str());
 
-        // Determine the color space
         bool nonLinear = contains(getNonLinearExtensions(), extension);
 
         // Grab the image buffer
@@ -332,16 +354,16 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
             throw std::exception("Couldn't create ImageOutput.");
         }
 
-        // Write the output
-
+        // Create ImageSpec
         OIIO::ImageSpec spec(width, height, 4, OIIO::TypeDesc::FLOAT);
 
-        if (!viewTransform)
+        // Embed the color space name
+        if ((!viewTransform) && contains(getMetaExtensions(), extension))
         {
-            spec.attribute("oiio:ColorSpace", OIIO::TypeDesc::TypeString, csName);
-            spec.attribute("colorspace", OIIO::TypeDesc::TypeString, csName);
+            spec.attribute(attribNameColorSpace, OIIO::TypeDesc::TypeString, csName);
         }
 
+        // Write the image
         if (out->open(filename, spec))
         {
             if (out->write_image(OIIO::TypeDesc::FLOAT, buffer.data()))
@@ -365,66 +387,13 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
             ).c_str());
         }
 
-        // Update target source name
+        // Update the target's source name
         source.setSourceName(std::filesystem::path(filename).filename().string());
     }
     catch (const std::exception& e)
     {
         throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
     }
-}
-
-bool CmImageIO::readImageColorSpace(const std::string& filename, std::string& outColorSpace)
-{
-    outColorSpace = "";
-
-    std::filesystem::path path(filename);
-    std::string extension = strLowercase(path.extension().string());
-
-    OCIO::ConstConfigRcPtr config = CMS::getConfig();
-    const std::vector<std::string>& userSpaces = CMS::getColorSpaces();
-
-    // Non-Linear
-    if (contains(getNonLinearExtensions(), extension))
-    {
-        outColorSpace = S_VARS->nonLinearSpace;
-        return !outColorSpace.empty();
-    }
-
-    try
-    {
-        // Open the file
-        OIIO::ImageInput::unique_ptr inp = OIIO::ImageInput::open(filename);
-        if (!inp)
-            return false;
-
-        // Read the color space
-        const OIIO::ImageSpec& spec = inp->spec();
-        std::string attribColorSpace = spec.get_string_attribute("colorspace", "");
-        std::string attribOiioSpace = spec.get_string_attribute("oiio:ColorSpace", "");
-        inp->close();
-
-        OCIO::ConstColorSpaceRcPtr colorSpace = config->getColorSpace(attribColorSpace.c_str());
-        OCIO::ConstColorSpaceRcPtr oiioSpace = config->getColorSpace(attribOiioSpace.c_str());
-
-        // If the color space exists in the user config, return it
-        if (colorSpace.get() != nullptr)
-        {
-            outColorSpace = attribColorSpace;
-            return true;
-        }
-        else if (oiioSpace.get() != nullptr)
-        {
-            outColorSpace = attribOiioSpace;
-            return true;
-        }
-    }
-    catch (const std::exception& e)
-    {
-        printError(__FUNCTION__, "", e.what());
-    }
-
-    return false;
 }
 
 const std::vector<std::string>& CmImageIO::getLinearExtensions()

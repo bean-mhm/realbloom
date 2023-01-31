@@ -341,17 +341,22 @@ bool CMS::usingGPU()
     return USE_GPU;
 }
 
-std::string CMS::resolveColorSpace(const std::string& s)
+std::string CMS::resolveColorSpace(const std::string& name, bool preserve)
 {
-    std::string csName = s;
+    std::string csName = name;
 
-    if ((strLowercase(s) == "working") || (strLowercase(s) == "w"))
+    if ((strLowercase(csName) == "working") || (strLowercase(csName) == "w"))
         csName = OCIO::ROLE_SCENE_LINEAR;
 
     OCIO::ConstColorSpaceRcPtr cs = S_VARS->config->getColorSpace(csName.c_str());
     if (cs.get())
+    {
         csName = cs->getName();
-
+    }
+    else if (!preserve)
+    {
+        return "";
+    }
     return csName;
 }
 
