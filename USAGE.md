@@ -222,6 +222,20 @@ This section displays the working color space of the current OCIO config, or mor
 
 > The user config is stored in the `ocio` folder located in the program directory. You may swap the contents with your own custom OCIO config.
 
+### IMAGE IO
+
+We can change image input/output color management settings here.
+
+ - **Input**: Interpreted color space when importing images in linear formats such as OpenEXR
+
+ - **Output**: Output color space when exporting images in linear formats without view transforms
+
+ - **Non-Linear**: Interpreted color space for importing images in non-linear formats like PNG and JPEG
+
+ - **Auto-Detect**: Try to detect the color space when loading linear images, and discard the *Input* setting if a color space was detected. This is guaranteed to work with images exported by RealBloom, ideally if the same version is used for both exporting and importing the image.
+
+ - **Apply View Transform**: Apply the current view transform when saving linear images. The view transform is always applied on non-linear images.
+
 ### COLOR MATCHING
 
 Color Matching Functions (CMF) help us go from wavelengths to [XYZ tristimulus](https://en.wikipedia.org/wiki/CIE_1931_color_space) when simulating dispersion. RealBloom looks for [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) tables in the `cmf` folder located in the program directory, to recognize and parse the available CMF tables. There are a few CMF tables included by default. You can hit *Preview* to see what will be sampled for dispersion.
