@@ -58,7 +58,7 @@ RealBloom is a sophisticated bloom simulation tool for achieving more realism in
 
 RealBloom was started as a hobby project in late August 2022, inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it in a physically accurate manner. **I highly recommend watching this video** to get a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets!
 
-The ultimate goal is to achieve more realism in 3D renders that contain bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night, bright lights at a concert, a flashlight pointing directly at the camera, you name it. RealBloom can be used to produce some other effects, including film halation, uniform lens blur, etc.
+The ultimate goal is to achieve more realism in 3D renders that contain bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night, bright lights at a concert, a flashlight pointing directly at the camera, you name it. RealBloom can be used to produce some other effects, including film halation, motion blur with arbitrary curves, uniform lens blur, etc.
 
 ### How It's Made
 
