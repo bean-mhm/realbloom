@@ -248,14 +248,14 @@ int main(int argc, char** argv)
 
 void layoutAll()
 {
-    layoutImageControls();
+    layoutImagePanels();
     layoutColorManagement();
     layoutMisc();
-    layoutDiffractionPattern();
     layoutConvolution();
+    layoutDiffractionPattern();
 }
 
-void layoutImageControls()
+void layoutImagePanels()
 {
     // Selected image
 
@@ -722,120 +722,6 @@ void layoutMisc()
     ImGui::End();
 }
 
-void layoutDiffractionPattern()
-{
-    CmImage& imgAperture = *getImageByID("aperture");
-    CmImage& imgDispInput = *getImageByID("disp-input");
-    CmImage& imgDispResult = *getImageByID("disp-result");
-
-    ImGui::Begin("Diffraction Pattern");
-
-    imGuiBold("APERTURE");
-
-    {
-        static std::string loadError = "";
-        if (ImGui::Button("Browse Aperture##DP", btnSize()))
-            openImage(imgAperture, imgAperture.getID(), loadError);
-        imGuiText(loadError, true, false);
-    }
-
-    imGuiDiv();
-    imGuiBold("DIFFRACTION");
-
-    ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
-
-    if (ImGui::Button("Compute##DP", btnSize()))
-    {
-        updateDiffParams();
-        diff.compute();
-        vars.dispParamsChanged = true;
-    }
-
-    if (!diff.getStatus().isOK())
-    {
-        std::string dpError = diff.getStatus().getError();
-        imGuiText(dpError, true, false);
-    }
-
-    imGuiDiv();
-    imGuiBold("DISPERSION");
-
-    {
-        static std::string loadError;
-        if (ImGui::Button("Browse Input##Disp", btnSize()))
-        {
-            CmImage* inputSrc = disp.getImgInputSrc();
-            if (openImage(*inputSrc, imgDispInput.getID(), loadError))
-                vars.dispParamsChanged = true;
-        }
-        imGuiText(loadError, true, false);
-    }
-
-    if (ImGui::SliderFloat("Exposure##Disp", &(vars.ds_exposure), -10, 10))
-        vars.dispParamsChanged = true;
-
-    if (ImGui::SliderFloat("Contrast##Disp", &(vars.ds_contrast), -1, 1))
-        vars.dispParamsChanged = true;
-
-    if (ImGui::ColorEdit3("Color##Disp", vars.ds_color,
-        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
-    {
-        vars.dispParamsChanged = true;
-    }
-
-    if (vars.dispParamsChanged)
-    {
-        vars.dispParamsChanged = false;
-        updateDispParams();
-        disp.previewInput();
-        selImageID = "disp-input";
-    }
-
-    if (ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1))
-        vars.ds_amount = std::clamp(vars.ds_amount, 0.0f, 1.0f);
-
-    if (ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024))
-        vars.ds_steps = std::clamp(vars.ds_steps, 1, RealBloom::DISP_MAX_STEPS);
-
-    const char* const dispMethodItems[]{ "CPU", "GPU" };
-    if (ImGui::Combo("Method##Disp", &(vars.ds_method), dispMethodItems, 2))
-        disp.cancel();
-
-    if (vars.ds_method == (int)RealBloom::DispersionMethod::CPU)
-    {
-        if (ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads()))
-            vars.ds_numThreads = std::clamp(vars.ds_numThreads, 1, (int)getMaxNumThreads());
-    }
-    else if (vars.ds_method == (int)RealBloom::DispersionMethod::GPU)
-    {
-        // No parameters yet
-    }
-
-    if (ImGui::Button("Apply Dispersion##Disp", btnSize()))
-    {
-        imgDispResult.resize(imgDispInput.getWidth(), imgDispInput.getHeight(), true);
-        imgDispResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
-        imgDispResult.moveToGPU();
-        selImageID = "disp-result";
-
-        updateDispParams();
-        disp.compute();
-    }
-
-    if (disp.getStatus().isWorking())
-    {
-        if (ImGui::Button("Cancel##Disp", btnSize()))
-            disp.cancel();
-    }
-
-    std::string dispStats = disp.getStatusText();
-    imGuiText(dispStats, !disp.getStatus().isOK(), false);
-
-    ImGui::NewLine();
-    imGuiDialogs();
-    ImGui::End(); // Diffraction Pattern
-}
-
 void layoutConvolution()
 {
     CmImage& imgConvInput = *getImageByID("cv-input");
@@ -1122,6 +1008,120 @@ void layoutConvolution()
         conv.mix(vars.cm_additive, vars.cm_inputMix, vars.cm_convMix, vars.cm_mix, vars.cm_convExposure);
         selImageID = "cv-result";
     }
+
+    ImGui::NewLine();
+    imGuiDialogs();
+    ImGui::End();
+}
+
+void layoutDiffractionPattern()
+{
+    CmImage& imgAperture = *getImageByID("aperture");
+    CmImage& imgDispInput = *getImageByID("disp-input");
+    CmImage& imgDispResult = *getImageByID("disp-result");
+
+    ImGui::Begin("Diffraction Pattern");
+
+    imGuiBold("APERTURE");
+
+    {
+        static std::string loadError = "";
+        if (ImGui::Button("Browse Aperture##DP", btnSize()))
+            openImage(imgAperture, imgAperture.getID(), loadError);
+        imGuiText(loadError, true, false);
+    }
+
+    imGuiDiv();
+    imGuiBold("DIFFRACTION");
+
+    ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
+
+    if (ImGui::Button("Compute##DP", btnSize()))
+    {
+        updateDiffParams();
+        diff.compute();
+        vars.dispParamsChanged = true;
+    }
+
+    if (!diff.getStatus().isOK())
+    {
+        std::string dpError = diff.getStatus().getError();
+        imGuiText(dpError, true, false);
+    }
+
+    imGuiDiv();
+    imGuiBold("DISPERSION");
+
+    {
+        static std::string loadError;
+        if (ImGui::Button("Browse Input##Disp", btnSize()))
+        {
+            CmImage* inputSrc = disp.getImgInputSrc();
+            if (openImage(*inputSrc, imgDispInput.getID(), loadError))
+                vars.dispParamsChanged = true;
+        }
+        imGuiText(loadError, true, false);
+    }
+
+    if (ImGui::SliderFloat("Exposure##Disp", &(vars.ds_exposure), -10, 10))
+        vars.dispParamsChanged = true;
+
+    if (ImGui::SliderFloat("Contrast##Disp", &(vars.ds_contrast), -1, 1))
+        vars.dispParamsChanged = true;
+
+    if (ImGui::ColorEdit3("Color##Disp", vars.ds_color,
+        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+    {
+        vars.dispParamsChanged = true;
+    }
+
+    if (vars.dispParamsChanged)
+    {
+        vars.dispParamsChanged = false;
+        updateDispParams();
+        disp.previewInput();
+        selImageID = "disp-input";
+    }
+
+    if (ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1))
+        vars.ds_amount = std::clamp(vars.ds_amount, 0.0f, 1.0f);
+
+    if (ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024))
+        vars.ds_steps = std::clamp(vars.ds_steps, 1, RealBloom::DISP_MAX_STEPS);
+
+    const char* const dispMethodItems[]{ "CPU", "GPU" };
+    if (ImGui::Combo("Method##Disp", &(vars.ds_method), dispMethodItems, 2))
+        disp.cancel();
+
+    if (vars.ds_method == (int)RealBloom::DispersionMethod::CPU)
+    {
+        if (ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads()))
+            vars.ds_numThreads = std::clamp(vars.ds_numThreads, 1, (int)getMaxNumThreads());
+    }
+    else if (vars.ds_method == (int)RealBloom::DispersionMethod::GPU)
+    {
+        // No parameters yet
+    }
+
+    if (ImGui::Button("Apply Dispersion##Disp", btnSize()))
+    {
+        imgDispResult.resize(imgDispInput.getWidth(), imgDispInput.getHeight(), true);
+        imgDispResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
+        imgDispResult.moveToGPU();
+        selImageID = "disp-result";
+
+        updateDispParams();
+        disp.compute();
+    }
+
+    if (disp.getStatus().isWorking())
+    {
+        if (ImGui::Button("Cancel##Disp", btnSize()))
+            disp.cancel();
+    }
+
+    std::string dispStats = disp.getStatusText();
+    imGuiText(dispStats, !disp.getStatus().isOK(), false);
 
     ImGui::NewLine();
     imGuiDialogs();
