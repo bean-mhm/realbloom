@@ -23,7 +23,7 @@ If any or all of these terms sound alien to you, fear not, as they'll be explain
 
 RealBloom provides a GUI (Graphical User Interface) and a CLI (Command Line Interface). We'll start by observing the GUI, and briefly talk about the CLI later. RealBloom's interface is rather simple, as there's a single main window that provides everything we need. Let's see how everything is laid out.
 
-![RealBloom Screenshot](images/4-interface.png)
+![RealBloom Screenshot](images/tutorial/0-interface.png)
 
 As of now, there are 6 panels, each for a specific purpose. A panel can be docked or floating, and you can resize it to your liking.
 
@@ -44,19 +44,19 @@ As of now, there are 6 panels, each for a specific purpose. A panel can be docke
 
 An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a [diffraction](https://en.wikipedia.org/wiki/Diffraction) pattern to form, which affects all the images taken by the camera. The diffraction pattern usually looks like a star with a halo around it, but it generally depends on the shape of the aperture. This is what makes stars have *the star shape* in the first place.
 
-Let's start by loading an image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Heptagon.png`.
+Let's start by loading an image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Octagon.png`.
 
-![A heptagonal aperture](images/tutorial/1-aperture.png)
+![An octagonal aperture](images/tutorial/1-aperture.png)
  
 ## Diffraction
 
 Let's see what the diffraction pattern of our aperture looks like. We'll continue by clicking on *Compute* in the *DIFFRACTION* section. This will generate the diffraction pattern using an [FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform). Keep in mind that we are referring to the far-field [Fraunhofer diffraction pattern](https://en.wikipedia.org/wiki/Fraunhofer_diffraction) here.
 
-![Diffraction pattern of a heptagon](images/tutorial/2-diff.png)
+![Diffraction pattern of an octagon](images/tutorial/2-diff.png)
 
 > The *Grayscale* checkbox can be enabled for colored images, in order to make the image black-and-white before feeding it to the FFT algorithm. If disabled, FFT will be performed on all color channels separately.
 
-I've increased my view exposure in the *Color Management* panel so that we can see the image properly. As you can see, this is a star with 14 blades, double the number of sides! You can experiment and see how this relation differs for other regular polygons.
+I've temporarily increased my view exposure in the *Color Management* panel so that we can see the image properly.
 
 Notice how the selected image slot has changed to *Dispersion Input*. We could use any arbitrary image as the dispersion input, but the diffraction pattern will automatically get loaded into this slot.
 
@@ -78,11 +78,13 @@ After adjusting the sliders to your liking - or copying the values from the scre
 
 ![Dispersion result](images/tutorial/3-disp.png)
 
+In the *Color Management* panel, I've set my view transform to *AgX*, and I'm using the *Punchy* artistic look. More on this in a second. 
+
 Now, hit *Save* in the *Image List* panel, and save the dispersion result as `kernel.exr`.
 
 ## Convolution Input
 
-This is the image we want to apply bloom on. We'll need an open-domain image for this, which preserves pixel values outside the 0-1 range.
+This is the image we want to apply bloom on. We'll need an open-domain image for this, which preserves pixel values outside the 0-1 range. If you're confused, I get it, so here are some questions and answers to hopefully help you better understand how open-domain (A.K.A. HDR) images work. If you're a nerd in this field, feel free to skip this part.
 
 > Q: **What on earth is an Open-Domain Image?**
 
@@ -104,11 +106,15 @@ This is the image we want to apply bloom on. We'll need an open-domain image for
 
 > A: [AgX](https://www.elsksa.me/scientia/cgi-offline-rendering/rendering-transform) is an experimental OCIO config made by [Troy James Sobotka](https://twitter.com/troy_s), aimed at accurate and cinematic color transforms. Troy is the author of the famous Filmic config for Blender, and a true master of color science. RealBloom uses a [fork](https://github.com/EaryChow/AgX) of AgX as its default user config, as well as its internal config (we'll discuss that later).
 
+> Q: **Are you an expert?**
+
+> A: Absolutely not. I've only been learning about color science for a couple months. But, I have asked Troy (indirectly, thanks to Nihal) to review this part, and he's corrected a few things.
+
 In the *Convolution* panel, click on *Browse Input* and select an HDR (open-domain) image. I have included some example images in `demo/Images`. For this tutorial, I'll be using `Leaves.exr`, which is a render I made in Blender for demonstrating convolutional bloom.
 
 > Bloom works best on scenes with extremely bright spots on dark backgrounds. Forcing bloom on low-contrast and flat images may take away from the realism.
 
-You can safely switch the view to "AgX" for this image, as this is the - almost - raw HDR data from a 3D scene. I will also use the "Punchy" artistic look, and increase my viewing exposure slightly.
+You can safely use the *AgX* view for this image, as this is (almost) raw HDR data from a 3D scene. I will reset the look, and increase my viewing exposure slightly.
  
 ![An HDR image loaded as the convolution input](images/tutorial/4-conv-input.png)
 
@@ -137,23 +143,23 @@ Let's see what each slider in the *KERNEL* section does.
 
 ![An HDR image loaded as the convolution kernel](images/tutorial/5-kernel-1.png)
 
-The image might look slightly different from before, that's because we are using the AgX view transform. Let's adjust the kernel exposure and contrast until we like it.
+Let's adjust the kernel exposure and contrast until we like it.
 
 ![Adjusting the kernel exposure and contrast](images/tutorial/5-kernel-2.png)
 
-Now, since most outer parts of the kernel are black, we can crop it to increase performance. To determine the right amount of cropping, I'll maximize my kernel exposure, and slowly decrease the crop amount until it barely touches the edges of the pattern.
+Since most outer parts of the kernel are black, we can crop it to increase performance. To determine the right amount of cropping, I'll maximize my kernel exposure, and slowly decrease the crop amount until it barely touches the edges of the pattern.
 
 > Ctrl+Click on a slider to type a custom value.
 
 ![Cropping the kernel](images/tutorial/5-kernel-3.png)
 
-Don't forget to dial down the kernel exposure after cropping. Let's finalize our kernel by increasing the scale a little bit.
+Let's finalize our kernel by lowering the exposure back.
 
 ![Kernel parameters](images/tutorial/5-kernel-4.png)
 
 ## Convolution Method
 
-At the time of writing this, RealBloom provides 3* ways to do convolution.
+RealBloom provides 3* ways to do convolution.
 
  - **FFT CPU**: This method uses the [FFT](https://en.wikipedia.org/wiki/Fast_Fourier_transform) and the [convolution theorem](https://en.wikipedia.org/wiki/Convolution_theorem) to perform convolution in a much shorter timespan. So far, this is the fastest implementation available.
 
@@ -188,7 +194,7 @@ Using a threshold of 0 and mixing the convolution output with the original input
 
 ## Auto-Exposure
 
-This option will adjust the exposure of the kernel in order to match the brightness of the convolution output to that of the input. This is done by making the pixel values in the kernel add up to 1, hence leaving the brightness unchanged. We'll have this on for this demonstration.
+This option will adjust the exposure of the kernel in order to match the brightness of the convolution output to that of the input. This is done by making the pixel values in the kernel add up to 1, hence preserving the overall brightness. We'll have this on for this demonstration.
  
 ## Convolve, Mix, Compare
 
@@ -278,7 +284,7 @@ If you find RealBloom useful, consider introducing it to a friend or anyone who 
 
 ## Special Thanks
 
-I'd like to say a huge thank you to  [Nihal](https://twitter.com/Mulana3D)  and their colleagues for supporting the development of RealBloom, by helping with research, testing dev builds and finding bugs, suggesting new features - including a CLI, the use of OCIO, adding demo kernels, etc. - and trying out RealBloom on their artworks and renders.
+I'd like to say a huge thank you to [Nihal](https://twitter.com/Mulana3D) and their colleagues for supporting the development of RealBloom, by helping with research, testing dev builds and finding bugs, suggesting new features - including a CLI, the use of OCIO, adding demo kernels, etc. - and trying out RealBloom on their artworks and renders.
 
 ## Read More
 
