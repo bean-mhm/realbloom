@@ -14,11 +14,6 @@ CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width,
 CmImage::~CmImage()
 {
     std::scoped_lock lock(m_mutex);
-
-    m_localFrameBuffer = nullptr;
-
-    if (m_imageData)
-        delete[] m_imageData;
 }
 
 const std::string& CmImage::getID() const
@@ -53,12 +48,12 @@ uint32_t CmImage::getHeight() const
 
 uint32_t CmImage::getImageDataSize() const
 {
-    return m_imageDataSize;
+    return m_imageData.size();
 }
 
 float* CmImage::getImageData()
 {
-    return m_imageData;
+    return m_imageData.data();
 }
 
 uint32_t CmImage::getGlTexture()
@@ -107,7 +102,7 @@ void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
 {
     if (shouldLock) lock();
 
-    if ((m_imageData != nullptr) && (m_width == newWidth) && (m_height == newHeight))
+    if ((m_imageData.size() > 0) && (m_width == newWidth) && (m_height == newHeight))
     {
         if (shouldLock) unlock();
         return;
@@ -119,17 +114,12 @@ void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
         return;
     }
 
-    if (m_imageData)
-    {
-        delete[] m_imageData;
-        m_imageData = nullptr;
-    }
+    clearVector(m_imageData);
 
     m_width = newWidth;
     m_height = newHeight;
 
-    m_imageDataSize = m_width * m_height * 4;
-    m_imageData = new float[m_imageDataSize];
+    m_imageData.resize(m_width * m_height * 4);
 
     if (shouldLock) unlock();
 }
@@ -137,13 +127,8 @@ void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
 void CmImage::fill(std::array<float, 4> color, bool shouldLock)
 {
     if (shouldLock) lock();
-    if (!m_imageData)
-    {
-        if (shouldLock) unlock();
-        return;
-    }
 
-    for (size_t i = 0; i < m_imageDataSize; i += 4)
+    for (size_t i = 0; i < m_imageData.size(); i += 4)
     {
         m_imageData[i + 0] = color[0];
         m_imageData[i + 1] = color[1];
@@ -157,35 +142,24 @@ void CmImage::fill(std::array<float, 4> color, bool shouldLock)
 void CmImage::fill(std::vector<float> buffer, bool shouldLock)
 {
     if (shouldLock) lock();
-    if (!m_imageData)
-    {
-        if (shouldLock) unlock();
-        return;
-    }
 
-    std::copy(buffer.data(), buffer.data() + std::min(m_imageDataSize, (uint32_t)buffer.size()), m_imageData);
+    std::copy(buffer.data(), buffer.data() + std::min(m_imageData.size(), buffer.size()), m_imageData.data());
+
     if (shouldLock) unlock();
 }
 
 void CmImage::fill(float* buffer, bool shouldLock)
 {
     if (shouldLock) lock();
-    if (!m_imageData)
-    {
-        if (shouldLock) unlock();
-        return;
-    }
 
-    std::copy(buffer, buffer + m_imageDataSize, m_imageData);
+    std::copy(buffer, buffer + m_imageData.size(), m_imageData.data());
+
     if (shouldLock) unlock();
 }
 
 void CmImage::renderUV()
 {
     std::scoped_lock lock(m_mutex);
-
-    if (!m_imageData)
-        return;
 
     int redIndex = 0;
     float u, v;
@@ -210,15 +184,12 @@ void CmImage::moveToGPU_Internal()
 {
     std::scoped_lock lock(m_mutex);
 
-    if (!m_imageData)
-        return;
-
     // Apply View Transform
     static bool lastResult = false;
     try
     {
         applyViewTransform(
-            m_imageData,
+            m_imageData.data(),
             m_width,
             m_height,
             m_useExposure ? CMS::getExposure() : 0.0f,

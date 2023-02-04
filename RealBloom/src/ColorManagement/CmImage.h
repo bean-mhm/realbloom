@@ -32,8 +32,7 @@ private:
     bool m_useExposure = true;
     bool m_useGlobalFB = true;
 
-    float* m_imageData = nullptr;
-    uint32_t m_imageDataSize = 0;
+    std::vector<float> m_imageData;
 
     std::mutex m_mutex;
 
