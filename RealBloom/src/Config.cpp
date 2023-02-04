@@ -1,7 +1,5 @@
 #include "Config.h"
 
-using namespace std;
-
 std::string Config::CFG_FILENAME = getLocalPath("config.xml");
 
 // Const
@@ -69,8 +67,8 @@ void Config::save()
 
     try
     {
-        ofstream outFile;
-        outFile.open(CFG_FILENAME, ofstream::out | ofstream::trunc);
+        std::ofstream outFile;
+        outFile.open(CFG_FILENAME, std::ofstream::out | std::ofstream::trunc);
 
         if (!outFile)
             throw std::exception(strFormat("Failed to open config file \"%s\".", CFG_FILENAME.c_str()).c_str());

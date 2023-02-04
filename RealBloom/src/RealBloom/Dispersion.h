@@ -61,7 +61,7 @@ namespace RealBloom
 
         CmImage m_imgInputSrc;
 
-        std::thread* m_thread = nullptr;
+        std::shared_ptr<std::jthread> m_thread = nullptr;
         std::vector<std::shared_ptr<DispersionThread>> m_threads;
 
     public:

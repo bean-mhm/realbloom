@@ -107,7 +107,7 @@ namespace RealBloom
         CmImage m_imgKernelSrc;
         CmImage m_imgOutput;
 
-        std::thread* m_thread = nullptr;
+        std::shared_ptr<std::jthread> m_thread = nullptr;
         std::vector<std::shared_ptr<ConvolutionThread>> m_threads;
 
     public:

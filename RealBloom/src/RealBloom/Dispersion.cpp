@@ -181,7 +181,7 @@ namespace RealBloom
         m_status.setWorking();
 
         // Start the thread
-        m_thread = new std::thread([this, dispSteps]()
+        m_thread = std::make_shared<std::jthread>([this, dispSteps]()
             {
                 try
                 {
@@ -276,8 +276,8 @@ namespace RealBloom
         }
 
         // Wait for the main thread
-        threadJoin(m_thread);
-        DELPTR(m_thread);
+        threadJoin(m_thread.get());
+        m_thread = nullptr;
 
         m_status.reset();
     }
@@ -379,7 +379,7 @@ namespace RealBloom
             // Start the threads
             for (auto& ct : m_threads)
             {
-                std::shared_ptr<std::thread> t = std::make_shared<std::thread>([ct]()
+                std::shared_ptr<std::jthread> t = std::make_shared<std::jthread>([ct]()
                     {
                         ct->start();
                     });

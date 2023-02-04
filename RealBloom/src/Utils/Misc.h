@@ -81,6 +81,13 @@ inline void threadJoin(std::thread* t)
             t->join();
 }
 
+inline void threadJoin(std::jthread* t)
+{
+    if (t)
+        if (t->joinable())
+            t->join();
+}
+
 uint32_t getMaxNumThreads();
 uint32_t getDefNumThreads();
 

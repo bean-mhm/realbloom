@@ -167,12 +167,12 @@ namespace RealBloom
         return m_outputBuffer;
     }
 
-    std::shared_ptr<std::thread> DispersionThread::getThread()
+    std::shared_ptr<std::jthread> DispersionThread::getThread()
     {
         return m_thread;
     }
 
-    void DispersionThread::setThread(std::shared_ptr<std::thread> thread)
+    void DispersionThread::setThread(std::shared_ptr<std::jthread> thread)
     {
         m_thread = thread;
     }

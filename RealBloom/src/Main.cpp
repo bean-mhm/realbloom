@@ -130,10 +130,10 @@ int main(int argc, char** argv)
     }
 
     // Update resource usage info for convolution (GUI)
-    std::shared_ptr<std::thread> convResUsageThread = nullptr;
+    std::shared_ptr<std::jthread> convResUsageThread = nullptr;
     if (!CLI::Interface::active())
     {
-        convResUsageThread = std::make_shared<std::thread>([]()
+        convResUsageThread = std::make_shared<std::jthread>([]()
             {
                 auto lastTime = std::chrono::system_clock::now();
                 while (appRunning)
@@ -241,11 +241,18 @@ int main(int argc, char** argv)
     }
 
     // Quit
+
     Config::save();
+
     if (!CLI::Interface::active())
+    {
         convResUsageThread->join();
+        convResUsageThread = nullptr;
+    }
+
     disp.cancel();
     conv.cancel();
+
     cleanUp();
 
     return 0;

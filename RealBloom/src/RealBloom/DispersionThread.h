@@ -32,7 +32,7 @@ namespace RealBloom
     private:
         uint32_t m_numThreads;
         uint32_t m_threadIndex;
-        std::shared_ptr<std::thread> m_thread;
+        std::shared_ptr<std::jthread> m_thread;
 
         DispersionThreadStats m_state;
         std::atomic_bool m_mustStop;
@@ -57,8 +57,8 @@ namespace RealBloom
         void stop();
 
         std::vector<float>& getBuffer();
-        std::shared_ptr<std::thread> getThread();
-        void setThread(std::shared_ptr<std::thread> thread);
+        std::shared_ptr<std::jthread> getThread();
+        void setThread(std::shared_ptr<std::jthread> thread);
 
         DispersionThreadStats* getStats();
     };

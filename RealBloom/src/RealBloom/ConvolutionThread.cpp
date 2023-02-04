@@ -208,12 +208,12 @@ namespace RealBloom
         return m_outputBuffer;
     }
 
-    std::shared_ptr<std::thread> ConvolutionThread::getThread()
+    std::shared_ptr<std::jthread> ConvolutionThread::getThread()
     {
         return m_thread;
     }
 
-    void ConvolutionThread::setThread(std::shared_ptr<std::thread> thread)
+    void ConvolutionThread::setThread(std::shared_ptr<std::jthread> thread)
     {
         m_thread = thread;
     }
