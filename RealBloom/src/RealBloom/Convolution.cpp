@@ -78,13 +78,13 @@ namespace RealBloom
 
         {
             // Input image
-            std::lock_guard<CmImage> lock1(*m_imgInput);
+            std::scoped_lock lock1(*m_imgInput);
             float* inputBuffer = m_imgInput->getImageData();
             uint32_t inputWidth = m_imgInput->getWidth();
             uint32_t inputHeight = m_imgInput->getHeight();
 
             // Convolution Preview Image
-            std::lock_guard<CmImage> lock2(*m_imgConvPreview);
+            std::scoped_lock lock2(*m_imgConvPreview);
             m_imgConvPreview->resize(inputWidth, inputHeight, false);
             float* prevBuffer = m_imgConvPreview->getImageData();
 
@@ -122,7 +122,7 @@ namespace RealBloom
         uint32_t kernelBufferSize = 0;
         uint32_t kernelWidth = 0, kernelHeight = 0;
         {
-            std::lock_guard<CmImage> lock(m_imgKernelSrc);
+            std::scoped_lock lock(m_imgKernelSrc);
             float* kernelSrcBuffer = m_imgKernelSrc.getImageData();
             kernelBufferSize = m_imgKernelSrc.getImageDataSize();
             kernelWidth = m_imgKernelSrc.getWidth();
@@ -308,7 +308,7 @@ namespace RealBloom
 
         // Copy to kernel preview image
         {
-            std::lock_guard<CmImage> lock(*m_imgKernel);
+            std::scoped_lock lock(*m_imgKernel);
             m_imgKernel->resize(croppedWidth, croppedHeight, false);
             float* prevBuffer = m_imgKernel->getImageData();
             std::copy(croppedBuffer.data(), croppedBuffer.data() + croppedBufferSize, prevBuffer);
@@ -388,13 +388,13 @@ namespace RealBloom
 
         {
             // Input buffer
-            std::lock_guard<CmImage> lock1(*m_imgInput);
+            std::scoped_lock lock1(*m_imgInput);
             float* inputBuffer = m_imgInput->getImageData();
             uint32_t inputWidth = m_imgInput->getWidth();
             uint32_t inputHeight = m_imgInput->getHeight();
 
             // Conv Buffer
-            std::lock_guard<CmImage> lock2(m_imgOutput);
+            std::scoped_lock lock2(m_imgOutput);
             float* convBuffer = m_imgOutput.getImageData();
             uint32_t convWidth = m_imgOutput.getWidth();
             uint32_t convHeight = m_imgOutput.getHeight();
@@ -402,7 +402,7 @@ namespace RealBloom
             if ((inputWidth == convWidth) && (inputHeight == convHeight))
             {
                 // Conv Mix Buffer
-                std::lock_guard<CmImage> convMixImageLock(*m_imgConvMix);
+                std::scoped_lock convMixImageLock(*m_imgConvMix);
                 m_imgConvMix->resize(inputWidth, inputHeight, false);
                 float* convMixBuffer = m_imgConvMix->getImageData();
 
@@ -455,7 +455,7 @@ namespace RealBloom
                 uint32_t inputBufferSize = 0;
                 {
                     // Input buffer from input image
-                    std::lock_guard<CmImage> lock(*m_imgInput);
+                    std::scoped_lock lock(*m_imgInput);
                     inputWidth = m_imgInput->getWidth();
                     inputHeight = m_imgInput->getHeight();
                     inputBufferSize = m_imgInput->getImageDataSize();
@@ -757,7 +757,7 @@ namespace RealBloom
 
             // Update the output image
             {
-                std::lock_guard<CmImage> lock(m_imgOutput);
+                std::scoped_lock lock(m_imgOutput);
                 m_imgOutput.resize(inputWidth, inputHeight, false);
                 float* convBuffer = m_imgOutput.getImageData();
                 std::copy(
@@ -853,7 +853,7 @@ namespace RealBloom
             {
                 // Update the output image
 
-                std::lock_guard<CmImage> lock(m_imgOutput);
+                std::scoped_lock lock(m_imgOutput);
                 m_imgOutput.resize(inputWidth, inputHeight, false);
                 float* convBuffer = m_imgOutput.getImageData();
                 uint32_t convBufferSize = m_imgOutput.getImageDataSize();
@@ -981,7 +981,7 @@ namespace RealBloom
 
                 // Update Conv. Mix
                 {
-                    std::lock_guard<CmImage> lock(*m_imgConvMix);
+                    std::scoped_lock lock(*m_imgConvMix);
                     m_imgConvMix->resize(inputWidth, inputHeight, false);
                     float* convBuffer = m_imgConvMix->getImageData();
                     std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, convBuffer);
@@ -1004,7 +1004,7 @@ namespace RealBloom
 
         // Update the output image
         {
-            std::lock_guard<CmImage> lock(m_imgOutput);
+            std::scoped_lock lock(m_imgOutput);
             m_imgOutput.resize(inputWidth, inputHeight, false);
             m_imgOutput.fill(std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f }, false);
             float* convBuffer = m_imgOutput.getImageData();
@@ -1147,7 +1147,7 @@ namespace RealBloom
                                 // Update Conv. Mix
                                 if (binStat.buffer.size() == (inputWidth * inputHeight * 4))
                                 {
-                                    std::lock_guard<CmImage> lock(*m_imgConvMix);
+                                    std::scoped_lock lock(*m_imgConvMix);
                                     m_imgConvMix->resize(inputWidth, inputHeight, false);
                                     float* convBuffer = m_imgConvMix->getImageData();
                                     std::copy(binStat.buffer.data(), binStat.buffer.data() + binStat.buffer.size(), convBuffer);
@@ -1193,7 +1193,7 @@ namespace RealBloom
             {
                 // Update the output image
 
-                std::lock_guard<CmImage> lock(m_imgOutput);
+                std::scoped_lock lock(m_imgOutput);
                 m_imgOutput.resize(inputWidth, inputHeight, false);
                 float* convBuffer = m_imgOutput.getImageData();
                 uint32_t convBufferSize = m_imgOutput.getImageDataSize();
@@ -1234,7 +1234,7 @@ namespace RealBloom
 
     void drawRect(CmImage* image, int rx, int ry, int rw, int rh)
     {
-        std::lock_guard<CmImage> lock(*image);
+        std::scoped_lock lock(*image);
         float* buffer = image->getImageData();
         uint32_t imageWidth = image->getWidth();
         uint32_t imageHeight = image->getHeight();
@@ -1287,7 +1287,7 @@ namespace RealBloom
 
     void fillRect(CmImage* image, int rx, int ry, int rw, int rh)
     {
-        std::lock_guard<CmImage> lock(*image);
+        std::scoped_lock lock(*image);
         float* buffer = image->getImageData();
         uint32_t imageWidth = image->getWidth();
         uint32_t imageHeight = image->getHeight();

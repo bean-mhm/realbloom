@@ -64,7 +64,7 @@ namespace RealBloom
 
             // Copy to image
             {
-                std::lock_guard<CmImage> lock(*m_imgDisp);
+                std::scoped_lock lock(*m_imgDisp);
                 m_imgDisp->resize(pWidth, pHeight, false);
                 float* imageBuffer = m_imgDisp->getImageData();
                 std::copy(buffer.data(), buffer.data() + buffer.size(), imageBuffer);
@@ -83,7 +83,7 @@ namespace RealBloom
         uint32_t inputBufferSize = 0;
         uint32_t inputWidth = 0, inputHeight = 0;
         {
-            std::lock_guard<CmImage> lock(m_imgInputSrc);
+            std::scoped_lock lock(m_imgInputSrc);
             float* inputSrcBuffer = m_imgInputSrc.getImageData();
             inputBufferSize = m_imgInputSrc.getImageDataSize();
             inputWidth = m_imgInputSrc.getWidth();
@@ -148,7 +148,7 @@ namespace RealBloom
 
         // Copy to input image
         {
-            std::lock_guard<CmImage> lock(*m_imgInput);
+            std::scoped_lock lock(*m_imgInput);
             m_imgInput->resize(inputWidth, inputHeight, false);
             float* prevBuffer = m_imgInput->getImageData();
             std::copy(inputBuffer.data(), inputBuffer.data() + inputBufferSize, prevBuffer);
@@ -432,7 +432,7 @@ namespace RealBloom
 
                         // Copy progBuffer into the dispersion image
                         {
-                            std::lock_guard<CmImage> lock(*m_imgDisp);
+                            std::scoped_lock lock(*m_imgDisp);
                             m_imgDisp->resize(inputWidth, inputHeight, false);
                             float* dispBuffer = m_imgDisp->getImageData();
                             std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, dispBuffer);
@@ -455,7 +455,7 @@ namespace RealBloom
 
             // Add the buffers from each thread
             {
-                std::lock_guard<CmImage> lock(*m_imgDisp);
+                std::scoped_lock lock(*m_imgDisp);
                 m_imgDisp->resize(inputWidth, inputHeight, false);
                 m_imgDisp->fill(std::array<float, 4>{ 0, 0, 0, 1 }, false);
                 float* dispBuffer = m_imgDisp->getImageData();
@@ -559,7 +559,7 @@ namespace RealBloom
             {
                 // Update the output image
 
-                std::lock_guard<CmImage> lock(*m_imgDisp);
+                std::scoped_lock lock(*m_imgDisp);
                 m_imgDisp->resize(inputWidth, inputHeight, false);
                 float* dispBuffer = m_imgDisp->getImageData();
                 uint32_t dispBufferSize = m_imgDisp->getImageDataSize();

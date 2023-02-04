@@ -13,7 +13,7 @@ CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width,
 
 CmImage::~CmImage()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     m_localFrameBuffer = nullptr;
 
@@ -182,7 +182,7 @@ void CmImage::fill(float* buffer, bool shouldLock)
 
 void CmImage::renderUV()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     if (!m_imageData)
         return;
@@ -208,7 +208,7 @@ void CmImage::renderUV()
 
 void CmImage::moveToGPU_Internal()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     if (!m_imageData)
         return;

@@ -241,7 +241,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
 
         // Move buffer to the target image
         {
-            std::lock_guard<CmImage> lock(target);
+            std::scoped_lock lock(target);
             target.resize(width, height, false);
             float* targetBuffer = target.getImageData();
             std::copy(bufferRGBA.data(), bufferRGBA.data() + bufferRGBA.size(), targetBuffer);

@@ -30,7 +30,7 @@ namespace RealBloom
         try
         {
             // Input Buffer
-            std::lock_guard<CmImage> lock(*m_imgAperture);
+            std::scoped_lock lock(*m_imgAperture);
             uint32_t inputWidth = m_imgAperture->getWidth();
             uint32_t inputHeight = m_imgAperture->getHeight();
             float* inputBuffer = m_imgAperture->getImageData();
@@ -185,7 +185,7 @@ namespace RealBloom
 
             // Update the output image
             {
-                std::lock_guard<CmImage> lock(*m_imgDiffPattern);
+                std::scoped_lock lock(*m_imgDiffPattern);
                 m_imgDiffPattern->resize(fftWidth, fftHeight, false);
                 float* imageBuffer = m_imgDiffPattern->getImageData();
 

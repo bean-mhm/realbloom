@@ -9,15 +9,13 @@ std::mutex Async::S_TASKS_MUTEX;
 void Async::schedule(std::function<void()> job)
 {
     std::packaged_task<void()> task(job);
-    {
-        std::lock_guard<std::mutex> lock(S_TASKS_MUTEX);
-        S_TASKS.push_back(std::move(task));
-    }
+    std::scoped_lock lock(S_TASKS_MUTEX);
+    S_TASKS.push_back(std::move(task));
 }
 
 void Async::putShared(std::string key, void* value)
 {
-    std::lock_guard<std::mutex> lock(S_SHARED_MUTEX);
+    std::scoped_lock lock(S_SHARED_MUTEX);
     S_SHARED[key] = value;
 }
 

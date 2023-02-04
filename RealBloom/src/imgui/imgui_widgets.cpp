@@ -5624,7 +5624,7 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
 
             // Draw the SV square
             {
-                std::lock_guard<CmImage> lock(*color_picker_sv_sqaure_cmimage);
+                std::scoped_lock lock(*color_picker_sv_sqaure_cmimage);
                 float* buffer = color_picker_sv_sqaure_cmimage->getImageData();
                 for (uint32_t y = 0; y < cmimage_height; y++)
                 {
@@ -5682,7 +5682,7 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
 
             // Draw the hue bar
             {
-                std::lock_guard<CmImage> lock(*color_picker_hue_bar_cmimage);
+                std::scoped_lock lock(*color_picker_hue_bar_cmimage);
                 float* buffer = color_picker_hue_bar_cmimage->getImageData();
                 for (uint32_t y = 0; y < cmimage_height; y++)
                 {
