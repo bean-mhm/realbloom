@@ -115,8 +115,10 @@
       <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
 XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
 XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
-XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
-      <Message>Copying external resources to the output directory</Message>
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y
+XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
+</Command>
+      <Message>Copying deployable resources to the output directory</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -144,8 +146,10 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
       <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
 XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
 XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
-XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
-      <Message>Copying external resources to the output directory</Message>
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y
+XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
+</Command>
+      <Message>Copying deployable resources to the output directory</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -168,8 +172,10 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
       <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
 XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
 XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
-XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
-      <Message>Copying external resources to the output directory</Message>
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y
+XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
+</Command>
+      <Message>Copying deployable resources to the output directory</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -197,8 +203,10 @@ XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
       <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
 XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
 XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
-XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y</Command>
-      <Message>Copying external resources to the output directory</Message>
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y
+XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
+</Command>
+      <Message>Copying deployable resources to the output directory</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
