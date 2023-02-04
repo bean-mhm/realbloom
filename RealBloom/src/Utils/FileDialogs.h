@@ -36,4 +36,5 @@ public:
         const std::vector<std::string>& filterList,
         const std::string& defaultName,
         std::string& outFilename);
+
 };

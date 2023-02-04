@@ -57,7 +57,7 @@ void layoutImagePanels();
 void layoutColorManagement();
 void layoutMisc();
 void layoutConvolution();
-void layoutDiffractionPattern();
+void layoutDiffraction();
 
 void imGuiDiv();
 void imGuiBold(const std::string& s);

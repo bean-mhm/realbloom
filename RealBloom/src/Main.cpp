@@ -25,11 +25,9 @@ std::vector<std::string> activeComboList;
 
 // Image slots
 std::vector<std::shared_ptr<CmImage>> images;
-
 std::vector<std::string> imageNames;
 int selImageIndex = 0;
 std::string selImageID = "";
-
 float imageZoom = 1.0f;
 
 // RealBloom modules
@@ -37,7 +35,7 @@ RealBloom::DiffractionPattern diff;
 RealBloom::Dispersion disp;
 RealBloom::Convolution conv;
 
-// Variables used for controls
+// Variables for controls
 UiVars vars;
 std::string convResUsage = "";
 
@@ -172,7 +170,7 @@ int main(int argc, char** argv)
             ImGui::NewFrame();
             ImGui::DockSpaceOverViewport();
 
-            // Process our queued tasks
+            // Process queued tasks
             {
                 std::unique_lock<std::mutex> lock(Async::S_TASKS_MUTEX);
                 while (!Async::S_TASKS.empty())
@@ -180,9 +178,16 @@ int main(int argc, char** argv)
                     auto task(std::move(Async::S_TASKS.front()));
                     Async::S_TASKS.pop_front();
 
-                    // unlock during the task
+                    // Unlock during the task
                     lock.unlock();
-                    task();
+                    try
+                    {
+                        task();
+                    }
+                    catch (const std::exception& e)
+                    {
+                        printError("Main Loop", "Task", e.what());
+                    }
                     lock.lock();
                 }
             }
@@ -252,7 +257,7 @@ void layoutAll()
     layoutColorManagement();
     layoutMisc();
     layoutConvolution();
-    layoutDiffractionPattern();
+    layoutDiffraction();
 }
 
 void layoutImagePanels()
@@ -742,6 +747,9 @@ void layoutConvolution()
         imGuiText(loadError, true, false);
     }
 
+    imGuiDiv();
+    imGuiBold("KERNEL");
+
     {
         static std::string loadError;
         if (ImGui::Button("Browse Kernel##Conv", btnSize()))
@@ -752,9 +760,6 @@ void layoutConvolution()
         }
         imGuiText(loadError, true, false);
     }
-
-    imGuiDiv();
-    imGuiBold("KERNEL");
 
     if (ImGui::SliderFloat("Exposure##Kernel", &(vars.cv_kernelExposure), -10, 10))
         vars.convParamsChanged = true;
@@ -1014,15 +1019,15 @@ void layoutConvolution()
     ImGui::End();
 }
 
-void layoutDiffractionPattern()
+void layoutDiffraction()
 {
     CmImage& imgAperture = *getImageByID("aperture");
     CmImage& imgDispInput = *getImageByID("disp-input");
     CmImage& imgDispResult = *getImageByID("disp-result");
 
-    ImGui::Begin("Diffraction Pattern");
+    ImGui::Begin("Diffraction");
 
-    imGuiBold("APERTURE");
+    imGuiBold("DIFFRACTION PATTERN");
 
     {
         static std::string loadError = "";
@@ -1030,9 +1035,6 @@ void layoutDiffractionPattern()
             openImage(imgAperture, imgAperture.getID(), loadError);
         imGuiText(loadError, true, false);
     }
-
-    imGuiDiv();
-    imGuiBold("DIFFRACTION");
 
     ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
 
