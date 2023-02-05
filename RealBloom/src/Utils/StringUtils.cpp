@@ -108,9 +108,9 @@ void strSplit(const std::string& s, char delimiter, std::vector<std::string>& ou
         outElements.push_back(strTrim(s.substr(from, s.size() - from)));
 }
 
-std::string strFromSize(uint64_t sizeBytes)
+std::string strFromDataSize(uint64_t bytes)
 {
-    static const char* suffixes[]{ "bytes", "KB", "MB", "GB", "TB" };
+    static const char* suffixes[]{ "bytes", "KiB", "MiB", "GiB", "TiB" };
     static double powers[]
     {
         pow(1024, 0), // 1 byte
@@ -120,14 +120,14 @@ std::string strFromSize(uint64_t sizeBytes)
         pow(1024, 4)  // 1 TB
     };
 
-    uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)sizeBytes) / log(1024.0))));
+    uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bytes) / log(1024.0))));
     if (mag == 0)
-        return strFormat("%lu %s", sizeBytes, suffixes[mag]);
+        return strFormat("%lu %s", bytes, suffixes[mag]);
     else
-        return strFormat("%.1f %s", (double)sizeBytes / powers[mag], suffixes[mag]);
+        return strFormat("%.1f %s", (double)bytes / powers[mag], suffixes[mag]);
 }
 
-std::string strFromBigNumber(uint64_t bigNumber)
+std::string strFromBigInteger(uint64_t bigInteger)
 {
     static const char* suffixes[]{ "", "K", "M", "B", "T" };
     static double powers[]
@@ -139,11 +139,11 @@ std::string strFromBigNumber(uint64_t bigNumber)
         pow(1000, 4)  // 1T
     };
 
-    uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bigNumber) / log(1000.0))));
+    uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bigInteger) / log(1000.0))));
     if (mag == 0)
-        return strFormat("%lu", bigNumber);
+        return strFormat("%lu", bigInteger);
     else
-        return strFormat("%.1f%s", (double)bigNumber / powers[mag], suffixes[mag]);
+        return strFormat("%.1f%s", (double)bigInteger / powers[mag], suffixes[mag]);
 }
 
 std::string strFromBool(bool v)

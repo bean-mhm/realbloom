@@ -664,7 +664,7 @@ namespace RealBloom
         {
             return strFormat(
                 "Est. Memory: %s",
-                strFromSize(ramUsage).c_str());
+                strFromDataSize(ramUsage).c_str());
         }
         else if (m_params.methodInfo.method == ConvolutionMethod::FFT_GPU)
         {
@@ -674,18 +674,18 @@ namespace RealBloom
         {
             return strFormat(
                 "Total Pixels: %s\nPixels/Thread: %s\nEst. Memory: %s",
-                strFromBigNumber(numPixels).c_str(),
-                strFromBigNumber(numPixelsPerBlock).c_str(),
-                strFromSize(ramUsage).c_str());
+                strFromBigInteger(numPixels).c_str(),
+                strFromBigInteger(numPixelsPerBlock).c_str(),
+                strFromDataSize(ramUsage).c_str());
         }
         else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
         {
             return strFormat(
                 "Total Pixels: %s\nPixels/Chunk: %s\nEst. Memory: %s\nEst. VRAM: %s",
-                strFromBigNumber(numPixels).c_str(),
-                strFromBigNumber(numPixelsPerBlock).c_str(),
-                strFromSize(ramUsage).c_str(),
-                strFromSize(vramUsage).c_str());
+                strFromBigInteger(numPixels).c_str(),
+                strFromBigInteger(numPixelsPerBlock).c_str(),
+                strFromDataSize(ramUsage).c_str(),
+                strFromDataSize(vramUsage).c_str());
         }
 
         return "";

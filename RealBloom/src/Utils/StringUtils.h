@@ -92,8 +92,8 @@ std::string strRightPadding(const std::string& s, size_t length, bool addSpace =
 std::string strWordWrap(const std::string& s, size_t lineLength, size_t leftPadding = 0);
 void strSplit(const std::string& s, char delimiter, std::vector<std::string>& outElements);
 
-std::string strFromSize(uint64_t sizeBytes);
-std::string strFromBigNumber(uint64_t bigNumber);
+std::string strFromDataSize(uint64_t bytes);
+std::string strFromBigInteger(uint64_t bigInteger);
 std::string strFromBool(bool v);
 std::string strFromColorChannelID(uint32_t ch);
 
