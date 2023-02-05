@@ -8,12 +8,27 @@ bool CmImageIO::init()
 {
     S_VARS = new CmImageIoVars();
 
+    // Default values
     S_VARS->inputSpace = CMS::getWorkingSpace();
     S_VARS->outputSpace = S_VARS->inputSpace;
     S_VARS->nonLinearSpace = S_VARS->inputSpace;
 
+    // Get the color spaces in the user config
     const std::vector<std::string>& userSpaces = CMS::getColorSpaces();
 
+    // Find Linear BT.709 I-D65
+    for (const auto& space : userSpaces)
+    {
+        std::string spaceLower = strLowercase(space);
+        if (spaceLower.starts_with("linear") && strContains(spaceLower, "709") && !strContains(spaceLower, "i-e"))
+        {
+            S_VARS->inputSpace = space;
+            S_VARS->outputSpace = space;
+            break;
+        }
+    }
+
+    // Find sRGB
     for (const auto& space : userSpaces)
     {
         if (strLowercase(space).starts_with("srgb"))

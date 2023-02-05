@@ -202,8 +202,11 @@ const std::string& CMS::getActiveLook()
 void CMS::setActiveDisplay(const std::string& display)
 {
     S_VARS->activeDisplay = display;
-    S_VARS->activeView = S_VARS->config->getDefaultView(S_VARS->activeDisplay.c_str());
     S_VARS->retrieveViews();
+    if (!contains(S_VARS->views, S_VARS->activeView))
+    {
+        S_VARS->activeView = S_VARS->config->getDefaultView(S_VARS->activeDisplay.c_str());
+    }
 }
 
 void CMS::setActiveView(const std::string& view)
