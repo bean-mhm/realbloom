@@ -23,7 +23,6 @@ bool CmImageIO::init()
         if (spaceLower.starts_with("linear") && strContains(spaceLower, "709") && !strContains(spaceLower, "i-e"))
         {
             S_VARS->inputSpace = space;
-            S_VARS->outputSpace = space;
             break;
         }
     }
