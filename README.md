@@ -17,7 +17,7 @@
   </a>
 <h3 align="center">RealBloom</h3>
   <p align="center">
-    Physically Accurate Bloom Simulation Software for Windows
+    Physically Accurate Bloom Simulation Software
     <br />
     <a href="https://github.com/bean-mhm/realbloom/releases">Latest Release</a>
     ·
@@ -50,19 +50,19 @@
 <!-- INTRODUCTION -->
 ## Introduction
 
-RealBloom is a physically accurate bloom simulation software for adding more realism to 3D renders and HDR images in general.
+RealBloom is a sophisticated bloom simulation tool for achieving more realism in 3D renders and HDR images.
 
 ![RealBloom Screenshot](images/1-main.png)
 
 ![RealBloom Screenshot](images/2-main-conv.png)
 
-RealBloom was started as a hobby project in late August 2022, inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it. **I highly recommend watching this video** in order to have a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets as well!
+RealBloom was started as a hobby project in late August 2022, inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it in a physically accurate manner. **I highly recommend watching this video** to get a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets!
 
-The ultimate goal is to achieve more realism in 3D renders that contain bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night, bright lights at a concert, a flashlight pointing directly at the camera, you name it.
+The ultimate goal is to achieve more realism in 3D renders that contain bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night, bright lights at a concert, a flashlight pointing directly at the camera, you name it. RealBloom can be used to produce some other effects, including film halation, motion blur with arbitrary curves, uniform lens blur, etc.
 
 ### How It's Made
 
-RealBloom is written in C++ using Visual Studio 2022. The target platform is Windows. However, considering the fact that all the libraries used and most of the code for RealBloom are platform-independent, it should be fairly easy to port it to another platform.
+RealBloom is written in C++ with Visual Studio 2022. The target platform is Windows. However, considering all the libraries used and most of the code for RealBloom are platform-independent, it should be fairly easy (ish) to port to other major desktop platforms.
 
 RealBloom uses the following libraries:
 | Library | Used for |
@@ -70,12 +70,13 @@ RealBloom uses the following libraries:
 | [GLEW](https://glew.sourceforge.net/) | OpenGL extensions |
 | [GLFW](https://www.glfw.org/) | Window and context creation for use in ImGui |
 | [Dear ImGui](https://github.com/ocornut/imgui) | Graphical user interface |
+| [NFD Extended](https://github.com/btzy/nativefiledialog-extended) | Native file dialogs |
 | [OpenColorIO](https://opencolorio.org/) | Color management |
 | [OpenImageIO](https://sites.google.com/site/openimageio/) | Reading and writing images |
 | [PocketFFT](https://github.com/mreineck/pocketfft) | 2D Fast Fourier Transforms |
-| [NFD](https://github.com/mlabbe/nativefiledialog) | Native file dialogs |
+| [dj_fft](https://github.com/jdupuy/dj_fft) | 2D FFT on the GPU |
+| [pugixml](https://pugixml.org/) | Parsing and serializing XML files |
 | [Rapidcsv](https://github.com/d99kris/rapidcsv) | Parsing CSV files |
-| [inih](https://github.com/jtilly/inih) | Parsing config files |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -84,11 +85,11 @@ RealBloom uses the following libraries:
 <!-- RUNNING -->
 ## Running RealBloom
 
-[Microsoft Visual C++ Runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) is required to run RealBloom. Chances are you already have it installed, though. To get RealBloom, you can [download the latest release here](https://github.com/bean-mhm/realbloom/releases).
+RealBloom requires [Microsoft Visual C++ Runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) to run properly. Chances are you already have it installed, though. To get RealBloom, you can [download the latest release here](https://github.com/bean-mhm/realbloom/releases).
 
 ### Minimum Requirements
 
- - A 64-bit version of Windows
+ - 64-bit version of Windows
 
  - 4 GB of RAM
 
@@ -101,7 +102,7 @@ RealBloom uses the following libraries:
 <!-- USAGE -->
 ## Using RealBloom
 
-Check out [this page](USAGE.md) for a step-by-step tutorial on getting started with RealBloom, along with more details on the project. This will cover most of what you need to know.
+Check out [this page](USAGE.md) for a step-by-step tutorial on getting started with RealBloom, along with more details and information about the project. This will cover most of what you need to know.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -111,7 +112,7 @@ Check out [this page](USAGE.md) for a step-by-step tutorial on getting started w
 
 ### Prerequisites
 
-The project was made for Windows and built with MSVC, so you're going to need a Windows system. To build a local copy of RealBloom, have a version of Visual Studio ready.
+The project was made for Windows and built with MSVC. To build a local copy of RealBloom, have a recent version of Visual Studio ready.
 
 ### Build
 
@@ -120,11 +121,9 @@ The project was made for Windows and built with MSVC, so you're going to need a 
    git clone https://github.com/bean-mhm/realbloom.git
    ```
 
-2. Open the solution `RealBloomCPP.sln` in Visual Studio.
+2. Open `RealBloom.sln` in Visual Studio.
 
-3. `RealBloomCPP` is the main project, while `RealBloomGPUConv` is a GPU helper program that gets used by the main program.
-
-4. Build the solution and run `RealBloom.exe`. Feel free to explore and play with the code!
+3. Build the solution and run `RealBloom.exe`. Feel free to explore and play with the code!
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -136,12 +135,12 @@ The project was made for Windows and built with MSVC, so you're going to need a 
 - [x] Color Management System
 - [x] OpenEXR support
 - [x] Command Line Interface
-- [ ] GPU FFT Convolution
-- [ ] GPU Dispersion
-- [ ] GPU Diffraction Pattern
+- [x] GPU Dispersion
+- [ ] [WIP] GPU FFT Convolution
 - [ ] GPU Image Transforms
 - [ ] Node-based workflow
 - [ ] ~~Support for animated apertures, kernels and input images~~ 
+- [ ] ~~GPU Diffraction Pattern~~
 
 See [open issues](https://github.com/bean-mhm/realbloom/issues) for a full list of proposed features (and known issues).
 

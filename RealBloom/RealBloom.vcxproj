@@ -1,0 +1,442 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{d56aa1c7-bb67-4826-99ee-a813c8ea3dd7}</ProjectGuid>
+    <RootNamespace>RealBloom</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>RealBloom</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>RealBloom</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>RealBloom</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>RealBloom</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>RealBloom</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
+XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
+XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y
+XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
+</Command>
+      <Message>Copying deployable resources to the output directory</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
+XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
+XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y
+XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
+</Command>
+      <Message>Copying deployable resources to the output directory</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
+XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
+XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y
+XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
+</Command>
+      <Message>Copying deployable resources to the output directory</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)assets\" "$(OutDir)assets\" /S /Y
+XCOPY "$(ProjectDir)demo\" "$(OutDir)demo\" /S /Y
+XCOPY "$(ProjectDir)ocio\" "$(OutDir)ocio\" /S /Y
+XCOPY "$(ProjectDir)cmf\" "$(OutDir)cmf\" /S /Y
+XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
+</Command>
+      <Message>Copying deployable resources to the output directory</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="include\nfde\nfd_win.cpp" />
+    <ClCompile Include="include\pugixml\pugixml.cpp" />
+    <ClCompile Include="src\CLI.cpp" />
+    <ClCompile Include="src\ColorManagement\CmXYZ.cpp" />
+    <ClCompile Include="src\ColorManagement\CMF.cpp" />
+    <ClCompile Include="src\RealBloom\Binary\BinaryConvFftGpu.cpp" />
+    <ClCompile Include="src\RealBloom\Binary\BinaryData.cpp" />
+    <ClCompile Include="src\RealBloom\Binary\BinaryConvNaiveGpu.cpp" />
+    <ClCompile Include="src\RealBloom\Binary\BinaryDispGpu.cpp" />
+    <ClCompile Include="src\RealBloom\ConvolutionFFT.cpp" />
+    <ClCompile Include="src\RealBloom\DispersionThread.cpp" />
+    <ClCompile Include="src\RealBloom\GpuHelper.cpp" />
+    <ClCompile Include="src\Utils\CliStackTimer.cpp" />
+    <ClCompile Include="src\Utils\ConsoleColors.cpp" />
+    <ClCompile Include="src\Utils\CliParser.cpp" />
+    <ClCompile Include="src\Utils\FileDialogs.cpp" />
+    <ClCompile Include="include\oiio\detail\pugixml\pugixml.cpp" />
+    <ClCompile Include="src\ColorManagement\OcioShader.cpp" />
+    <ClCompile Include="src\Async.cpp" />
+    <ClCompile Include="src\ColorManagement\CmImage.cpp" />
+    <ClCompile Include="src\ColorManagement\CmImageIO.cpp" />
+    <ClCompile Include="src\ColorManagement\CMS.cpp" />
+    <ClCompile Include="src\Config.cpp" />
+    <ClCompile Include="src\Utils\OpenGL\GlContext.cpp" />
+    <ClCompile Include="src\Utils\OpenGL\GlFrameBuffer.cpp" />
+    <ClCompile Include="src\Utils\OpenGL\GlShaderStorageBuffer.cpp" />
+    <ClCompile Include="src\Utils\OpenGL\GlTexture.cpp" />
+    <ClCompile Include="src\Utils\OpenGL\GlUtils.cpp" />
+    <ClCompile Include="src\Utils\Random.cpp" />
+    <ClCompile Include="src\RealBloom\ConvolutionThread.cpp" />
+    <ClCompile Include="src\imgui\imgui.cpp" />
+    <ClCompile Include="src\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\RealBloom\Convolution.cpp" />
+    <ClCompile Include="src\RealBloom\Dispersion.cpp" />
+    <ClCompile Include="src\Utils\Bilinear.cpp" />
+    <ClCompile Include="src\Utils\Misc.cpp" />
+    <ClCompile Include="src\Utils\NumberHelpers.cpp" />
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\RealBloom\DiffractionPattern.cpp" />
+    <ClCompile Include="src\Utils\Status.cpp" />
+    <ClCompile Include="src\Utils\StreamUtils.cpp" />
+    <ClCompile Include="src\Utils\StringUtils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\dj_fft\dj_fft.h" />
+    <ClInclude Include="include\nfde\nfd.h" />
+    <ClInclude Include="include\nfde\nfd.hpp" />
+    <ClInclude Include="include\pocketfft\pocketfft_hdronly.h" />
+    <ClInclude Include="include\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="include\pugixml\pugixml.hpp" />
+    <ClInclude Include="include\rapidcsv\rapidcsv.h" />
+    <ClInclude Include="src\CLI.h" />
+    <ClInclude Include="src\ColorManagement\CMF.h" />
+    <ClInclude Include="src\ColorManagement\CmXYZ.h" />
+    <ClInclude Include="src\RealBloom\Binary\BinaryConvFftGpu.h" />
+    <ClInclude Include="src\RealBloom\Binary\BinaryData.h" />
+    <ClInclude Include="src\RealBloom\Binary\BinaryConvNaiveGpu.h" />
+    <ClInclude Include="src\RealBloom\Binary\BinaryDispGpu.h" />
+    <ClInclude Include="src\RealBloom\ConvolutionFFT.h" />
+    <ClInclude Include="src\RealBloom\DispersionThread.h" />
+    <ClInclude Include="src\RealBloom\GpuHelper.h" />
+    <ClInclude Include="src\Utils\CliStackTimer.h" />
+    <ClInclude Include="src\Utils\ConsoleColors.h" />
+    <ClInclude Include="src\Utils\CliParser.h" />
+    <ClInclude Include="src\Utils\FileDialogs.h" />
+    <ClInclude Include="include\ocio\OpenColorABI.h" />
+    <ClInclude Include="include\ocio\OpenColorAppHelpers.h" />
+    <ClInclude Include="include\ocio\OpenColorIO.h" />
+    <ClInclude Include="include\ocio\OpenColorTransforms.h" />
+    <ClInclude Include="include\ocio\OpenColorTypes.h" />
+    <ClInclude Include="include\oiio\argparse.h" />
+    <ClInclude Include="include\oiio\array_view.h" />
+    <ClInclude Include="include\oiio\atomic.h" />
+    <ClInclude Include="include\oiio\attrdelegate.h" />
+    <ClInclude Include="include\oiio\benchmark.h" />
+    <ClInclude Include="include\oiio\c-deepdata.h" />
+    <ClInclude Include="include\oiio\c-paramlist.h" />
+    <ClInclude Include="include\oiio\c-typedesc.h" />
+    <ClInclude Include="include\oiio\color.h" />
+    <ClInclude Include="include\oiio\dassert.h" />
+    <ClInclude Include="include\oiio\deepdata.h" />
+    <ClInclude Include="include\oiio\detail\farmhash.h" />
+    <ClInclude Include="include\oiio\detail\fmt.h" />
+    <ClInclude Include="include\oiio\detail\fmt\core.h" />
+    <ClInclude Include="include\oiio\detail\fmt\format-inl.h" />
+    <ClInclude Include="include\oiio\detail\fmt\format.h" />
+    <ClInclude Include="include\oiio\detail\fmt\ostream.h" />
+    <ClInclude Include="include\oiio\detail\fmt\printf.h" />
+    <ClInclude Include="include\oiio\detail\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="include\oiio\detail\pugixml\pugixml.hpp" />
+    <ClInclude Include="include\oiio\errorhandler.h" />
+    <ClInclude Include="include\oiio\export.h" />
+    <ClInclude Include="include\oiio\filesystem.h" />
+    <ClInclude Include="include\oiio\filter.h" />
+    <ClInclude Include="include\oiio\fmath.h" />
+    <ClInclude Include="include\oiio\fstream_mingw.h" />
+    <ClInclude Include="include\oiio\function_view.h" />
+    <ClInclude Include="include\oiio\hash.h" />
+    <ClInclude Include="include\oiio\imagebuf.h" />
+    <ClInclude Include="include\oiio\imagebufalgo.h" />
+    <ClInclude Include="include\oiio\imagebufalgo_util.h" />
+    <ClInclude Include="include\oiio\imagecache.h" />
+    <ClInclude Include="include\oiio\imageio.h" />
+    <ClInclude Include="include\oiio\image_view.h" />
+    <ClInclude Include="include\oiio\Imath.h" />
+    <ClInclude Include="include\oiio\missing_math.h" />
+    <ClInclude Include="include\oiio\oiioversion.h" />
+    <ClInclude Include="include\oiio\optparser.h" />
+    <ClInclude Include="include\oiio\parallel.h" />
+    <ClInclude Include="include\oiio\paramlist.h" />
+    <ClInclude Include="include\oiio\platform.h" />
+    <ClInclude Include="include\oiio\plugin.h" />
+    <ClInclude Include="include\oiio\refcnt.h" />
+    <ClInclude Include="include\oiio\simd.h" />
+    <ClInclude Include="include\oiio\span.h" />
+    <ClInclude Include="include\oiio\strided_ptr.h" />
+    <ClInclude Include="include\oiio\string_view.h" />
+    <ClInclude Include="include\oiio\strongparam.h" />
+    <ClInclude Include="include\oiio\strutil.h" />
+    <ClInclude Include="include\oiio\sysutil.h" />
+    <ClInclude Include="include\oiio\texture.h" />
+    <ClInclude Include="include\oiio\thread.h" />
+    <ClInclude Include="include\oiio\tiffutils.h" />
+    <ClInclude Include="include\oiio\timer.h" />
+    <ClInclude Include="include\oiio\typedesc.h" />
+    <ClInclude Include="include\oiio\type_traits.h" />
+    <ClInclude Include="include\oiio\unittest.h" />
+    <ClInclude Include="include\oiio\unordered_map_concurrent.h" />
+    <ClInclude Include="include\oiio\ustring.h" />
+    <ClInclude Include="include\oiio\varyingref.h" />
+    <ClInclude Include="include\oiio\version.h" />
+    <ClInclude Include="src\ColorManagement\OcioShader.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="src\Async.h" />
+    <ClInclude Include="src\ColorManagement\CmImage.h" />
+    <ClInclude Include="src\ColorManagement\CmImageIO.h" />
+    <ClInclude Include="src\ColorManagement\CMS.h" />
+    <ClInclude Include="src\Utils\OpenGL\GlContext.h" />
+    <ClInclude Include="src\Utils\OpenGL\GlFrameBuffer.h" />
+    <ClInclude Include="src\Utils\OpenGL\GlShaderStorageBuffer.h" />
+    <ClInclude Include="src\Utils\OpenGL\GlTexture.h" />
+    <ClInclude Include="src\Utils\OpenGL\GlUtils.h" />
+    <ClInclude Include="src\Utils\Random.h" />
+    <ClInclude Include="include\GL\eglew.h" />
+    <ClInclude Include="include\GL\glew.h" />
+    <ClInclude Include="include\GL\glxew.h" />
+    <ClInclude Include="include\GL\wglew.h" />
+    <ClInclude Include="src\RealBloom\ConvolutionThread.h" />
+    <ClInclude Include="src\imgui\imconfig.h" />
+    <ClInclude Include="src\imgui\imgui.h" />
+    <ClInclude Include="src\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="src\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="src\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="src\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="src\imgui\imgui_internal.h" />
+    <ClInclude Include="src\imgui\imstb_rectpack.h" />
+    <ClInclude Include="src\imgui\imstb_textedit.h" />
+    <ClInclude Include="src\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\RealBloom\Convolution.h" />
+    <ClInclude Include="src\RealBloom\Dispersion.h" />
+    <ClInclude Include="src\Utils\Bilinear.h" />
+    <ClInclude Include="src\Utils\NumberHelpers.h" />
+    <ClInclude Include="include\GLFW\glfw3.h" />
+    <ClInclude Include="include\GLFW\glfw3native.h" />
+    <ClInclude Include="src\Config.h" />
+    <ClInclude Include="src\Main.h" />
+    <ClInclude Include="src\RealBloom\DiffractionPattern.h" />
+    <ClInclude Include="src\Utils\Misc.h" />
+    <ClInclude Include="src\Utils\Status.h" />
+    <ClInclude Include="src\Utils\StreamUtils.h" />
+    <ClInclude Include="src\Utils\StringUtils.h" />
+    <ClInclude Include="src\Utils\Array2D.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="imgui.ini">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <FileType>Document</FileType>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </CopyFileToFolders>
+    <None Include="libs\glfw3\glfw3.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="libs\glew\glew32s.lib" />
+    <Library Include="libs\glfw3\glfw3.lib" />
+    <Library Include="libs\glfw3\glfw3dll.lib" />
+    <Library Include="libs\glfw3\glfw3_mt.lib" />
+    <Library Include="libs\ocio\OpenColorIO.lib" />
+    <Library Include="libs\oiio\OpenImageIO.lib" />
+    <Library Include="libs\oiio\OpenImageIO_Util.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="assets\Roboto-Bold.ttf">
+      <DeploymentContent>true</DeploymentContent>
+    </Font>
+    <Font Include="assets\Roboto-BoldItalic.ttf">
+      <DeploymentContent>true</DeploymentContent>
+    </Font>
+    <Font Include="assets\Roboto-Italic.ttf">
+      <DeploymentContent>true</DeploymentContent>
+    </Font>
+    <Font Include="assets\Roboto-Regular.ttf">
+      <DeploymentContent>true</DeploymentContent>
+    </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RealBloom.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="config.xml">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
