@@ -112,7 +112,7 @@ Check out [this page](USAGE.md) for a step-by-step tutorial on getting started w
 
 ### Prerequisites
 
-The project was made for Windows and built with MSVC, so you're going to need Windows. To build a local copy of RealBloom, have a version of Visual Studio ready.
+The project was made for Windows and built with MSVC. To build a local copy of RealBloom, have a recent version of Visual Studio ready.
 
 ### Build
 
@@ -121,11 +121,9 @@ The project was made for Windows and built with MSVC, so you're going to need Wi
    git clone https://github.com/bean-mhm/realbloom.git
    ```
 
-2. Open the solution (`RealBloom.sln`) in Visual Studio.
+2. Open `RealBloom.sln` in Visual Studio.
 
-3. `RealBloom` is the main project, while `RealBloomGpuHelper` is a GPU helper that gets used by the main program.
-
-4. Build the solution and run `RealBloom.exe`. Feel free to explore and play with the code!
+3. Build the solution and run `RealBloom.exe`. Feel free to explore and play with the code!
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
