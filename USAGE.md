@@ -3,7 +3,7 @@
 
 # Quick Start
 
-This tutorial intends to get your hands on RealBloom as quickly as possible. Below, we'll go through the process of applying convolutional bloom - A.K.A. the super cool physically accurate realistic bloom sauce - on a 3D render. So buckle up, run the [latest release](https://github.com/bean-mhm/realbloom/releases), and let's get started.
+This tutorial intends to get your hands on RealBloom as quickly as possible. Below, we'll go through the process of applying convolutional bloom - A.K.A. the physically accurate RTX bloom sauce - on a 3D render. So buckle up, run the [latest release](https://github.com/bean-mhm/realbloom/releases), and let's get started.
 
 ## Wait
 
@@ -21,20 +21,20 @@ If any or all of these terms sound alien to you, fear not, as they'll be explain
 
 ## Interface
 
-RealBloom provides a GUI (Graphical User Interface) and a CLI (Command Line Interface). We'll start by observing the GUI, and briefly talk about the CLI later. RealBloom's interface is rather simple, as there's a single main window that provides everything we need. Let's see how everything is laid out.
+RealBloom provides a GUI (Graphical User Interface) and a CLI (Command Line Interface). We'll start by observing the GUI, and briefly talk about the CLI later. The layout is rather simple, as there's a single main window that provides everything we need.
 
 ![RealBloom Screenshot](images/tutorial/0-interface.png)
 
 As of now, there are 6 panels, each for a specific purpose. A panel can be docked or floating, and you can resize it to your liking.
 
 
- - **Image List**: This is a static list of image slots that serve different purposes. You can switch to another slot by clicking on it. We'll go through what each slot is used for later.
+ - **Image List**: A static list of image slots that serve different purposes. You can switch to another slot by clicking on it. We'll go through what each slot is used for later.
 
- - **Color Management**: We'll use this panel to change how we import, view, and export images, as well as some options that'll come handy when simulating dispersion.
+ - **Color Management**: We'll use this panel to change how we import, view, and export images, as well as options that'll come handy when simulating dispersion.
 
- - **Misc**: This panel displays miscellaneous information, along with a slider for the UI scale.
+ - **Misc**: Miscellaneous information, along with a slider for the UI scale.
 
- - **Image Viewer**:  This panel displays the image contained in the current slot.
+ - **Image Viewer**:  Displays the image contained in the current slot.
 
 - **Diffraction Pattern**: We'll use this to generate the light diffraction pattern of an aperture, and to apply dispersion on it. Again, don't worry if this seems confusing to you.
 
@@ -42,9 +42,9 @@ As of now, there are 6 panels, each for a specific purpose. A panel can be docke
 
 ## Aperture
 
-An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a [diffraction](https://en.wikipedia.org/wiki/Diffraction) pattern to form, which affects all the images taken by the camera. The diffraction pattern usually looks like a star with a halo around it, but it generally depends on the shape of the aperture. This is what makes stars have *the star shape* in the first place.
+An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a [diffraction](https://en.wikipedia.org/wiki/Diffraction) pattern to form, which affects every image captured by the camera. The diffraction pattern usually looks like a star with a halo, but it generally depends on the shape of the aperture. Diffraction is what makes stars have *the star shape*.
 
-Let's start by loading an image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Octagon.png`.
+Let's start by loading in an image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Octagon.png`.
 
 ![An octagonal aperture](images/tutorial/1-aperture.png)
  
@@ -78,17 +78,17 @@ After adjusting the sliders to your liking - or copying the values from the scre
 
 ![Dispersion result](images/tutorial/3-disp.png)
 
-In the *Color Management* panel, I've set my view transform to *AgX*, and I'm using the *Punchy* artistic look. More on this in a second. 
+> In the *Color Management* panel, I've set my view transform to *AgX*, and I'm using the *Punchy* artistic look. More on this in a second. 
 
 Now, hit *Save* in the *Image List* panel, and save the dispersion result as `kernel.exr`.
 
 ## Convolution Input
 
-This is the image we want to apply bloom on. We'll need an open-domain image for this, which preserves pixel values outside the 0-1 range. If you're confused, I get it, so here are some questions and answers to hopefully help you better understand how open-domain (A.K.A. HDR) images work. If you're a nerd in this field, feel free to skip this part.
+This is the image we want to apply bloom on. We'll need an open-domain image for this, which preserves pixel values outside the 0-1 range. If you're confused, here are some questions and answers to hopefully help you better understand how open-domain (A.K.A. HDR) images work. If you're a nerd in this field, feel free to skip this part.
 
 > Q: **What on earth is an Open-Domain Image?**
 
-> A: Most everyday image formats such as PNG and JPEG can only have RGB values from 0-1, which translates to 0-255 when stored using unsigned 8-bit integers. An open-domain image accepts any real number for its pixel values, while also providing more depth and precision, as it is typically stored using 32-bit or 16-bit floating-point numbers. This may be called an "HDR" image in some articles.
+> A: Most everyday image formats such as PNG and JPEG can only have RGB values from 0-1, which translates to 0-255 when stored using unsigned 8-bit integers. Hence, they are closed-domain formats. Most closed-domain images have some form of an [OETF](https://en.wikipedia.org/wiki/Transfer_functions_in_imaging), widely known as a "Gamma" function, applied on the pixel values, therefore they may be called non-linear images. On the other hand, an open-domain image accepts any real number for its pixel values, while also providing more depth and precision, as it is typically stored using a 32-bit or 16-bit floating-point number per color channel. It is very common for these images to have linear pixel values. They may also be called "HDR" images in some places.
 
 > Q: **How do you store these images?**
 
@@ -100,15 +100,15 @@ This is the image we want to apply bloom on. We'll need an open-domain image for
 
 > Q: **Does RealBloom support display transforms?**
 
-> A: Yes. RealBloom supports display/view transforms through [OpenColorIO](https://opencolorio.org/). In the *Color Management* panel, you can switch the view to *AgX* to have a better view of 3D scenes. Note that this will likely ruin images that have already been transformed and gone through a camera, so this works best on raw linear tristimulus output from your rendering software, typically stored in an OpenEXR image.
+> A: Yes. RealBloom supports display/view transforms through [OpenColorIO](https://opencolorio.org/). In the *Color Management* panel, you can switch the view to *AgX* to have a better view of 3D scenes. Note that this may ruin images that have already been transformed and gone through a camera, so this works best on raw linear tristimulus output from your rendering software, or a carefully developed RAW image, typically stored in the OpenEXR format.
 
 > Q: **What is AgX?**
 
-> A: [AgX](https://www.elsksa.me/scientia/cgi-offline-rendering/rendering-transform) is an experimental OCIO config made by [Troy James Sobotka](https://twitter.com/troy_s), aimed at accurate and cinematic color transforms. Troy is the author of the famous Filmic config for Blender, and a true master of color science. RealBloom uses a [fork](https://github.com/EaryChow/AgX) of AgX as its default user config, as well as its internal config (we'll discuss that later).
+> A: [AgX](https://www.elsksa.me/scientia/cgi-offline-rendering/rendering-transform) is an experimental OCIO config, made by [Troy James Sobotka](https://twitter.com/troy_s), aimed at cinematic and filmic color transforms. Troy is the author of the famous Filmic config for Blender, and a true master of color science. RealBloom uses a custom version of AgX as its default user config, as well as its internal config (we'll discuss that later).
 
 > Q: **Are you an expert?**
 
-> A: Absolutely not. I've only been learning about color science for a couple months. But, I have asked Troy (indirectly, thanks to Nihal) to review this part, and he's corrected a few things.
+> A: Absolutely not. I've only been learning about color science for a couple of months. But, I have asked Troy (indirectly, thanks to Nihal) to review this part, and he's corrected a few things.
 
 In the *Convolution* panel, click on *Browse Input* and select an HDR (open-domain) image. I have included some example images in `demo/Images`. For this tutorial, I'll be using `Leaves.exr`, which is a render I made in Blender for demonstrating convolutional bloom.
 
@@ -120,11 +120,11 @@ You can safely use the *AgX* view for this image, as this is (almost) raw HDR da
 
 ## Convolution Kernel
 
-The kernel is what defines the "shape" of the bloom pattern. Meaning, convolution will be applied on the input image using this kernel.
+The kernel is what defines the "shape" of the bloom effect. Meaning, convolution will be performed on the input image using this kernel.
 
 > Q: **What is Convolution?**
 
-> A: Convolution is like a moving weighted average that can be performed on a 1D signal like audio or a 2D image, or any number of dimensions really. It's very powerful and can be used to achieve lots of cool audio and image effects, as well as many other things in different fields. I highly recommend watching [this video](https://youtu.be/KuXjwB4LzSA) by 3Blue1Brown to get a better understanding of convolution.
+> A: Convolution is like a moving weighted average that can be performed on a 1D signal like audio, a 2D image, or any number of dimensions really. It's very powerful, and can be used to achieve lots of cool audio and image effects, as well as many other things in different fields. I highly recommend watching [this video](https://youtu.be/KuXjwB4LzSA) by 3Blue1Brown to get a better understanding of convolution.
 
 Click on *Browse Kernel* and choose the dispersion result that we saved before. This will switch the current slot to *Conv. Kernel*. I'll also reset my view exposure.
 
@@ -167,7 +167,9 @@ RealBloom provides 3* ways to do convolution.
 
  - **Naive GPU**: Same as the previous method, but runs on the GPU instead. Usually quite a lot faster than the CPU method.
 
-\* The latest build supports a GPU FFT method, but it's in an experimental state and performs very poorly.
+\*The latest build supports a GPU FFT method, but it's in an experimental state and performs very poorly at the moment.
+
+For this tutorial, we'll go with *FFT CPU*.
 
 ### Threads 'n Chunks
 
@@ -180,13 +182,11 @@ In the *Naive CPU* method, you can split the job between multiple threads that r
 
 > *FFT CPU* will automatically decide the optimal number of threads to use.
 
-For this tutorial, we'll go with *FFT CPU*.
-
 ## Convolution Threshold
 
 The threshold defines the darkest a pixel can go before being ignored by the convolution process. We can increase the threshold to skip pixels that aren't bright enough to contribute to the final result. The *Knee* parameter defines how smooth the transition will be. A higher threshold speeds up the process in naive convolution, but it does not affect the performance in the FFT methods.
 
-In *Conv. Preview*, we can preview what the convolution process will see after threshold is applied.
+In *Conv. Preview*, we can observe what the convolution process will see after threshold is applied.
 
 ![Threshold preview](images/tutorial/6-thres.png)
 
@@ -196,9 +196,9 @@ Using a threshold of 0 and mixing the convolution output with the original input
 
 This option will adjust the exposure of the kernel in order to match the brightness of the convolution output to that of the input. This is done by making the pixel values in the kernel add up to 1, hence preserving the overall brightness. We'll have this on for this demonstration.
  
-## Convolve, Mix, Compare
+## Convolve
 
-After having loaded an input and a kenrel, and set all the parameters, hit this button to perform convolution. The convolution output will be mixed with the original input image afterwards. We can change the mixing parameters in the *LAYERS* section.
+After having loaded an input and a kenrel, and set all the parameters, hit *Convolve* to perform convolution. The output will be mixed with the original input image afterwards. We can change the mixing parameters in the *LAYERS* section.
 
 ![Convolution result](images/tutorial/7-convmix.png)
 
@@ -206,9 +206,9 @@ Look, we have a sun! Let's hit *Show Conv. Layer* to see how the convolution out
 
 ![Convolution layer](images/tutorial/8-convlayer.png)
 
-Generally speaking, the convolution layer should have the same overall brightness as the input. We can use the *Exposure* slider in the *LAYERS* section to adjust the exposure of the convolution layer. In this case, we don't need to do this, since we had *Auto-Exposure* enabled. We'll set the mix to 0.1 to gently introduce some bloom to the image.
+Generally speaking, the convolution layer should have the same overall brightness as the input. We can use the *Exposure* slider in the *LAYERS* section to adjust the exposure of the convolution layer. In this case, we don't need to do this, since we had *Auto-Exposure* enabled.
 
-> You can enable additive blending using the *Additive* checkbox. It's usually more accurate and best not to use this blending mode.
+> You can enable additive blending using the *Additive* checkbox, although it is usually more accurate and best not to use this blending mode.
 
 You'll notice a *Compare* button has appeared In the *Image List* panel. We can use this to compare *Conv. Input* with *Conv. Result*. Finally, while having selected *Conv. Result* as the current slot, we'll use the *Save* button in *Image List* to export the result into an image file.
 
@@ -220,7 +220,7 @@ RealBloom uses [OpenColorIO](https://opencolorio.org/) for color management. For
 
 ### VIEW
 
-Here we can adjust how we *view* the image contained in the current slot, by changing the **display** type, the **view** transform, and optionally choosing an artistic **look**. This does not affect the pixel values of the image in any way, it just defines how the image is displayed.
+Here we can alter how we *view* the image contained in the current slot, by adjusting the exposure, changing the **display** type and the **view** transform, and optionally choosing an artistic **look**. This does not affect the pixel values of the image in any way, it just defines how the image is displayed.
 
 ### INFO
 
@@ -240,7 +240,7 @@ We can change image input/output color management settings here.
 
  - **Auto-Detect**: Try to detect the color space when loading linear images, and discard the *Input* setting if a color space was detected. This is guaranteed to work with images exported by RealBloom, ideally if the same version is used for both exporting and importing the image.
 
- - **Apply View Transform**: Apply the current view transform when saving linear images. The view transform is always applied on non-linear images.
+ - **Apply View Transform**: Apply the current view transform when exporting linear images. The view transform is always applied on non-linear images.
 
 ### COLOR MATCHING
 
@@ -250,15 +250,15 @@ Color Matching Functions (CMF) help us go from wavelengths to [XYZ tristimulus](
 
 Here we can alter how the XYZ values from a CMF table get transformed into RGB tristimulus in the working space. The *User Config* method should be used if a CIE XYZ I-E color space exists in the user config. Otherwise, you can use the *Common Space* method and choose a color space that exists in both your config and RealBloom's internal OCIO config.
 
-With the *Common Space* method, the XYZ values will be converted from XYZ in the internal config to the common space in the internal config, then from the common space in the user config to the working space. Let that sink in.
+With the *Common Space* method, the XYZ values will be converted to the common space in the internal config, then from the common space in the user config to the working space.
 
 ## Command Line Interface
 
-RealBloom provides a CLI that can be used from within a terminal, or any other program. This can be useful for doing animations and such. The commands are straightforward and self-explanatory, since they deliver the same functionality as the GUI.
+RealBloom provides a CLI that can be used from within a terminal, or any other program. This can be useful for doing animations and automations. The commands are self-explanatory, since they deliver the same functionality as the GUI.
 
-You can get started by running `realbloom cli` in the program directory, then typing `help` and hitting *Enter*. Use `quit` to exit the program.
+You can enter CLI mode by running `realbloom cli` in the program directory. Type `help` to see a list of supported commands. Use `quit` to exit the program.
 
-> If you run RealBloom with an empty command or anything other than `cli`, RealBloom will start in GUI mode. Otherwise, it'll start the CLI. This is why you get the GUI when opening the program normally.
+> If you run RealBloom with an empty command, or anything other than `cli`, it will start the GUI.
 
 ### Animations
 
@@ -266,7 +266,7 @@ As mentioned above, a CLI opens the possibility to use RealBloom on animations. 
 
 ## GPU Helper
 
-Some modules may use RealBloom's GPU helper program in GPU methods. The GPU helper, or specifically `RealBloomGpuHelper.exe`, tries to perform operations on the dedicated GPU, while the main program and its GUI are intended to run on the integrated GPU. This is only relevant for Dual-GPU systems.
+Some of the modules may use RealBloom's GPU helper program if needed. The GPU helper tries to perform operations on the dedicated GPU, while the main program and its GUI are intended to run on the integrated GPU. This is only relevant for Dual-GPU systems.
 
 You can check your `%TEMP%` directory and look for the most recent text file, the name of which starts with `realbloom_gpu_operation`. This log file will contain the name of the GPU (Renderer) on which the operation was ran. If the GPU helper isn't using the desired GPU, visit **Windows Settings > System > Display > Graphics**  to change the default/preferred GPU for `RealBloomGpuHelper.exe`. This might differ for older versions of Windows.
 
