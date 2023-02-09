@@ -21,9 +21,9 @@
     <br />
     <a href="https://github.com/bean-mhm/realbloom/releases">Latest Release</a>
     ·
-    <a href="https://github.com/bean-mhm/realbloom/issues">Report Bug</a>
+    <a href="https://github.com/bean-mhm/realbloom/blob/main/USAGE.md">Tutorial</a>
     ·
-    <a href="https://github.com/bean-mhm/realbloom/issues">Request Feature</a>
+    <a href="https://github.com/bean-mhm/realbloom/issues">Report Bug</a>
   </p>
 </div>
 
