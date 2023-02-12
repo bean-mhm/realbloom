@@ -108,7 +108,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -139,7 +139,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -165,7 +165,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -196,7 +196,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\fftw;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;$(ProjectDir)libs\oiio;$(ProjectDir)libs\ocio;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\glfw3;$(ProjectDir)libs\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -226,7 +226,6 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClCompile Include="src\Utils\ConsoleColors.cpp" />
     <ClCompile Include="src\Utils\CliParser.cpp" />
     <ClCompile Include="src\Utils\FileDialogs.cpp" />
-    <ClCompile Include="include\oiio\detail\pugixml\pugixml.cpp" />
     <ClCompile Include="src\ColorManagement\OcioShader.cpp" />
     <ClCompile Include="src\Async.cpp" />
     <ClCompile Include="src\ColorManagement\CmImage.cpp" />
@@ -281,72 +280,6 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClInclude Include="src\Utils\ConsoleColors.h" />
     <ClInclude Include="src\Utils\CliParser.h" />
     <ClInclude Include="src\Utils\FileDialogs.h" />
-    <ClInclude Include="include\ocio\OpenColorABI.h" />
-    <ClInclude Include="include\ocio\OpenColorAppHelpers.h" />
-    <ClInclude Include="include\ocio\OpenColorIO.h" />
-    <ClInclude Include="include\ocio\OpenColorTransforms.h" />
-    <ClInclude Include="include\ocio\OpenColorTypes.h" />
-    <ClInclude Include="include\oiio\argparse.h" />
-    <ClInclude Include="include\oiio\array_view.h" />
-    <ClInclude Include="include\oiio\atomic.h" />
-    <ClInclude Include="include\oiio\attrdelegate.h" />
-    <ClInclude Include="include\oiio\benchmark.h" />
-    <ClInclude Include="include\oiio\c-deepdata.h" />
-    <ClInclude Include="include\oiio\c-paramlist.h" />
-    <ClInclude Include="include\oiio\c-typedesc.h" />
-    <ClInclude Include="include\oiio\color.h" />
-    <ClInclude Include="include\oiio\dassert.h" />
-    <ClInclude Include="include\oiio\deepdata.h" />
-    <ClInclude Include="include\oiio\detail\farmhash.h" />
-    <ClInclude Include="include\oiio\detail\fmt.h" />
-    <ClInclude Include="include\oiio\detail\fmt\core.h" />
-    <ClInclude Include="include\oiio\detail\fmt\format-inl.h" />
-    <ClInclude Include="include\oiio\detail\fmt\format.h" />
-    <ClInclude Include="include\oiio\detail\fmt\ostream.h" />
-    <ClInclude Include="include\oiio\detail\fmt\printf.h" />
-    <ClInclude Include="include\oiio\detail\pugixml\pugiconfig.hpp" />
-    <ClInclude Include="include\oiio\detail\pugixml\pugixml.hpp" />
-    <ClInclude Include="include\oiio\errorhandler.h" />
-    <ClInclude Include="include\oiio\export.h" />
-    <ClInclude Include="include\oiio\filesystem.h" />
-    <ClInclude Include="include\oiio\filter.h" />
-    <ClInclude Include="include\oiio\fmath.h" />
-    <ClInclude Include="include\oiio\fstream_mingw.h" />
-    <ClInclude Include="include\oiio\function_view.h" />
-    <ClInclude Include="include\oiio\hash.h" />
-    <ClInclude Include="include\oiio\imagebuf.h" />
-    <ClInclude Include="include\oiio\imagebufalgo.h" />
-    <ClInclude Include="include\oiio\imagebufalgo_util.h" />
-    <ClInclude Include="include\oiio\imagecache.h" />
-    <ClInclude Include="include\oiio\imageio.h" />
-    <ClInclude Include="include\oiio\image_view.h" />
-    <ClInclude Include="include\oiio\Imath.h" />
-    <ClInclude Include="include\oiio\missing_math.h" />
-    <ClInclude Include="include\oiio\oiioversion.h" />
-    <ClInclude Include="include\oiio\optparser.h" />
-    <ClInclude Include="include\oiio\parallel.h" />
-    <ClInclude Include="include\oiio\paramlist.h" />
-    <ClInclude Include="include\oiio\platform.h" />
-    <ClInclude Include="include\oiio\plugin.h" />
-    <ClInclude Include="include\oiio\refcnt.h" />
-    <ClInclude Include="include\oiio\simd.h" />
-    <ClInclude Include="include\oiio\span.h" />
-    <ClInclude Include="include\oiio\strided_ptr.h" />
-    <ClInclude Include="include\oiio\string_view.h" />
-    <ClInclude Include="include\oiio\strongparam.h" />
-    <ClInclude Include="include\oiio\strutil.h" />
-    <ClInclude Include="include\oiio\sysutil.h" />
-    <ClInclude Include="include\oiio\texture.h" />
-    <ClInclude Include="include\oiio\thread.h" />
-    <ClInclude Include="include\oiio\tiffutils.h" />
-    <ClInclude Include="include\oiio\timer.h" />
-    <ClInclude Include="include\oiio\typedesc.h" />
-    <ClInclude Include="include\oiio\type_traits.h" />
-    <ClInclude Include="include\oiio\unittest.h" />
-    <ClInclude Include="include\oiio\unordered_map_concurrent.h" />
-    <ClInclude Include="include\oiio\ustring.h" />
-    <ClInclude Include="include\oiio\varyingref.h" />
-    <ClInclude Include="include\oiio\version.h" />
     <ClInclude Include="src\ColorManagement\OcioShader.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\Async.h" />
@@ -404,9 +337,6 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <Library Include="libs\glfw3\glfw3.lib" />
     <Library Include="libs\glfw3\glfw3dll.lib" />
     <Library Include="libs\glfw3\glfw3_mt.lib" />
-    <Library Include="libs\ocio\OpenColorIO.lib" />
-    <Library Include="libs\oiio\OpenImageIO.lib" />
-    <Library Include="libs\oiio\OpenImageIO_Util.lib" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="assets\Roboto-Bold.ttf">

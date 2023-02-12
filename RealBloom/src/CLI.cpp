@@ -3,7 +3,7 @@
 #define NOMINMAX
 #include <Windows.h>
 
-#include "ocio/OpenColorIO.h"
+#include <OpenColorIO/OpenColorIO.h>
 namespace OCIO = OpenColorIO_v2_1;
 
 #include "ColorManagement/CMS.h"
