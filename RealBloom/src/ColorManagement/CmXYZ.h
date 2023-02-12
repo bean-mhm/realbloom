@@ -5,7 +5,7 @@
 #include <vector>
 #include <memory>
 
-#include <OpenColorIO/OpenColorIO.h>
+#include "ocio/OpenColorIO.h"
 namespace OCIO = OpenColorIO_v2_1;
 
 #include "CMS.h"

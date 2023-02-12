@@ -7,9 +7,9 @@
 #include <memory>
 #include <filesystem>
 
-#include "OpenImageIO/imageio.h"
+#include "oiio/imageio.h"
 
-#include <OpenColorIO/OpenColorIO.h>
+#include "ocio/OpenColorIO.h"
 namespace OCIO = OpenColorIO_v2_1;
 
 #include "CMS.h"

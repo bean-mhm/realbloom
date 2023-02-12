@@ -12,7 +12,7 @@
 #include "../Utils/OpenGL/GlUtils.h"
 #include "../Utils/Misc.h"
 
-#include <OpenColorIO/OpenColorIO.h>
+#include "ocio/OpenColorIO.h"
 namespace OCIO = OpenColorIO_v2_1;
 
 constexpr bool OCIO_SHADER_LOG = false;
