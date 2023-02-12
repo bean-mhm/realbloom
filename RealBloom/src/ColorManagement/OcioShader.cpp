@@ -21,8 +21,8 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
     : m_shaderDesc(shaderDesc)
 {
     // Make fragment shader source code
-    std::ostringstream fragSource;
-    fragSource
+    std::ostringstream fragSourceStream;
+    fragSourceStream
         << "#version 130" << std::endl
         << std::endl
         << m_shaderDesc->getShaderText() << std::endl
@@ -39,6 +39,10 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
         << "    vec4 col = texture(img, vTexUV) * vec4(exposureMul, exposureMul, exposureMul, 1.0);" << std::endl
         << "    outColor = " << m_shaderDesc->getFunctionName() << "(col);" << std::endl
         << "}" << std::endl;
+    
+    std::string fragSource = fragSourceStream.str();
+    strReplace(fragSource, "texture3D(", "texture(");
+    strReplace(fragSource, "texture2D(", "texture(");
 
     // Print out the shader source code
     if (OCIO_SHADER_LOG)
@@ -60,7 +64,7 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
 
             __FUNCTION__,
             VERTEX_SOURCE,
-            fragSource.str().c_str());
+            fragSource.c_str());
 
     std::string shaderLog;
 
@@ -71,7 +75,7 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
         );
 
     // Create and compile the fragment shader
-    if (!createShader(GL_FRAGMENT_SHADER, fragSource.str().c_str(), m_fragShader, shaderLog))
+    if (!createShader(GL_FRAGMENT_SHADER, fragSource.c_str(), m_fragShader, shaderLog))
         throw std::exception(
             makeError(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
         );
