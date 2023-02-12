@@ -91,13 +91,14 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         wglMakeCurrent(devContext, tempContext);
 
         // Initialize GLEW
-        glewExperimental = GL_TRUE;
-        GLenum err = glewInit();
         wglewInit();
+        glewExperimental = GL_TRUE;
+        GLenum glewInitResult = glewInit();
+
+        // Delete the temporary context
         wglDeleteContext(tempContext);
 
-        bool glewReady = (err == GLEW_OK);
-        if (glewReady)
+        if (glewInitResult == GLEW_OK)
         {
             // Real context
             static const int ctxAttribs[] = {
@@ -132,10 +133,10 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         }
         else
         {
-            *g_outError = "GLEW was not initialized.";
+            *g_outError = strFormat("Failed to initialize GLEW: %d", glewInitResult);
         }
 
-        // Delete the device context
+        // Clean up
         ReleaseDC(hWnd, devContext);
         DestroyWindow(hWnd);
         PostQuitMessage(0);
