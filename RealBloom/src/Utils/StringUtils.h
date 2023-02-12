@@ -85,6 +85,7 @@ inline std::string strTrim(std::string s)
     return s;
 }
 
+void strReplace(std::string& s, const std::string& from, const std::string& to);
 bool strContains(const std::string& source, const std::string& substring);
 std::string strList(const std::vector<std::string>& list, const std::string& separator);
 std::string strLeftPadding(const std::string& s, size_t length, bool addSpace = true);

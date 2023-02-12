@@ -1,5 +1,19 @@
 #include "StringUtils.h"
 
+// https://stackoverflow.com/a/3418285/18049911
+void strReplace(std::string& s, const std::string& from, const std::string& to)
+{
+    if (from.empty())
+        return;
+
+    size_t start_pos = 0;
+    while ((start_pos = s.find(from, start_pos)) != std::string::npos)
+    {
+        s.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
+}
+
 bool strContains(const std::string& source, const std::string& substring)
 {
     return (source.find(substring) != std::string::npos);
