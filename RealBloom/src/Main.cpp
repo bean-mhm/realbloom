@@ -7,6 +7,7 @@ const char* glslVersion = "#version 150";
 GLFWwindow* window = nullptr;
 ImGuiIO* io = nullptr;
 bool appRunning = true;
+bool showRenderer = false;
 bool showFPS = false;
 
 // Fonts
@@ -58,14 +59,28 @@ int main(int argc, char** argv)
         // config properly
         SetCurrentDirectoryA(getExecDir().c_str());
 
-        // Setup GLFW and ImGui
+        // Setup GLFW
         if (!setupGLFW())
+        {
+            std::cout << "Failed to initialize GLFW.\n";
             return 1;
-        if (!setupImGui())
-            return 1;
+        }
 
         // GLEW for loading OpenGL extensions
-        glewInit();
+        glewExperimental = GL_TRUE;
+        GLenum glewInitResult = glewInit();
+        if (glewInitResult != GLEW_OK)
+        {
+            std::cout << "Failed to initialize GLEW: " << glewInitResult << "\n";
+            return 1;
+        }
+
+        // Setup ImGui
+        if (!setupImGui())
+        {
+            std::cout << "Failed to initialize ImGui.\n";
+            return 1;
+        }
     }
 
     // Color Management System
@@ -84,8 +99,8 @@ int main(int argc, char** argv)
     // GUI-specific
     if (!CLI::Interface::active())
     {
-        // Hide the console window
-        ShowWindow(GetConsoleWindow(), SW_HIDE);
+        // Minimize the console window
+        PostMessage(GetConsoleWindow(), WM_SYSCOMMAND, SC_MINIMIZE, 0);
 
         // Native File Dialog Extended
         NFD_Init();
@@ -706,7 +721,11 @@ void layoutMisc()
     }
 
     // UI Renderer
-    static std::string uiRenderer = strFormat("UI Renderer:\n%s", (const char*)glGetString(GL_RENDERER));
+    if (showRenderer)
+    {
+        static std::string uiRenderer = strFormat("Renderer: %s", (const char*)glGetString(GL_RENDERER));
+        ImGui::TextWrapped(uiRenderer.c_str());
+    }
 
     // FPS
     if (showFPS)
@@ -715,8 +734,6 @@ void layoutMisc()
             "%.3f ms (%.1f FPS)",
             1000.0f / ImGui::GetIO().Framerate,
             ImGui::GetIO().Framerate);
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip(uiRenderer.c_str());
     }
 
     imGuiDiv();
@@ -1317,12 +1334,14 @@ bool setupGLFW()
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, glVersionMajor);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, glVersionMinor);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     // Create window with graphics context
     window = glfwCreateWindow(Config::S_WINDOW_WIDTH, Config::S_WINDOW_HEIGHT, Config::S_APP_TITLE, NULL, NULL);
     if (window == NULL)
     {
-        std::cout << "Failed to create a window.\n";
+        std::cout << "Failed to create the main window.\n";
         return false;
     }
     glfwMakeContextCurrent(window);

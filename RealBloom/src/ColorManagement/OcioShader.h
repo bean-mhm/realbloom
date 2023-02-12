@@ -95,4 +95,3 @@ public:
     void enableAttribs();
     void disableAttribs();
 };
-
