@@ -114,7 +114,20 @@ Check out [this page](USAGE.md) for a step-by-step tutorial on getting started w
 
 The project was made for Windows and built with MSVC. To build a local copy of RealBloom, have a recent version of Visual Studio ready.
 
+You'll need to install OpenColorIO and OpenImageIO through [vcpkg](https://vcpkg.io/en/index.html) first.
+
+1. Follow [vcpkg installation instructions](https://github.com/Microsoft/vcpkg#quick-start-windows) to install vcpkg and enable Visual Studio integration.
+
+2. Run the following command from vcpkg's root directory:
+   ```sh
+   vcpkg install openimageio[opencolorio,tools]:x64-windows --recurse
+   ```
+
+Note that this might take some time to finish.
+
 ### Build
+
+Now to build RealBloom,
 
 1. Clone the repo:
    ```sh
