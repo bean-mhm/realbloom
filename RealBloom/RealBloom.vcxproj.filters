@@ -156,6 +156,9 @@
     <ClCompile Include="include\nfde\nfd_win.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Utils\ImageTransform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RealBloom\DiffractionPattern.h">
@@ -342,6 +345,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\nfde\nfd.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils\ImageTransform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

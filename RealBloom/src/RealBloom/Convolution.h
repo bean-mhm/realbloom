@@ -53,7 +53,7 @@ namespace RealBloom
         ConvolutionMethodInfo methodInfo;
         float kernelExposure = 0.0f;
         float kernelContrast = 0.0f;
-        std::array<float, 3> kernelColor{ 1, 1, 1 };
+        std::array<float, 3> kernelColor{ 1.0f, 1.0f, 1.0f };
         float kernelRotation = 0.0f;
         float kernelScaleX = 1.0f;
         float kernelScaleY = 1.0f;

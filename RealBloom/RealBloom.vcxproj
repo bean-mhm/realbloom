@@ -232,6 +232,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClCompile Include="src\ColorManagement\CmImageIO.cpp" />
     <ClCompile Include="src\ColorManagement\CMS.cpp" />
     <ClCompile Include="src\Config.cpp" />
+    <ClCompile Include="src\Utils\ImageTransform.cpp" />
     <ClCompile Include="src\Utils\OpenGL\GlContext.cpp" />
     <ClCompile Include="src\Utils\OpenGL\GlFrameBuffer.cpp" />
     <ClCompile Include="src\Utils\OpenGL\GlShaderStorageBuffer.cpp" />
@@ -286,6 +287,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClInclude Include="src\ColorManagement\CmImage.h" />
     <ClInclude Include="src\ColorManagement\CmImageIO.h" />
     <ClInclude Include="src\ColorManagement\CMS.h" />
+    <ClInclude Include="src\Utils\ImageTransform.h" />
     <ClInclude Include="src\Utils\OpenGL\GlContext.h" />
     <ClInclude Include="src\Utils\OpenGL\GlFrameBuffer.h" />
     <ClInclude Include="src\Utils\OpenGL\GlShaderStorageBuffer.h" />
