@@ -2,30 +2,27 @@
 
 #include <array>
 #include <vector>
+#include <cstdint>
 
-struct ImageTransform
+#include "Bilinear.h"
+#include "NumberHelpers.h"
+#include "Misc.h"
+
+struct ImageTransformParams
 {
-    enum class GrayscaleMethod
+    struct CropResizeParams
     {
-        None = 0,
-        Weighted = 1,
-        Average = 2,
-        Maximum = 3
-    };
-
-    struct ResizeCropParams
-    {
-        std::array<float, 2> resize{ 1.0f, 1.0f };
         std::array<float, 2> crop{ 1.0f, 1.0f };
+        std::array<float, 2> resize{ 1.0f, 1.0f };
         std::array<float, 2> origin{ 0.5f, 0.5f };
         bool previewOrigin = false;
     };
 
     struct TransformParams
     {
-        std::array<float, 2> translate{ 0.0f, 0.0f };
         std::array<float, 2> scale{ 1.0f, 1.0f };
         float rotate = 0.0f;
+        std::array<float, 2> translate{ 0.0f, 0.0f };
         std::array<float, 2> origin{ 0.5f, 0.5f };
         bool previewOrigin = false;
     };
@@ -34,14 +31,73 @@ struct ImageTransform
     {
         float exposure = 0.0f;
         float contrast = 0.0f;
-        std::array<float, 3> color{ 1.0f, 1.0f, 1.0f };
-        GrayscaleMethod grayscaleMethod = GrayscaleMethod::None;
+        std::array<float, 3> filter{ 1.0f, 1.0f, 1.0f };
+        bool mono = false;
+        RgbToMonoMethod monoMethod = RgbToMonoMethod::Luminance;
     };
 
-    ResizeCropParams resizeCropParams;
-    TransformParams transformParams;
-    ColorParams colorParams;
+    CropResizeParams cropResize;
+    TransformParams transform;
+    ColorParams color;
+};
 
-    void apply(const std::vector<float>& inputBuffer, std::vector<float>& outputBuffer);
+class ImageTransform
+{
+public:
+    ImageTransform() = delete;
+    ImageTransform(const ImageTransform&) = delete;
+    ImageTransform& operator= (const ImageTransform&) = delete;
+
+    static void getOutputDimensions(
+        const ImageTransformParams& params,
+        uint32_t inputWidth,
+        uint32_t inputHeight,
+        uint32_t& outCroppedWidth,
+        uint32_t& outCroppedHeight,
+        float& outCropX,
+        float& outCropY,
+        uint32_t& outResizedWidth,
+        uint32_t& outResizedHeight,
+        float& outResizeX,
+        float& outResizeY
+    );
+
+    static void getOutputDimensions(
+        const ImageTransformParams& params,
+        uint32_t inputWidth,
+        uint32_t inputHeight,
+        uint32_t& outputWidth,
+        uint32_t& outputHeight
+    );
+
+    static void apply(
+        const ImageTransformParams& params,
+        const std::vector<float>& inputBuffer,
+        uint32_t inputWidth,
+        uint32_t inputHeight,
+        std::vector<float>& outputBuffer,
+        uint32_t& outputWidth,
+        uint32_t& outputHeight);
+
+private:
+    static bool USE_GPU;
+
+    static void applyCPU(
+        const ImageTransformParams& params,
+        const std::vector<float>& inputBuffer,
+        uint32_t inputWidth,
+        uint32_t inputHeight,
+        std::vector<float>& outputBuffer,
+        uint32_t& outputWidth,
+        uint32_t& outputHeight);
+
+    static void applyGPU(
+        const ImageTransformParams& params,
+        const std::vector<float>& inputBuffer,
+        uint32_t inputWidth,
+        uint32_t inputHeight,
+        std::vector<float>& outputBuffer,
+        uint32_t& outputWidth,
+        uint32_t& outputHeight);
 
 };

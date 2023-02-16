@@ -14,9 +14,12 @@
 
 #include "CMS.h"
 #include "OcioShader.h"
+
 #include "../Utils/OpenGL/GlTexture.h"
 #include "../Utils/OpenGL/GlFrameBuffer.h"
 #include "../Utils/OpenGL/GlUtils.h"
+
+#include "../Utils/NumberHelpers.h"
 #include "../Utils/Misc.h"
 
 // Color Managed Image

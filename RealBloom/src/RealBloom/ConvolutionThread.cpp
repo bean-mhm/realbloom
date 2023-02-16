@@ -48,7 +48,7 @@ namespace RealBloom
                     inpColor[1] = m_inputBuffer[redIndexInput + 1];
                     inpColor[2] = m_inputBuffer[redIndexInput + 2];
 
-                    v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
+                    v = rgbToMono(inpColor, CONV_THRESHOLD_METHOD);
                     if (v > threshold)
                         num++;
                 }
@@ -88,7 +88,7 @@ namespace RealBloom
                     inpColor[1] = m_inputBuffer[redIndexInput + 1];
                     inpColor[2] = m_inputBuffer[redIndexInput + 2];
 
-                    v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
+                    v = rgbToMono(inpColor, CONV_THRESHOLD_METHOD);
                     if (v > threshold)
                     {
                         // Smooth Transition
@@ -161,7 +161,7 @@ namespace RealBloom
                 inpColor[1] = m_inputBuffer[redIndexInput + 1];
                 inpColor[2] = m_inputBuffer[redIndexInput + 2];
 
-                v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
+                v = rgbToMono(inpColor, CONV_THRESHOLD_METHOD);
                 if (v > threshold)
                 {
                     // Smooth Transition

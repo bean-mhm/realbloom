@@ -70,7 +70,7 @@ namespace RealBloom
                         for (uint32_t x = 0; x < inputWidth; x++)
                         {
                             redIndex = (y * inputWidth + x) * 4;
-                            fftInput[0](y, x) = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
+                            fftInput[0](y, x) = rgbToMono(&(inputBuffer[redIndex]), RgbToMonoMethod::Luminance);
                         }
                     }
                 }

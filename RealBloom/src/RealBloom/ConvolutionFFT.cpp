@@ -70,7 +70,7 @@ namespace RealBloom
                     inpColor[1] = m_inputBuffer[redIndex + 1];
                     inpColor[2] = m_inputBuffer[redIndex + 2];
 
-                    float v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
+                    float v = rgbToMono(inpColor, CONV_THRESHOLD_METHOD);
                     if (v > threshold)
                     {
                         // Smooth Transition

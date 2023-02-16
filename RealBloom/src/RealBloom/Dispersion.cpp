@@ -93,7 +93,7 @@ namespace RealBloom
             std::copy(inputSrcBuffer, inputSrcBuffer + inputBufferSize, inputBuffer.data());
         }
 
-        float expMul = applyExposure(m_params.exposure);
+        float expMul = getExposureMul(m_params.exposure);
         float contrast = m_params.contrast;
 
         std::array<float, 3> color = m_params.color;
@@ -123,12 +123,12 @@ namespace RealBloom
                     inputBuffer[redIndex + 2] /= maxV;
 
                     // Calculate the grayscale value
-                    float grayscale = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
+                    float grayscale = rgbToMono(&(inputBuffer[redIndex]), RgbToMonoMethod::Luminance);
 
                     // Apply contrast, de-normalize, colorize
                     if (grayscale > 0.0f)
                     {
-                        float mul = expMul * maxV * (contrastCurve(grayscale, contrast) / grayscale);
+                        float mul = expMul * maxV * (applyContrast(grayscale, contrast) / grayscale);
                         inputBuffer[redIndex + 0] *= mul * color[0];
                         inputBuffer[redIndex + 1] *= mul * color[1];
                         inputBuffer[redIndex + 2] *= mul * color[2];
@@ -212,11 +212,7 @@ namespace RealBloom
                         for (uint32_t i = 0; i < dispSteps; i++)
                         {
                             smpIndex = i * 3;
-                            luminanceSum += rgbToGrayscale(
-                                cmfSamples[smpIndex + 0],
-                                cmfSamples[smpIndex + 1],
-                                cmfSamples[smpIndex + 2]
-                            );
+                            luminanceSum += rgbToMono(&(cmfSamples[smpIndex]), RgbToMonoMethod::Luminance);
                         }
 
                         // Divide by the sum

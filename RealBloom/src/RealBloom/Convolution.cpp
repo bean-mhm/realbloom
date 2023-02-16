@@ -98,7 +98,7 @@ namespace RealBloom
                     prevBuffer[redIndex + 2] = 0;
                     prevBuffer[redIndex + 3] = 1;
 
-                    float v = rgbToGrayscale(inputBuffer[redIndex + 0], inputBuffer[redIndex + 1], inputBuffer[redIndex + 2]);
+                    float v = rgbToMono(&(inputBuffer[redIndex]), CONV_THRESHOLD_METHOD);
                     if (v > threshold)
                     {
                         numPixels++;
@@ -143,7 +143,7 @@ namespace RealBloom
         float rotation = m_params.kernelRotation;
 
         bool autoExposure = m_params.autoExposure;
-        float expMul = applyExposure(m_params.kernelExposure);
+        float expMul = getExposureMul(m_params.kernelExposure);
         float contrast = m_params.kernelContrast;
 
         std::array<float, 3> color = m_params.kernelColor;
@@ -292,12 +292,12 @@ namespace RealBloom
                     croppedBuffer[redIndex + 2] /= maxV;
 
                     // Calculate the grayscale value
-                    float grayscale = rgbToGrayscale(croppedBuffer[redIndex + 0], croppedBuffer[redIndex + 1], croppedBuffer[redIndex + 2]);
+                    float grayscale = rgbToMono(&(croppedBuffer[redIndex]), RgbToMonoMethod::Luminance);
 
                     // Apply contrast, de-normalize, colorize
                     if (grayscale > 0.0f)
                     {
-                        float mul = expMul * maxV * (contrastCurve(grayscale, contrast) / grayscale);
+                        float mul = expMul * maxV * (applyContrast(grayscale, contrast) / grayscale);
                         croppedBuffer[redIndex + 0] *= mul * color[0];
                         croppedBuffer[redIndex + 1] *= mul * color[1];
                         croppedBuffer[redIndex + 2] *= mul * color[2];
@@ -327,7 +327,7 @@ namespace RealBloom
                 {
                     uint32_t redIndex = (y * croppedWidth + x) * 4;
 
-                    float grayscale = rgbToGrayscale(croppedBuffer[redIndex + 0], croppedBuffer[redIndex + 1], croppedBuffer[redIndex + 2]);
+                    float grayscale = rgbToMono(&(croppedBuffer[redIndex]), RgbToMonoMethod::Luminance);
                     sumV += fmaxf(0.0f, grayscale);
                 }
             }
@@ -406,7 +406,7 @@ namespace RealBloom
                 m_imgConvMix->resize(inputWidth, inputHeight, false);
                 float* convMixBuffer = m_imgConvMix->getImageData();
 
-                float multiplier = convMix * applyExposure(convExposure);
+                float multiplier = convMix * getExposureMul(convExposure);
                 for (uint32_t y = 0; y < inputHeight; y++)
                 {
                     for (uint32_t x = 0; x < inputWidth; x++)

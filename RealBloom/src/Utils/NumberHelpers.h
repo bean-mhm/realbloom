@@ -65,14 +65,37 @@ inline int shiftIndex(int i, int shift, int size)
     return (i + shift) % size;
 }
 
-inline float rgbToGrayscale(float r, float g, float b)
+enum class RgbToMonoMethod
 {
-    return (r * 0.2126f) + (g * 0.7152f) + (b * 0.0722f);
-}
+    Luminance = 0,
+    Average = 1,
+    Maximum = 2,
+    Magnitude = 3
+};
 
-inline double rgbToGrayscale(double r, double g, double b)
+constexpr RgbToMonoMethod CONV_THRESHOLD_METHOD = RgbToMonoMethod::Luminance;
+
+inline float rgbToMono(float* rgb, RgbToMonoMethod method)
 {
-    return (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+    switch (method)
+    {
+    case RgbToMonoMethod::Luminance:
+        return (rgb[0] * 0.2126f) + (rgb[1] * 0.7152f) + (rgb[2] * 0.0722f);
+        break;
+    case RgbToMonoMethod::Average:
+        return (rgb[0] + rgb[1] + rgb[2]) / 3.0f;
+        break;
+    case RgbToMonoMethod::Maximum:
+        return std::max(std::max(rgb[0], rgb[1]), rgb[2]);
+        break;
+    case RgbToMonoMethod::Magnitude:
+        return sqrtf((rgb[0] * rgb[0]) + (rgb[1] * rgb[1]) + (rgb[2] * rgb[2]));
+        break;
+    default:
+        break;
+    }
+
+    return rgb[0];
 }
 
 inline float transformKnee(float v)
@@ -104,27 +127,39 @@ inline bool checkBounds(int x, int y, int w, int h)
     return true;
 }
 
-inline void blendAddRGB(float* colorA, uint32_t indexA, float* colorB, uint32_t indexB, float t)
+inline void blendAddRGB(float* colorA, uint32_t indexA, const float* colorB, uint32_t indexB, float t)
 {
+    if (t == 0.0f)
+        return;
     colorA[indexA + 0] += colorB[indexB + 0] * t;
     colorA[indexA + 1] += colorB[indexB + 1] * t;
     colorA[indexA + 2] += colorB[indexB + 2] * t;
 }
 
-inline float applyExposure(float v)
+inline void blendAddRGBA(float* colorA, uint32_t indexA, const float* colorB, uint32_t indexB, float t)
+{
+    if (t == 0.0f)
+        return;
+    colorA[indexA + 0] += colorB[indexB + 0] * t;
+    colorA[indexA + 1] += colorB[indexB + 1] * t;
+    colorA[indexA + 2] += colorB[indexB + 2] * t;
+    colorA[indexA + 3] += colorB[indexB + 3] * t;
+}
+
+inline float getExposureMul(float v)
 {
     return powf(2.0f, v);
 }
 
-inline double applyExposure(double v)
+inline double getExposureMul(double v)
 {
     return pow(2.0, v);
 }
 
-uint8_t doubleTo8bit(double v);
-float contrastCurve(float v, float contrast);
-double contrastCurve(double v, double contrast);
+float applyContrast(float v, float contrast);
+
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY);
+void rotatePointInPlace(float& x, float& y, float pivotX, float pivotY, float angle);
 
 void calcFftConvPadding(
     bool powerOfTwo,

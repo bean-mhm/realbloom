@@ -82,4 +82,5 @@ public:
 
     static bool hasTable();
     static const BaseStatus& getStatus();
+
 };

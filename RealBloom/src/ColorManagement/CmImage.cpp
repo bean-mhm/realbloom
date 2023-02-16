@@ -229,7 +229,7 @@ void CmImage::applyViewTransform(
     }
 
     uint32_t size = width * height * 4;
-    float exposureMul = powf(2, exposure);
+    float expMul = getExposureMul(exposure);
     bool gpuMode = CMS::usingGPU() && uploadToGPU;
 
     // Temporary buffer to apply transforms on (CPU)
@@ -243,7 +243,7 @@ void CmImage::applyViewTransform(
 
         if (exposure != 0.0f)
             for (uint32_t i = 0; i < size; i++)
-                if (i % 4 != 3) transBuffer[i] *= exposureMul;
+                if (i % 4 != 3) transBuffer[i] *= expMul;
 
         try
         {
@@ -341,7 +341,7 @@ void CmImage::applyViewTransform(
             // Set the input uniforms
             texture->bind(GL_TEXTURE0);
             shader->setInputTexture(0);
-            shader->setExposureMul(exposureMul);
+            shader->setExposureMul(expMul);
 
             // Use the LUTs and uniforms associated with the shader
             shader->useLuts();
