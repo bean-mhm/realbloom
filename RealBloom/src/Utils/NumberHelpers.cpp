@@ -12,8 +12,8 @@ float applyContrast(float v, float contrast)
     if (contrast == 0.0f)
         return v;
 
-    // v0.5.1-dev
-    const float pivot = 0.5f;
+    // v0.5.2-dev
+    constexpr float pivot = 1.0f;
     float c =
         (contrast >= 0.0f) ?
         (2.0f * contrast + 1.0f) :
