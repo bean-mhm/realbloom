@@ -121,7 +121,7 @@ void ImageTransform::applyCPU(
         {
             for (uint32_t x = 0; x < croppedWidth; x++)
             {
-                uint32_t redIndexCropped = (y * croppedWidth + x) * 4;
+                uint32_t redIndexCropped = 4 * (y * croppedWidth + x);
                 uint32_t redIndexInput = 4 * (((y + cropStartY) * inputWidth) + x + cropStartX);
 
                 croppedBuffer[redIndexCropped + 0] = inputBuffer[redIndexInput + 0];
@@ -137,8 +137,8 @@ void ImageTransform::applyCPU(
     outputBuffer.resize(outputBufferSize);
 
     // Transform origin
-    float transformOriginX = (params.transform.origin[0] * resizedWidth);
-    float transformOriginY = (params.transform.origin[1] * resizedHeight);
+    float transformOriginX = params.transform.origin[0] * resizedWidth;
+    float transformOriginY = params.transform.origin[1] * resizedHeight;
 
     // Color multiplier
     float expMul = getExposureMul(params.color.exposure);
@@ -231,6 +231,46 @@ void ImageTransform::applyCPU(
         }
     }
 
+    // Preview origins
+    if (params.cropResize.previewOrigin || params.transform.previewOrigin)
+    {
+        float cropOriginX = params.cropResize.origin[0] * resizedWidth;
+        float cropOriginY = params.cropResize.origin[1] * resizedHeight;
+
+        // Draw
+        for (uint32_t y = 0; y < resizedHeight; y++)
+        {
+            for (uint32_t x = 0; x < resizedWidth; x++)
+            {
+                uint32_t redIndex = 4 * (y * resizedWidth + x);
+
+                float fX = x + 0.5f;
+                float fY = y + 0.5f;
+
+                // Pixel value, goes from source pixel to filled from 0 to 1
+                float v = 0.0f;
+
+                // Crop origin
+                if (params.cropResize.previewOrigin)
+                {
+                    constexpr std::array<float, 4> fillColor{ 0.0f, 1.0f, 0.0f, 1.0f };
+                    v = getPreviewMarkValue(cropOriginX, cropOriginY, fX, fY, resizedWidth, resizedHeight);
+                    for (uint32_t i = 0; i < 4; i++)
+                        outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], fillColor[i], v);
+                }
+
+                // Transform origin
+                if (params.transform.previewOrigin)
+                {
+                    constexpr std::array<float, 4> fillColor{ 0.0f, 0.0f, 1.0f, 1.0f };
+                    v = getPreviewMarkValue(transformOriginX, transformOriginY, fX, fY, resizedWidth, resizedHeight);
+                    for (uint32_t i = 0; i < 4; i++)
+                        outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], fillColor[i], v);
+                }
+            }
+        }
+    }
+
     clearVector(croppedBuffer);
 }
 
@@ -244,4 +284,25 @@ void ImageTransform::applyGPU(
     uint32_t& outputHeight)
 {
     // To be implemented
+}
+
+float ImageTransform::getPreviewMarkValue(float originX, float originY, float x, float y, uint32_t bufferWidth, uint32_t bufferHeight)
+{
+    // Parameters
+    constexpr float softness = 0.5f;
+    constexpr float outlineRadius = 1.0f;
+    constexpr float dotRadius = 1.5f;
+    float squareRadius = 0.15f * fminf(bufferWidth, bufferHeight);
+
+    // Chebyshev distance
+    float distSquare = fmaxf(fabsf(x - originX), fabsf(y - originY));
+
+    // Square
+    float v = fminf(fmaxf(fabsf(distSquare - squareRadius) - outlineRadius, 0.0f) / softness, 1.0f);
+
+    // Dot
+    float distDot = sqrtf(powf(x - originX, 2.0f) + powf(y - originY, 2.0f));
+    v *= fminf(fmaxf(distDot - dotRadius, 0.0f) / softness, 1.0f);
+
+    return 1.0f - v;
 }

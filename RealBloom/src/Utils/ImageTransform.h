@@ -100,4 +100,6 @@ private:
         uint32_t& outputWidth,
         uint32_t& outputHeight);
 
+    static float getPreviewMarkValue(float originX, float originY, float x, float y, uint32_t bufferWidth, uint32_t bufferHeight);
+
 };
