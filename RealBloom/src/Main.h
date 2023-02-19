@@ -46,6 +46,7 @@
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
+#include "Utils/ImageTransform.h"
 #include "Utils/FileDialogs.h"
 #include "Utils/NumberHelpers.h"
 #include "Utils/OpenGL/GlContext.h"
@@ -58,6 +59,8 @@ void layoutColorManagement();
 void layoutMisc();
 void layoutConvolution();
 void layoutDiffraction();
+
+bool layoutImageTransformParams(const std::string& id, ImageTransformParams& params);
 
 void imGuiDiv();
 void imGuiBold(const std::string& s);

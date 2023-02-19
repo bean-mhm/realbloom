@@ -1,5 +1,38 @@
 #include "ImageTransform.h"
 
+void ImageTransformParams::CropResizeParams::reset()
+{
+    crop = { 1.0f, 1.0f };
+    resize = { 1.0f, 1.0f };
+    origin = { 0.5f, 0.5f };
+    previewOrigin = false;
+}
+
+void ImageTransformParams::TransformParams::reset()
+{
+    scale = { 1.0f, 1.0f };
+    rotate = 0.0f;
+    translate = { 0.0f, 0.0f };
+    origin = { 0.5f, 0.5f };
+    previewOrigin = false;
+}
+
+void ImageTransformParams::ColorParams::reset()
+{
+    exposure = 0.0f;
+    contrast = 0.0f;
+    filter = { 1.0f, 1.0f, 1.0f };
+    mono = false;
+    monoMethod = RgbToMonoMethod::Luminance;
+}
+
+void ImageTransformParams::reset()
+{
+    cropResize.reset();
+    transform.reset();
+    color.reset();
+}
+
 bool ImageTransform::USE_GPU = false;
 
 void ImageTransform::getOutputDimensions(
@@ -140,6 +173,12 @@ void ImageTransform::applyCPU(
     float transformOriginX = params.transform.origin[0] * resizedWidth;
     float transformOriginY = params.transform.origin[1] * resizedHeight;
 
+    // Scale (non-zero)
+    float scaleX = params.transform.scale[0];
+    float scaleY = params.transform.scale[1];
+    if (scaleX == 0.0f) scaleX == EPSILON;
+    if (scaleY == 0.0f) scaleY == EPSILON;
+
     // Color multiplier
     float expMul = getExposureMul(params.color.exposure);
     float colorMulR = expMul * params.color.filter[0];
@@ -161,8 +200,8 @@ void ImageTransform::applyCPU(
                 transY = (y + 0.5f) / resizeY;
 
                 // Scale
-                transX = ((transX - transformOriginX) / params.transform.scale[0]) + transformOriginX;
-                transY = ((transY - transformOriginY) / params.transform.scale[1]) + transformOriginY;
+                transX = ((transX - transformOriginX) / scaleX) + transformOriginX;
+                transY = ((transY - transformOriginY) / scaleY) + transformOriginY;
 
                 // Rotate
                 rotatePointInPlace(transX, transY, transformOriginX, transformOriginY, -params.transform.rotate);

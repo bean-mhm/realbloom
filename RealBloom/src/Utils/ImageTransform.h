@@ -16,6 +16,8 @@ struct ImageTransformParams
         std::array<float, 2> resize{ 1.0f, 1.0f };
         std::array<float, 2> origin{ 0.5f, 0.5f };
         bool previewOrigin = false;
+
+        void reset();
     };
 
     struct TransformParams
@@ -25,6 +27,8 @@ struct ImageTransformParams
         std::array<float, 2> translate{ 0.0f, 0.0f };
         std::array<float, 2> origin{ 0.5f, 0.5f };
         bool previewOrigin = false;
+
+        void reset();
     };
 
     struct ColorParams
@@ -34,11 +38,15 @@ struct ImageTransformParams
         std::array<float, 3> filter{ 1.0f, 1.0f, 1.0f };
         bool mono = false;
         RgbToMonoMethod monoMethod = RgbToMonoMethod::Luminance;
+
+        void reset();
     };
 
     CropResizeParams cropResize;
     TransformParams transform;
     ColorParams color;
+
+    void reset();
 };
 
 class ImageTransform

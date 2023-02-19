@@ -1154,6 +1154,196 @@ void layoutDiffraction()
     ImGui::End();
 }
 
+bool layoutImageTransformParams(const std::string& id, ImageTransformParams& params)
+{
+    bool changed = false;
+
+    static std::unordered_map<std::string, bool> lockCrop;
+    if (!lockCrop.contains(id))
+        lockCrop[id] = true;
+
+    static std::unordered_map<std::string, bool> lockResize;
+    if (!lockResize.contains(id))
+        lockResize[id] = true;
+
+    static std::unordered_map<std::string, bool> lockScale;
+    if (!lockScale.contains(id))
+        lockScale[id] = true;
+
+    ImGui::PushID(id.c_str());
+    if (ImGui::CollapsingHeader("Transform"))
+    {
+        ImGui::Indent();
+
+        imGuiBold("CROP & RESIZE");
+
+        {
+            // Crop
+            if (ImGui::Checkbox("Lock Crop##CropResize", &lockCrop[id]))
+            {
+                if (lockCrop[id])
+                {
+                    params.cropResize.crop[0] = (params.cropResize.crop[0] + params.cropResize.crop[1]) / 2.0f;
+                    params.cropResize.crop[1] = params.cropResize.crop[0];
+                }
+                changed = true;
+            }
+            if (lockCrop[id])
+            {
+                if (ImGui::SliderFloat("Crop##CropResize", &params.cropResize.crop[0], 0.01f, 1.0f))
+                {
+                    params.cropResize.crop[0] = std::clamp(params.cropResize.crop[0], 0.01f, 1.0f);
+                    params.cropResize.crop[1] = params.cropResize.crop[0];
+                    changed = true;
+                }
+            }
+            else
+            {
+                if (ImGui::SliderFloat2("Crop##CropResize", &params.cropResize.crop[0], 0.01f, 1.0f))
+                {
+                    params.cropResize.crop[0] = std::clamp(params.cropResize.crop[0], 0.01f, 1.0f);
+                    params.cropResize.crop[1] = std::clamp(params.cropResize.crop[1], 0.01f, 1.0f);
+                    changed = true;
+                }
+            }
+
+            // Resize
+            if (ImGui::Checkbox("Lock Resize##CropResize", &lockResize[id]))
+            {
+                if (lockResize[id])
+                {
+                    params.cropResize.resize[0] = (params.cropResize.resize[0] + params.cropResize.resize[1]) / 2.0f;
+                    params.cropResize.resize[1] = params.cropResize.resize[0];
+                }
+                changed = true;
+            }
+            if (lockResize[id])
+            {
+                if (ImGui::SliderFloat("Resize##CropResize", &params.cropResize.resize[0], 0.01f, 2))
+                {
+                    params.cropResize.resize[0] = std::max(params.cropResize.resize[0], 0.01f);
+                    params.cropResize.resize[1] = params.cropResize.resize[0];
+                    changed = true;
+                }
+            }
+            else
+            {
+                if (ImGui::SliderFloat2("Resize##CropResize", &params.cropResize.resize[0], 0.01f, 2))
+                {
+                    params.cropResize.resize[0] = std::max(params.cropResize.resize[0], 0.01f);
+                    params.cropResize.resize[1] = std::max(params.cropResize.resize[1], 0.01f);
+                    changed = true;
+                }
+            }
+
+            // Origin
+            if (ImGui::SliderFloat2("Origin##CropResize", params.cropResize.origin.data(), 0.0f, 1.0f))
+            {
+                params.cropResize.origin[0] = std::clamp(params.cropResize.origin[0], 0.0f, 1.0f);
+                params.cropResize.origin[1] = std::clamp(params.cropResize.origin[1], 0.0f, 1.0f);
+                changed = true;
+            }
+            if (ImGui::Checkbox("Preview Origin##CropResize", &params.cropResize.previewOrigin))
+                changed = true;
+
+            // Reset
+            if (ImGui::Button("Reset##CropResize", btnSize()))
+                params.cropResize.reset();
+        }
+
+        imGuiDiv();
+        imGuiBold("TRANSFORM");
+
+        {
+            // Scale
+            if (ImGui::Checkbox("Lock Scale##Transform", &lockScale[id]))
+            {
+                if (lockScale[id])
+                {
+                    params.transform.scale[0] = (params.transform.scale[0] + params.transform.scale[1]) / 2.0f;
+                    params.transform.scale[1] = params.transform.scale[0];
+                }
+                changed = true;
+            }
+            if (lockScale[id])
+            {
+                if (ImGui::SliderFloat("Scale##Transform", &params.transform.scale[0], 0.01f, 2))
+                {
+                    params.transform.scale[1] = params.transform.scale[0];
+                    changed = true;
+                }
+            }
+            else
+            {
+                if (ImGui::SliderFloat2("Scale##Transform", &params.transform.scale[0], 0.01f, 2))
+                {
+                    changed = true;
+                }
+            }
+
+            // Rotate
+            if (ImGui::SliderFloat("Rotate##Transform", &params.transform.rotate, -180.0f, 180.0f))
+                changed = true;
+
+            // Translate
+            if (ImGui::SliderFloat2("Translate##Transform", params.transform.translate.data(), -1.0f, 1.0f))
+                changed = true;
+
+            // Origin
+            if (ImGui::SliderFloat2("Origin##Transform", params.transform.origin.data(), 0.0f, 1.0f))
+            {
+                params.transform.origin[0] = std::clamp(params.transform.origin[0], 0.0f, 1.0f);
+                params.transform.origin[1] = std::clamp(params.transform.origin[1], 0.0f, 1.0f);
+                changed = true;
+            }
+            if (ImGui::Checkbox("Preview Origin##Transform", &params.transform.previewOrigin))
+                changed = true;
+
+            // Reset
+            if (ImGui::Button("Reset##Transform", btnSize()))
+                params.transform.reset();
+        }
+
+        imGuiDiv();
+        imGuiBold("COLOR");
+
+        {
+            // Exposure
+            if (ImGui::SliderFloat("Exposure##Color", &params.color.exposure, -10.0f, 10.0f))
+                changed = true;
+
+            // Contrast
+            if (ImGui::SliderFloat("Contrast##Color", &params.color.contrast, -1.0f, 1.0f))
+                changed = true;
+
+            // Filter
+            if (ImGui::ColorEdit3("Filter##Color", params.color.filter.data(),
+                ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+            {
+                changed = true;
+            }
+
+            // Mono
+            if (ImGui::Checkbox("Mono##Color", &params.color.mono))
+                changed = true;
+
+            // Mono Method
+            const char* const monoMethodItems[]{ "Luminance", "Average", "Maximum", "Magnitude" };
+            if (ImGui::Combo("Mono Method##Color", (int*)(&params.color.monoMethod), monoMethodItems, 4))
+                changed = true;
+
+            // Reset
+            if (ImGui::Button("Reset##Color", btnSize()))
+                params.color.reset();
+        }
+
+        ImGui::Unindent();
+    }
+    ImGui::PopID();
+
+    return changed;
+}
+
 void imGuiDiv()
 {
     ImGui::NewLine();
