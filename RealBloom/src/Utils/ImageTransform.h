@@ -27,17 +27,18 @@ struct ImageTransformParams
         std::array<float, 2> translate{ 0.0f, 0.0f };
         std::array<float, 2> origin{ 0.5f, 0.5f };
         bool previewOrigin = false;
+        bool transparency = false;
 
         void reset();
     };
 
     struct ColorParams
     {
+        std::array<float, 3> filter{ 1.0f, 1.0f, 1.0f };
         float exposure = 0.0f;
         float contrast = 0.0f;
-        std::array<float, 3> filter{ 1.0f, 1.0f, 1.0f };
-        bool mono = false;
-        RgbToMonoMethod monoMethod = RgbToMonoMethod::Luminance;
+        bool grayscale = false;
+        GrayscaleType grayscaleType = GrayscaleType::Luminance;
 
         void reset();
     };
@@ -85,7 +86,8 @@ public:
         uint32_t inputHeight,
         std::vector<float>& outputBuffer,
         uint32_t& outputWidth,
-        uint32_t& outputHeight);
+        uint32_t& outputHeight,
+        bool previewMode);
 
 private:
     static bool USE_GPU;
@@ -97,7 +99,8 @@ private:
         uint32_t inputHeight,
         std::vector<float>& outputBuffer,
         uint32_t& outputWidth,
-        uint32_t& outputHeight);
+        uint32_t& outputHeight,
+        bool previewMode);
 
     static void applyGPU(
         const ImageTransformParams& params,
@@ -106,8 +109,9 @@ private:
         uint32_t inputHeight,
         std::vector<float>& outputBuffer,
         uint32_t& outputWidth,
-        uint32_t& outputHeight);
+        uint32_t& outputHeight,
+        bool previewMode);
 
-    static float getPreviewMarkValue(float originX, float originY, float x, float y, uint32_t bufferWidth, uint32_t bufferHeight);
+    static float getPreviewMarkValue(float originX, float originY, float squareRadius, float x, float y);
 
 };

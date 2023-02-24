@@ -5,22 +5,80 @@ namespace RealBloom
 
     constexpr double CONTRAST_CONSTANT = 0.0002187;
 
-    DiffractionPattern::DiffractionPattern()
+    DiffractionPattern::DiffractionPattern() : m_imgInputSrc("", "")
     {}
 
-    RealBloom::DiffractionPatternParams* DiffractionPattern::getParams()
+    ImageTransformParams* DiffractionPattern::getInputTransformParams()
     {
-        return &m_params;
+        return &m_inputTransformParams;
     }
 
-    void DiffractionPattern::setImgAperture(CmImage* image)
+    void DiffractionPattern::setImgInput(CmImage* image)
     {
-        m_imgAperture = image;
+        m_imgInput = image;
     }
 
     void DiffractionPattern::setImgDiffPattern(CmImage* image)
     {
         m_imgDiffPattern = image;
+    }
+
+    CmImage* DiffractionPattern::getImgInputSrc()
+    {
+        return &m_imgInputSrc;
+    }
+
+    void DiffractionPattern::previewInput(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
+    {
+        // Get the input buffer
+        std::vector<float> inputBuffer;
+        uint32_t inputBufferSize = 0;
+        uint32_t inputWidth, inputHeight;
+        {
+            std::scoped_lock lock(m_imgInputSrc);
+            float* inputSrcBuffer = m_imgInputSrc.getImageData();
+            inputBufferSize = m_imgInputSrc.getImageDataSize();
+            inputWidth = m_imgInputSrc.getWidth();
+            inputHeight = m_imgInputSrc.getHeight();
+
+            inputBuffer.resize(inputBufferSize);
+            std::copy(inputSrcBuffer, inputSrcBuffer + inputBufferSize, inputBuffer.data());
+        }
+
+        // Transform
+        std::vector<float> transBuffer;
+        uint32_t transWidth, transHeight;
+        ImageTransform::apply(
+            m_inputTransformParams,
+            inputBuffer,
+            inputWidth,
+            inputHeight,
+            transBuffer,
+            transWidth,
+            transHeight,
+            previewMode);
+
+        clearVector(inputBuffer);
+
+        // Copy to outBuffer if it's requested by another function
+        if (!previewMode && (outBuffer != nullptr))
+        {
+            *outWidth = transWidth;
+            *outHeight = transHeight;
+            outBuffer->resize(transBuffer.size());
+            *outBuffer = transBuffer;
+        }
+
+        // Copy to input image
+        {
+            std::scoped_lock lock(*m_imgInput);
+            m_imgInput->resize(transWidth, transHeight, false);
+            float* prevBuffer = m_imgInput->getImageData();
+            std::copy(transBuffer.data(), transBuffer.data() + transBuffer.size(), prevBuffer);
+        }
+
+        m_imgInput->moveToGPU();
+        m_imgInput->setSourceName(m_imgInputSrc.getSourceName());
     }
 
     void DiffractionPattern::compute()
@@ -30,10 +88,10 @@ namespace RealBloom
         try
         {
             // Input Buffer
-            std::scoped_lock lock(*m_imgAperture);
-            uint32_t inputWidth = m_imgAperture->getWidth();
-            uint32_t inputHeight = m_imgAperture->getHeight();
-            float* inputBuffer = m_imgAperture->getImageData();
+            std::vector<float> inputBuffer;
+            uint32_t inputWidth = 0, inputHeight = 0;
+            previewInput(false, &inputBuffer, &inputWidth, &inputHeight);
+            uint32_t inputBufferSize = inputWidth * inputHeight * 4;
 
             // Validate the dimensions
             if ((inputWidth < 4) || (inputHeight < 4))
@@ -43,7 +101,7 @@ namespace RealBloom
             uint32_t fftWidth = (inputWidth % 2 == 0) ? (inputWidth) : (inputWidth + 1);
             uint32_t fftHeight = (inputHeight % 2 == 0) ? (inputHeight) : (inputHeight + 1);
 
-            bool grayscale = m_params.grayscale;
+            bool grayscale = m_inputTransformParams.color.grayscale;
 
             // FFT buffers (RGB)
             Array2D<double> fftInput[3];
@@ -61,30 +119,27 @@ namespace RealBloom
             }
 
             // Fill in the input buffer
+            if (grayscale)
             {
-                uint32_t redIndex = 0;
-                if (grayscale)
+                for (uint32_t y = 0; y < inputHeight; y++)
                 {
-                    for (uint32_t y = 0; y < inputHeight; y++)
+                    for (uint32_t x = 0; x < inputWidth; x++)
                     {
-                        for (uint32_t x = 0; x < inputWidth; x++)
-                        {
-                            redIndex = (y * inputWidth + x) * 4;
-                            fftInput[0](y, x) = rgbToMono(&(inputBuffer[redIndex]), RgbToMonoMethod::Luminance);
-                        }
+                        uint32_t redIndex = (y * inputWidth + x) * 4;
+                        fftInput[0](y, x) = inputBuffer[redIndex];
                     }
                 }
-                else
+            }
+            else
+            {
+                for (uint32_t y = 0; y < inputHeight; y++)
                 {
-                    for (uint32_t y = 0; y < inputHeight; y++)
+                    for (uint32_t x = 0; x < inputWidth; x++)
                     {
-                        for (uint32_t x = 0; x < inputWidth; x++)
-                        {
-                            redIndex = (y * inputWidth + x) * 4;
-                            fftInput[0](y, x) = inputBuffer[redIndex + 0];
-                            fftInput[1](y, x) = inputBuffer[redIndex + 1];
-                            fftInput[2](y, x) = inputBuffer[redIndex + 2];
-                        }
+                        uint32_t redIndex = (y * inputWidth + x) * 4;
+                        fftInput[0](y, x) = inputBuffer[redIndex + 0];
+                        fftInput[1](y, x) = inputBuffer[redIndex + 1];
+                        fftInput[2](y, x) = inputBuffer[redIndex + 2];
                     }
                 }
             }
@@ -168,7 +223,7 @@ namespace RealBloom
                     }
                 }
             }
-             
+
             double logOfMaxMag;
             if (grayscale)
             {
@@ -213,7 +268,8 @@ namespace RealBloom
                 }
             }
             m_imgDiffPattern->moveToGPU();
-        } catch (const std::exception& e)
+        }
+        catch (const std::exception& e)
         {
             m_status.setError(e.what());
         }

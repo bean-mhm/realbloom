@@ -106,7 +106,8 @@ int main(int argc, char** argv)
         NFD_Init();
 
         // Create images to be used throughout the program
-        addImage("aperture", "Aperture");
+        addImage("diff-input", "Diffraction Input");
+        addImage("diff-result", "Diffraction Result");
         addImage("disp-input", "Dispersion Input");
         addImage("disp-result", "Dispersion Result");
         addImage("cv-input", "Conv. Input");
@@ -115,8 +116,8 @@ int main(int argc, char** argv)
         addImage("cv-result", "Conv. Result");
 
         // Set up images for diffraction pattern
-        diff.setImgAperture(getImageByID("aperture"));
-        diff.setImgDiffPattern(disp.getImgInputSrc());
+        diff.setImgInput(getImageByID("diff-input"));
+        diff.setImgDiffPattern(getImageByID("diff-result"));
 
         // Set up images for dispersion
         disp.setImgInput(getImageByID("disp-input"));
@@ -1045,7 +1046,7 @@ void layoutConvolution()
 
 void layoutDiffraction()
 {
-    CmImage& imgAperture = *getImageByID("aperture");
+    CmImage& imgDiffInput = *getImageByID("diff-input");
     CmImage& imgDispInput = *getImageByID("disp-input");
     CmImage& imgDispResult = *getImageByID("disp-result");
 
@@ -1055,18 +1056,31 @@ void layoutDiffraction()
 
     {
         static std::string loadError = "";
-        if (ImGui::Button("Browse Aperture##DP", btnSize()))
-            openImage(imgAperture, imgAperture.getID(), loadError);
+        if (ImGui::Button("Browse Input##Diff", btnSize()))
+        {
+            CmImage* inputSrc = diff.getImgInputSrc();
+            if (openImage(*inputSrc, imgDiffInput.getID(), loadError))
+                vars.diffParamsChanged = true;
+        }
         imGuiText(loadError, true, false);
     }
 
-    ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
+    if (layoutImageTransformParams("Diff", *diff.getInputTransformParams()))
+        vars.diffParamsChanged = true;
 
-    if (ImGui::Button("Compute##DP", btnSize()))
+    if (vars.diffParamsChanged)
     {
+        vars.diffParamsChanged = false;
+        updateDiffParams();
+        diff.previewInput();
+        selImageID = "diff-input";
+    }
+
+    if (ImGui::Button("Compute##Diff", btnSize()))
+    {
+        selImageID = "diff-result";
         updateDiffParams();
         diff.compute();
-        vars.dispParamsChanged = true;
     }
 
     if (!diff.getStatus().isOK())
@@ -1248,7 +1262,12 @@ bool layoutImageTransformParams(const std::string& id, ImageTransformParams& par
 
             // Reset
             if (ImGui::Button("Reset##CropResize", btnSize()))
+            {
                 params.cropResize.reset();
+                lockCrop[id] = true;
+                lockResize[id] = true;
+                changed = true;
+            }
         }
 
         imGuiDiv();
@@ -1299,15 +1318,30 @@ bool layoutImageTransformParams(const std::string& id, ImageTransformParams& par
             if (ImGui::Checkbox("Preview Origin##Transform", &params.transform.previewOrigin))
                 changed = true;
 
+            // Transparency
+            if (ImGui::Checkbox("Transparency##Transform", &params.transform.transparency))
+                changed = true;
+
             // Reset
             if (ImGui::Button("Reset##Transform", btnSize()))
+            {
                 params.transform.reset();
+                lockScale[id] = true;
+                changed = true;
+            }
         }
 
         imGuiDiv();
         imGuiBold("COLOR");
 
         {
+            // Filter
+            if (ImGui::ColorEdit3("Filter##Color", params.color.filter.data(),
+                ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+            {
+                changed = true;
+            }
+
             // Exposure
             if (ImGui::SliderFloat("Exposure##Color", &params.color.exposure, -10.0f, 10.0f))
                 changed = true;
@@ -1316,27 +1350,34 @@ bool layoutImageTransformParams(const std::string& id, ImageTransformParams& par
             if (ImGui::SliderFloat("Contrast##Color", &params.color.contrast, -1.0f, 1.0f))
                 changed = true;
 
-            // Filter
-            if (ImGui::ColorEdit3("Filter##Color", params.color.filter.data(),
-                ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+            // Grayscale
             {
-                changed = true;
+                const char* const grayscaleItems[]{ "None", "Luminance", "Average", "Maximum", "Magnitude", "Red", "Green", "Blue", "Alpha" };
+                int selIndex = params.color.grayscale ? ((int)params.color.grayscaleType + 1) : 0;
+                if (ImGui::Combo("Grayscale##Color", &selIndex, grayscaleItems, sizeof(grayscaleItems) / sizeof(grayscaleItems[0])))
+                {
+                    if (selIndex > 0)
+                    {
+                        params.color.grayscale = true;
+                        params.color.grayscaleType = (GrayscaleType)(selIndex - 1);
+                    }
+                    else
+                    {
+                        params.color.grayscale = false;
+                    }
+                    changed = true;
+                }
             }
-
-            // Mono
-            if (ImGui::Checkbox("Mono##Color", &params.color.mono))
-                changed = true;
-
-            // Mono Method
-            const char* const monoMethodItems[]{ "Luminance", "Average", "Maximum", "Magnitude" };
-            if (ImGui::Combo("Mono Method##Color", (int*)(&params.color.monoMethod), monoMethodItems, 4))
-                changed = true;
 
             // Reset
             if (ImGui::Button("Reset##Color", btnSize()))
+            {
                 params.color.reset();
+                changed = true;
+            }
         }
 
+        ImGui::NewLine();
         ImGui::Unindent();
     }
     ImGui::PopID();
@@ -1460,8 +1501,7 @@ bool saveImage(CmImage& image, const std::string& dlgID, std::string& outError)
 
 void updateDiffParams()
 {
-    RealBloom::DiffractionPatternParams* params = diff.getParams();
-    params->grayscale = vars.dp_grayscale;
+    //
 }
 
 void updateDispParams()

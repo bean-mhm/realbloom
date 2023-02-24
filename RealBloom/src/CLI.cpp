@@ -522,16 +522,24 @@ namespace CLI
             timer.done(verbose);
         }
 
+        // Images
+        CmImage imgInputPrev("", "", 1, 1);
         CmImage imgOutput("", "", 1, 1);
 
         // Diffraction Pattern
-
         RealBloom::DiffractionPattern diff;
-        diff.setImgAperture(&imgInput);
+        diff.setImgInput(&imgInput);
         diff.setImgDiffPattern(&imgOutput);
 
-        RealBloom::DiffractionPatternParams* params = diff.getParams();
-        params->grayscale = grayscale;
+        // TODO: Read image transform params
+
+        // Read the input image
+        {
+            CliStackTimer timer("Read the input image");
+            setInputColorSpace(inpColorSpace);
+            CmImageIO::readImage(*diff.getImgInputSrc(), inpFilename);
+            timer.done(verbose);
+        }
 
         // Compute
         {
@@ -635,7 +643,7 @@ namespace CLI
         {
             CliStackTimer timer("Read the input image");
             setInputColorSpace(inpColorSpace);
-            CmImageIO::readImage(*(disp.getImgInputSrc()), inpFilename);
+            CmImageIO::readImage(*disp.getImgInputSrc(), inpFilename);
             timer.done(verbose);
         }
 
@@ -820,7 +828,7 @@ namespace CLI
         {
             CliStackTimer timer("Read the kernel image");
             setInputColorSpace(knlColorSpace);
-            CmImageIO::readImage(*(conv.getImgKernelSrc()), knlFilename);
+            CmImageIO::readImage(*conv.getImgKernelSrc(), knlFilename);
             timer.done(verbose);
         }
 

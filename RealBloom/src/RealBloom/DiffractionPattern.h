@@ -9,6 +9,7 @@
 
 #include "../ColorManagement/CmImage.h"
 
+#include "../Utils/ImageTransform.h"
 #include "../Utils/Array2D.h"
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/Status.h"
@@ -18,27 +19,28 @@
 
 namespace RealBloom
 {
-    struct DiffractionPatternParams
-    {
-        bool grayscale = false;
-    };
 
     class DiffractionPattern
     {
     private:
         BaseStatus m_status;
-        DiffractionPatternParams m_params;
+        ImageTransformParams m_inputTransformParams;
 
-        CmImage* m_imgAperture = nullptr;
+        CmImage* m_imgInput = nullptr;
         CmImage* m_imgDiffPattern = nullptr;
+
+        CmImage m_imgInputSrc;
 
     public:
         DiffractionPattern();
-        DiffractionPatternParams* getParams();
+        ImageTransformParams* getInputTransformParams();
 
-        void setImgAperture(CmImage* image);
+        void setImgInput(CmImage* image);
         void setImgDiffPattern(CmImage* image);
 
+        CmImage* getImgInputSrc();
+
+        void previewInput(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
         void compute();
 
         const BaseStatus& getStatus() const;

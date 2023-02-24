@@ -13,7 +13,7 @@ float applyContrast(float v, float contrast)
         return v;
 
     // v0.5.2-dev
-    constexpr float pivot = 1.0f;
+    constexpr float pivot = 0.5f;
     float c =
         (contrast >= 0.0f) ?
         (2.0f * contrast + 1.0f) :

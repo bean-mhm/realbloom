@@ -122,13 +122,13 @@ namespace RealBloom
                     inputBuffer[redIndex + 1] /= maxV;
                     inputBuffer[redIndex + 2] /= maxV;
 
-                    // Calculate the grayscale value
-                    float grayscale = rgbToMono(&(inputBuffer[redIndex]), RgbToMonoMethod::Luminance);
+                    // Get the monotonic value for contrast
+                    float mono = rgbaToGrayscale(&(inputBuffer[redIndex]), GrayscaleType::Luminance);
 
                     // Apply contrast, de-normalize, colorize
-                    if (grayscale > 0.0f)
+                    if (mono > 0.0f)
                     {
-                        float mul = expMul * maxV * (applyContrast(grayscale, contrast) / grayscale);
+                        float mul = expMul * maxV * (applyContrast(mono, contrast) / mono);
                         inputBuffer[redIndex + 0] *= mul * color[0];
                         inputBuffer[redIndex + 1] *= mul * color[1];
                         inputBuffer[redIndex + 2] *= mul * color[2];
@@ -206,22 +206,26 @@ namespace RealBloom
 
                     // Normalize the samples
                     {
-                        // Calculate the total perceived luminance
-                        float luminanceSum = EPSILON;
-                        uint32_t smpIndex;
+                        // Get the sum of the grayscale values
+                        float sumV = 0.0f;
                         for (uint32_t i = 0; i < dispSteps; i++)
                         {
-                            smpIndex = i * 3;
-                            luminanceSum += rgbToMono(&(cmfSamples[smpIndex]), RgbToMonoMethod::Luminance);
+                            uint32_t smpIndex = i * 3;
+
+                            float grayscale = rgbToGrayscale(&cmfSamples[smpIndex], GrayscaleType::Average);
+                            sumV += fmaxf(0.0f, grayscale);
                         }
+
+                        // To avoid division by zero
+                        sumV = fmaxf(EPSILON, sumV);
 
                         // Divide by the sum
                         for (uint32_t i = 0; i < dispSteps; i++)
                         {
-                            smpIndex = i * 3;
-                            cmfSamples[smpIndex + 0] /= luminanceSum;
-                            cmfSamples[smpIndex + 1] /= luminanceSum;
-                            cmfSamples[smpIndex + 2] /= luminanceSum;
+                            uint32_t smpIndex = i * 3;
+                            cmfSamples[smpIndex + 0] /= sumV;
+                            cmfSamples[smpIndex + 1] /= sumV;
+                            cmfSamples[smpIndex + 2] /= sumV;
                         }
                     }
 

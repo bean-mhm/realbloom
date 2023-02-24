@@ -321,7 +321,7 @@ namespace RealBloom
                 color[1] = m_binInput->inputBuffer[redIndex + 1];
                 color[2] = m_binInput->inputBuffer[redIndex + 2];
 
-                float v = rgbToMono(color, CONV_THRESHOLD_METHOD);
+                float v = rgbToGrayscale(color, CONV_THRESHOLD_GRAYSCALE_TYPE);
                 if (v > threshold)
                 {
                     uint32_t ix = i % m_width;

@@ -93,7 +93,7 @@ struct UiVars
     bool cmsParamsChanged = false;
 
     // Diffraction Pattern
-    bool dp_grayscale = false;
+    bool diffParamsChanged = false;
 
     // Dispersion
     float ds_exposure = 0.0f;

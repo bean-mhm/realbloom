@@ -73,7 +73,7 @@ namespace RealBloom
                     inpColor[1] = m_binInput->inputBuffer[redIndex + 1];
                     inpColor[2] = m_binInput->inputBuffer[redIndex + 2];
 
-                    float v = rgbToMono(inpColor, CONV_THRESHOLD_METHOD);
+                    float v = rgbToGrayscale(inpColor, CONV_THRESHOLD_GRAYSCALE_TYPE);
                     if (v > threshold)
                     {
                         float mul = fftScale * softThreshold(v, threshold, transKnee);

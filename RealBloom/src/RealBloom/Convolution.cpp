@@ -98,7 +98,7 @@ namespace RealBloom
                     prevBuffer[redIndex + 2] = 0;
                     prevBuffer[redIndex + 3] = 1;
 
-                    float v = rgbToMono(&(inputBuffer[redIndex]), CONV_THRESHOLD_METHOD);
+                    float v = rgbaToGrayscale(&inputBuffer[redIndex], CONV_THRESHOLD_GRAYSCALE_TYPE);
                     if (v > threshold)
                     {
                         numPixels++;
@@ -224,7 +224,7 @@ namespace RealBloom
                     }
 
                     redIndexScaled = (y * scaledWidth + x) * 4;
-                    std::copy(targetColor, targetColor + 4, &(scaledBuffer[redIndexScaled]));
+                    std::copy(targetColor, targetColor + 4, &scaledBuffer[redIndexScaled]);
                 }
             }
         }
@@ -291,13 +291,13 @@ namespace RealBloom
                     croppedBuffer[redIndex + 1] /= maxV;
                     croppedBuffer[redIndex + 2] /= maxV;
 
-                    // Calculate the grayscale value
-                    float grayscale = rgbToMono(&(croppedBuffer[redIndex]), RgbToMonoMethod::Luminance);
+                    // Get the monotonic value for contrast
+                    float mono = rgbaToGrayscale(&croppedBuffer[redIndex], CONTRAST_GRAYSCALE_TYPE);
 
                     // Apply contrast, de-normalize, colorize
-                    if (grayscale > 0.0f)
+                    if (mono > 0.0f)
                     {
-                        float mul = expMul * maxV * (applyContrast(grayscale, contrast) / grayscale);
+                        float mul = expMul * maxV * (applyContrast(mono, contrast) / mono);
                         croppedBuffer[redIndex + 0] *= mul * color[0];
                         croppedBuffer[redIndex + 1] *= mul * color[1];
                         croppedBuffer[redIndex + 2] *= mul * color[2];
@@ -327,7 +327,7 @@ namespace RealBloom
                 {
                     uint32_t redIndex = (y * croppedWidth + x) * 4;
 
-                    float grayscale = rgbToMono(&(croppedBuffer[redIndex]), RgbToMonoMethod::Luminance);
+                    float grayscale = rgbaToGrayscale(&croppedBuffer[redIndex], GrayscaleType::Average);
                     sumV += fmaxf(0.0f, grayscale);
                 }
             }

@@ -65,37 +65,66 @@ inline int shiftIndex(int i, int shift, int size)
     return (i + shift) % size;
 }
 
-enum class RgbToMonoMethod
+enum class GrayscaleType
 {
     Luminance = 0,
     Average = 1,
     Maximum = 2,
-    Magnitude = 3
+    Magnitude = 3,
+    Red = 4,
+    Green = 5,
+    Blue = 6,
+    Alpha = 7
 };
 
-constexpr RgbToMonoMethod CONV_THRESHOLD_METHOD = RgbToMonoMethod::Luminance;
+constexpr GrayscaleType CONV_THRESHOLD_GRAYSCALE_TYPE = GrayscaleType::Luminance;
 
-inline float rgbToMono(float* rgb, RgbToMonoMethod method)
+inline float rgbaToGrayscale(float* rgba, GrayscaleType type)
 {
-    switch (method)
+    switch (type)
     {
-    case RgbToMonoMethod::Luminance:
-        return (rgb[0] * 0.2126f) + (rgb[1] * 0.7152f) + (rgb[2] * 0.0722f);
+    case GrayscaleType::Luminance:
+        return (rgba[0] * 0.2126f) + (rgba[1] * 0.7152f) + (rgba[2] * 0.0722f);
         break;
-    case RgbToMonoMethod::Average:
-        return (rgb[0] + rgb[1] + rgb[2]) / 3.0f;
+    case GrayscaleType::Average:
+        return (rgba[0] + rgba[1] + rgba[2]) / 3.0f;
         break;
-    case RgbToMonoMethod::Maximum:
-        return std::max(std::max(rgb[0], rgb[1]), rgb[2]);
+    case GrayscaleType::Maximum:
+        return std::max(std::max(rgba[0], rgba[1]), rgba[2]);
         break;
-    case RgbToMonoMethod::Magnitude:
-        return sqrtf((rgb[0] * rgb[0]) + (rgb[1] * rgb[1]) + (rgb[2] * rgb[2]));
+    case GrayscaleType::Magnitude:
+        return sqrtf((rgba[0] * rgba[0]) + (rgba[1] * rgba[1]) + (rgba[2] * rgba[2]));
+        break;
+    case GrayscaleType::Red:
+        return rgba[0];
+        break;
+    case GrayscaleType::Green:
+        return rgba[1];
+        break;
+    case GrayscaleType::Blue:
+        return rgba[2];
+        break;
+    case GrayscaleType::Alpha:
+        return rgba[3];
         break;
     default:
         break;
     }
 
-    return rgb[0];
+    return rgba[0];
+}
+
+inline float rgbToGrayscale(float* rgb, GrayscaleType type)
+{
+    switch (type)
+    {
+    case GrayscaleType::Alpha:
+        return 1.0f;
+        break;
+    default:
+        return rgbaToGrayscale(rgb, type);
+        break;
+    }
 }
 
 inline float transformKnee(float v)
@@ -156,6 +185,7 @@ inline double getExposureMul(double v)
     return pow(2.0, v);
 }
 
+constexpr GrayscaleType CONTRAST_GRAYSCALE_TYPE = GrayscaleType::Magnitude;
 float applyContrast(float v, float contrast);
 
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY);

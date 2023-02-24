@@ -15,15 +15,16 @@ void ImageTransformParams::TransformParams::reset()
     translate = { 0.0f, 0.0f };
     origin = { 0.5f, 0.5f };
     previewOrigin = false;
+    transparency = false;
 }
 
 void ImageTransformParams::ColorParams::reset()
 {
+    filter = { 1.0f, 1.0f, 1.0f };
     exposure = 0.0f;
     contrast = 0.0f;
-    filter = { 1.0f, 1.0f, 1.0f };
-    mono = false;
-    monoMethod = RgbToMonoMethod::Luminance;
+    grayscale = false;
+    grayscaleType = GrayscaleType::Luminance;
 }
 
 void ImageTransformParams::reset()
@@ -91,12 +92,13 @@ void ImageTransform::apply(
     uint32_t inputHeight,
     std::vector<float>& outputBuffer,
     uint32_t& outputWidth,
-    uint32_t& outputHeight)
+    uint32_t& outputHeight,
+    bool previewMode)
 {
     if (USE_GPU)
-        applyGPU(params, inputBuffer, inputWidth, inputHeight, outputBuffer, outputWidth, outputHeight);
+        applyGPU(params, inputBuffer, inputWidth, inputHeight, outputBuffer, outputWidth, outputHeight, previewMode);
     else
-        applyCPU(params, inputBuffer, inputWidth, inputHeight, outputBuffer, outputWidth, outputHeight);
+        applyCPU(params, inputBuffer, inputWidth, inputHeight, outputBuffer, outputWidth, outputHeight, previewMode);
 }
 
 void ImageTransform::applyCPU(
@@ -106,7 +108,8 @@ void ImageTransform::applyCPU(
     uint32_t inputHeight,
     std::vector<float>& outputBuffer,
     uint32_t& outputWidth,
-    uint32_t& outputHeight)
+    uint32_t& outputHeight,
+    bool previewMode)
 {
     // Verify the input size
     uint32_t inputBufferSize = inputWidth * inputHeight * 4;
@@ -131,6 +134,8 @@ void ImageTransform::applyCPU(
         resizedHeight,
         resizeX,
         resizeY);
+    outputWidth = resizedWidth;
+    outputHeight = resizedHeight;
 
     // Define the input buffer for later transforms
     const std::vector<float>* lastBuffer = &inputBuffer;
@@ -195,56 +200,80 @@ void ImageTransform::applyCPU(
         {
             for (uint32_t x = 0; x < resizedWidth; x++)
             {
-                // Resize
-                transX = (x + 0.5f) / resizeX;
-                transY = (y + 0.5f) / resizeY;
+                // Translate
+                transX = (x + 0.5f) - (params.transform.translate[0] * resizedWidth);
+                transY = (y + 0.5f) - (params.transform.translate[1] * resizedHeight);
+
+                // Rotate
+                rotatePointInPlace(transX, transY, transformOriginX, transformOriginY, -params.transform.rotate);
 
                 // Scale
                 transX = ((transX - transformOriginX) / scaleX) + transformOriginX;
                 transY = ((transY - transformOriginY) / scaleY) + transformOriginY;
 
-                // Rotate
-                rotatePointInPlace(transX, transY, transformOriginX, transformOriginY, -params.transform.rotate);
-
-                // Translate
-                transX += params.transform.translate[0] * resizedWidth;
-                transY += params.transform.translate[1] * resizedHeight;
+                // Resize
+                transX /= resizeX;
+                transY /= resizeY;
 
                 // Interpolate
-
                 bil.calc(transX, transY);
-
                 for (auto& v : targetColor)
                     v = 0.0f;
+                if (params.transform.transparency)
+                {
+                    if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], croppedWidth, croppedHeight))
+                    {
+                        redIndexInput = (bil.topLeftPos[1] * croppedWidth + bil.topLeftPos[0]) * 4;
+                        blendAddRGBA(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.topLeftWeight);
+                    }
+                    if (checkBounds(bil.topRightPos[0], bil.topRightPos[1], croppedWidth, croppedHeight))
+                    {
+                        redIndexInput = (bil.topRightPos[1] * croppedWidth + bil.topRightPos[0]) * 4;
+                        blendAddRGBA(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.topRightWeight);
+                    }
+                    if (checkBounds(bil.bottomLeftPos[0], bil.bottomLeftPos[1], croppedWidth, croppedHeight))
+                    {
+                        redIndexInput = (bil.bottomLeftPos[1] * croppedWidth + bil.bottomLeftPos[0]) * 4;
+                        blendAddRGBA(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.bottomLeftWeight);
+                    }
+                    if (checkBounds(bil.bottomRightPos[0], bil.bottomRightPos[1], croppedWidth, croppedHeight))
+                    {
+                        redIndexInput = (bil.bottomRightPos[1] * croppedWidth + bil.bottomRightPos[0]) * 4;
+                        blendAddRGBA(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.bottomRightWeight);
+                    }
+                }
+                else
+                {
+                    targetColor[3] = 1.0f;
+                    if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], croppedWidth, croppedHeight))
+                    {
+                        redIndexInput = (bil.topLeftPos[1] * croppedWidth + bil.topLeftPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.topLeftWeight);
+                    }
+                    if (checkBounds(bil.topRightPos[0], bil.topRightPos[1], croppedWidth, croppedHeight))
+                    {
+                        redIndexInput = (bil.topRightPos[1] * croppedWidth + bil.topRightPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.topRightWeight);
+                    }
+                    if (checkBounds(bil.bottomLeftPos[0], bil.bottomLeftPos[1], croppedWidth, croppedHeight))
+                    {
+                        redIndexInput = (bil.bottomLeftPos[1] * croppedWidth + bil.bottomLeftPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.bottomLeftWeight);
+                    }
+                    if (checkBounds(bil.bottomRightPos[0], bil.bottomRightPos[1], croppedWidth, croppedHeight))
+                    {
+                        redIndexInput = (bil.bottomRightPos[1] * croppedWidth + bil.bottomRightPos[0]) * 4;
+                        blendAddRGB(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.bottomRightWeight);
+                    }
+                }
 
-                if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], croppedWidth, croppedHeight))
-                {
-                    redIndexInput = (bil.topLeftPos[1] * croppedWidth + bil.topLeftPos[0]) * 4;
-                    blendAddRGBA(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.topLeftWeight);
-                }
-                if (checkBounds(bil.topRightPos[0], bil.topRightPos[1], croppedWidth, croppedHeight))
-                {
-                    redIndexInput = (bil.topRightPos[1] * croppedWidth + bil.topRightPos[0]) * 4;
-                    blendAddRGBA(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.topRightWeight);
-                }
-                if (checkBounds(bil.bottomLeftPos[0], bil.bottomLeftPos[1], croppedWidth, croppedHeight))
-                {
-                    redIndexInput = (bil.bottomLeftPos[1] * croppedWidth + bil.bottomLeftPos[0]) * 4;
-                    blendAddRGBA(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.bottomLeftWeight);
-                }
-                if (checkBounds(bil.bottomRightPos[0], bil.bottomRightPos[1], croppedWidth, croppedHeight))
-                {
-                    redIndexInput = (bil.bottomRightPos[1] * croppedWidth + bil.bottomRightPos[0]) * 4;
-                    blendAddRGBA(targetColor, 0, (*lastBuffer).data(), redIndexInput, bil.bottomRightWeight);
-                }
-
-                // Exposure, Filter
+                // Filter, Exposure
                 targetColor[0] *= colorMulR;
                 targetColor[1] *= colorMulG;
                 targetColor[2] *= colorMulB;
 
                 // Get the monotonic value for contrast
-                float mono = rgbToMono(targetColor, RgbToMonoMethod::Magnitude);
+                float mono = rgbaToGrayscale(targetColor, CONTRAST_GRAYSCALE_TYPE);
 
                 // Contrast
                 if (mono > 0.0f)
@@ -255,10 +284,10 @@ void ImageTransform::applyCPU(
                     targetColor[2] *= mul;
                 }
 
-                // Mono
-                if (params.color.mono)
+                // Grayscale
+                if (params.color.grayscale)
                 {
-                    targetColor[0] = rgbToMono(targetColor, params.color.monoMethod);
+                    targetColor[0] = rgbaToGrayscale(targetColor, params.color.grayscaleType);
                     targetColor[1] = targetColor[0];
                     targetColor[2] = targetColor[0];
                 }
@@ -271,10 +300,12 @@ void ImageTransform::applyCPU(
     }
 
     // Preview origins
-    if (params.cropResize.previewOrigin || params.transform.previewOrigin)
+    if ((params.cropResize.previewOrigin || params.transform.previewOrigin) && previewMode)
     {
         float cropOriginX = params.cropResize.origin[0] * resizedWidth;
         float cropOriginY = params.cropResize.origin[1] * resizedHeight;
+
+        float squareRadius = 0.08f * fminf(resizedWidth, resizedHeight);
 
         // Draw
         for (uint32_t y = 0; y < resizedHeight; y++)
@@ -293,7 +324,7 @@ void ImageTransform::applyCPU(
                 if (params.cropResize.previewOrigin)
                 {
                     constexpr std::array<float, 4> fillColor{ 0.0f, 1.0f, 0.0f, 1.0f };
-                    v = getPreviewMarkValue(cropOriginX, cropOriginY, fX, fY, resizedWidth, resizedHeight);
+                    v = getPreviewMarkValue(cropOriginX, cropOriginY, squareRadius, fX, fY);
                     for (uint32_t i = 0; i < 4; i++)
                         outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], fillColor[i], v);
                 }
@@ -302,7 +333,7 @@ void ImageTransform::applyCPU(
                 if (params.transform.previewOrigin)
                 {
                     constexpr std::array<float, 4> fillColor{ 0.0f, 0.0f, 1.0f, 1.0f };
-                    v = getPreviewMarkValue(transformOriginX, transformOriginY, fX, fY, resizedWidth, resizedHeight);
+                    v = getPreviewMarkValue(transformOriginX, transformOriginY, squareRadius, fX, fY);
                     for (uint32_t i = 0; i < 4; i++)
                         outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], fillColor[i], v);
                 }
@@ -320,18 +351,18 @@ void ImageTransform::applyGPU(
     uint32_t inputHeight,
     std::vector<float>& outputBuffer,
     uint32_t& outputWidth,
-    uint32_t& outputHeight)
+    uint32_t& outputHeight,
+    bool previewMode)
 {
     // To be implemented
 }
 
-float ImageTransform::getPreviewMarkValue(float originX, float originY, float x, float y, uint32_t bufferWidth, uint32_t bufferHeight)
+float ImageTransform::getPreviewMarkValue(float originX, float originY, float squareRadius, float x, float y)
 {
     // Parameters
-    constexpr float softness = 0.5f;
+    constexpr float softness = 1.0f;
     constexpr float outlineRadius = 1.0f;
     constexpr float dotRadius = 1.5f;
-    float squareRadius = 0.15f * fminf(bufferWidth, bufferHeight);
 
     // Chebyshev distance
     float distSquare = fmaxf(fabsf(x - originX), fabsf(y - originY));
