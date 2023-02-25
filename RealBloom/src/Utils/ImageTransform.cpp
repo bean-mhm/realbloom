@@ -305,7 +305,7 @@ void ImageTransform::applyCPU(
         float cropOriginX = params.cropResize.origin[0] * resizedWidth;
         float cropOriginY = params.cropResize.origin[1] * resizedHeight;
 
-        float squareRadius = 0.08f * fminf(resizedWidth, resizedHeight);
+        float squareRadius = 0.06f * fminf(resizedWidth, resizedHeight);
 
         // Draw
         for (uint32_t y = 0; y < resizedHeight; y++)
@@ -323,7 +323,7 @@ void ImageTransform::applyCPU(
                 // Crop origin
                 if (params.cropResize.previewOrigin)
                 {
-                    constexpr std::array<float, 4> fillColor{ 0.0f, 1.0f, 0.0f, 1.0f };
+                    constexpr std::array<float, 4> fillColor{ 1.0f, 0.0f, 0.0f, 1.0f };
                     v = getPreviewMarkValue(cropOriginX, cropOriginY, squareRadius, fX, fY);
                     for (uint32_t i = 0; i < 4; i++)
                         outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], fillColor[i], v);

@@ -17,6 +17,7 @@ ImFont* fontMono = nullptr;
 
 // Colors
 const ImVec4 bgColor{ 0.13f, 0.13f, 0.13f, 1.00f };
+const ImVec4 colorImageBorder{ 0.05f, 0.05f, 0.05f, 1.0f };
 const ImVec4 colorInfoText{ 0.328f, 0.735f, 0.910f, 1.0f };
 const ImVec4 colorWarningText{ 0.940f, 0.578f, 0.282f, 1.0f };
 const ImVec4 colorErrorText{ 0.950f, 0.300f, 0.228f, 1.0f };
@@ -402,10 +403,11 @@ void layoutImagePanels()
 
         ImGui::Image(
             (void*)(intptr_t)(selImage.getGlTexture()),
-            ImVec2(
-                (float)imageWidth * imageZoom,
-                (float)imageHeight * imageZoom
-            ));
+            ImVec2((float)imageWidth * imageZoom, (float)imageHeight * imageZoom),
+            { 0, 0 },
+            { 1,1 },
+            { 1, 1, 1, 1 },
+            colorImageBorder);
 
         ImGui::End();
     }
