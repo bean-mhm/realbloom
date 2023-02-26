@@ -12,7 +12,7 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "ColorManagement/CmImage.h"
 #include "ColorManagement/CmImageIO.h"
 
-#include "RealBloom/DiffractionPattern.h"
+#include "RealBloom/Diffraction.h"
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
@@ -526,10 +526,10 @@ namespace CLI
         CmImage imgInputPrev("", "", 1, 1);
         CmImage imgOutput("", "", 1, 1);
 
-        // Diffraction Pattern
-        RealBloom::DiffractionPattern diff;
+        // Diffraction
+        RealBloom::Diffraction diff;
         diff.setImgInput(&imgInput);
-        diff.setImgDiffPattern(&imgOutput);
+        diff.setImgDiff(&imgOutput);
 
         // TODO: Read image transform params
 

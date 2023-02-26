@@ -254,7 +254,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClCompile Include="src\Utils\Misc.cpp" />
     <ClCompile Include="src\Utils\NumberHelpers.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\RealBloom\DiffractionPattern.cpp" />
+    <ClCompile Include="src\RealBloom\Diffraction.cpp" />
     <ClCompile Include="src\Utils\Status.cpp" />
     <ClCompile Include="src\Utils\StreamUtils.cpp" />
     <ClCompile Include="src\Utils\StringUtils.cpp" />
@@ -317,7 +317,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClInclude Include="include\GLFW\glfw3native.h" />
     <ClInclude Include="src\Config.h" />
     <ClInclude Include="src\Main.h" />
-    <ClInclude Include="src\RealBloom\DiffractionPattern.h" />
+    <ClInclude Include="src\RealBloom\Diffraction.h" />
     <ClInclude Include="src\Utils\Misc.h" />
     <ClInclude Include="src\Utils\Status.h" />
     <ClInclude Include="src\Utils\StreamUtils.h" />

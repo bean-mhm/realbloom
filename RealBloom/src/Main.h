@@ -42,7 +42,7 @@
 #include "ColorManagement/CmImage.h"
 #include "ColorManagement/CmImageIO.h"
 
-#include "RealBloom/DiffractionPattern.h"
+#include "RealBloom/Diffraction.h"
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
@@ -92,7 +92,7 @@ struct UiVars
     float cms_exposure = 0.0f;
     bool cmsParamsChanged = false;
 
-    // Diffraction Pattern
+    // Diffraction
     bool diffParamsChanged = false;
 
     // Dispersion

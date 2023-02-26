@@ -33,7 +33,7 @@ std::string selImageID = "";
 float imageZoom = 1.0f;
 
 // RealBloom modules
-RealBloom::DiffractionPattern diff;
+RealBloom::Diffraction diff;
 RealBloom::Dispersion disp;
 RealBloom::Convolution conv;
 
@@ -116,9 +116,9 @@ int main(int argc, char** argv)
         addImage("cv-prev", "Conv. Preview");
         addImage("cv-result", "Conv. Result");
 
-        // Set up images for diffraction pattern
+        // Set up images for diffraction
         diff.setImgInput(getImageByID("diff-input"));
-        diff.setImgDiffPattern(getImageByID("diff-result"));
+        diff.setImgDiff(getImageByID("diff-result"));
 
         // Set up images for dispersion
         disp.setImgInput(getImageByID("disp-input"));
@@ -1054,7 +1054,7 @@ void layoutDiffraction()
 
     ImGui::Begin("Diffraction");
 
-    imGuiBold("DIFFRACTION PATTERN");
+    imGuiBold("DIFFRACTION");
 
     {
         static std::string loadError = "";

@@ -18,7 +18,7 @@
     <ClCompile Include="src\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\RealBloom\DiffractionPattern.cpp">
+    <ClCompile Include="src\RealBloom\Diffraction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Utils\NumberHelpers.cpp">
@@ -161,7 +161,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\RealBloom\DiffractionPattern.h">
+    <ClInclude Include="src\RealBloom\Diffraction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\GLFW\glfw3.h">

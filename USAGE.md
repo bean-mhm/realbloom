@@ -36,7 +36,7 @@ As of now, there are 6 panels, each for a specific purpose. A panel can be docke
 
  - **Image Viewer**:  Displays the image contained in the current slot.
 
-- **Diffraction Pattern**: We'll use this to generate the light diffraction pattern of an aperture, and to apply dispersion on it. Again, don't worry if this seems confusing to you.
+- **Diffraction**: We'll use this to generate the light diffraction pattern of an aperture, and to apply dispersion on it. Again, don't worry if this seems confusing to you.
 
 - **Convolution**: This is where we can apply the bloom effect. We can do lots of other things using convolution, so it's not necessarily limited to bloom.
 
@@ -44,7 +44,7 @@ As of now, there are 6 panels, each for a specific purpose. A panel can be docke
 
 An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a [diffraction](https://en.wikipedia.org/wiki/Diffraction) pattern to form, which affects every image captured by the camera. The diffraction pattern usually looks like a star with a halo, but it generally depends on the shape of the aperture. Diffraction is what makes stars have *the star shape*.
 
-Let's start by loading in an image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction Pattern*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Octagon.png`.
+Let's start by loading in an image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Octagon.png`.
 
 ![An octagonal aperture](images/tutorial/1-aperture.png)
  

@@ -1,34 +1,34 @@
-#include "DiffractionPattern.h"
+#include "Diffraction.h"
 
 namespace RealBloom
 {
 
     constexpr double CONTRAST_CONSTANT = 0.0002187;
 
-    DiffractionPattern::DiffractionPattern() : m_imgInputSrc("", "")
+    Diffraction::Diffraction() : m_imgInputSrc("", "")
     {}
 
-    ImageTransformParams* DiffractionPattern::getInputTransformParams()
+    ImageTransformParams* Diffraction::getInputTransformParams()
     {
         return &m_inputTransformParams;
     }
 
-    void DiffractionPattern::setImgInput(CmImage* image)
+    void Diffraction::setImgInput(CmImage* image)
     {
         m_imgInput = image;
     }
 
-    void DiffractionPattern::setImgDiffPattern(CmImage* image)
+    void Diffraction::setImgDiff(CmImage* image)
     {
-        m_imgDiffPattern = image;
+        m_imgDiff = image;
     }
 
-    CmImage* DiffractionPattern::getImgInputSrc()
+    CmImage* Diffraction::getImgInputSrc()
     {
         return &m_imgInputSrc;
     }
 
-    void DiffractionPattern::previewInput(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
+    void Diffraction::previewInput(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
     {
         // Get the input buffer
         std::vector<float> inputBuffer;
@@ -81,7 +81,7 @@ namespace RealBloom
         m_imgInput->setSourceName(m_imgInputSrc.getSourceName());
     }
 
-    void DiffractionPattern::compute()
+    void Diffraction::compute()
     {
         m_status.reset();
 
@@ -240,9 +240,9 @@ namespace RealBloom
 
             // Update the output image
             {
-                std::scoped_lock lock(*m_imgDiffPattern);
-                m_imgDiffPattern->resize(fftWidth, fftHeight, false);
-                float* imageBuffer = m_imgDiffPattern->getImageData();
+                std::scoped_lock lock(*m_imgDiff);
+                m_imgDiff->resize(fftWidth, fftHeight, false);
+                float* imageBuffer = m_imgDiff->getImageData();
 
                 uint32_t redIndex = 0;
                 for (uint32_t y = 0; y < fftHeight; y++)
@@ -267,7 +267,7 @@ namespace RealBloom
                     }
                 }
             }
-            m_imgDiffPattern->moveToGPU();
+            m_imgDiff->moveToGPU();
         }
         catch (const std::exception& e)
         {
@@ -275,7 +275,7 @@ namespace RealBloom
         }
     }
 
-    const BaseStatus& DiffractionPattern::getStatus() const
+    const BaseStatus& Diffraction::getStatus() const
     {
         return m_status;
     }

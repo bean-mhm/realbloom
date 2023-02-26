@@ -20,23 +20,23 @@
 namespace RealBloom
 {
 
-    class DiffractionPattern
+    class Diffraction
     {
     private:
         BaseStatus m_status;
         ImageTransformParams m_inputTransformParams;
 
         CmImage* m_imgInput = nullptr;
-        CmImage* m_imgDiffPattern = nullptr;
+        CmImage* m_imgDiff = nullptr;
 
         CmImage m_imgInputSrc;
 
     public:
-        DiffractionPattern();
+        Diffraction();
         ImageTransformParams* getInputTransformParams();
 
         void setImgInput(CmImage* image);
-        void setImgDiffPattern(CmImage* image);
+        void setImgDiff(CmImage* image);
 
         CmImage* getImgInputSrc();
 
