@@ -3,14 +3,19 @@
 namespace RealBloom
 {
 
-    constexpr double CONTRAST_CONSTANT = 0.0002187;
+    static constexpr double CONTRAST_CONSTANT = 0.0002187;
 
-    Diffraction::Diffraction() : m_imgInputSrc("", "")
+    Diffraction::Diffraction()
     {}
 
-    ImageTransformParams* Diffraction::getInputTransformParams()
+    DiffractionParams* Diffraction::getParams()
     {
-        return &m_inputTransformParams;
+        return &m_params;
+    }
+
+    CmImage* Diffraction::getImgInputSrc()
+    {
+        return &m_imgInputSrc;
     }
 
     void Diffraction::setImgInput(CmImage* image)
@@ -23,62 +28,9 @@ namespace RealBloom
         m_imgDiff = image;
     }
 
-    CmImage* Diffraction::getImgInputSrc()
-    {
-        return &m_imgInputSrc;
-    }
-
     void Diffraction::previewInput(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
     {
-        // Get the input buffer
-        std::vector<float> inputBuffer;
-        uint32_t inputBufferSize = 0;
-        uint32_t inputWidth, inputHeight;
-        {
-            std::scoped_lock lock(m_imgInputSrc);
-            float* inputSrcBuffer = m_imgInputSrc.getImageData();
-            inputBufferSize = m_imgInputSrc.getImageDataSize();
-            inputWidth = m_imgInputSrc.getWidth();
-            inputHeight = m_imgInputSrc.getHeight();
-
-            inputBuffer.resize(inputBufferSize);
-            std::copy(inputSrcBuffer, inputSrcBuffer + inputBufferSize, inputBuffer.data());
-        }
-
-        // Transform
-        std::vector<float> transBuffer;
-        uint32_t transWidth, transHeight;
-        ImageTransform::apply(
-            m_inputTransformParams,
-            inputBuffer,
-            inputWidth,
-            inputHeight,
-            transBuffer,
-            transWidth,
-            transHeight,
-            previewMode);
-
-        clearVector(inputBuffer);
-
-        // Copy to outBuffer if it's requested by another function
-        if (!previewMode && (outBuffer != nullptr))
-        {
-            *outWidth = transWidth;
-            *outHeight = transHeight;
-            outBuffer->resize(transBuffer.size());
-            *outBuffer = transBuffer;
-        }
-
-        // Copy to input image
-        {
-            std::scoped_lock lock(*m_imgInput);
-            m_imgInput->resize(transWidth, transHeight, false);
-            float* prevBuffer = m_imgInput->getImageData();
-            std::copy(transBuffer.data(), transBuffer.data() + transBuffer.size(), prevBuffer);
-        }
-
-        m_imgInput->moveToGPU();
-        m_imgInput->setSourceName(m_imgInputSrc.getSourceName());
+        processInputImage(previewMode, m_params.inputTransformParams, m_imgInputSrc, *m_imgInput, outBuffer, outWidth, outHeight);
     }
 
     void Diffraction::compute()
@@ -87,7 +39,7 @@ namespace RealBloom
 
         try
         {
-            // Input Buffer
+            // Input buffer
             std::vector<float> inputBuffer;
             uint32_t inputWidth = 0, inputHeight = 0;
             previewInput(false, &inputBuffer, &inputWidth, &inputHeight);
@@ -101,7 +53,7 @@ namespace RealBloom
             uint32_t fftWidth = (inputWidth % 2 == 0) ? (inputWidth) : (inputWidth + 1);
             uint32_t fftHeight = (inputHeight % 2 == 0) ? (inputHeight) : (inputHeight + 1);
 
-            bool grayscale = m_inputTransformParams.color.grayscale;
+            bool grayscale = m_params.inputTransformParams.color.grayscale;
 
             // FFT buffers (RGB)
             Array2D<double> fftInput[3];

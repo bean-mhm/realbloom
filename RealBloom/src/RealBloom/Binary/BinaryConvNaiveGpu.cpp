@@ -19,11 +19,11 @@ namespace RealBloom
         chunkSleep = stmReadScalar<uint32_t>(stream);
         stmCheck(stream, __FUNCTION__, "chunkSleep");
 
-        cp_kernelCenterX = stmReadScalar<float>(stream);
-        stmCheck(stream, __FUNCTION__, "cp_kernelCenterX");
+        cp_kernelOriginX = stmReadScalar<float>(stream);
+        stmCheck(stream, __FUNCTION__, "cp_kernelOriginX");
 
-        cp_kernelCenterY = stmReadScalar<float>(stream);
-        stmCheck(stream, __FUNCTION__, "cp_kernelCenterY");
+        cp_kernelOriginY = stmReadScalar<float>(stream);
+        stmCheck(stream, __FUNCTION__, "cp_kernelOriginY");
 
         cp_convThreshold = stmReadScalar<float>(stream);
         stmCheck(stream, __FUNCTION__, "cp_convThreshold");
@@ -64,11 +64,11 @@ namespace RealBloom
         stmWriteScalar(stream, chunkSleep);
         stmCheck(stream, __FUNCTION__, "chunkSleep");
 
-        stmWriteScalar(stream, cp_kernelCenterX);
-        stmCheck(stream, __FUNCTION__, "cp_kernelCenterX");
+        stmWriteScalar(stream, cp_kernelOriginX);
+        stmCheck(stream, __FUNCTION__, "cp_kernelOriginX");
 
-        stmWriteScalar(stream, cp_kernelCenterY);
-        stmCheck(stream, __FUNCTION__, "cp_kernelCenterY");
+        stmWriteScalar(stream, cp_kernelOriginY);
+        stmCheck(stream, __FUNCTION__, "cp_kernelOriginY");
 
         stmWriteScalar(stream, cp_convThreshold);
         stmCheck(stream, __FUNCTION__, "cp_convThreshold");

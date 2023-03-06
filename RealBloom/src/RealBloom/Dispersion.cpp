@@ -4,14 +4,19 @@
 namespace RealBloom
 {
 
-    constexpr uint32_t DISP_PROG_TIMESTEP = 33;
+    static constexpr uint32_t DISP_PROG_TIMESTEP = 33;
 
-    Dispersion::Dispersion() : m_imgInputSrc("", "")
+    Dispersion::Dispersion()
     {}
 
     DispersionParams* Dispersion::getParams()
     {
         return &m_params;
+    }
+
+    CmImage* Dispersion::getImgInputSrc()
+    {
+        return &m_imgInputSrc;
     }
 
     void Dispersion::setImgInput(CmImage* image)
@@ -22,11 +27,6 @@ namespace RealBloom
     void Dispersion::setImgDisp(CmImage* image)
     {
         m_imgDisp = image;
-    }
-
-    CmImage* Dispersion::getImgInputSrc()
-    {
-        return &m_imgInputSrc;
     }
 
     void Dispersion::previewCmf(CmfTable* table)
@@ -79,83 +79,7 @@ namespace RealBloom
 
     void Dispersion::previewInput(bool previewMode, std::vector<float>* outBuffer, uint32_t* outWidth, uint32_t* outHeight)
     {
-        std::vector<float> inputBuffer;
-        uint32_t inputBufferSize = 0;
-        uint32_t inputWidth = 0, inputHeight = 0;
-        {
-            std::scoped_lock lock(m_imgInputSrc);
-            float* inputSrcBuffer = m_imgInputSrc.getImageData();
-            inputBufferSize = m_imgInputSrc.getImageDataSize();
-            inputWidth = m_imgInputSrc.getWidth();
-            inputHeight = m_imgInputSrc.getHeight();
-
-            inputBuffer.resize(inputBufferSize);
-            std::copy(inputSrcBuffer, inputSrcBuffer + inputBufferSize, inputBuffer.data());
-        }
-
-        float expMul = getExposureMul(m_params.exposure);
-        float contrast = m_params.contrast;
-
-        std::array<float, 3> color = m_params.color;
-
-        // Apply contrast and exposure
-        {
-            // Get the brightest value
-            float v = 0;
-            float maxV = EPSILON;
-            for (uint32_t i = 0; i < inputBufferSize; i++)
-            {
-                v = fmaxf(0.0f, inputBuffer[i]);
-                if ((v > maxV) && (i % 4 != 3))
-                    maxV = v;
-            }
-
-            uint32_t redIndex;
-            for (uint32_t y = 0; y < inputHeight; y++)
-            {
-                for (uint32_t x = 0; x < inputWidth; x++)
-                {
-                    redIndex = (y * inputWidth + x) * 4;
-
-                    // Normalize
-                    inputBuffer[redIndex + 0] /= maxV;
-                    inputBuffer[redIndex + 1] /= maxV;
-                    inputBuffer[redIndex + 2] /= maxV;
-
-                    // Get the monotonic value for contrast
-                    float mono = rgbaToGrayscale(&(inputBuffer[redIndex]), GrayscaleType::Luminance);
-
-                    // Apply contrast, de-normalize, colorize
-                    if (mono > 0.0f)
-                    {
-                        float mul = expMul * maxV * (applyContrast(mono, contrast) / mono);
-                        inputBuffer[redIndex + 0] *= mul * color[0];
-                        inputBuffer[redIndex + 1] *= mul * color[1];
-                        inputBuffer[redIndex + 2] *= mul * color[2];
-                    }
-                }
-            }
-        }
-
-        // Copy to outBuffer if it's requested by another function
-        if (!previewMode && (outBuffer != nullptr))
-        {
-            *outWidth = inputWidth;
-            *outHeight = inputHeight;
-            outBuffer->resize(inputBufferSize);
-            *outBuffer = inputBuffer;
-        }
-
-        // Copy to input image
-        {
-            std::scoped_lock lock(*m_imgInput);
-            m_imgInput->resize(inputWidth, inputHeight, false);
-            float* prevBuffer = m_imgInput->getImageData();
-            std::copy(inputBuffer.data(), inputBuffer.data() + inputBufferSize, prevBuffer);
-        }
-
-        m_imgInput->moveToGPU();
-        m_imgInput->setSourceName(m_imgInputSrc.getSourceName());
+        processInputImage(previewMode, m_params.inputTransformParams, m_imgInputSrc, *m_imgInput, outBuffer, outWidth, outHeight);
     }
 
     void Dispersion::compute()
@@ -192,7 +116,7 @@ namespace RealBloom
                     if (table.get() == nullptr)
                         throw std::exception("An active CMF table is needed.");
 
-                    // Input Buffer
+                    // Input buffer
                     std::vector<float> inputBuffer;
                     uint32_t inputWidth = 0, inputHeight = 0;
                     previewInput(false, &inputBuffer, &inputWidth, &inputHeight);
@@ -230,16 +154,21 @@ namespace RealBloom
                     }
 
                     // Call the appropriate function
-
-                    if (m_params.methodInfo.method == DispersionMethod::CPU)
+                    switch (m_params.methodInfo.method)
+                    {
+                    case RealBloom::DispersionMethod::CPU:
                         dispCPU(
                             inputBuffer, inputWidth, inputHeight,
                             inputBufferSize, cmfSamples);
-
-                    if (m_params.methodInfo.method == DispersionMethod::GPU)
+                        break;
+                    case RealBloom::DispersionMethod::GPU:
                         dispGPU(
                             inputBuffer, inputWidth, inputHeight,
                             inputBufferSize, cmfSamples);
+                        break;
+                    default:
+                        break;
+                    }
 
                     // Update the dispersion image
                     m_imgDisp->moveToGPU();
@@ -280,26 +209,6 @@ namespace RealBloom
         m_thread = nullptr;
 
         m_status.reset();
-    }
-
-    uint32_t Dispersion::getNumStepsDoneCpu() const
-    {
-        if (!(m_status.isWorking() && m_status.isOK() && !m_status.mustCancel()))
-            return 0;
-
-        if (m_capturedParams.methodInfo.method != DispersionMethod::CPU)
-            return 0;
-
-        uint32_t numDone = 0;
-
-        for (auto& ct : m_threads)
-        {
-            DispersionThreadStats* stats = ct->getStats();
-            if (stats->state == DispersionThreadState::Working || stats->state == DispersionThreadState::Done)
-                numDone += stats->numDone;
-        }
-
-        return numDone;
     }
 
     const TimedWorkingStatus& Dispersion::getStatus() const
@@ -344,6 +253,26 @@ namespace RealBloom
         }
 
         return "";
+    }
+
+    uint32_t Dispersion::getNumStepsDoneCpu() const
+    {
+        if (!(m_status.isWorking() && m_status.isOK() && !m_status.mustCancel()))
+            return 0;
+
+        if (m_capturedParams.methodInfo.method != DispersionMethod::CPU)
+            return 0;
+
+        uint32_t numDone = 0;
+
+        for (auto& ct : m_threads)
+        {
+            DispersionThreadStats* stats = ct->getStats();
+            if (stats->state == DispersionThreadState::Working || stats->state == DispersionThreadState::Done)
+                numDone += stats->numDone;
+        }
+
+        return numDone;
     }
 
     void Dispersion::dispCPU(

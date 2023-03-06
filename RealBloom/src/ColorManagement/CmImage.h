@@ -50,8 +50,8 @@ private:
 
 public:
     CmImage(
-        const std::string& id,
-        const std::string& name,
+        const std::string& id = "",
+        const std::string& name = "",
         uint32_t width = 32,
         uint32_t height = 32,
         std::array<float, 4> fillColor = { 0, 0, 0, 1 },

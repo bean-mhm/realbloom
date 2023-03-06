@@ -1,7 +1,7 @@
 #include "CMF.h"
 
-const std::string CMF_DIR = getLocalPath("cmf") + getPathSeparator();
-const std::string CMF_DEFAULT_TABLE = "CIE 1931 2-deg";
+static const std::string CMF_DIR = getLocalPath("cmf") + getPathSeparator();
+static const std::string CMF_DEFAULT_TABLE = "CIE 1931 2-deg";
 
 #pragma region CmfTable
 
@@ -71,7 +71,7 @@ CmfTable::CmfTable(std::string filename)
     }
     catch (const std::exception& e)
     {
-        throw std::exception(makeError(__FUNCTION__, "", e.what(), true).c_str());
+        throw std::exception(makeError(__FUNCTION__, "", e.what()).c_str());
     }
 }
 

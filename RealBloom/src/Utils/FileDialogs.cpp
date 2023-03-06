@@ -2,7 +2,7 @@
 
 std::unordered_map<std::string, std::string> FileDialogs::S_PATHS;
 
-const std::vector<std::string> DEFAULT_FILTER_LIST{ "All Files", "*" };
+static const std::vector<std::string> DEFAULT_FILTER_LIST{ "All Files", "*" };
 
 // Convert filter list to a vector of nfdfilteritem_t
 // Example input: { "Headers", "h,hpp" }

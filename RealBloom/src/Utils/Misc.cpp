@@ -1,6 +1,6 @@
 #include "Misc.h"
 
-std::function<void(std::string)> g_printHanlder = [](std::string s) { std::cout << s << "\n"; };
+static std::function<void(std::string)> g_printHanlder = [](std::string s) { std::cout << s << "\n"; };
 
 std::string makeError(const std::string& source, const std::string& stage, const std::string& message, bool print)
 {
@@ -53,14 +53,14 @@ uint32_t getMaxNumThreads()
 
 uint32_t getDefNumThreads()
 {
-    static uint32_t v = 1;
+    static uint32_t num = 1;
     static bool firstCall = true;
     if (firstCall)
     {
         firstCall = false;
-        v = std::max(1u, getMaxNumThreads() / 2);
+        num = std::max(1u, getMaxNumThreads() / 2);
     }
-    return v;
+    return num;
 }
 
 float getElapsedMs(std::chrono::system_clock::time_point startTime)

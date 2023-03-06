@@ -1,5 +1,7 @@
 #include "ImageTransform.h"
 
+#include <omp.h>
+
 void ImageTransformParams::CropResizeParams::reset()
 {
     crop = { 1.0f, 1.0f };
@@ -15,7 +17,6 @@ void ImageTransformParams::TransformParams::reset()
     translate = { 0.0f, 0.0f };
     origin = { 0.5f, 0.5f };
     previewOrigin = false;
-    transparency = false;
 }
 
 void ImageTransformParams::ColorParams::reset()
@@ -32,6 +33,7 @@ void ImageTransformParams::reset()
     cropResize.reset();
     transform.reset();
     color.reset();
+    transparency = false;
 }
 
 bool ImageTransform::USE_GPU = false;
@@ -155,9 +157,10 @@ void ImageTransform::applyCPU(
         uint32_t cropStartX = (uint32_t)floorf(params.cropResize.origin[0] * cropMaxOffsetX);
         uint32_t cropStartY = (uint32_t)floorf(params.cropResize.origin[1] * cropMaxOffsetY);
 
-        for (uint32_t y = 0; y < croppedHeight; y++)
+#pragma omp parallel for
+        for (int y = 0; y < croppedHeight; y++)
         {
-            for (uint32_t x = 0; x < croppedWidth; x++)
+            for (int x = 0; x < croppedWidth; x++)
             {
                 uint32_t redIndexCropped = 4 * (y * croppedWidth + x);
                 uint32_t redIndexInput = 4 * (((y + cropStartY) * inputWidth) + x + cropStartX);
@@ -190,15 +193,49 @@ void ImageTransform::applyCPU(
     float colorMulG = expMul * params.color.filter[1];
     float colorMulB = expMul * params.color.filter[2];
 
+    // Check if we'll need to draw preview marks for crop and transform origins
+    bool previewOrigins = (params.cropResize.previewOrigin || params.transform.previewOrigin) && previewMode;
+
+    // Check if there's no need for any transforms
+    bool noTrans =
+        (resizeX == 1.0f)
+        && (resizeY == 1.0f)
+        && (scaleX == 1.0f)
+        && (scaleY == 1.0f)
+        && (params.transform.rotate == 0.0f)
+        && (params.transform.translate[0] == 0.0f)
+        && (params.transform.translate[1] == 0.0f)
+        && (!previewOrigins)
+        && (params.color.filter[0] == 1.0f)
+        && (params.color.filter[1] == 1.0f)
+        && (params.color.filter[2] == 1.0f)
+        && (params.color.exposure == 0.0f)
+        && (params.color.contrast == 0.0f)
+        && (!params.color.grayscale);
+
     // Resize, Scale, Rotate, Translate, Color Transforms
+    if (noTrans)
     {
-        uint32_t redIndexInput, redIndexOutput;
-        float transX, transY;
-        float targetColor[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
-        Bilinear bil;
-        for (uint32_t y = 0; y < resizedHeight; y++)
+        outputBuffer = *lastBuffer;
+
+        // Reset the alpha channel if there's no transparency
+        if (!params.transparency)
         {
-            for (uint32_t x = 0; x < resizedWidth; x++)
+            for (uint32_t i = 0; i < outputBuffer.size(); i++)
+                if (i % 4 == 3) outputBuffer[i] = 1.0f;
+        }
+    }
+    else
+    {
+#pragma omp parallel for
+        for (int y = 0; y < resizedHeight; y++)
+        {
+            uint32_t redIndexInput, redIndexOutput;
+            float transX, transY;
+            float targetColor[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
+            Bilinear bil;
+
+            for (int x = 0; x < resizedWidth; x++)
             {
                 // Translate
                 transX = (x + 0.5f) - (params.transform.translate[0] * resizedWidth);
@@ -217,9 +254,8 @@ void ImageTransform::applyCPU(
 
                 // Interpolate
                 bil.calc(transX, transY);
-                for (auto& v : targetColor)
-                    v = 0.0f;
-                if (params.transform.transparency)
+                for (auto& v : targetColor) v = 0.0f;
+                if (params.transparency)
                 {
                     if (checkBounds(bil.topLeftPos[0], bil.topLeftPos[1], croppedWidth, croppedHeight))
                     {
@@ -290,6 +326,7 @@ void ImageTransform::applyCPU(
                     targetColor[0] = rgbaToGrayscale(targetColor, params.color.grayscaleType);
                     targetColor[1] = targetColor[0];
                     targetColor[2] = targetColor[0];
+                    targetColor[3] = 1.0f;
                 }
 
                 // Put tagetColor in the output buffer
@@ -300,7 +337,7 @@ void ImageTransform::applyCPU(
     }
 
     // Preview origins
-    if ((params.cropResize.previewOrigin || params.transform.previewOrigin) && previewMode)
+    if (previewOrigins)
     {
         float cropOriginX = params.cropResize.origin[0] * resizedWidth;
         float cropOriginY = params.cropResize.origin[1] * resizedHeight;
@@ -308,9 +345,10 @@ void ImageTransform::applyCPU(
         float squareRadius = 0.06f * fminf(resizedWidth, resizedHeight);
 
         // Draw
-        for (uint32_t y = 0; y < resizedHeight; y++)
+#pragma omp parallel for
+        for (int y = 0; y < resizedHeight; y++)
         {
-            for (uint32_t x = 0; x < resizedWidth; x++)
+            for (int x = 0; x < resizedWidth; x++)
             {
                 uint32_t redIndex = 4 * (y * resizedWidth + x);
 
@@ -323,7 +361,7 @@ void ImageTransform::applyCPU(
                 // Crop origin
                 if (params.cropResize.previewOrigin)
                 {
-                    constexpr std::array<float, 4> fillColor{ 1.0f, 0.0f, 0.0f, 1.0f };
+                    static constexpr std::array<float, 4> fillColor{ 1.0f, 0.0f, 0.0f, 1.0f };
                     v = getPreviewMarkValue(cropOriginX, cropOriginY, squareRadius, fX, fY);
                     for (uint32_t i = 0; i < 4; i++)
                         outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], fillColor[i], v);
@@ -332,7 +370,7 @@ void ImageTransform::applyCPU(
                 // Transform origin
                 if (params.transform.previewOrigin)
                 {
-                    constexpr std::array<float, 4> fillColor{ 0.0f, 0.0f, 1.0f, 1.0f };
+                    static constexpr std::array<float, 4> fillColor{ 0.0f, 0.0f, 1.0f, 1.0f };
                     v = getPreviewMarkValue(transformOriginX, transformOriginY, squareRadius, fX, fY);
                     for (uint32_t i = 0; i < 4; i++)
                         outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], fillColor[i], v);
@@ -360,9 +398,9 @@ void ImageTransform::applyGPU(
 float ImageTransform::getPreviewMarkValue(float originX, float originY, float squareRadius, float x, float y)
 {
     // Parameters
-    constexpr float softness = 1.0f;
-    constexpr float outlineRadius = 1.0f;
-    constexpr float dotRadius = 1.5f;
+    static constexpr float softness = 1.0f;
+    static constexpr float outlineRadius = 1.0f;
+    static constexpr float dotRadius = 1.5f;
 
     // Chebyshev distance
     float distSquare = fmaxf(fabsf(x - originX), fabsf(y - originY));

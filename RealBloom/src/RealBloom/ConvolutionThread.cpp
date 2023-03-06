@@ -27,8 +27,9 @@ namespace RealBloom
         float threshold = m_params.threshold;
         float transKnee = transformKnee(m_params.knee);
 
-        int kernelCenterX = (int)floorf(m_params.kernelCenterX * (float)m_kernelWidth);
-        int kernelCenterY = (int)floorf(m_params.kernelCenterY * (float)m_kernelHeight);
+        std::array<float, 2> kernelOrigin = Convolution::getKernelOrigin(m_params);
+        int kernelOriginX = (int)floorf(kernelOrigin[0] * (float)m_kernelWidth);
+        int kernelOriginY = (int)floorf(kernelOrigin[1] * (float)m_kernelHeight);
 
         uint32_t inputPixels = m_inputWidth * m_inputHeight;
 
@@ -118,8 +119,8 @@ namespace RealBloom
                         {
                             for (int kx = 0; kx < (int)m_kernelWidth; kx++)
                             {
-                                cx = (kx - kernelCenterX) + ix;
-                                cy = (ky - kernelCenterY) + iy;
+                                cx = (kx - kernelOriginX) + ix;
+                                cy = (ky - kernelOriginY) + iy;
                                 if (checkBounds(cx, cy, m_inputWidth, m_inputHeight))
                                 {
                                     redIndexKernel = (ky * m_kernelWidth + kx) * 4;
@@ -176,8 +177,8 @@ namespace RealBloom
                     {
                         for (int kx = 0; kx < (int)m_kernelWidth; kx++)
                         {
-                            cx = (kx - kernelCenterX) + ix;
-                            cy = (ky - kernelCenterY) + iy;
+                            cx = (kx - kernelOriginX) + ix;
+                            cy = (ky - kernelOriginY) + iy;
                             if (checkBounds(cx, cy, m_inputWidth, m_inputHeight))
                             {
                                 redIndexKernel = (ky * m_kernelWidth + kx) * 4;

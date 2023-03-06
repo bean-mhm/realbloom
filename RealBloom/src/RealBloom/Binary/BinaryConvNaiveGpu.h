@@ -24,8 +24,8 @@ namespace RealBloom
         uint32_t numChunks = 1;
         uint32_t chunkSleep = 0;
 
-        float cp_kernelCenterX = 0.5f;
-        float cp_kernelCenterY = 0.5f;
+        float cp_kernelOriginX = 0.5f;
+        float cp_kernelOriginY = 0.5f;
         float cp_convThreshold = 0.0f;
         float cp_convKnee = 0.0f;
         float convMultiplier = 1.0f;

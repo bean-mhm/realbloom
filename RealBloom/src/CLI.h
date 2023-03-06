@@ -59,8 +59,6 @@ namespace CLI
         static void proceed();
     };
 
-    void handleXyzArgs(StringMap& args);
-
     struct OutputColorManagement
     {
         bool applyViewTransform = false;

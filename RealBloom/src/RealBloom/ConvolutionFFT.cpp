@@ -14,13 +14,14 @@ namespace RealBloom
 
     void ConvolutionFFT::pad()
     {
-        // Padded size
+        std::array<float, 2> kernelOrigin = Convolution::getKernelOrigin(m_params);
 
+        // Padded size
         calcFftConvPadding(
             false, false,
             m_inputWidth, m_inputHeight,
             m_kernelWidth, m_kernelHeight,
-            m_params.kernelCenterX, m_params.kernelCenterY,
+            kernelOrigin[0], kernelOrigin[1],
             m_paddedWidth, m_paddedHeight
         );
 
@@ -29,8 +30,8 @@ namespace RealBloom
         m_inputLeftPadding = floorf((float)(m_paddedWidth - m_inputWidth) / 2.0f);
         m_inputTopPadding = floorf((float)(m_paddedHeight - m_inputHeight) / 2.0f);
 
-        m_kernelLeftPadding = floorf(((float)m_paddedWidth / 2.0f) - ((float)m_kernelWidth * m_params.kernelCenterX));
-        m_kernelTopPadding = floorf(((float)m_paddedHeight / 2.0f) - ((float)m_kernelHeight * m_params.kernelCenterY));
+        m_kernelLeftPadding = floorf(((float)m_paddedWidth / 2.0f) - ((float)m_kernelWidth * kernelOrigin[0]));
+        m_kernelTopPadding = floorf(((float)m_paddedHeight / 2.0f) - ((float)m_kernelHeight * kernelOrigin[1]));
 
         if (m_kernelWidth % 2 == 1) m_kernelLeftPadding += 1;
         if (m_kernelHeight % 2 == 1) m_kernelTopPadding += 1;

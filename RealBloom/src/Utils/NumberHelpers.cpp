@@ -13,7 +13,7 @@ float applyContrast(float v, float contrast)
         return v;
 
     // v0.5.2-dev
-    constexpr float pivot = 0.5f;
+    static constexpr float pivot = 0.5f;
     float c =
         (contrast >= 0.0f) ?
         (2.0f * contrast + 1.0f) :
@@ -78,13 +78,13 @@ void calcFftConvPadding(
     uint32_t inputHeight,
     uint32_t kernelWidth,
     uint32_t kernelHeight,
-    float kernelCenterX,
-    float kernelCenterY,
+    float kernelOriginX,
+    float kernelOriginY,
     uint32_t& outPaddedWidth,
     uint32_t& outPaddedHeight)
 {
-    int kernelExtraPaddingX = (int)fabsf(floorf((float)kernelWidth / 2.0f) - floorf(kernelCenterX * (float)kernelWidth)) + 1;
-    int kernelExtraPaddingY = (int)fabsf(floorf((float)kernelHeight / 2.0f) - floorf(kernelCenterY * (float)kernelHeight)) + 1;
+    int kernelExtraPaddingX = (int)fabsf(floorf((float)kernelWidth / 2.0f) - floorf(kernelOriginX * (float)kernelWidth)) + 1;
+    int kernelExtraPaddingY = (int)fabsf(floorf((float)kernelHeight / 2.0f) - floorf(kernelOriginY * (float)kernelHeight)) + 1;
 
     uint32_t totalWidth = inputWidth + kernelWidth + kernelExtraPaddingX;
     uint32_t totalHeight = inputHeight + kernelHeight + kernelExtraPaddingY;

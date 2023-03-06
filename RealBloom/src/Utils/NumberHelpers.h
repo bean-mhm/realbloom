@@ -67,15 +67,16 @@ inline int shiftIndex(int i, int shift, int size)
 
 enum class GrayscaleType
 {
-    Luminance = 0,
-    Average = 1,
-    Maximum = 2,
-    Magnitude = 3,
-    Red = 4,
-    Green = 5,
-    Blue = 6,
-    Alpha = 7
+    Luminance,
+    Average,
+    Maximum,
+    Magnitude,
+    Red,
+    Green,
+    Blue,
+    Alpha
 };
+constexpr uint32_t GRAYSCALE_TYPE_SIZE = 8;
 
 constexpr GrayscaleType CONV_THRESHOLD_GRAYSCALE_TYPE = GrayscaleType::Luminance;
 

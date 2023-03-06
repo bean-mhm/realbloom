@@ -1,13 +1,13 @@
 #include "GlContext.h"
 
-HGLRC realContext = NULL;
+static HGLRC realContext = NULL;
 
-int g_glVersionMajor;
-int g_glVersionMinor;
+static int g_glVersionMajor;
+static int g_glVersionMinor;
 
-std::function<void()> g_job;
-bool g_success = false;
-std::string* g_outError = nullptr;
+static std::function<void()> g_job;
+static bool g_success = false;
+static std::string* g_outError = nullptr;
 
 LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 

@@ -1,7 +1,7 @@
 #include "ConvNaiveGpu.h"
 
 #pragma region Shaders
-const char* convNaiveGpuVertexSource = R"glsl(
+static const char* vertexSource = R"glsl(
     #version 150 core
 
     in vec2 pos;
@@ -16,7 +16,7 @@ const char* convNaiveGpuVertexSource = R"glsl(
     }
     )glsl";
 
-const char* convNaiveGpuGeometrySource = R"glsl(
+static const char* geometrySource = R"glsl(
     #version 150 core
 
     layout(points) in;
@@ -76,7 +76,7 @@ const char* convNaiveGpuGeometrySource = R"glsl(
     }
     )glsl";
 
-const char* convNaiveGpuFragmentSource = R"glsl(
+static const char* fragmentSource = R"glsl(
     #version 150 core
 
     in vec3 gColor;
@@ -122,17 +122,17 @@ namespace RealBloom
         // Create and compile shaders
         std::string shaderLog;
 
-        if (!createShader(GL_VERTEX_SHADER, convNaiveGpuVertexSource, m_vertexShader, shaderLog))
+        if (!createShader(GL_VERTEX_SHADER, vertexSource, m_vertexShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
-        if (!createShader(GL_GEOMETRY_SHADER, convNaiveGpuGeometrySource, m_geometryShader, shaderLog))
+        if (!createShader(GL_GEOMETRY_SHADER, geometrySource, m_geometryShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
-        if (!createShader(GL_FRAGMENT_SHADER, convNaiveGpuFragmentSource, m_fragmentShader, shaderLog))
+        if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, m_fragmentShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
             );
@@ -302,11 +302,11 @@ namespace RealBloom
         float threshold = m_binInput->cp_convThreshold;
         float transKnee = transformKnee(m_binInput->cp_convKnee);
 
-        float kernelCenterX = (int)floorf(m_binInput->cp_kernelCenterX * (float)kernelWidth);
-        float kernelCenterY = (int)floorf(m_binInput->cp_kernelCenterY * (float)kernelHeight);
+        float kernelOriginX = (int)floorf(m_binInput->cp_kernelOriginX * (float)kernelWidth);
+        float kernelOriginY = (int)floorf(m_binInput->cp_kernelOriginY * (float)kernelHeight);
 
-        float offsetX = floorf((float)kernelWidth / 2.0f) - kernelCenterX;
-        float offsetY = floorf((float)kernelHeight / 2.0f) - kernelCenterY;
+        float offsetX = floorf((float)kernelWidth / 2.0f) - kernelOriginX;
+        float offsetY = floorf((float)kernelHeight / 2.0f) - kernelOriginY;
 
         // Collect points (vertex data)
         clearVector(m_vertexData);

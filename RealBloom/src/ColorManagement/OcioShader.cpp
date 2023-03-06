@@ -1,7 +1,7 @@
 #include "OcioShader.h"
 
 #pragma region Vertex Shader Source
-constexpr const char* VERTEX_SOURCE = R"glsl(
+static constexpr const char* VERTEX_SOURCE = R"glsl(
     #version 150 core
 
     in vec2 pos;

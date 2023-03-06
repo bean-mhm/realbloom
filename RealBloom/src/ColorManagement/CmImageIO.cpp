@@ -441,13 +441,8 @@ const std::vector<std::string>& CmImageIO::getAllExtensions()
     if (!init)
     {
         init = true;
-
-        const std::vector<std::string>& linearExts = getLinearExtensions();
-        const std::vector<std::string>& nonLinearExts = getNonLinearExtensions();
-
-        exts.reserve(linearExts.size() + nonLinearExts.size());
-        exts.insert(exts.end(), linearExts.begin(), linearExts.end());
-        exts.insert(exts.end(), nonLinearExts.begin(), nonLinearExts.end());
+        insertContents(exts, getLinearExtensions());
+        insertContents(exts, getNonLinearExtensions());
     }
 
     return exts;

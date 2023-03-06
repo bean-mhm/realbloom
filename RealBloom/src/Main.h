@@ -60,7 +60,7 @@ void layoutMisc();
 void layoutConvolution();
 void layoutDiffraction();
 
-bool layoutImageTransformParams(const std::string& id, ImageTransformParams& params);
+bool layoutImageTransformParams(const std::string& imageName, const std::string& imGuiID, ImageTransformParams& params);
 
 void imGuiDiv();
 void imGuiBold(const std::string& s);
@@ -96,9 +96,6 @@ struct UiVars
     bool diffParamsChanged = false;
 
     // Dispersion
-    float ds_exposure = 0.0f;
-    float ds_contrast = 0.0f;
-    float ds_color[3]{ 1.0f, 1.0f, 1.0f };
     float ds_amount = 0.4f;
     int ds_steps = 32;
     bool dispParamsChanged = false;
@@ -108,17 +105,9 @@ struct UiVars
     int ds_numThreads = getDefNumThreads();
 
     // Convolution Kernel
-    float cv_kernelExposure = 0.0f;
-    float cv_kernelContrast = 0.0f;
-    float cv_kernelColor[3]{ 1.0f, 1.0f, 1.0f };
-    float cv_kernelRotation = 0.0f;
-    bool cv_kernelLockScale = true;
-    float cv_kernelScale[2] = { 1.0f, 1.0f };
-    bool cv_kernelLockCrop = true;
-    float cv_kernelCrop[2] = { 1.0f, 1.0f };
-    bool cv_kernelPreviewCenter = false;
-    float cv_kernelCenter[2] = { 0.5f, 0.5f };
-    bool convParamsChanged = false;
+    bool cv_useKernelTransformOrigin = true;
+    bool convInputTransformParamsChanged = false;
+    bool convKernelTransformParamsChanged = false;
 
     // Convolution Method
     int cv_method = 0;

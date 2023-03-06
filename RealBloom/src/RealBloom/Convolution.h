@@ -16,10 +16,13 @@
 #include "Binary/BinaryConvNaiveGpu.h"
 #include "Binary/BinaryConvFftGpu.h"
 
+#include "ModuleHelpers.h"
+
 #include "../ColorManagement/CmImage.h"
 
-#include "../Utils/NumberHelpers.h"
+#include "../Utils/ImageTransform.h"
 #include "../Utils/Bilinear.h"
+#include "../Utils/NumberHelpers.h"
 #include "../Utils/Status.h"
 #include "../Utils/Misc.h"
 
@@ -51,17 +54,9 @@ namespace RealBloom
     struct ConvolutionParams
     {
         ConvolutionMethodInfo methodInfo;
-        float kernelExposure = 0.0f;
-        float kernelContrast = 0.0f;
-        std::array<float, 3> kernelColor{ 1.0f, 1.0f, 1.0f };
-        float kernelRotation = 0.0f;
-        float kernelScaleX = 1.0f;
-        float kernelScaleY = 1.0f;
-        float kernelCropX = 1.0f;
-        float kernelCropY = 1.0f;
-        bool  kernelPreviewCenter = true;
-        float kernelCenterX = 0.5f;
-        float kernelCenterY = 0.5f;
+        ImageTransformParams inputTransformParams;
+        ImageTransformParams kernelTransformParams;
+        bool useKernelTransformOrigin = true;
         float threshold = 0.0f;
         float knee = 0.0f;
         bool  autoExposure = true;
@@ -99,30 +94,37 @@ namespace RealBloom
         ConvolutionParams m_params;
         ConvolutionParams m_capturedParams;
 
+        CmImage m_imgInputSrc;
         CmImage* m_imgInput = nullptr;
+        
+        CmImage m_imgKernelSrc;
         CmImage* m_imgKernel = nullptr;
+
         CmImage* m_imgConvPreview = nullptr;
         CmImage* m_imgConvMix = nullptr;
 
-        CmImage m_imgKernelSrc;
+        CmImage m_imgInputCaptured;
         CmImage m_imgOutput;
 
         std::shared_ptr<std::jthread> m_thread = nullptr;
-        std::vector<std::shared_ptr<ConvolutionThread>> m_threads;
+        std::vector<std::shared_ptr<ConvolutionThread>> m_cpuThreads;
 
     public:
         Convolution();
         ConvolutionParams* getParams();
 
+        CmImage* getImgInputSrc();
         void setImgInput(CmImage* image);
+
+        CmImage* getImgKernelSrc();
         void setImgKernel(CmImage* image);
+
         void setImgConvPreview(CmImage* image);
         void setImgConvMix(CmImage* image);
 
-        CmImage* getImgKernelSrc();
-
         void previewThreshold(size_t* outNumPixels = nullptr);
-        void kernel(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
+        void previewInput(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
+        void previewKernel(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
         void mix(bool additive, float inputMix, float convMix, float mix, float convExposure);
         void convolve();
         void cancel();
@@ -131,8 +133,10 @@ namespace RealBloom
 
         // outMessageType: 0 = normal, 1 = info, 2 = warning, 3 = error
         void getStatusText(std::string& outStatus, std::string& outMessage, uint32_t& outMessageType) const;
-        
+
         std::string getResourceInfo();
+
+        static std::array<float, 2> getKernelOrigin(const ConvolutionParams& params);
 
     private:
         void convFftCPU(

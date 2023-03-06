@@ -1,7 +1,7 @@
 #include "DispGpu.h"
 
 #pragma region Shaders
-const char* dispGpuVertexSource = R"glsl(
+static const char* vertexSource = R"glsl(
     #version 150 core
 
     in float scale;
@@ -18,7 +18,7 @@ const char* dispGpuVertexSource = R"glsl(
     }
     )glsl";
 
-const char* dispGpuGeometrySource = R"glsl(
+static const char* geometrySource = R"glsl(
     #version 150 core
 
     layout(points) in;
@@ -77,7 +77,7 @@ const char* dispGpuGeometrySource = R"glsl(
     }
     )glsl";
 
-const char* dispGpuFragmentSource = R"glsl(
+static const char* fragmentSource = R"glsl(
     #version 150 core
 
     in vec3 gColor;
@@ -127,17 +127,17 @@ namespace RealBloom
         // Create and compile shaders
         std::string shaderLog;
 
-        if (!createShader(GL_VERTEX_SHADER, dispGpuVertexSource, m_vertexShader, shaderLog))
+        if (!createShader(GL_VERTEX_SHADER, vertexSource, m_vertexShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
-        if (!createShader(GL_GEOMETRY_SHADER, dispGpuGeometrySource, m_geometryShader, shaderLog))
+        if (!createShader(GL_GEOMETRY_SHADER, geometrySource, m_geometryShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
-        if (!createShader(GL_FRAGMENT_SHADER, dispGpuFragmentSource, m_fragmentShader, shaderLog))
+        if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, m_fragmentShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
             );

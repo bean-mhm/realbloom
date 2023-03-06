@@ -27,7 +27,6 @@ struct ImageTransformParams
         std::array<float, 2> translate{ 0.0f, 0.0f };
         std::array<float, 2> origin{ 0.5f, 0.5f };
         bool previewOrigin = false;
-        bool transparency = false;
 
         void reset();
     };
@@ -46,6 +45,7 @@ struct ImageTransformParams
     CropResizeParams cropResize;
     TransformParams transform;
     ColorParams color;
+    bool transparency = false;
 
     void reset();
 };

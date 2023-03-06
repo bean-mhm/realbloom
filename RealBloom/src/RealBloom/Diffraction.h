@@ -1,11 +1,15 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
+#include <memory>
+#include <mutex>
 #include <complex>
 #include <cmath>
 
 #include "pocketfft/pocketfft_hdronly.h"
+
+#include "ModuleHelpers.h"
 
 #include "../ColorManagement/CmImage.h"
 
@@ -20,25 +24,30 @@
 namespace RealBloom
 {
 
+    struct DiffractionParams
+    {
+        ImageTransformParams inputTransformParams;
+    };
+
     class Diffraction
     {
     private:
         BaseStatus m_status;
-        ImageTransformParams m_inputTransformParams;
-
-        CmImage* m_imgInput = nullptr;
-        CmImage* m_imgDiff = nullptr;
+        DiffractionParams m_params;
 
         CmImage m_imgInputSrc;
+        CmImage* m_imgInput = nullptr;
+
+        CmImage* m_imgDiff = nullptr;
 
     public:
         Diffraction();
-        ImageTransformParams* getInputTransformParams();
-
-        void setImgInput(CmImage* image);
-        void setImgDiff(CmImage* image);
+        DiffractionParams* getParams();
 
         CmImage* getImgInputSrc();
+        void setImgInput(CmImage* image);
+
+        void setImgDiff(CmImage* image);
 
         void previewInput(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
         void compute();

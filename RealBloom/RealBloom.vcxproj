@@ -104,6 +104,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -133,6 +134,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
       <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -161,6 +163,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -190,6 +193,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
       <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -222,6 +226,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClCompile Include="src\RealBloom\ConvolutionFFT.cpp" />
     <ClCompile Include="src\RealBloom\DispersionThread.cpp" />
     <ClCompile Include="src\RealBloom\GpuHelper.cpp" />
+    <ClCompile Include="src\RealBloom\ModuleHelpers.cpp" />
     <ClCompile Include="src\Utils\CliStackTimer.cpp" />
     <ClCompile Include="src\Utils\ConsoleColors.cpp" />
     <ClCompile Include="src\Utils\CliParser.cpp" />
@@ -277,6 +282,7 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClInclude Include="src\RealBloom\ConvolutionFFT.h" />
     <ClInclude Include="src\RealBloom\DispersionThread.h" />
     <ClInclude Include="src\RealBloom\GpuHelper.h" />
+    <ClInclude Include="src\RealBloom\ModuleHelpers.h" />
     <ClInclude Include="src\Utils\CliStackTimer.h" />
     <ClInclude Include="src\Utils\ConsoleColors.h" />
     <ClInclude Include="src\Utils\CliParser.h" />

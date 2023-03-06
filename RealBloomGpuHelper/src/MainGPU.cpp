@@ -35,7 +35,7 @@ extern "C" {
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-constexpr const char* APP_TITLE = "RealBloom GPU Helper";
+static constexpr const char* APP_TITLE = "RealBloom GPU Helper";
 
 typedef std::function<void(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)> GpuHelperOperation;
 
@@ -43,7 +43,7 @@ void runDisp(std::string inpFilename, std::string outFilename, std::ifstream& in
 void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
 void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
 
-std::ofstream logFile;
+static std::ofstream logFile;
 
 enum class LogLevel
 {
