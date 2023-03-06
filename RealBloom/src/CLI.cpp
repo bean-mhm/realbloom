@@ -184,7 +184,7 @@ namespace CLI
             {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
             {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
             {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
-            {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional}
+            {{"--view-exposure"}, "Exposure for view transform", "0", ArgumentType::Optional}
             });
     }
 
@@ -1217,8 +1217,8 @@ namespace CLI
         if (args.contains("--look"))
             look = args["--look"];
 
-        if (args.contains("--view-exp"))
-            exposure = strToFloat(args["--view-exp"]);
+        if (args.contains("--view-exposure"))
+            exposure = strToFloat(args["--view-exposure"]);
 
         /*
         *    Arguments:
@@ -1228,7 +1228,7 @@ namespace CLI
         *    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
         *    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
         *    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
-        *    {{"--view-exp"}, "Exposure for view transform", "", ArgumentType::Optional},
+        *    {{"--view-exposure"}, "Exposure for view transform", "", ArgumentType::Optional},
         */
 
         /*
@@ -1255,7 +1255,7 @@ namespace CLI
             else if (args.contains("--display")
                 || args.contains("--view")
                 || args.contains("--look")
-                || args.contains("--view-exp"))
+                || args.contains("--view-exposure"))
             {
                 applyViewTransform = true;
             }
