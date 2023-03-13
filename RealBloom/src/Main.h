@@ -83,10 +83,3 @@ bool setupGLFW();
 bool setupImGui();
 void applyStyle_RealBloomGray();
 void cleanUp();
-
-struct UiVars
-{
-    // Color Management (CMS)
-    float cms_exposure = 0.0f;
-    bool cmsParamsChanged = false;
-};

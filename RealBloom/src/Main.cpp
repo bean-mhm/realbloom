@@ -34,8 +34,7 @@ static RealBloom::Diffraction diff;
 static RealBloom::Dispersion disp;
 static RealBloom::Convolution conv;
 
-// Variables for controls
-static UiVars vars;
+// Variables for modules
 static std::string convResUsage = "";
 
 // Constants
@@ -427,6 +426,8 @@ void layoutColorManagement()
     const std::vector<std::string>& internalSpaces = CMS::getInternalColorSpaces();
     const std::vector<std::string>& userSpaces = CMS::getColorSpaces();
 
+    static bool cmsParamsChanged = false;
+
     ImGui::Begin("Color Management");
 
     imGuiBold("VIEW");
@@ -434,10 +435,11 @@ void layoutColorManagement()
     {
 
         // Exposure
-        if (ImGui::SliderFloat("Exposure##CMS", &vars.cms_exposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
+        float cmsExposure = CMS::getExposure();
+        if (ImGui::SliderFloat("Exposure##CMS", &cmsExposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
         {
-            CMS::setExposure(vars.cms_exposure);
-            vars.cmsParamsChanged = true;
+            CMS::setExposure(cmsExposure);
+            cmsParamsChanged = true;
         }
 
         const std::vector<std::string>& displays = CMS::getDisplays();
@@ -458,7 +460,7 @@ void layoutColorManagement()
         {
             CMS::setActiveDisplay(displays[selDisplay]);
             CMS::updateProcessors();
-            vars.cmsParamsChanged = true;
+            cmsParamsChanged = true;
 
             // Update selView
             ptrdiff_t activeViewIndex = std::distance(views.begin(), std::find(views.begin(), views.end(), activeView));
@@ -471,7 +473,7 @@ void layoutColorManagement()
         {
             CMS::setActiveView(views[selView]);
             CMS::updateProcessors();
-            vars.cmsParamsChanged = true;
+            cmsParamsChanged = true;
         }
 
         // Look
@@ -479,13 +481,13 @@ void layoutColorManagement()
         {
             CMS::setActiveLook(looks[selLook]);
             CMS::updateProcessors();
-            vars.cmsParamsChanged = true;
+            cmsParamsChanged = true;
         }
 
         // Update
-        if (vars.cmsParamsChanged)
+        if (cmsParamsChanged)
         {
-            vars.cmsParamsChanged = false;
+            cmsParamsChanged = false;
             for (auto& img : images)
                 img->moveToGPU();
         }
@@ -769,13 +771,13 @@ void layoutConvolution()
     CmImage& imgConvKernel = *getImageByID("cv-kernel");
     CmImage& imgConvResult = *getImageByID("cv-result");
 
+    RealBloom::ConvolutionParams* convParams = conv.getParams();
+
     static bool convInputTransformParamsChanged = false;
     static bool convThresholdChanged = false;
     static bool convThresholdSwitchImage = false;
     static bool convKernelTransformParamsChanged = false;
     static bool convBlendParamsChanged = false;
-
-    RealBloom::ConvolutionParams* convParams = conv.getParams();
 
     ImGui::Begin("Convolution");
 
@@ -859,14 +861,14 @@ void layoutConvolution()
             convParams->methodInfo.chunkSleep = std::clamp(convParams->methodInfo.chunkSleep, 0u, RealBloom::CONV_MAX_SLEEP);
     }
 
-    if (ImGui::SliderFloat("Threshold##Conv", &convParams->threshold, 0, 2))
+    if (ImGui::SliderFloat("Threshold##Conv", &convParams->threshold, 0.0f, 2.0f))
     {
         convParams->threshold = std::max(convParams->threshold, 0.0f);
         convThresholdChanged = true;
         convThresholdSwitchImage = true;
     }
 
-    if (ImGui::SliderFloat("Knee##Conv", &convParams->knee, 0, 2))
+    if (ImGui::SliderFloat("Knee##Conv", &convParams->knee, 0.0f, 2.0f))
     {
         convParams->knee = std::max(convParams->knee, 0.0f);
         convThresholdChanged = true;
@@ -1001,11 +1003,11 @@ void layoutDiffraction()
     CmImage& imgDispInput = *getImageByID("disp-input");
     CmImage& imgDispResult = *getImageByID("disp-result");
 
-    static bool diffParamsChanged = false;
-    static bool dispParamsChanged = false;
-
     RealBloom::DiffractionParams* diffParams = diff.getParams();
     RealBloom::DispersionParams* dispParams = disp.getParams();
+
+    static bool diffParamsChanged = false;
+    static bool dispParamsChanged = false;
 
     ImGui::Begin("Diffraction");
 
@@ -1174,7 +1176,7 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
             }
             if (lockResize[imGuiID])
             {
-                if (ImGui::SliderFloat("Resize##CropResize", &params.cropResize.resize[0], 0.01f, 2))
+                if (ImGui::SliderFloat("Resize##CropResize", &params.cropResize.resize[0], 0.01f, 2.0f))
                 {
                     params.cropResize.resize[0] = std::max(params.cropResize.resize[0], 0.01f);
                     params.cropResize.resize[1] = params.cropResize.resize[0];
@@ -1183,7 +1185,7 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
             }
             else
             {
-                if (ImGui::SliderFloat2("Resize##CropResize", &params.cropResize.resize[0], 0.01f, 2))
+                if (ImGui::SliderFloat2("Resize##CropResize", &params.cropResize.resize[0], 0.01f, 2.0f))
                 {
                     params.cropResize.resize[0] = std::max(params.cropResize.resize[0], 0.01f);
                     params.cropResize.resize[1] = std::max(params.cropResize.resize[1], 0.01f);
@@ -1229,7 +1231,7 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
             }
             if (lockScale[imGuiID])
             {
-                if (ImGui::SliderFloat("Scale##Transform", &params.transform.scale[0], 0.01f, 2))
+                if (ImGui::SliderFloat("Scale##Transform", &params.transform.scale[0], 0.01f, 2.0f))
                 {
                     params.transform.scale[1] = params.transform.scale[0];
                     changed = true;
@@ -1237,7 +1239,7 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
             }
             else
             {
-                if (ImGui::SliderFloat2("Scale##Transform", &params.transform.scale[0], 0.01f, 2))
+                if (ImGui::SliderFloat2("Scale##Transform", &params.transform.scale[0], 0.01f, 2.0f))
                 {
                     changed = true;
                 }
