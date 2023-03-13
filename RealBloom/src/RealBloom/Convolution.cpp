@@ -70,9 +70,9 @@ namespace RealBloom
         m_imgConvPreview = image;
     }
 
-    void Convolution::setImgConvMix(CmImage* image)
+    void Convolution::setImgConvResult(CmImage* image)
     {
-        m_imgConvMix = image;
+        m_imgConvResult = image;
     }
 
     void Convolution::previewThreshold(size_t* outNumPixels)
@@ -169,16 +169,19 @@ namespace RealBloom
         }
     }
 
-    void Convolution::mix(bool additive, float inputMix, float convMix, float mix, float convExposure)
+    void Convolution::blend()
     {
-        inputMix = fmaxf(inputMix, 0.0f);
-        convMix = fmaxf(convMix, 0.0f);
-        if (!additive)
+        float blendInput = fmaxf(m_params.blendInput, 0.0f);
+        float blendConv = fmaxf(m_params.blendConv, 0.0f);
+        float blendMix = 0.0f;
+        if (!m_params.blendAdditive)
         {
-            mix = fminf(fmaxf(mix, 0.0f), 1.0f);
-            convMix = mix;
-            inputMix = 1.0f - mix;
+            blendMix = fminf(fmaxf(m_params.blendMix, 0.0f), 1.0f);
+            blendConv = blendMix;
+            blendInput = 1.0f - blendMix;
         }
+
+        float blendExposure = m_params.blendExposure;
 
         {
             // Input buffer
@@ -187,7 +190,7 @@ namespace RealBloom
             uint32_t inputWidth = m_imgInputCaptured.getWidth();
             uint32_t inputHeight = m_imgInputCaptured.getHeight();
 
-            // Conv Buffer
+            // Conv. Buffer
             std::scoped_lock lock2(m_imgOutput);
             float* convBuffer = m_imgOutput.getImageData();
             uint32_t convWidth = m_imgOutput.getWidth();
@@ -195,31 +198,31 @@ namespace RealBloom
 
             if ((inputWidth == convWidth) && (inputHeight == convHeight))
             {
-                // Conv Mix Buffer
-                std::scoped_lock convMixImageLock(*m_imgConvMix);
-                m_imgConvMix->resize(inputWidth, inputHeight, false);
-                float* convMixBuffer = m_imgConvMix->getImageData();
+                // Conv. Result Buffer
+                std::scoped_lock lock3(*m_imgConvResult);
+                m_imgConvResult->resize(inputWidth, inputHeight, false);
+                float* convResultBuffer = m_imgConvResult->getImageData();
 
-                float multiplier = convMix * getExposureMul(convExposure);
+                float mul = blendConv * getExposureMul(blendExposure);
                 for (uint32_t y = 0; y < inputHeight; y++)
                 {
                     for (uint32_t x = 0; x < inputWidth; x++)
                     {
                         uint32_t redIndex = (y * inputWidth + x) * 4;
 
-                        convMixBuffer[redIndex + 0] =
-                            (inputBuffer[redIndex + 0] * inputMix) + (convBuffer[redIndex + 0] * multiplier);
-                        convMixBuffer[redIndex + 1] =
-                            (inputBuffer[redIndex + 1] * inputMix) + (convBuffer[redIndex + 1] * multiplier);
-                        convMixBuffer[redIndex + 2] =
-                            (inputBuffer[redIndex + 2] * inputMix) + (convBuffer[redIndex + 2] * multiplier);
+                        convResultBuffer[redIndex + 0] =
+                            (inputBuffer[redIndex + 0] * blendInput) + (convBuffer[redIndex + 0] * mul);
+                        convResultBuffer[redIndex + 1] =
+                            (inputBuffer[redIndex + 1] * blendInput) + (convBuffer[redIndex + 1] * mul);
+                        convResultBuffer[redIndex + 2] =
+                            (inputBuffer[redIndex + 2] * blendInput) + (convBuffer[redIndex + 2] * mul);
 
-                        convMixBuffer[redIndex + 3] = 1;
+                        convResultBuffer[redIndex + 3] = 1;
                     }
                 }
             }
         }
-        m_imgConvMix->moveToGPU();
+        m_imgConvResult->moveToGPU();
     }
 
     void Convolution::convolve()
@@ -277,7 +280,7 @@ namespace RealBloom
                     break;
                 }
 
-                // Update the captured input image, used for mixing
+                // Update the captured input image, used for blending
                 {
                     std::scoped_lock lock(m_imgInputCaptured);
                     m_imgInputCaptured.resize(inputWidth, inputHeight, false);
@@ -285,9 +288,9 @@ namespace RealBloom
                     std::copy(inputBuffer.data(), inputBuffer.data() + inputBufferSize, buffer);
                 }
 
-                // Update convMixParamsChanged
+                // Update convBlendParamsChanged
                 if (m_status.isOK() && !m_status.mustCancel())
-                    Async::emitSignal("convMixParamsChanged", nullptr);
+                    Async::emitSignal("convBlendParamsChanged", nullptr);
 
                 m_status.setDone();
             }
@@ -781,14 +784,14 @@ namespace RealBloom
                     }
                 }
 
-                // Update Conv. Mix
+                // Update Conv. Result
                 {
-                    std::scoped_lock lock(*m_imgConvMix);
-                    m_imgConvMix->resize(inputWidth, inputHeight, false);
-                    float* convBuffer = m_imgConvMix->getImageData();
-                    std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, convBuffer);
+                    std::scoped_lock lock(*m_imgConvResult);
+                    m_imgConvResult->resize(inputWidth, inputHeight, false);
+                    float* convResultBuffer = m_imgConvResult->getImageData();
+                    std::copy(progBuffer.data(), progBuffer.data() + inputBufferSize, convResultBuffer);
                 }
-                m_imgConvMix->moveToGPU();
+                m_imgConvResult->moveToGPU();
 
                 lastProgTime = std::chrono::system_clock::now();
             }
@@ -944,15 +947,15 @@ namespace RealBloom
                             {
                                 m_status.setNumChunksDone(binStat.numChunksDone);
 
-                                // Update Conv. Mix
+                                // Update Conv. Result
                                 if (binStat.buffer.size() == (inputWidth * inputHeight * 4))
                                 {
-                                    std::scoped_lock lock(*m_imgConvMix);
-                                    m_imgConvMix->resize(inputWidth, inputHeight, false);
-                                    float* convBuffer = m_imgConvMix->getImageData();
-                                    std::copy(binStat.buffer.data(), binStat.buffer.data() + binStat.buffer.size(), convBuffer);
+                                    std::scoped_lock lock(*m_imgConvResult);
+                                    m_imgConvResult->resize(inputWidth, inputHeight, false);
+                                    float* convResultBuffer = m_imgConvResult->getImageData();
+                                    std::copy(binStat.buffer.data(), binStat.buffer.data() + binStat.buffer.size(), convResultBuffer);
                                 }
-                                m_imgConvMix->moveToGPU();
+                                m_imgConvResult->moveToGPU();
                             }
                         }
                         catch (const std::exception& e)

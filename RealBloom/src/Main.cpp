@@ -128,7 +128,7 @@ int main(int argc, char** argv)
         conv.setImgInput(getImageByID("cv-input"));
         conv.setImgKernel(getImageByID("cv-kernel"));
         conv.setImgConvPreview(getImageByID("cv-prev"));
-        conv.setImgConvMix(getImageByID("cv-result"));
+        conv.setImgConvResult(getImageByID("cv-result"));
     }
 
     // To kill child processes when the parent dies
@@ -773,6 +773,7 @@ void layoutConvolution()
     static bool convThresholdChanged = false;
     static bool convThresholdSwitchImage = false;
     static bool convKernelTransformParamsChanged = false;
+    static bool convBlendParamsChanged = false;
 
     RealBloom::ConvolutionParams* convParams = conv.getParams();
 
@@ -937,62 +938,55 @@ void layoutConvolution()
     }
 
     imGuiDiv();
-    imGuiBold("LAYERS");
+    imGuiBold("BLENDING");
 
-    static bool convMixAdditive = false;
-    static float convMixInput = 1.0f;        // for additive blending
-    static float convMixConv = 0.2f;         // for additive blending
-    static float convMixBlend = 0.2f;        // for normal blending
-    static float convMixExposure = 0.0f;
-    static bool convMixParamsChanged = false;
+    if (ImGui::Checkbox("Additive##Conv", &convParams->blendAdditive))
+        convBlendParamsChanged = true;
 
-    if (ImGui::Checkbox("Additive##Conv", &convMixAdditive))
-        convMixParamsChanged = true;
-
-    if (convMixAdditive)
+    if (convParams->blendAdditive)
     {
-        if (ImGui::SliderFloat("Input##Conv", &convMixInput, 0.0f, 1.0f))
+        if (ImGui::SliderFloat("Input##Conv", &convParams->blendInput, 0.0f, 1.0f))
         {
-            convMixInput = std::max(convMixInput, 0.0f);
-            convMixParamsChanged = true;
+            convParams->blendInput = std::max(convParams->blendInput, 0.0f);
+            convBlendParamsChanged = true;
         }
 
-        if (ImGui::SliderFloat("Conv.##Conv", &convMixConv, 0.0f, 1.0f))
+        if (ImGui::SliderFloat("Conv.##Conv", &convParams->blendConv, 0.0f, 1.0f))
         {
-            convMixConv = std::max(convMixConv, 0.0f);
-            convMixParamsChanged = true;
+            convParams->blendConv = std::max(convParams->blendConv, 0.0f);
+            convBlendParamsChanged = true;
         }
     }
     else
     {
-        if (ImGui::SliderFloat("Mix##Conv", &convMixBlend, 0.0f, 1.0f))
+        if (ImGui::SliderFloat("Mix##Conv", &convParams->blendMix, 0.0f, 1.0f))
         {
-            convMixBlend = std::clamp(convMixBlend, 0.0f, 1.0f);
-            convMixParamsChanged = true;
+            convParams->blendMix = std::clamp(convParams->blendMix, 0.0f, 1.0f);
+            convBlendParamsChanged = true;
         }
     }
 
-    if (ImGui::SliderFloat("Exposure##Conv", &convMixExposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
-        convMixParamsChanged = true;
+    if (ImGui::SliderFloat("Exposure##Conv", &convParams->blendExposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
+        convBlendParamsChanged = true;
 
     if (ImGui::Button("Show Conv. Layer##Conv", btnSize()))
     {
-        convMixAdditive = false;
-        convMixBlend = 1.0f;
-        convMixExposure = 0.0f;
-        convMixParamsChanged = true;
+        convParams->blendAdditive = false;
+        convParams->blendMix = 1.0f;
+        convParams->blendExposure = 0.0f;
+        convBlendParamsChanged = true;
     }
 
     {
         SignalValue v;
-        convMixParamsChanged |= Async::readSignalLast("convMixParamsChanged", v);
+        convBlendParamsChanged |= Async::readSignalLast("convBlendParamsChanged", v);
     }
 
 
-    if (convMixParamsChanged)
+    if (convBlendParamsChanged)
     {
-        convMixParamsChanged = false;
-        conv.mix(convMixAdditive, convMixInput, convMixConv, convMixBlend, convMixExposure);
+        convBlendParamsChanged = false;
+        conv.blend();
         selImageID = "cv-result";
     }
 

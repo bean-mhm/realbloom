@@ -61,6 +61,11 @@ namespace RealBloom
         float threshold = 0.0f;
         float knee = 0.0f;
         bool  autoExposure = true;
+        bool blendAdditive;
+        float blendInput;
+        float blendConv;
+        float blendMix;
+        float blendExposure;
     };
 
     struct ConvolutionStatus : public TimedWorkingStatus
@@ -102,7 +107,7 @@ namespace RealBloom
         CmImage* m_imgKernel = nullptr;
 
         CmImage* m_imgConvPreview = nullptr;
-        CmImage* m_imgConvMix = nullptr;
+        CmImage* m_imgConvResult = nullptr;
 
         CmImage m_imgInputCaptured;
         CmImage m_imgOutput;
@@ -121,12 +126,12 @@ namespace RealBloom
         void setImgKernel(CmImage* image);
 
         void setImgConvPreview(CmImage* image);
-        void setImgConvMix(CmImage* image);
+        void setImgConvResult(CmImage* image);
 
         void previewThreshold(size_t* outNumPixels = nullptr);
         void previewInput(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
         void previewKernel(bool previewMode = true, std::vector<float>* outBuffer = nullptr, uint32_t* outWidth = nullptr, uint32_t* outHeight = nullptr);
-        void mix(bool additive, float inputMix, float convMix, float mix, float convExposure);
+        void blend();
         void convolve();
         void cancel();
 

@@ -551,10 +551,10 @@ namespace CLI
                 {{"--threshold", "-t"}, "Threshold", "0", ArgumentType::Optional},
                 {{"--knee", "-w"}, "Threshold knee", "0", ArgumentType::Optional},
                 {{"--autoexp", "-n"}, "Auto-Exposure", "", ArgumentType::Optional},
-                {{"--input-mix", "-x"}, "Input mix (additive blending)", "", ArgumentType::Optional},
-                {{"--conv-mix", "-y"}, "Output mix (additive blending)", "", ArgumentType::Optional},
-                {{"--mix", "-m"}, "Blend between input and output (normal blending)", "1", ArgumentType::Optional},
-                {{"--conv-exposure", "-z"}, "Conv. output exposure", "0", ArgumentType::Optional}
+                {{"--blend-input", "-x"}, "Input blend (additive blending)", "", ArgumentType::Optional},
+                {{"--blend-conv", "-y"}, "Conv. blend (additive blending)", "", ArgumentType::Optional},
+                {{"--blend-mix", "-m"}, "Blend between input and conv.", "1", ArgumentType::Optional},
+                {{"--blend-exposure", "-z"}, "Conv. exposure adjustment when blending", "0", ArgumentType::Optional}
                 });
 
             commands.push_back(cmd);
@@ -985,32 +985,31 @@ namespace CLI
 
         bool autoExposure = args.contains("--autoexp");
 
-        bool additive = false;
-        float mix = 1.0f;
-        float inputMix = 1.0f;
-        float convMix = 0.2f;
+        bool blendAdditive = false;
+        float blendInput = 1.0f;
+        float blendConv = 0.2f;
+        float blendMix = 1.0f;
+        float blendExposure = 0.0f;
 
-        if (args.contains("--mix"))
+        if (args.contains("--blend-mix"))
         {
-            mix = strToFloat(args["--mix"]);
+            blendMix = strToFloat(args["--blend-mix"]);
         }
-        else if (args.contains("--input-mix") && args.contains("--conv-mix"))
+        else if (args.contains("--blend-input") && args.contains("--blend-conv"))
         {
-            additive = true;
-            inputMix = strToFloat(args["--input-mix"]);
-            convMix = strToFloat(args["--conv-mix"]);
+            blendAdditive = true;
+            blendInput = strToFloat(args["--blend-input"]);
+            blendConv = strToFloat(args["--blend-conv"]);
         }
-
-        float convExposure = 0;
-        if (args.contains("--conv-exposure"))
-            convExposure = strToFloat(args["--conv-exposure"]);
+        if (args.contains("--blend-exposure"))
+            blendExposure = strToFloat(args["--blend-exposure"]);
 
         // Images
 
         CmImage imgInput("", "", 1, 1);
         CmImage imgKernel("", "", 1, 1);
         CmImage imgConvPreview("", "", 1, 1);
-        CmImage imgConvMix("", "", 1, 1);
+        CmImage imgConvResult("", "", 1, 1);
 
         // Convolution
 
@@ -1018,7 +1017,7 @@ namespace CLI
         conv.setImgInput(&imgInput);
         conv.setImgKernel(&imgKernel);
         conv.setImgConvPreview(&imgConvPreview);
-        conv.setImgConvMix(&imgConvMix);
+        conv.setImgConvResult(&imgConvResult);
 
         // Read image transform arguments
         readImageTransformArguments(args, "input", conv.getParams()->inputTransformParams);
@@ -1048,6 +1047,11 @@ namespace CLI
         params->threshold = threshold;
         params->knee = knee;
         params->autoExposure = autoExposure;
+        params->blendAdditive = blendAdditive;
+        params->blendInput = blendInput;
+        params->blendConv = blendConv;
+        params->blendMix = blendMix;
+        params->blendExposure = blendExposure;
 
         // Compute
         {
@@ -1073,10 +1077,10 @@ namespace CLI
         if (!conv.getStatus().isOK())
             throw std::exception(conv.getStatus().getError().c_str());
 
-        // Mixing
+        // Blending
         {
-            CliStackTimer timer("Mixing");
-            conv.mix(additive, inputMix, convMix, mix, convExposure);
+            CliStackTimer timer("Blending");
+            conv.blend();
             timer.done(verbose);
         }
 
@@ -1084,7 +1088,7 @@ namespace CLI
         {
             CliStackTimer timer("Write the output image");
             outCm.apply();
-            CmImageIO::writeImage(imgConvMix, outFilename);
+            CmImageIO::writeImage(imgConvResult, outFilename);
             timer.done(verbose);
         }
 
