@@ -108,7 +108,7 @@ namespace CLI
 
     void printVersion()
     {
-        std::cout << Config::S_APP_VERSION << "\n";
+        std::cout << Config::APP_VERSION << "\n";
     }
 
     void printHelp(const std::string& commandName = "")
@@ -118,7 +118,7 @@ namespace CLI
             // Header
             std::cout
                 << consoleColor(COL_PRI)
-                << Config::S_APP_TITLE << " v" << Config::S_APP_VERSION << "\n"
+                << Config::APP_TITLE << " v" << Config::APP_VERSION << "\n"
                 << "Usage:\n"
                 << consoleColor();
 
@@ -407,7 +407,7 @@ namespace CLI
         if (args.contains(argPrefix + arg))
         {
             int index = strToInt(args[argPrefix + arg]);
-            if (index >= 0 && index < GRAYSCALE_TYPE_SIZE)
+            if (index >= 0 && index < GrayscaleType_EnumSize)
             {
                 outParams.color.grayscale = true;
                 outParams.color.grayscaleType = (GrayscaleType)index;

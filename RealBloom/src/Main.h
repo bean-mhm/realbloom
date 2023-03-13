@@ -46,10 +46,10 @@
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
-#include "Utils/ImageTransform.h"
 #include "Utils/FileDialogs.h"
-#include "Utils/NumberHelpers.h"
+#include "Utils/ImageTransform.h"
 #include "Utils/OpenGL/GlContext.h"
+#include "Utils/NumberHelpers.h"
 #include "Utils/Misc.h"
 
 void layoutAll();
@@ -65,6 +65,8 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
 void imGuiDiv();
 void imGuiBold(const std::string& s);
 void imGuiText(const std::string& s, bool isError, bool newLine);
+bool imGuiSliderUInt(const std::string& label, uint32_t* v, uint32_t min, uint32_t max);
+bool imGuiInputUInt(const std::string& label, uint32_t* v);
 bool imGuiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth);
 void imGuiDialogs();
 
@@ -73,10 +75,6 @@ CmImage* getImageByID(const std::string& id);
 
 bool openImage(CmImage& image, const std::string& dlgID, std::string& outError);
 bool saveImage(CmImage& image, const std::string& dlgID, std::string& outError);
-
-void updateDiffParams();
-void updateDispParams();
-void updateConvParams();
 
 inline ImVec2 btnSize();
 inline ImVec2 dlgBtnSize();
@@ -91,44 +89,4 @@ struct UiVars
     // Color Management (CMS)
     float cms_exposure = 0.0f;
     bool cmsParamsChanged = false;
-
-    // Diffraction
-    bool diffParamsChanged = false;
-
-    // Dispersion
-    float ds_amount = 0.4f;
-    int ds_steps = 32;
-    bool dispParamsChanged = false;
-
-    // Dispersion Method
-    int ds_method = 0;
-    int ds_numThreads = getDefNumThreads();
-
-    // Convolution Kernel
-    bool cv_useKernelTransformOrigin = true;
-    bool convInputTransformParamsChanged = false;
-    bool convKernelTransformParamsChanged = false;
-
-    // Convolution Method
-    int cv_method = 0;
-    int cv_numThreads = getDefNumThreads();
-    int cv_numChunks = 10;
-    int cv_chunkSleep = 0;
-
-    // Convolution Threshold
-    float cv_convThreshold = 0.0f;
-    float cv_convKnee = 0.0f;
-    bool convThresholdChanged = false;
-    bool convThresholdSwitchImage = false;
-
-    // Kernel Auto-Exposure
-    bool cv_autoExposure = true;
-
-    // Convolution Mix (Layers)
-    bool cm_additive = false;
-    float cm_inputMix = 1.0f;       // for additive blending
-    float cm_convMix = 0.2f;        // for additive blending
-    float cm_mix = 0.2f;            // for normal blending
-    float cm_convExposure = 0.0f;
-    bool convMixParamsChanged = false;
 };

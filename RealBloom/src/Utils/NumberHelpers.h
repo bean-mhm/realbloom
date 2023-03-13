@@ -65,6 +65,16 @@ inline int shiftIndex(int i, int shift, int size)
     return (i + shift) % size;
 }
 
+inline uint32_t i32ToU32(int v)
+{
+    return std::max(v, 0);
+}
+
+inline int u32ToI32(uint32_t v)
+{
+    return std::min(v, (uint32_t)INT_MAX);
+}
+
 enum class GrayscaleType
 {
     Luminance,
@@ -76,7 +86,7 @@ enum class GrayscaleType
     Blue,
     Alpha
 };
-constexpr uint32_t GRAYSCALE_TYPE_SIZE = 8;
+constexpr uint32_t GrayscaleType_EnumSize = 8;
 
 constexpr GrayscaleType CONV_THRESHOLD_GRAYSCALE_TYPE = GrayscaleType::Luminance;
 

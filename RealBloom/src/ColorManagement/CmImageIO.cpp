@@ -436,15 +436,13 @@ const std::vector<std::string>& CmImageIO::getNonLinearExtensions()
 const std::vector<std::string>& CmImageIO::getAllExtensions()
 {
     static std::vector<std::string> exts;
-    static bool init = false;
-
-    if (!init)
+    static bool init = true;
+    if (init)
     {
-        init = true;
+        init = false;
         insertContents(exts, getLinearExtensions());
         insertContents(exts, getNonLinearExtensions());
     }
-
     return exts;
 }
 

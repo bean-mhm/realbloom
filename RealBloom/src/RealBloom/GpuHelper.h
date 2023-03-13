@@ -14,13 +14,12 @@
 
 enum class GpuHelperOperationType
 {
-    Diffraction = 0,
-    Dispersion = 1,
-    ConvFFT = 2,
-    ConvNaive = 3
+    Diffraction,
+    Dispersion,
+    ConvFFT,
+    ConvNaive
 };
 
-// Is this Java? Perhaps not long enough of a name.
 std::string strFromGpuHelperOperationType(GpuHelperOperationType opType);
 
 constexpr uint32_t GPU_HELPER_FILE_TIMEOUT = 5000;

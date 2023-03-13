@@ -42,10 +42,10 @@ void setPrintHandler(std::function<void(std::string)> handler)
 uint32_t getMaxNumThreads()
 {
     static uint32_t v = 1;
-    static bool firstCall = true;
-    if (firstCall)
+    static bool init = true;
+    if (init)
     {
-        firstCall = false;
+        init = false;
         v = std::max(1u, std::thread::hardware_concurrency());
     }
     return v;
@@ -54,10 +54,10 @@ uint32_t getMaxNumThreads()
 uint32_t getDefNumThreads()
 {
     static uint32_t num = 1;
-    static bool firstCall = true;
-    if (firstCall)
+    static bool init = true;
+    if (init)
     {
-        firstCall = false;
+        init = false;
         num = std::max(1u, getMaxNumThreads() / 2);
     }
     return num;

@@ -32,22 +32,23 @@ namespace RealBloom
 {
 
     constexpr float CONV_MULTIPLIER = 1.0 / 1024.0;
-    constexpr int CONV_MAX_CHUNKS = 2048;
-    constexpr int CONV_MAX_SLEEP = 5000;
+    constexpr uint32_t CONV_MAX_CHUNKS = 2048;
+    constexpr uint32_t CONV_MAX_SLEEP = 5000;
 
     enum class ConvolutionMethod
     {
-        FFT_CPU = 0,
-        FFT_GPU = 1,
-        NAIVE_CPU = 2,
-        NAIVE_GPU = 3
+        FFT_CPU,
+        FFT_GPU,
+        NAIVE_CPU,
+        NAIVE_GPU
     };
+    constexpr uint32_t ConvolutionMethod_EnumSize = 4;
 
     struct ConvolutionMethodInfo
     {
         ConvolutionMethod method = ConvolutionMethod::FFT_CPU;
-        uint32_t numThreads = 1;
-        uint32_t numChunks = 1;
+        uint32_t numThreads = getDefNumThreads();
+        uint32_t numChunks = 10;
         uint32_t chunkSleep = 0;
     };
 

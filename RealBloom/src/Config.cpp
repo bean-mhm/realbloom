@@ -3,17 +3,18 @@
 std::string Config::CFG_FILENAME = getLocalPath("config.xml");
 
 // Const
-const char* Config::S_APP_TITLE = "RealBloom";
-const char* Config::S_APP_VERSION = "0.5.2-dev";
-const char* Config::S_APP_LOCALE = "en_US.UTF-8";
 
-const uint32_t Config::S_WINDOW_WIDTH = 1440;
-const uint32_t Config::S_WINDOW_HEIGHT = 810;
-const float Config::S_UI_MAX_SCALE = 1.50f;
-const float Config::S_UI_MIN_SCALE = 0.75f;
+const char* Config::APP_TITLE = "RealBloom";
+const char* Config::APP_VERSION = "0.5.2-dev";
+const char* Config::APP_LOCALE = "en_US.UTF-8";
 
-const char* Config::S_GITHUB_URL = "https://github.com/bean-mhm/realbloom";
-const char* Config::S_DOCS_URL = "https://github.com/bean-mhm/realbloom/blob/main/USAGE.md";
+const uint32_t Config::WINDOW_WIDTH = 1440;
+const uint32_t Config::WINDOW_HEIGHT = 810;
+const float Config::UI_MAX_SCALE = 1.50f;
+const float Config::UI_MIN_SCALE = 0.75f;
+
+const char* Config::GITHUB_URL = "https://github.com/bean-mhm/realbloom";
+const char* Config::DOCS_URL = "https://github.com/bean-mhm/realbloom/blob/main/USAGE.md";
 
 // Variable
 float Config::UI_SCALE = 1.0f;
@@ -39,7 +40,7 @@ void Config::load()
             ).c_str());
 
         // Root node
-        pugi::xml_node root = doc.child(S_APP_TITLE).child("Config");
+        pugi::xml_node root = doc.child(APP_TITLE).child("Config");
 
         // Interface
         {
@@ -51,7 +52,7 @@ void Config::load()
             if (!scaleValue.empty())
             {
                 UI_SCALE = std::stof(scaleValue);
-                UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
+                UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::UI_MIN_SCALE), Config::UI_MAX_SCALE);
             }
         }
     }
@@ -76,7 +77,7 @@ void Config::save()
         pugi::xml_document doc;
 
         // Root node
-        pugi::xml_node root = doc.append_child(S_APP_TITLE).append_child("Config");
+        pugi::xml_node root = doc.append_child(APP_TITLE).append_child("Config");
 
         // Interface
         {

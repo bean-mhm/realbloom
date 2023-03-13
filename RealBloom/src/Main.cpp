@@ -38,11 +38,14 @@ static RealBloom::Convolution conv;
 static UiVars vars;
 static std::string convResUsage = "";
 
+// Constants
+static constexpr float EXPOSURE_RANGE = 10.0f;
+
 int main(int argc, char** argv)
 {
     // Set Locale
-    if (!std::setlocale(LC_ALL, Config::S_APP_LOCALE))
-        std::cout << "Couldn't set locale to \"" << Config::S_APP_LOCALE << "\".\n";
+    if (!std::setlocale(LC_ALL, Config::APP_LOCALE))
+        std::cout << "Couldn't set locale to \"" << Config::APP_LOCALE << "\".\n";
 
     // Load config
     Config::load();
@@ -126,10 +129,6 @@ int main(int argc, char** argv)
         conv.setImgKernel(getImageByID("cv-kernel"));
         conv.setImgConvPreview(getImageByID("cv-prev"));
         conv.setImgConvMix(getImageByID("cv-result"));
-
-        // Will be shared with Convolution and Dispersion
-        Async::putShared("convMixParamsChanged", &vars.convMixParamsChanged);
-        Async::putShared("selImageID", &selImageID);
     }
 
     // To kill child processes when the parent dies
@@ -140,7 +139,7 @@ int main(int argc, char** argv)
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = { 0 };
         jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
         SetInformationJobObject(hJobObject, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
-        Async::putShared("hJobObject", hJobObject);
+        Async::emitSignal("hJobObject", (void*)hJobObject);
     }
 
     // Update resource usage info for convolution (GUI)
@@ -154,7 +153,6 @@ int main(int argc, char** argv)
                 {
                     if (getElapsedMs(lastTime) > 500)
                     {
-                        updateConvParams();
                         convResUsage = conv.getResourceInfo();
                         lastTime = std::chrono::system_clock::now();
                     }
@@ -284,6 +282,12 @@ void layoutAll()
 void layoutImagePanels()
 {
     // Selected image
+
+    {
+        SignalValue v;
+        if (Async::readSignalLast("selImageID", v))
+            selImageID = std::get<std::string>(v);
+    }
 
     if (!selImageID.empty())
     {
@@ -430,7 +434,7 @@ void layoutColorManagement()
     {
 
         // Exposure
-        if (ImGui::SliderFloat("Exposure##CMS", &vars.cms_exposure, -10, 10))
+        if (ImGui::SliderFloat("Exposure##CMS", &vars.cms_exposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
         {
             CMS::setExposure(vars.cms_exposure);
             vars.cmsParamsChanged = true;
@@ -724,8 +728,8 @@ void layoutMisc()
 
     if (ImGui::InputFloat("Scale", &Config::UI_SCALE, 0.125f, 0.125f, "%.3f"))
     {
-        Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
-        io->FontGlobalScale = Config::UI_SCALE / Config::S_UI_MAX_SCALE;
+        Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::UI_MIN_SCALE), Config::UI_MAX_SCALE);
+        io->FontGlobalScale = Config::UI_SCALE / Config::UI_MAX_SCALE;
     }
 
     // UI Renderer
@@ -748,13 +752,13 @@ void layoutMisc()
     imGuiBold("INFO");
 
     // Version
-    ImGui::TextWrapped("%s v%s", Config::S_APP_TITLE, Config::S_APP_VERSION);
+    ImGui::TextWrapped("%s v%s", Config::APP_TITLE, Config::APP_VERSION);
 
     // GitHub
     if (ImGui::Button("GitHub", btnSize()))
-        openURL(Config::S_GITHUB_URL);
+        openURL(Config::GITHUB_URL);
     if (ImGui::Button("Tutorial", btnSize()))
-        openURL(Config::S_DOCS_URL);
+        openURL(Config::DOCS_URL);
 
     ImGui::End();
 }
@@ -764,6 +768,13 @@ void layoutConvolution()
     CmImage& imgConvInput = *getImageByID("cv-input");
     CmImage& imgConvKernel = *getImageByID("cv-kernel");
     CmImage& imgConvResult = *getImageByID("cv-result");
+
+    static bool convInputTransformParamsChanged = false;
+    static bool convThresholdChanged = false;
+    static bool convThresholdSwitchImage = false;
+    static bool convKernelTransformParamsChanged = false;
+
+    RealBloom::ConvolutionParams* convParams = conv.getParams();
 
     ImGui::Begin("Convolution");
 
@@ -776,20 +787,19 @@ void layoutConvolution()
             CmImage* imgSrc = conv.getImgInputSrc();
             if (openImage(*imgSrc, imgConvInput.getID(), loadError))
             {
-                vars.convInputTransformParamsChanged = true;
-                vars.convThresholdChanged = true;
+                convInputTransformParamsChanged = true;
+                convThresholdChanged = true;
             }
         }
         imGuiText(loadError, true, false);
     }
 
-    if (layoutImageTransformParams("Input", "ConvInput", conv.getParams()->inputTransformParams))
-        vars.convInputTransformParamsChanged = true;
+    if (layoutImageTransformParams("Input", "ConvInput", convParams->inputTransformParams))
+        convInputTransformParamsChanged = true;
 
-    if (vars.convInputTransformParamsChanged)
+    if (convInputTransformParamsChanged)
     {
-        vars.convInputTransformParamsChanged = false;
-        updateConvParams();
+        convInputTransformParamsChanged = false;
         conv.previewInput();
         selImageID = "cv-input";
     }
@@ -803,79 +813,77 @@ void layoutConvolution()
         {
             CmImage* imgSrc = conv.getImgKernelSrc();
             if (openImage(*imgSrc, imgConvKernel.getID(), loadError))
-                vars.convKernelTransformParamsChanged = true;
+                convKernelTransformParamsChanged = true;
         }
         imGuiText(loadError, true, false);
     }
 
-    if (layoutImageTransformParams("Kernel", "ConvKernel", conv.getParams()->kernelTransformParams))
-        vars.convKernelTransformParamsChanged = true;
+    if (layoutImageTransformParams("Kernel", "ConvKernel", convParams->kernelTransformParams))
+        convKernelTransformParamsChanged = true;
 
-    if (vars.convKernelTransformParamsChanged)
+    if (convKernelTransformParamsChanged)
     {
-        vars.convKernelTransformParamsChanged = false;
-        updateConvParams();
+        convKernelTransformParamsChanged = false;
         conv.previewKernel();
         selImageID = "cv-kernel";
     }
 
-    ImGui::Checkbox("Use Transform Origin##Kernel", &vars.cv_useKernelTransformOrigin);
+    ImGui::Checkbox("Use Transform Origin##Kernel", &convParams->useKernelTransformOrigin);
 
     imGuiDiv();
     imGuiBold("CONVOLUTION");
 
     const char* const convMethodItems[]{ "FFT CPU", "FFT GPU (Experimental)", "Naive CPU", "Naive GPU" };
-    if (ImGui::Combo("Method##Conv", &vars.cv_method, convMethodItems, 4))
+    if (ImGui::Combo("Method##Conv", (int*)(&convParams->methodInfo.method), convMethodItems, RealBloom::ConvolutionMethod_EnumSize))
         conv.cancel();
 
-    if (vars.cv_method == (int)RealBloom::ConvolutionMethod::FFT_CPU)
+    if (convParams->methodInfo.method == RealBloom::ConvolutionMethod::FFT_CPU)
     {
         // No parameters yet
     }
-    else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_CPU)
+    else if (convParams->methodInfo.method == RealBloom::ConvolutionMethod::NAIVE_CPU)
     {
         // Threads
-        if (ImGui::SliderInt("Threads##Conv", &vars.cv_numThreads, 1, getMaxNumThreads()))
-            vars.cv_numThreads = std::clamp(vars.cv_numThreads, 1, (int)getMaxNumThreads());
+        if (imGuiSliderUInt("Threads##Conv", &convParams->methodInfo.numThreads, 1, getMaxNumThreads()))
+            convParams->methodInfo.numThreads = std::clamp(convParams->methodInfo.numThreads, 1u, getMaxNumThreads());
     }
-    else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_GPU)
+    else if (convParams->methodInfo.method == RealBloom::ConvolutionMethod::NAIVE_GPU)
     {
         // Chunks
-        if (ImGui::InputInt("Chunks##Conv", &vars.cv_numChunks))
-            vars.cv_numChunks = std::clamp(vars.cv_numChunks, 1, RealBloom::CONV_MAX_CHUNKS);
+        if (imGuiInputUInt("Chunks##Conv", &convParams->methodInfo.numChunks))
+            convParams->methodInfo.numChunks = std::clamp(convParams->methodInfo.numChunks, 1u, RealBloom::CONV_MAX_CHUNKS);
 
         // Chunk Sleep Time
-        if (ImGui::InputInt("Sleep (ms)##Conv", &vars.cv_chunkSleep))
-            vars.cv_chunkSleep = std::clamp(vars.cv_chunkSleep, 0, RealBloom::CONV_MAX_SLEEP);
+        if (imGuiInputUInt("Sleep (ms)##Conv", &convParams->methodInfo.chunkSleep))
+            convParams->methodInfo.chunkSleep = std::clamp(convParams->methodInfo.chunkSleep, 0u, RealBloom::CONV_MAX_SLEEP);
     }
 
-    if (ImGui::SliderFloat("Threshold##Conv", &vars.cv_convThreshold, 0, 2))
+    if (ImGui::SliderFloat("Threshold##Conv", &convParams->threshold, 0, 2))
     {
-        vars.cv_convThreshold = std::max(vars.cv_convThreshold, 0.0f);
-        vars.convThresholdChanged = true;
-        vars.convThresholdSwitchImage = true;
+        convParams->threshold = std::max(convParams->threshold, 0.0f);
+        convThresholdChanged = true;
+        convThresholdSwitchImage = true;
     }
 
-    if (ImGui::SliderFloat("Knee##Conv", &vars.cv_convKnee, 0, 2))
+    if (ImGui::SliderFloat("Knee##Conv", &convParams->knee, 0, 2))
     {
-        vars.cv_convKnee = std::max(vars.cv_convKnee, 0.0f);
-        vars.convThresholdChanged = true;
-        vars.convThresholdSwitchImage = true;
+        convParams->knee = std::max(convParams->knee, 0.0f);
+        convThresholdChanged = true;
+        convThresholdSwitchImage = true;
     }
 
-    if (vars.convThresholdChanged)
+    if (convThresholdChanged)
     {
-        updateConvParams();
+        convThresholdChanged = false;
         conv.previewThreshold();
-        if (vars.convThresholdSwitchImage)
+        if (convThresholdSwitchImage)
         {
+            convThresholdSwitchImage = false;
             selImageID = "cv-prev";
-            vars.convThresholdSwitchImage = false;
         }
-        vars.convThresholdChanged = false;
     }
 
-    ImGui::Checkbox("Auto-Exposure##Kernel", &vars.cv_autoExposure);
+    ImGui::Checkbox("Auto-Exposure##Kernel", &convParams->autoExposure);
 
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Adjust the exposure to preserve the overall brightness");
@@ -887,7 +895,6 @@ void layoutConvolution()
         imgConvResult.moveToGPU();
         selImageID = "cv-result";
 
-        updateConvParams();
         conv.convolve();
     }
 
@@ -932,50 +939,60 @@ void layoutConvolution()
     imGuiDiv();
     imGuiBold("LAYERS");
 
-    if (ImGui::Checkbox("Additive##Conv", &vars.cm_additive))
-        vars.convMixParamsChanged = true;
+    static bool convMixAdditive = false;
+    static float convMixInput = 1.0f;        // for additive blending
+    static float convMixConv = 0.2f;         // for additive blending
+    static float convMixBlend = 0.2f;        // for normal blending
+    static float convMixExposure = 0.0f;
+    static bool convMixParamsChanged = false;
 
-    if (vars.cm_additive)
+    if (ImGui::Checkbox("Additive##Conv", &convMixAdditive))
+        convMixParamsChanged = true;
+
+    if (convMixAdditive)
     {
-        if (ImGui::SliderFloat("Input##Conv", &vars.cm_inputMix, 0, 1))
+        if (ImGui::SliderFloat("Input##Conv", &convMixInput, 0.0f, 1.0f))
         {
-            vars.cm_inputMix = std::max(vars.cm_inputMix, 0.0f);
-            vars.convMixParamsChanged = true;
+            convMixInput = std::max(convMixInput, 0.0f);
+            convMixParamsChanged = true;
         }
 
-        if (ImGui::SliderFloat("Conv.##Conv", &vars.cm_convMix, 0, 1))
+        if (ImGui::SliderFloat("Conv.##Conv", &convMixConv, 0.0f, 1.0f))
         {
-            vars.cm_convMix = std::max(vars.cm_convMix, 0.0f);
-            vars.convMixParamsChanged = true;
+            convMixConv = std::max(convMixConv, 0.0f);
+            convMixParamsChanged = true;
         }
-
-        if (ImGui::SliderFloat("Exposure##Conv", &vars.cm_convExposure, -10, 10))
-            vars.convMixParamsChanged = true;
     }
     else
     {
-        if (ImGui::SliderFloat("Mix##Conv", &vars.cm_mix, 0, 1))
+        if (ImGui::SliderFloat("Mix##Conv", &convMixBlend, 0.0f, 1.0f))
         {
-            vars.cm_mix = std::clamp(vars.cm_mix, 0.0f, 1.0f);
-            vars.convMixParamsChanged = true;
+            convMixBlend = std::clamp(convMixBlend, 0.0f, 1.0f);
+            convMixParamsChanged = true;
         }
-
-        if (ImGui::SliderFloat("Exposure##Conv", &vars.cm_convExposure, -10, 10))
-            vars.convMixParamsChanged = true;
     }
+
+    if (ImGui::SliderFloat("Exposure##Conv", &convMixExposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
+        convMixParamsChanged = true;
 
     if (ImGui::Button("Show Conv. Layer##Conv", btnSize()))
     {
-        vars.cm_additive = false;
-        vars.cm_mix = 1.0f;
-        vars.cm_convExposure = 0.0f;
-        vars.convMixParamsChanged = true;
+        convMixAdditive = false;
+        convMixBlend = 1.0f;
+        convMixExposure = 0.0f;
+        convMixParamsChanged = true;
     }
 
-    if (vars.convMixParamsChanged)
     {
-        vars.convMixParamsChanged = false;
-        conv.mix(vars.cm_additive, vars.cm_inputMix, vars.cm_convMix, vars.cm_mix, vars.cm_convExposure);
+        SignalValue v;
+        convMixParamsChanged |= Async::readSignalLast("convMixParamsChanged", v);
+    }
+
+
+    if (convMixParamsChanged)
+    {
+        convMixParamsChanged = false;
+        conv.mix(convMixAdditive, convMixInput, convMixConv, convMixBlend, convMixExposure);
         selImageID = "cv-result";
     }
 
@@ -990,6 +1007,12 @@ void layoutDiffraction()
     CmImage& imgDispInput = *getImageByID("disp-input");
     CmImage& imgDispResult = *getImageByID("disp-result");
 
+    static bool diffParamsChanged = false;
+    static bool dispParamsChanged = false;
+
+    RealBloom::DiffractionParams* diffParams = diff.getParams();
+    RealBloom::DispersionParams* dispParams = disp.getParams();
+
     ImGui::Begin("Diffraction");
 
     imGuiBold("DIFFRACTION");
@@ -1000,18 +1023,17 @@ void layoutDiffraction()
         {
             CmImage* imgSrc = diff.getImgInputSrc();
             if (openImage(*imgSrc, imgDiffInput.getID(), loadError))
-                vars.diffParamsChanged = true;
+                diffParamsChanged = true;
         }
         imGuiText(loadError, true, false);
     }
 
-    if (layoutImageTransformParams("Input", "DiffInput", diff.getParams()->inputTransformParams))
-        vars.diffParamsChanged = true;
+    if (layoutImageTransformParams("Input", "DiffInput", diffParams->inputTransformParams))
+        diffParamsChanged = true;
 
-    if (vars.diffParamsChanged)
+    if (diffParamsChanged)
     {
-        vars.diffParamsChanged = false;
-        updateDiffParams();
+        diffParamsChanged = false;
         diff.previewInput();
         selImageID = "diff-input";
     }
@@ -1019,7 +1041,6 @@ void layoutDiffraction()
     if (ImGui::Button("Compute##Diff", btnSize()))
     {
         selImageID = "diff-result";
-        updateDiffParams();
         diff.compute();
     }
 
@@ -1038,36 +1059,35 @@ void layoutDiffraction()
         {
             CmImage* imgSrc = disp.getImgInputSrc();
             if (openImage(*imgSrc, imgDispInput.getID(), loadError))
-                vars.dispParamsChanged = true;
+                dispParamsChanged = true;
         }
         imGuiText(loadError, true, false);
     }
 
-    if (layoutImageTransformParams("Input", "DispInput", disp.getParams()->inputTransformParams))
-        vars.dispParamsChanged = true;
+    if (layoutImageTransformParams("Input", "DispInput", dispParams->inputTransformParams))
+        dispParamsChanged = true;
 
-    if (vars.dispParamsChanged)
+    if (dispParamsChanged)
     {
-        vars.dispParamsChanged = false;
-        updateDispParams();
+        dispParamsChanged = false;
         disp.previewInput();
         selImageID = "disp-input";
     }
 
-    if (ImGui::SliderFloat("Amount##Disp", &vars.ds_amount, 0, 1))
-        vars.ds_amount = std::clamp(vars.ds_amount, 0.0f, 1.0f);
+    if (ImGui::SliderFloat("Amount##Disp", &dispParams->amount, 0.0f, 1.0f))
+        dispParams->amount = std::clamp(dispParams->amount, 0.0f, 1.0f);
 
-    if (ImGui::SliderInt("Steps##Disp", &vars.ds_steps, 32, 1024))
-        vars.ds_steps = std::clamp(vars.ds_steps, 1, RealBloom::DISP_MAX_STEPS);
+    if (imGuiSliderUInt("Steps##Disp", &dispParams->steps, 32, 1024))
+        dispParams->steps = std::clamp(dispParams->steps, 1u, RealBloom::DISP_MAX_STEPS);
 
     const char* const dispMethodItems[]{ "CPU", "GPU" };
-    if (ImGui::Combo("Method##Disp", &vars.ds_method, dispMethodItems, 2))
+    if (ImGui::Combo("Method##Disp", (int*)(&dispParams->methodInfo.method), dispMethodItems, RealBloom::DispersionMethod_EnumSize))
         disp.cancel();
 
-    if (vars.ds_method == (int)RealBloom::DispersionMethod::CPU)
+    if (dispParams->methodInfo.method == RealBloom::DispersionMethod::CPU)
     {
-        if (ImGui::SliderInt("Threads##Disp", &vars.ds_numThreads, 1, getMaxNumThreads()))
-            vars.ds_numThreads = std::clamp(vars.ds_numThreads, 1, (int)getMaxNumThreads());
+        if (imGuiSliderUInt("Threads##Disp", &dispParams->methodInfo.numThreads, 1, getMaxNumThreads()))
+            dispParams->methodInfo.numThreads = std::clamp(dispParams->methodInfo.numThreads, 1u, getMaxNumThreads());
     }
 
     if (ImGui::Button("Apply Dispersion##Disp", btnSize()))
@@ -1077,7 +1097,6 @@ void layoutDiffraction()
         imgDispResult.moveToGPU();
         selImageID = "disp-result";
 
-        updateDispParams();
         disp.compute();
     }
 
@@ -1271,7 +1290,7 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
             }
 
             // Exposure
-            if (ImGui::SliderFloat("Exposure##Color", &params.color.exposure, -10.0f, 10.0f))
+            if (ImGui::SliderFloat("Exposure##Color", &params.color.exposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
                 changed = true;
 
             // Contrast
@@ -1366,10 +1385,32 @@ void imGuiText(const std::string& s, bool isError, bool newLine)
     }
 }
 
+bool imGuiSliderUInt(const std::string& label, uint32_t* v, uint32_t min, uint32_t max)
+{
+    int vInt = u32ToI32(*v);
+    if (ImGui::SliderInt(label.c_str(), &vInt, u32ToI32(min), u32ToI32(max)))
+    {
+        *v = i32ToU32(vInt);
+        return true;
+    }
+    return false;
+}
+
+bool imGuiInputUInt(const std::string& label, uint32_t* v)
+{
+    int vInt = u32ToI32(*v);
+    if (ImGui::InputInt(label.c_str(), &vInt))
+    {
+        *v = i32ToU32(vInt);
+        return true;
+    }
+    return false;
+}
+
 bool imGuiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth)
 {
     static std::vector<std::string> activeComboList;
-    
+
     activeComboList = items;
     bool result = false;
 
@@ -1451,33 +1492,6 @@ bool saveImage(CmImage& image, const std::string& dlgID, std::string& outError)
     return false;
 }
 
-void updateDiffParams()
-{
-    //
-}
-
-void updateDispParams()
-{
-    RealBloom::DispersionParams* params = disp.getParams();
-    params->methodInfo.method = (RealBloom::DispersionMethod)(vars.ds_method);
-    params->methodInfo.numThreads = vars.ds_numThreads;
-    params->amount = vars.ds_amount;
-    params->steps = vars.ds_steps;
-}
-
-void updateConvParams()
-{
-    RealBloom::ConvolutionParams* params = conv.getParams();
-    params->methodInfo.method = (RealBloom::ConvolutionMethod)(vars.cv_method);
-    params->methodInfo.numThreads = vars.cv_numThreads;
-    params->methodInfo.numChunks = vars.cv_numChunks;
-    params->methodInfo.chunkSleep = vars.cv_chunkSleep;
-    params->useKernelTransformOrigin = vars.cv_useKernelTransformOrigin;
-    params->threshold = vars.cv_convThreshold;
-    params->knee = vars.cv_convKnee;
-    params->autoExposure = vars.cv_autoExposure;
-}
-
 ImVec2 btnSize()
 {
     return { -1.0f, 28.0f * Config::UI_SCALE };
@@ -1507,7 +1521,7 @@ bool setupGLFW()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     // Create window with graphics context
-    window = glfwCreateWindow(Config::S_WINDOW_WIDTH, Config::S_WINDOW_HEIGHT, Config::S_APP_TITLE, NULL, NULL);
+    window = glfwCreateWindow(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::APP_TITLE, NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create the main window.\n";
@@ -1562,19 +1576,19 @@ bool setupImGui()
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
-    io->FontGlobalScale = Config::UI_SCALE / Config::S_UI_MAX_SCALE;
+    io->FontGlobalScale = Config::UI_SCALE / Config::UI_MAX_SCALE;
 
     fontRoboto = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/RobotoCondensed-Regular.ttf").c_str(),
-        18.0f * Config::S_UI_MAX_SCALE);
+        18.0f * Config::UI_MAX_SCALE);
 
     fontRobotoBold = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/RobotoCondensed-Bold.ttf").c_str(),
-        19.0f * Config::S_UI_MAX_SCALE);
+        19.0f * Config::UI_MAX_SCALE);
 
     fontMono = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/mono/RobotoMono-Regular.ttf").c_str(),
-        18.0f * Config::S_UI_MAX_SCALE);
+        18.0f * Config::UI_MAX_SCALE);
 
     if (fontRoboto && fontRobotoBold && fontMono)
         return true;

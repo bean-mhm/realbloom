@@ -44,7 +44,7 @@ namespace RealBloom
 
             // Get wavelength samples
             std::vector<float> samples;
-            table->sampleRGB(pWidth, samples);
+            table->sampleRGB(pWidth, true, samples);
 
             // Copy to buffer
             uint32_t redIndex, smpIndex;
@@ -124,37 +124,12 @@ namespace RealBloom
 
                     // Sample wavelengths
                     std::vector<float> cmfSamples;
-                    table->sampleRGB(dispSteps, cmfSamples);
+                    table->sampleRGB(dispSteps, true, cmfSamples);
                     if (cmfSamples.size() < (dispSteps * 3))
                         throw std::exception("Invalid number of samples provided by CmfTable.");
 
-                    // Normalize the samples
-                    {
-                        // Get the sum of the grayscale values
-                        float sumV = 0.0f;
-                        for (uint32_t i = 0; i < dispSteps; i++)
-                        {
-                            uint32_t smpIndex = i * 3;
-
-                            float grayscale = rgbToGrayscale(&cmfSamples[smpIndex], GrayscaleType::Average);
-                            sumV += fmaxf(0.0f, grayscale);
-                        }
-
-                        // To avoid division by zero
-                        sumV = fmaxf(EPSILON, sumV);
-
-                        // Divide by the sum
-                        for (uint32_t i = 0; i < dispSteps; i++)
-                        {
-                            uint32_t smpIndex = i * 3;
-                            cmfSamples[smpIndex + 0] /= sumV;
-                            cmfSamples[smpIndex + 1] /= sumV;
-                            cmfSamples[smpIndex + 2] /= sumV;
-                        }
-                    }
-
                     // Call the appropriate function
-                    switch (m_params.methodInfo.method)
+                    switch (m_capturedParams.methodInfo.method)
                     {
                     case RealBloom::DispersionMethod::CPU:
                         dispCPU(
@@ -172,11 +147,7 @@ namespace RealBloom
 
                     // Update the dispersion image
                     m_imgDisp->moveToGPU();
-                    Async::schedule([this]()
-                        {
-                            std::string* pSelImageID = (std::string*)Async::getShared("selImageID");
-                            if (pSelImageID != nullptr) *pSelImageID = m_imgDisp->getID();
-                        });
+                    Async::emitSignal("selImageID", m_imgDisp->getID());
 
                     m_status.setDone();
                 }

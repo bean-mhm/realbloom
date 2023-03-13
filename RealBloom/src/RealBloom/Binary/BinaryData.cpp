@@ -10,7 +10,7 @@ namespace RealBloom
 
     std::string BinaryData::getDefaultHeader()
     {
-        return strFormat("RealBloom Binary Data v%s; Type: %s;", Config::S_APP_VERSION, getType().c_str());
+        return strFormat("RealBloom Binary Data v%s; Type: %s;", Config::APP_VERSION, getType().c_str());
     }
 
     void BinaryData::readFrom(std::istream& stream)

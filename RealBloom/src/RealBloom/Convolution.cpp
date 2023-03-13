@@ -287,13 +287,7 @@ namespace RealBloom
 
                 // Update convMixParamsChanged
                 if (m_status.isOK() && !m_status.mustCancel())
-                {
-                    Async::schedule([this]()
-                        {
-                            bool* pConvMixParamsChanged = (bool*)Async::getShared("convMixParamsChanged");
-                            if (pConvMixParamsChanged != nullptr) *pConvMixParamsChanged = true;
-                        });
-                }
+                    Async::emitSignal("convMixParamsChanged", nullptr);
 
                 m_status.setDone();
             }

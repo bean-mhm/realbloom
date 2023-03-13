@@ -155,7 +155,7 @@ void CmfTable::sample(size_t numSamples, std::vector<float>& outSamples) const
     }
 }
 
-void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) const
+void CmfTable::sampleRGB(size_t numSamples, bool normalize, std::vector<float>& outSamples) const
 {
     sample(numSamples, outSamples);
 
@@ -225,23 +225,48 @@ void CmfTable::sampleRGB(size_t numSamples, std::vector<float>& outSamples) cons
 
         // Eliminate negative values
         {
-            float minV;
-            size_t redIndex;
-            for (size_t i = 0; i < numSamples; i++)
+            // Offset
+            if (0)
             {
-                redIndex = i * 3;
-
-                minV = fminf(fminf(outSamples[redIndex], outSamples[redIndex + 1]), outSamples[redIndex + 2]);
-                if (minV < 0.0f)
+                for (uint32_t i = 0; i < numSamples; i++)
                 {
-                    outSamples[redIndex + 0] -= minV;
-                    outSamples[redIndex + 1] -= minV;
-                    outSamples[redIndex + 2] -= minV;
+                    uint32_t redIndex = i * 3;
+
+                    float minV = fminf(fminf(outSamples[redIndex], outSamples[redIndex + 1]), outSamples[redIndex + 2]);
+                    if (minV < 0.0f)
+                    {
+                        outSamples[redIndex + 0] -= minV;
+                        outSamples[redIndex + 1] -= minV;
+                        outSamples[redIndex + 2] -= minV;
+                    }
                 }
             }
+
+            // Clip
+            for (auto& v : outSamples)
+                v = fmaxf(v, 0.0f);
         }
-        for (auto& v : outSamples)
-            v = fmaxf(v, 0.0f);
+
+        // Normalize the samples
+        if (normalize)
+        {
+            // Get the sum of the grayscale values
+            float sumV = 0.0f;
+            for (uint32_t i = 0; i < numSamples; i++)
+            {
+                uint32_t redIndex = i * 3;
+
+                float grayscale = rgbToGrayscale(&outSamples[redIndex], GrayscaleType::Average);
+                sumV += fmaxf(0.0f, grayscale);
+            }
+
+            // To avoid division by zero
+            sumV = fmaxf(EPSILON, sumV);
+
+            // Divide by the sum
+            for (auto& v : outSamples)
+                v /= sumV;
+        }
     }
     catch (std::exception& e)
     {

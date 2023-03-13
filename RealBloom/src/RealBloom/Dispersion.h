@@ -27,25 +27,26 @@
 
 namespace RealBloom
 {
-    constexpr int DISP_MAX_STEPS = 2048;
+    constexpr uint32_t DISP_MAX_STEPS = 2048;
 
     enum class DispersionMethod
     {
-        CPU = 0,
-        GPU = 1
+        CPU,
+        GPU
     };
+    constexpr uint32_t DispersionMethod_EnumSize = 2;
 
     struct DispersionMethodInfo
     {
         DispersionMethod method = DispersionMethod::CPU;
-        uint32_t numThreads = 1;
+        uint32_t numThreads = getDefNumThreads();
     };
 
     struct DispersionParams
     {
         DispersionMethodInfo methodInfo;
         ImageTransformParams inputTransformParams;
-        float amount = 0.0f;
+        float amount = 0.4f;
         uint32_t steps = 32;
     };
 
