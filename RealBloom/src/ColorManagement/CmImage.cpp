@@ -180,6 +180,38 @@ void CmImage::renderUV()
     }
 }
 
+void CmImage::copyTo(CmImage& target, bool move)
+{
+    std::scoped_lock lock1(m_mutex);
+    std::scoped_lock lock2(target);
+
+    // Copy the source name
+    target.m_sourceName = m_sourceName;
+
+    // Resize the target
+    target.resize(m_width, m_height, false);
+
+    // Move/Copy the buffer
+    if (move)
+        target.m_imageData = std::move(m_imageData);
+    else
+        target.m_imageData = m_imageData;
+
+    // Reset self if moving
+    if (move)
+    {
+        m_sourceName = "";
+
+        clearVector(m_imageData);
+        resize(1, 1, false);
+
+        moveToGPU();
+    }
+
+    // Move to GPU
+    target.moveToGPU();
+}
+
 void CmImage::moveToGPU_Internal()
 {
     std::scoped_lock lock(m_mutex);

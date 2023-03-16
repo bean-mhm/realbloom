@@ -832,8 +832,8 @@ namespace CLI
         bool grayscale = args.contains("--grayscale");
 
         // Images
-        CmImage imgInput("", "", 1, 1);
-        CmImage imgOutput("", "", 1, 1);
+        CmImage imgInput;
+        CmImage imgOutput;
 
         // Diffraction
         RealBloom::Diffraction diff;
@@ -917,8 +917,8 @@ namespace CLI
         readXyzConversionArguments(args);
 
         // Images
-        CmImage imgInput("", "", 1, 1);
-        CmImage imgOutput("", "", 1, 1);
+        CmImage imgInput;
+        CmImage imgOutput;
 
         // Dispersion
         RealBloom::Dispersion disp;
@@ -1055,10 +1055,10 @@ namespace CLI
 
         // Images
 
-        CmImage imgInput("", "", 1, 1);
-        CmImage imgKernel("", "", 1, 1);
-        CmImage imgConvPreview("", "", 1, 1);
-        CmImage imgConvResult("", "", 1, 1);
+        CmImage imgInput;
+        CmImage imgKernel;
+        CmImage imgConvPreview;
+        CmImage imgConvResult;
 
         // Convolution
 
@@ -1178,7 +1178,7 @@ namespace CLI
         readXyzConversionArguments(args);
 
         // Image
-        CmImage img("", "", 1, 1);
+        CmImage img;
 
         // Compute
         RealBloom::Dispersion disp;

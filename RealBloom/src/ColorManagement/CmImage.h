@@ -52,8 +52,8 @@ public:
     CmImage(
         const std::string& id = "",
         const std::string& name = "",
-        uint32_t width = 32,
-        uint32_t height = 32,
+        uint32_t width = 1,
+        uint32_t height = 1,
         std::array<float, 4> fillColor = { 0, 0, 0, 1 },
         bool useExposure = true,
         bool useGlobalFB = true
@@ -89,6 +89,8 @@ public:
     void fill(std::vector<float> buffer, bool shouldLock);
     void fill(float* buffer, bool shouldLock);
     void renderUV();
+
+    void copyTo(CmImage& target, bool move);
 
     /// <summary>
     ///     Apply view transform on a given buffer
