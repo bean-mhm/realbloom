@@ -97,6 +97,7 @@ std::string strFromDataSize(uint64_t bytes);
 std::string strFromBigInteger(uint64_t bigInteger);
 std::string strFromBool(bool v);
 std::string strFromColorChannelID(uint32_t ch);
+std::string strFromEnumValues(const std::string& name, const std::vector<std::string>& values, int startingIndex = 0);
 
 // Examples: "6h 9m 42s", "10.7s"
 std::string strFromDuration(float seconds);

@@ -173,6 +173,21 @@ std::string strFromColorChannelID(uint32_t ch)
     return "R";
 }
 
+std::string strFromEnumValues(const std::string& name, const std::vector<std::string>& values, int startingIndex)
+{
+    std::string s = strFormat("Enum %s: ", name.c_str());
+
+    for (uint32_t i = 0; i < values.size(); i++)
+    {
+        if (i > 0)
+            s += ", ";
+
+        s += strFormat("%s = %d", values[i].c_str(), i + startingIndex);
+    }
+
+    return s;
+}
+
 std::string strFromDuration(float seconds)
 {
     if (seconds < 1.0f)

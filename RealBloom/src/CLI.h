@@ -38,6 +38,7 @@ namespace CLI
         std::string desc;
         std::string example;
         std::vector<Argument> arguments;
+        std::vector<std::string> notes;
         std::function<void(const Command&, const CliParser&, StringMap&, bool)> action;
         bool hasVerbose = false;
     };

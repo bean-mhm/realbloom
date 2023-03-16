@@ -86,6 +86,21 @@ namespace CLI
         }
     }
 
+    // Print the notes of a command
+    void printNotes(const Command& command)
+    {
+        for (uint32_t i = 0; i < command.notes.size(); i++)
+        {
+            std::string prefix = strFormat("%u. ", i + 1);
+
+            std::cout
+                << "  "
+                << consoleColor(COL_SEC) << strRightPadding(prefix, 4) << consoleColor()
+                << strWordWrap(command.notes[i], LINE_LENGTH, 6)
+                << consoleColor() << "\n";
+        }
+    }
+
     // Print the parsed parameters
     void printParameters(const std::vector<std::string>& params)
     {
@@ -169,6 +184,14 @@ namespace CLI
                         << consoleColor(COL_PRI) << "Arguments:\n" << consoleColor();
                     printArguments(*cmdPtr);
                 }
+
+                if (cmdPtr->notes.size() > 0)
+                {
+                    std::cout
+                        << "\n"
+                        << consoleColor(COL_PRI) << "Notes:\n" << consoleColor();
+                    printNotes(*cmdPtr);
+                }
             }
             else
             {
@@ -177,9 +200,9 @@ namespace CLI
         }
     }
 
-    void addOutputColorManagementArguments(std::vector<Argument>& args)
+    void addOutputColorManagementArguments(Command& cmd)
     {
-        insertContents(args, {
+        insertContents(cmd.arguments, {
             {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
             {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
             {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
@@ -188,9 +211,9 @@ namespace CLI
             });
     }
 
-    void addXyzConversionArguments(std::vector<Argument>& args)
+    void addXyzConversionArguments(Command& cmd)
     {
-        insertContents(args, {
+        insertContents(cmd.arguments, {
             {{"--user-space", "-x"}, "XYZ I-E color space in the user config (UserConfig)", "", ArgumentType::Optional},
             {{"--common-internal", "-w"}, "Common XYZ color space in the internal config (CommonSpace)", "", ArgumentType::Optional},
             {{"--common-user", "-u"}, "Common XYZ color space in the user config (CommonSpace)", "", ArgumentType::Optional}
@@ -268,16 +291,16 @@ namespace CLI
         return aliasMaps[index];
     }
 
-    void addImageTransformArguments(std::vector<Argument>& args, const std::string& imageID, const std::string& imageName, uint32_t aliasMapIndex = 0)
+    void addImageTransformArguments(Command& cmd, const std::string& imageID, const std::string& imageName, uint32_t imageIndex = 0)
     {
-        StringMap& aliasMap = getImageTransformArgumentsAliasMap(aliasMapIndex);
+        StringMap& aliasMap = getImageTransformArgumentsAliasMap(imageIndex);
 
         // Make prefixes
         std::string argPrefix = strFormat("--%s-", imageID.c_str());
         std::string descPrefix = strFormat("%s: ", imageName.c_str());
 
         // Add the arguments
-        insertContents(args, {
+        insertContents(cmd.arguments, {
             {
                 {argPrefix + "crop", aliasMap["crop"]},
                 descPrefix + "Crop",
@@ -351,6 +374,21 @@ namespace CLI
                 ArgumentType::Optional
             }
             });
+
+        // Add notes
+        if (imageIndex == 0)
+        {
+            cmd.notes.push_back(strFromEnumValues("GrayscaleType", {
+                "Luminance",
+                "Average",
+                "Maximum",
+                "Magnitude",
+                "Red",
+                "Green",
+                "Blue",
+                "Alpha",
+                }));
+        }
     }
 
     void readImageTransformArguments(StringMap& args, const std::string& imageID, ImageTransformParams& outParams)
@@ -440,6 +478,7 @@ namespace CLI
                 "Print the current version",
                 "",
                 {},
+                {},
                 cmdVersion
             };
             commands.push_back(cmd);
@@ -452,6 +491,7 @@ namespace CLI
                 "help",
                 "Print guide for all commands or a specific command",
                 "help <command>",
+                {},
                 {},
                 cmdHelp
             };
@@ -466,6 +506,7 @@ namespace CLI
                 "Generate diffraction pattern",
                 "diff -i aperture.png -a sRGB -o output.exr -p w",
                 {},
+                {},
                 cmdDiff,
                 true
             };
@@ -476,9 +517,9 @@ namespace CLI
                 {{"--output", "-o"}, "Output filename", "", ArgumentType::Required}
                 });
 
-            addOutputColorManagementArguments(cmd.arguments);
+            addOutputColorManagementArguments(cmd);
 
-            addImageTransformArguments(cmd.arguments, "input", "Input");
+            addImageTransformArguments(cmd, "input", "Input");
 
             commands.push_back(cmd);
         }
@@ -492,6 +533,7 @@ namespace CLI
                 "disp -i input.exr -a Linear -o output.exr -p w "
                 "-s 128 -d 0.4",
                 {},
+                {},
                 cmdDisp,
                 true
             };
@@ -502,9 +544,9 @@ namespace CLI
                 {{"--output", "-o"}, "Output filename", "", ArgumentType::Required}
                 });
 
-            addOutputColorManagementArguments(cmd.arguments);
+            addOutputColorManagementArguments(cmd);
 
-            addImageTransformArguments(cmd.arguments, "input", "Input");
+            addImageTransformArguments(cmd, "input", "Input");
 
             insertContents(cmd.arguments, {
                 {{"--amount", "-d"}, "Amount of dispersion", "", ArgumentType::Required},
@@ -516,7 +558,7 @@ namespace CLI
                 {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Optional},
                 });
 
-            addXyzConversionArguments(cmd.arguments);
+            addXyzConversionArguments(cmd);
 
             commands.push_back(cmd);
         }
@@ -528,6 +570,7 @@ namespace CLI
                 "conv",
                 "Perform convolution (FFT CPU)",
                 "conv -i input.exr -a Linear -k kernel.exr -b w -o conv.png -j AgX",
+                {},
                 {},
                 cmdConv,
                 true
@@ -541,10 +584,10 @@ namespace CLI
                 {{"--output", "-o"}, "Output filename", "", ArgumentType::Required}
                 });
 
-            addOutputColorManagementArguments(cmd.arguments);
+            addOutputColorManagementArguments(cmd);
 
-            addImageTransformArguments(cmd.arguments, "input", "Input", 0);
-            addImageTransformArguments(cmd.arguments, "kernel", "Kernel", 1);
+            addImageTransformArguments(cmd, "input", "Input", 0);
+            addImageTransformArguments(cmd, "kernel", "Kernel", 1);
 
             insertContents(cmd.arguments, {
                 {{"--use-origin", "-u"}, "Use the kernel transform origin in convolution", "", ArgumentType::Optional},
@@ -570,6 +613,7 @@ namespace CLI
                 {
                     {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Required}
                 },
+                {},
                 cmdCmfDetails
             };
             commands.push_back(cmd);
@@ -583,6 +627,7 @@ namespace CLI
                 "Preview CMF",
                 "cmf-preview -f \"CIE 1931 2-deg.csv\" -o cmf.exr -p w",
                 {},
+                {},
                 cmdCmfPreview
             };
 
@@ -590,9 +635,9 @@ namespace CLI
                 {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Required},
                 });
 
-            addOutputColorManagementArguments(cmd.arguments);
+            addOutputColorManagementArguments(cmd);
 
-            addXyzConversionArguments(cmd.arguments);
+            addXyzConversionArguments(cmd);
 
             commands.push_back(cmd);
         }
@@ -607,6 +652,7 @@ namespace CLI
                 {
                     {{"--internal", "-i"}, "Use the internal config", "", ArgumentType::Optional}
                 },
+                {},
                 cmdColorSpaces,
                 true
             };
@@ -620,6 +666,7 @@ namespace CLI
                 "displays",
                 "Print the available displays",
                 "",
+                {},
                 {},
                 cmdDisplays
             };
@@ -636,6 +683,7 @@ namespace CLI
                 {
                     {{"--display", "-d"}, "Display name", "", ArgumentType::Required}
                 },
+                {},
                 cmdViews
             };
             commands.push_back(cmd);
@@ -648,6 +696,7 @@ namespace CLI
                 "looks",
                 "Print the available looks",
                 "",
+                {},
                 {},
                 cmdLooks
             };
