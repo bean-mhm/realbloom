@@ -1,5 +1,7 @@
 #include "DispersionThread.h"
 
+#include <omp.h>
+
 namespace RealBloom
 {
 
@@ -75,13 +77,13 @@ namespace RealBloom
             // Scale
             if (areEqual(scale, 1))
             {
-                uint32_t redIndexDP, redIndexScaled;
-                for (uint32_t y = 0; y < m_inputHeight; y++)
+#pragma omp parallel for
+                for (int y = 0; y < m_inputHeight; y++)
                 {
-                    for (uint32_t x = 0; x < m_inputWidth; x++)
+                    for (int x = 0; x < m_inputWidth; x++)
                     {
-                        redIndexDP = (y * m_inputWidth + x) * 4;
-                        redIndexScaled = (y * m_inputWidth + x) * 3;
+                        uint32_t redIndexDP = (y * m_inputWidth + x) * 4;
+                        uint32_t redIndexScaled = (y * m_inputWidth + x) * 3;
 
                         scaledBuffer[redIndexScaled + 0] = m_inputBuffer[redIndexDP + 0];
                         scaledBuffer[redIndexScaled + 1] = m_inputBuffer[redIndexDP + 1];
@@ -91,11 +93,13 @@ namespace RealBloom
             }
             else
             {
-                float targetColor[3];
-                Bilinear bil;
-                for (uint32_t y = 0; y < m_inputHeight; y++)
+#pragma omp parallel for
+                for (int y = 0; y < m_inputHeight; y++)
                 {
-                    for (uint32_t x = 0; x < m_inputWidth; x++)
+                    float targetColor[3];
+                    Bilinear bil;
+
+                    for (int x = 0; x < m_inputWidth; x++)
                     {
                         float transX = (((x + 0.5f) - centerX) / scale) + centerX;
                         float transY = (((y + 0.5f) - centerY) / scale) + centerY;
@@ -136,13 +140,13 @@ namespace RealBloom
 
             // Colorize and add to dispBuffer
             {
-                uint32_t redIndexOutput, redIndexScaled;
-                for (uint32_t y = 0; y < m_inputHeight; y++)
+#pragma omp parallel for
+                for (int y = 0; y < m_inputHeight; y++)
                 {
-                    for (uint32_t x = 0; x < m_inputWidth; x++)
+                    for (int x = 0; x < m_inputWidth; x++)
                     {
-                        redIndexScaled = (y * m_inputWidth + x) * 3;
-                        redIndexOutput = (y * m_inputWidth + x) * 4;
+                        uint32_t redIndexScaled = (y * m_inputWidth + x) * 3;
+                        uint32_t redIndexOutput = (y * m_inputWidth + x) * 4;
 
                         m_outputBuffer[redIndexOutput + 0] += scaledBuffer[redIndexScaled + 0] * wlR;
                         m_outputBuffer[redIndexOutput + 1] += scaledBuffer[redIndexScaled + 1] * wlG;

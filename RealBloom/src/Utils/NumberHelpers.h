@@ -169,8 +169,6 @@ inline bool checkBounds(int x, int y, int w, int h)
 
 inline void blendAddRGB(float* colorA, uint32_t indexA, const float* colorB, uint32_t indexB, float t)
 {
-    if (t == 0.0f)
-        return;
     colorA[indexA + 0] += colorB[indexB + 0] * t;
     colorA[indexA + 1] += colorB[indexB + 1] * t;
     colorA[indexA + 2] += colorB[indexB + 2] * t;
@@ -178,8 +176,6 @@ inline void blendAddRGB(float* colorA, uint32_t indexA, const float* colorB, uin
 
 inline void blendAddRGBA(float* colorA, uint32_t indexA, const float* colorB, uint32_t indexB, float t)
 {
-    if (t == 0.0f)
-        return;
     colorA[indexA + 0] += colorB[indexB + 0] * t;
     colorA[indexA + 1] += colorB[indexB + 1] * t;
     colorA[indexA + 2] += colorB[indexB + 2] * t;

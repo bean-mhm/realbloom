@@ -1,5 +1,7 @@
 #include "Diffraction.h"
 
+#include <omp.h>
+
 namespace RealBloom
 {
 
@@ -73,9 +75,10 @@ namespace RealBloom
             // Fill in the input buffer
             if (grayscale)
             {
-                for (uint32_t y = 0; y < inputHeight; y++)
+#pragma omp parallel for
+                for (int y = 0; y < inputHeight; y++)
                 {
-                    for (uint32_t x = 0; x < inputWidth; x++)
+                    for (int x = 0; x < inputWidth; x++)
                     {
                         uint32_t redIndex = (y * inputWidth + x) * 4;
                         fftInput[0](y, x) = inputBuffer[redIndex];
@@ -84,9 +87,10 @@ namespace RealBloom
             }
             else
             {
-                for (uint32_t y = 0; y < inputHeight; y++)
+#pragma omp parallel for
+                for (int y = 0; y < inputHeight; y++)
                 {
-                    for (uint32_t x = 0; x < inputWidth; x++)
+                    for (int x = 0; x < inputWidth; x++)
                     {
                         uint32_t redIndex = (y * inputWidth + x) * 4;
                         fftInput[0](y, x) = inputBuffer[redIndex + 0];
@@ -136,10 +140,12 @@ namespace RealBloom
             int shiftX = (int)fftWidth / 2;
             int shiftY = (int)fftHeight / 2;
 
-            int transX, transY;
-            for (uint32_t y = 0; y < fftHeight; y++)
+#pragma omp parallel for
+            for (int y = 0; y < fftHeight; y++)
             {
-                for (uint32_t x = 0; x < fftWidth; x++)
+                int transX, transY;
+
+                for (int x = 0; x < fftWidth; x++)
                 {
                     // Shift and mirror
 
@@ -196,12 +202,12 @@ namespace RealBloom
                 m_imgDiff->resize(fftWidth, fftHeight, false);
                 float* imageBuffer = m_imgDiff->getImageData();
 
-                uint32_t redIndex = 0;
-                for (uint32_t y = 0; y < fftHeight; y++)
+#pragma omp parallel for
+                for (int y = 0; y < fftHeight; y++)
                 {
-                    for (uint32_t x = 0; x < fftWidth; x++)
+                    for (int x = 0; x < fftWidth; x++)
                     {
-                        redIndex = (y * fftWidth + x) * 4;
+                        uint32_t redIndex = (y * fftWidth + x) * 4;
                         if (grayscale)
                         {
                             float v = log(CONTRAST_CONSTANT * fftMag[0](y, x) + 1.0) / logOfMaxMag;
