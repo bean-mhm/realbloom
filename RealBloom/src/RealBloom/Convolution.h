@@ -61,11 +61,11 @@ namespace RealBloom
         float threshold = 0.0f;
         float knee = 0.0f;
         bool  autoExposure = true;
-        bool blendAdditive;
-        float blendInput;
-        float blendConv;
-        float blendMix;
-        float blendExposure;
+        bool blendAdditive = false;
+        float blendInput = 1.0f;
+        float blendConv = 0.2f;
+        float blendMix = 0.2f;
+        float blendExposure = 0.0f;
     };
 
     struct ConvolutionStatus : public TimedWorkingStatus
