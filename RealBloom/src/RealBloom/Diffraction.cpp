@@ -55,7 +55,7 @@ namespace RealBloom
             uint32_t fftWidth = (inputWidth % 2 == 0) ? (inputWidth) : (inputWidth + 1);
             uint32_t fftHeight = (inputHeight % 2 == 0) ? (inputHeight) : (inputHeight + 1);
 
-            bool grayscale = m_params.inputTransformParams.color.grayscale;
+            const bool grayscale = m_params.inputTransformParams.color.grayscale;
 
             // FFT buffers (RGB)
             Array2D<double> fftInput[3];
@@ -106,7 +106,7 @@ namespace RealBloom
                 pocketfft::stride_t strideIn{ sizeof(double), (ptrdiff_t)(fftWidth * sizeof(double)) };
                 pocketfft::stride_t strideOut{ sizeof(std::complex<double>), (ptrdiff_t)(fftWidth * sizeof(std::complex<double>)) };
 
-                for (size_t i = 0; i < 3; i++)
+                for (uint32_t i = 0; i < 3; i++)
                 {
                     if ((!grayscale) || (grayscale && (i == 0)))
                     {
@@ -129,16 +129,17 @@ namespace RealBloom
 
             Array2D<double> fftMag[3];
             double maxMag[3]{ EPSILON, EPSILON, EPSILON };
-            double currentMag = 0;
 
-            for (size_t i = 0; i < 3; i++)
+            for (uint32_t i = 0; i < 3; i++)
                 if ((!grayscale) || (grayscale && (i == 0)))
                 {
                     fftMag[i].resize(fftHeight, fftWidth);
                 }
 
-            int shiftX = (int)fftWidth / 2;
-            int shiftY = (int)fftHeight / 2;
+            const int shiftX = (int)fftWidth / 2;
+            const int shiftY = (int)fftHeight / 2;
+
+            const int numChannels = grayscale ? 1 : 3;
 
 #pragma omp parallel for
             for (int y = 0; y < fftHeight; y++)
@@ -160,24 +161,13 @@ namespace RealBloom
                         fftHeight);
 
                     // Save the results while finding the maximum magnitudes
+                    for (uint32_t i = 0; i < numChannels; i++)
                     {
-                        currentMag = getMagnitude(fftOutput[0](transY, transX));
-                        fftMag[0](y, x) = currentMag;
-                        if (currentMag > maxMag[0])
-                            maxMag[0] = currentMag;
+                        double currentMag = getMagnitude(fftOutput[i](transY, transX));
+                        fftMag[i](y, x) = currentMag;
 
-                        if (!grayscale)
-                        {
-                            currentMag = getMagnitude(fftOutput[1](transY, transX));
-                            fftMag[1](y, x) = currentMag;
-                            if (currentMag > maxMag[1])
-                                maxMag[1] = currentMag;
-
-                            currentMag = getMagnitude(fftOutput[2](transY, transX));
-                            fftMag[2](y, x) = currentMag;
-                            if (currentMag > maxMag[2])
-                                maxMag[2] = currentMag;
-                        }
+                        if (currentMag > maxMag[i])
+                            maxMag[i] = currentMag;
                     }
                 }
             }
@@ -186,9 +176,11 @@ namespace RealBloom
             if (grayscale)
             {
                 double logsOfMaxMag[3];
-                logsOfMaxMag[0] = log(CONTRAST_CONSTANT * maxMag[0] + 1.0);
-                logsOfMaxMag[1] = log(CONTRAST_CONSTANT * maxMag[1] + 1.0);
-                logsOfMaxMag[2] = log(CONTRAST_CONSTANT * maxMag[2] + 1.0);
+                for (uint32_t i = 0; i < 3; i++)
+                {
+                    logsOfMaxMag[i] = log(CONTRAST_CONSTANT * maxMag[i] + 1.0);
+                }
+
                 logOfMaxMag = fmax(fmax(logsOfMaxMag[0], logsOfMaxMag[1]), logsOfMaxMag[2]);
             }
             else
