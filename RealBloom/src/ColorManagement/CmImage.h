@@ -82,15 +82,15 @@ public:
 
     void moveToGPU();
 
-    // shouldLock must be false if the image is already locked.
     void resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock);
+    void reset(bool shouldLock);
 
     void fill(std::array<float, 4> color, bool shouldLock);
     void fill(std::vector<float> buffer, bool shouldLock);
     void fill(float* buffer, bool shouldLock);
     void renderUV();
 
-    void copyTo(CmImage& target, bool move);
+    void moveContent(CmImage& target, bool copy);
 
     /// <summary>
     ///     Apply view transform on a given buffer

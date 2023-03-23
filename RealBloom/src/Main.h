@@ -83,3 +83,20 @@ bool setupGLFW();
 bool setupImGui();
 void applyStyle_RealBloomGray();
 void cleanUp();
+
+constexpr const char* DIALOG_TITLE_MOVETO = "Move To";
+
+struct DialogParams_MoveTo
+{
+    int selSourceImage = -1;
+    int selDestImage = -1;
+    bool preserveOriginal = false;
+};
+
+struct ImageSourceInfo
+{
+    CmImage* imageSource;
+    bool* paramsChanged;
+
+    void updateParamsChanged();
+};

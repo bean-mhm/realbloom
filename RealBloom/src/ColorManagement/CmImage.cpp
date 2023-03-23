@@ -124,6 +124,20 @@ void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
     if (shouldLock) unlock();
 }
 
+void CmImage::reset(bool shouldLock)
+{
+    if (shouldLock) lock();
+
+    m_sourceName = "";
+
+    clearVector(m_imageData);
+    resize(1, 1, false);
+
+    moveToGPU();
+
+    if (shouldLock) unlock();
+}
+
 void CmImage::fill(std::array<float, 4> color, bool shouldLock)
 {
     if (shouldLock) lock();
@@ -180,7 +194,7 @@ void CmImage::renderUV()
     }
 }
 
-void CmImage::copyTo(CmImage& target, bool move)
+void CmImage::moveContent(CmImage& target, bool copy)
 {
     std::scoped_lock lock1(m_mutex);
     std::scoped_lock lock2(target);
@@ -191,22 +205,15 @@ void CmImage::copyTo(CmImage& target, bool move)
     // Resize the target
     target.resize(m_width, m_height, false);
 
-    // Move/Copy the buffer
-    if (move)
-        target.m_imageData = std::move(m_imageData);
-    else
+    // Move / Copy the buffer
+    if (copy)
         target.m_imageData = m_imageData;
+    else
+        target.m_imageData = std::move(m_imageData);
 
     // Reset self if moving
-    if (move)
-    {
-        m_sourceName = "";
-
-        clearVector(m_imageData);
-        resize(1, 1, false);
-
-        moveToGPU();
-    }
+    if (!copy)
+        reset(false);
 
     // Move to GPU
     target.moveToGPU();
