@@ -16,6 +16,7 @@ private:
 
 public:
     CliStackTimer(const std::string& title, bool isTotal = false);
+
     CliStackTimer(const CliStackTimer&) = delete;
     CliStackTimer& operator= (const CliStackTimer&) = delete;
 

@@ -56,6 +56,7 @@ namespace RealBloom
             uint32_t fftHeight = (inputHeight % 2 == 0) ? (inputHeight) : (inputHeight + 1);
 
             const bool grayscale = m_params.inputTransformParams.color.grayscale;
+            const int numChannels = grayscale ? 1 : 3;
 
             // FFT buffers (RGB)
             Array2D<double> fftInput[3];
@@ -138,8 +139,6 @@ namespace RealBloom
 
             const int shiftX = (int)fftWidth / 2;
             const int shiftY = (int)fftHeight / 2;
-
-            const int numChannels = grayscale ? 1 : 3;
 
 #pragma omp parallel for
             for (int y = 0; y < fftHeight; y++)

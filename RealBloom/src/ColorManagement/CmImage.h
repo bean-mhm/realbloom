@@ -74,6 +74,7 @@ public:
 
     // RGBA. Every 4 elements represent a pixel.
     float* getImageData();
+    std::vector<float>& getImageDataVector();
 
     GLuint getGlTexture();
 

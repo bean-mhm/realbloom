@@ -42,6 +42,8 @@ namespace CLI
     void cmdVersion(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
     void cmdHelp(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
 
+    void cmdImageTransform(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
+
     void cmdDiff(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
     void cmdDisp(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
     void cmdConv(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
@@ -296,8 +298,8 @@ namespace CLI
         StringMap& aliasMap = getImageTransformArgumentsAliasMap(imageIndex);
 
         // Make prefixes
-        std::string argPrefix = strFormat("--%s-", imageID.c_str());
-        std::string descPrefix = strFormat("%s: ", imageName.c_str());
+        std::string argPrefix = imageID.empty() ? "--" : strFormat("--%s-", imageID.c_str());
+        std::string descPrefix = imageName.empty() ? "" : strFormat("%s: ", imageName.c_str());
 
         // Add the arguments
         insertContents(cmd.arguments, {
@@ -394,7 +396,7 @@ namespace CLI
     void readImageTransformArguments(StringMap& args, const std::string& imageID, ImageTransformParams& outParams)
     {
         // Make the prefix
-        std::string argPrefix = strFormat("--%s-", imageID.c_str());
+        std::string argPrefix = imageID.empty() ? "--" : strFormat("--%s-", imageID.c_str());
 
         // Read the arguments
 
@@ -495,6 +497,32 @@ namespace CLI
                 {},
                 cmdHelp
             };
+            commands.push_back(cmd);
+        }
+
+        // image-transform
+        {
+            Command cmd
+            {
+                "image-transform",
+                "Apply an image transform",
+                "image-transform -i input.png -a sRGB -o output.exr -p w",
+                {},
+                {},
+                cmdImageTransform,
+                true
+            };
+
+            insertContents(cmd.arguments, {
+                {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
+                {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
+                {{"--output", "-o"}, "Output filename", "", ArgumentType::Required}
+                });
+
+            addOutputColorManagementArguments(cmd);
+
+            addImageTransformArguments(cmd, "", "");
+
             commands.push_back(cmd);
         }
 
@@ -817,6 +845,68 @@ namespace CLI
             printHelp();
     }
 
+    void cmdImageTransform(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose)
+    {
+        CliStackTimer totalTimer("", true);
+
+        // Arguments
+
+        std::string inpFilename = args["--input"];
+        std::string inpColorSpace = CMS::resolveColorSpace(args["--input-space"]);
+
+        std::string outFilename = args["--output"];
+        OutputColorManagement outputCM(args, outFilename);
+
+        // Read image transform arguments
+        ImageTransformParams inputTransformParams;
+        readImageTransformArguments(args, "", inputTransformParams);
+
+        // Image
+        CmImage img;
+
+        // Read the input image
+        {
+            CliStackTimer timer("Read the input image");
+            setInputColorSpace(inpColorSpace);
+            CmImageIO::readImage(img, inpFilename);
+            timer.done(verbose);
+        }
+
+        // Transform
+        {
+            CliStackTimer timer("Transform");
+
+            std::vector<float> outputBuffer;
+            uint32_t outputWidth, outputHeight;
+
+            ImageTransform::apply(
+                inputTransformParams,
+                img.getImageDataVector(),
+                img.getWidth(),
+                img.getHeight(),
+                outputBuffer,
+                outputWidth,
+                outputHeight,
+                false);
+
+            std::scoped_lock lock(img);
+            img.resize(outputWidth, outputHeight, false);
+            img.getImageDataVector() = std::move(outputBuffer);
+
+            timer.done(verbose);
+        }
+
+        // Write the output image
+        {
+            CliStackTimer timer("Write the output image");
+            outputCM.apply();
+            CmImageIO::writeImage(img, outFilename);
+            timer.done(verbose);
+        }
+
+        totalTimer.done(verbose);
+    }
+
     void cmdDiff(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose)
     {
         CliStackTimer totalTimer("", true);
@@ -827,9 +917,7 @@ namespace CLI
         std::string inpColorSpace = CMS::resolveColorSpace(args["--input-space"]);
 
         std::string outFilename = args["--output"];
-        OutputColorManagement outCm(args, outFilename);
-
-        bool grayscale = args.contains("--grayscale");
+        OutputColorManagement outputCM(args, outFilename);
 
         // Images
         CmImage imgInput;
@@ -865,7 +953,7 @@ namespace CLI
         // Write the output image
         {
             CliStackTimer timer("Write the output image");
-            outCm.apply();
+            outputCM.apply();
             CmImageIO::writeImage(imgOutput, outFilename);
             timer.done(verbose);
         }
@@ -883,7 +971,7 @@ namespace CLI
         std::string inpColorSpace = CMS::resolveColorSpace(args["--input-space"]);
 
         std::string outFilename = args["--output"];
-        OutputColorManagement outCm(args, outFilename);
+        OutputColorManagement outputCM(args, outFilename);
 
         float amount = strToFloat(args["--amount"]);
         uint32_t steps = strToInt(args["--steps"]);
@@ -971,7 +1059,7 @@ namespace CLI
         // Write the output image
         {
             CliStackTimer timer("Write the output image");
-            outCm.apply();
+            outputCM.apply();
             CmImageIO::writeImage(imgOutput, outFilename);
             timer.done(verbose);
         }
@@ -992,7 +1080,7 @@ namespace CLI
         std::string knlColorSpace = CMS::resolveColorSpace(args["--kernel-space"]);
 
         std::string outFilename = args["--output"];
-        OutputColorManagement outCm(args, outFilename);
+        OutputColorManagement outputCM(args, outFilename);
 
         float kernelExposure = 0;
         if (args.contains("--kernel-exposure"))
@@ -1136,7 +1224,7 @@ namespace CLI
         // Write the output image
         {
             CliStackTimer timer("Write the output image");
-            outCm.apply();
+            outputCM.apply();
             CmImageIO::writeImage(imgConvResult, outFilename);
             timer.done(verbose);
         }
@@ -1172,7 +1260,7 @@ namespace CLI
 
         // Output info
         std::string outFilename = args["--output"];
-        OutputColorManagement outCm(args, outFilename);
+        OutputColorManagement outputCM(args, outFilename);
 
         // XYZ conversions
         readXyzConversionArguments(args);
@@ -1186,7 +1274,7 @@ namespace CLI
         disp.previewCmf(&table);
 
         // Write output image
-        outCm.apply();
+        outputCM.apply();
         CmImageIO::writeImage(img, outFilename);
     }
 

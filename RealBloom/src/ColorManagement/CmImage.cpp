@@ -56,6 +56,11 @@ float* CmImage::getImageData()
     return m_imageData.data();
 }
 
+std::vector<float>& CmImage::getImageDataVector()
+{
+    return m_imageData;
+}
+
 uint32_t CmImage::getGlTexture()
 {
     if (m_moveToGpu)
