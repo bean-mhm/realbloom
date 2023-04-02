@@ -1,22 +1,5 @@
 #include "OcioShader.h"
 
-#pragma region Vertex Shader Source
-static constexpr const char* VERTEX_SOURCE = R"glsl(
-    #version 150 core
-
-    in vec2 pos;
-    in vec2 texUV;
-
-    out vec2 vTexUV;
-
-    void main()
-    {
-        gl_Position = vec4(pos, 0.0, 1.0);
-        vTexUV = texUV;
-    }
-)glsl";
-#pragma endregion
-
 OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
     : m_shaderDesc(shaderDesc)
 {
@@ -63,13 +46,13 @@ OcioShader::OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc)
             "\n",
 
             __FUNCTION__,
-            VERTEX_SOURCE,
+            GL_BASE_VERTEX_SOURCE,
             fragSource.c_str());
 
     std::string shaderLog;
 
     // Create and compile the vertex shader
-    if (!createShader(GL_VERTEX_SHADER, VERTEX_SOURCE, m_vertShader, shaderLog))
+    if (!createShader(GL_VERTEX_SHADER, GL_BASE_VERTEX_SOURCE, m_vertShader, shaderLog))
         throw std::exception(
             makeError(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
         );
@@ -122,7 +105,7 @@ OcioShader::~OcioShader()
     glDeleteProgram(m_program);
     glDeleteShader(m_fragShader);
     glDeleteShader(m_vertShader);
-    checkGlStatus(__FUNCTION__, "Cleanup");
+    clearGlStatus();
 }
 
 GLuint OcioShader::getProgram() const
@@ -297,32 +280,6 @@ void OcioShader::setExposureMul(float exposureMul)
 
     glUniform1f(uniform, exposureMul);
     checkGlStatus(__FUNCTION__, "glUniform1f");
-}
-
-void OcioShader::enableAttribs()
-{
-    // Specify the layout of the vertex data
-    GLint posAttrib = glGetAttribLocation(m_program, "pos");
-    glEnableVertexAttribArray(posAttrib);
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
-    checkGlStatus(__FUNCTION__, "posAttrib");
-
-    GLint texAttrib = glGetAttribLocation(m_program, "texUV");
-    glEnableVertexAttribArray(texAttrib);
-    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
-    checkGlStatus(__FUNCTION__, "texAttrib");
-}
-
-void OcioShader::disableAttribs()
-{
-    // Specify the layout of the vertex data
-    GLint posAttrib = glGetAttribLocation(m_program, "pos");
-    glDisableVertexAttribArray(posAttrib);
-    checkGlStatus(__FUNCTION__, "posAttrib");
-
-    GLint texAttrib = glGetAttribLocation(m_program, "texUV");
-    glDisableVertexAttribArray(texAttrib);
-    checkGlStatus(__FUNCTION__, "texAttrib");
 }
 
 void OcioShader::setTextureParameters(GLenum textureType, OCIO::Interpolation interpolation)

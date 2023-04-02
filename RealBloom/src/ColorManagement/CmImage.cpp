@@ -382,7 +382,7 @@ void CmImage::applyViewTransform(
             std::shared_ptr<OcioShader> shader = CMS::getShader();
             shader->useProgram();
 
-            // Set the input uniforms
+            // Configure the input textures and uniforms
             texture->bind(GL_TEXTURE0);
             shader->setInputTexture(0);
             shader->setExposureMul(expMul);
@@ -391,32 +391,6 @@ void CmImage::applyViewTransform(
             shader->useLuts();
             shader->useUniforms();
 
-            // Define vertex data
-            GLuint vao;
-            GLuint vbo;
-            {
-                GLfloat vertices[] = {
-                    //  Pos           UV
-                        -1.0f,  1.0f, 0.0f, 1.0f, // Top-left
-                         1.0f,  1.0f, 1.0f, 1.0f, // Top-right
-                         1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
-                         1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
-                        -1.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
-                        -1.0f,  1.0f, 0.0f, 1.0f  // Top-left
-                };
-
-                // Create Vertex Array Object
-                glGenVertexArrays(1, &vao);
-                glBindVertexArray(vao);
-                checkGlStatus("", "VAO");
-
-                // Create a Vertex Buffer Object and copy the vertex data to it
-                glGenBuffers(1, &vbo);
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-                checkGlStatus("", "VBO");
-            }
-
             // Clear the buffer
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT);
@@ -424,27 +398,16 @@ void CmImage::applyViewTransform(
 
             // Draw
             {
-                glBindVertexArray(vao);
-                checkGlStatus("", "glBindVertexArray(vao)");
-
-                shader->enableAttribs();
+                GlFullPlaneVertices::enable(shader->getProgram());
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
                 checkGlStatus("", "glDrawArrays");
 
-                shader->disableAttribs();
-
-                glBindVertexArray(0);
-                checkGlStatus("", "glBindVertexArray(0)");
+                GlFullPlaneVertices::disable(shader->getProgram());
             }
 
-            // Unbind the frame buffer so we can continue rendering to the screen
+            // Unbind the frame buffer
             frameBuffer->unbind();
-
-            // Clean up
-            glDeleteBuffers(1, &vbo);
-            glDeleteVertexArrays(1, &vao);
-            checkGlStatus("", "Cleanup");
         }
         catch (const std::exception& e)
         {

@@ -240,9 +240,12 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClCompile Include="src\Utils\ImageTransform.cpp" />
     <ClCompile Include="src\Utils\OpenGL\GlContext.cpp" />
     <ClCompile Include="src\Utils\OpenGL\GlFrameBuffer.cpp" />
+    <ClCompile Include="src\Utils\OpenGL\GlFullPlaneVertices.cpp" />
     <ClCompile Include="src\Utils\OpenGL\GlShaderStorageBuffer.cpp" />
     <ClCompile Include="src\Utils\OpenGL\GlTexture.cpp" />
     <ClCompile Include="src\Utils\OpenGL\GlUtils.cpp" />
+    <ClCompile Include="src\Utils\OpenGL\GlVertexArray.cpp" />
+    <ClCompile Include="src\Utils\OpenGL\GlVertexBuffer.cpp" />
     <ClCompile Include="src\Utils\Random.cpp" />
     <ClCompile Include="src\RealBloom\ConvolutionThread.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
@@ -296,9 +299,12 @@ XCOPY "$(ProjectDir)license\" "$(OutDir)license\" /S /Y
     <ClInclude Include="src\Utils\ImageTransform.h" />
     <ClInclude Include="src\Utils\OpenGL\GlContext.h" />
     <ClInclude Include="src\Utils\OpenGL\GlFrameBuffer.h" />
+    <ClInclude Include="src\Utils\OpenGL\GlFullPlaneVertices.h" />
     <ClInclude Include="src\Utils\OpenGL\GlShaderStorageBuffer.h" />
     <ClInclude Include="src\Utils\OpenGL\GlTexture.h" />
     <ClInclude Include="src\Utils\OpenGL\GlUtils.h" />
+    <ClInclude Include="src\Utils\OpenGL\GlVertexArray.h" />
+    <ClInclude Include="src\Utils\OpenGL\GlVertexBuffer.h" />
     <ClInclude Include="src\Utils\Random.h" />
     <ClInclude Include="include\GL\eglew.h" />
     <ClInclude Include="include\GL\glew.h" />

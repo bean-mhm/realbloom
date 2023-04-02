@@ -17,6 +17,9 @@
 
 #include "../Utils/OpenGL/GlTexture.h"
 #include "../Utils/OpenGL/GlFrameBuffer.h"
+#include "../Utils/OpenGL/GlVertexArray.h"
+#include "../Utils/OpenGL/GlVertexBuffer.h"
+#include "../Utils/OpenGL/GlFullPlaneVertices.h"
 #include "../Utils/OpenGL/GlUtils.h"
 
 #include "../Utils/NumberHelpers.h"

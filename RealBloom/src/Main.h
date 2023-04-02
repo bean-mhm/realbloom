@@ -46,9 +46,11 @@
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
+#include "Utils/OpenGL/GlContext.h"
+#include "Utils/OpenGL/GlFullPlaneVertices.h"
+
 #include "Utils/FileDialogs.h"
 #include "Utils/ImageTransform.h"
-#include "Utils/OpenGL/GlContext.h"
 #include "Utils/NumberHelpers.h"
 #include "Utils/Misc.h"
 

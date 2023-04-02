@@ -14,7 +14,7 @@ static const char* vertexSource = R"glsl(
         gl_Position = vec4(pos, 0.0, 1.0);
         vColor = color;
     }
-    )glsl";
+)glsl";
 
 static const char* geometrySource = R"glsl(
     #version 150 core
@@ -74,7 +74,7 @@ static const char* geometrySource = R"glsl(
 
         EndPrimitive();
     }
-    )glsl";
+)glsl";
 
 static const char* fragmentSource = R"glsl(
     #version 150 core
@@ -90,7 +90,7 @@ static const char* fragmentSource = R"glsl(
     {
         outColor = texture(texKernel, gTexUV) * vec4(gColor, 1.0);
     }
-    )glsl";
+)glsl";
 #pragma endregion
 
 namespace RealBloom
@@ -207,20 +207,14 @@ namespace RealBloom
     void ConvNaiveGpu::setUniforms(uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize)
     {
         GLint kernelTopLeftUniform = glGetUniformLocation(m_shaderProgram, "kernelTopLeft");
-        checkGlStatus(__FUNCTION__, "glGetUniformLocation(kernelTopLeft)");
-
         glUniform2f(kernelTopLeftUniform, kernelTopLeft[0], kernelTopLeft[1]);
         checkGlStatus(__FUNCTION__, "glUniform2f(kernelTopLeftUniform)");
 
         GLint kernelSizeUniform = glGetUniformLocation(m_shaderProgram, "kernelSize");
-        checkGlStatus(__FUNCTION__, "glGetUniformLocation(kernelSize)");
-
         glUniform2f(kernelSizeUniform, kernelSize[0], kernelSize[1]);
         checkGlStatus(__FUNCTION__, "glUniform2f(kernelSizeUniform)");
 
         GLint texKernelUniform = glGetUniformLocation(m_shaderProgram, "texKernel");
-        checkGlStatus(__FUNCTION__, "glGetUniformLocation(texKernel)");
-
         glUniform1i(texKernelUniform, 0);
         checkGlStatus(__FUNCTION__, "glUniform1i(texKernelUniform)");
 
@@ -430,19 +424,12 @@ namespace RealBloom
         // Clean up
         try
         {
-            try
-            {
-                frameBuffer = nullptr;
-            }
-            catch (const std::exception& e)
-            {
-                printError("", "Cleanup (frameBuffer)", e.what());
-            }
+            frameBuffer = nullptr;
 
             glDeleteBuffers(1, &m_vbo);
             glDeleteVertexArrays(1, &m_vao);
 
-            checkGlStatus("", "Cleanup");
+            clearGlStatus();
         }
         catch (const std::exception& e)
         {
@@ -452,19 +439,12 @@ namespace RealBloom
 
     void ConvNaiveGpu::cleanUp()
     {
-        try
-        {
-            glDeleteTextures(1, &m_texKernel);
-            glDeleteProgram(m_shaderProgram);
-            glDeleteShader(m_vertexShader);
-            glDeleteShader(m_geometryShader);
-            glDeleteShader(m_fragmentShader);
-            checkGlStatus("", "Cleanup");
-        }
-        catch (const std::exception& e)
-        {
-            printError(__FUNCTION__, "", e.what());
-        }
+        glDeleteTextures(1, &m_texKernel);
+        glDeleteProgram(m_shaderProgram);
+        glDeleteShader(m_vertexShader);
+        glDeleteShader(m_geometryShader);
+        glDeleteShader(m_fragmentShader);
+        clearGlStatus();
     }
 
     uint32_t ConvNaiveGpu::getNumVertices() const

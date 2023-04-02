@@ -15,7 +15,8 @@ bool createShader(GLenum shaderType, const char* shaderSource, GLuint& outShader
 
         bool shaderStatus = checkShader(outShaderID, outLog);
         return shaderStatus;
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         outLog = e.what();
         return false;
@@ -69,6 +70,12 @@ void checkGlStatus(const std::string& source, const std::string& stage)
     {
         throw std::exception(makeError(source, stage, errors).c_str());
     }
+}
+
+void clearGlStatus()
+{
+    std::string errors;
+    getGlErrors(errors);
 }
 
 GlWrapper::GlWrapper()

@@ -4,6 +4,16 @@
 #include <vector>
 #include <cstdint>
 
+#ifndef GLEW_STATIC
+#define GLEW_STATIC
+#endif
+#include <GL/glew.h>
+
+#include "OpenGL/GlTexture.h"
+#include "OpenGL/GlFrameBuffer.h"
+#include "OpenGL/GlFullPlaneVertices.h"
+#include "OpenGL/GlUtils.h"
+
 #include "Bilinear.h"
 #include "NumberHelpers.h"
 #include "Misc.h"
@@ -52,10 +62,47 @@ struct ImageTransformParams
 
 class ImageTransform
 {
+private:
+    static bool USE_GPU;
+
+    static GLuint m_vertShader;
+    static GLuint m_fragShader;
+    static GLuint m_program;
+
+    static void ensureInit();
+
+    static void applyNoCropCPU(
+        const ImageTransformParams& params,
+        const std::vector<float>* lastBuffer,
+        uint32_t lastBufferWidth,
+        uint32_t lastBufferHeight,
+        std::vector<float>& outputBuffer,
+        uint32_t resizedWidth,
+        uint32_t resizedHeight,
+        float resizeX,
+        float resizeY,
+        bool previewMode);
+
+    static void applyNoCropGPU(
+        const ImageTransformParams& params,
+        const std::vector<float>* lastBuffer,
+        uint32_t lastBufferWidth,
+        uint32_t lastBufferHeight,
+        std::vector<float>& outputBuffer,
+        uint32_t resizedWidth,
+        uint32_t resizedHeight,
+        float resizeX,
+        float resizeY,
+        bool previewMode);
+
+    static float getPreviewMarkValue(float originX, float originY, float squareRadius, float x, float y);
+
 public:
     ImageTransform() = delete;
     ImageTransform(const ImageTransform&) = delete;
     ImageTransform& operator= (const ImageTransform&) = delete;
+
+    static void cleanUp();
 
     static void getOutputDimensions(
         const ImageTransformParams& params,
@@ -88,30 +135,5 @@ public:
         uint32_t& outputWidth,
         uint32_t& outputHeight,
         bool previewMode);
-
-private:
-    static bool USE_GPU;
-
-    static void applyCPU(
-        const ImageTransformParams& params,
-        const std::vector<float>& inputBuffer,
-        uint32_t inputWidth,
-        uint32_t inputHeight,
-        std::vector<float>& outputBuffer,
-        uint32_t& outputWidth,
-        uint32_t& outputHeight,
-        bool previewMode);
-
-    static void applyGPU(
-        const ImageTransformParams& params,
-        const std::vector<float>& inputBuffer,
-        uint32_t inputWidth,
-        uint32_t inputHeight,
-        std::vector<float>& outputBuffer,
-        uint32_t& outputWidth,
-        uint32_t& outputHeight,
-        bool previewMode);
-
-    static float getPreviewMarkValue(float originX, float originY, float squareRadius, float x, float y);
 
 };

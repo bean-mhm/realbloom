@@ -92,6 +92,4 @@ public:
     void useLuts();
     void useUniforms();
 
-    void enableAttribs();
-    void disableAttribs();
 };

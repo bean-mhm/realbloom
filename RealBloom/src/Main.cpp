@@ -1784,6 +1784,8 @@ void applyStyle_RealBloomGray()
 
 void cleanUp()
 {
+    ImageTransform::cleanUp();
+
     if (!CLI::Interface::active())
     {
         clearVector(images);
@@ -1794,6 +1796,8 @@ void cleanUp()
     CmImageIO::cleanUp();
     CMF::cleanUp();
     CMS::cleanUp();
+
+    GlFullPlaneVertices::cleanUp();
 
     if (!CLI::Interface::active())
     {

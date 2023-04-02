@@ -16,7 +16,7 @@ static const char* vertexSource = R"glsl(
         vScale = scale;
         vColor = color;
     }
-    )glsl";
+)glsl";
 
 static const char* geometrySource = R"glsl(
     #version 150 core
@@ -75,7 +75,7 @@ static const char* geometrySource = R"glsl(
 
         EndPrimitive();
     }
-    )glsl";
+)glsl";
 
 static const char* fragmentSource = R"glsl(
     #version 150 core
@@ -91,7 +91,7 @@ static const char* fragmentSource = R"glsl(
     {
         outColor = texture(texInput, gTexUV) * vec4(gColor, 1.0);
     }
-    )glsl";
+)glsl";
 #pragma endregion
 
 namespace RealBloom
@@ -212,8 +212,6 @@ namespace RealBloom
     void DispGpu::setUniforms()
     {
         GLint texInputUniform = glGetUniformLocation(m_shaderProgram, "texInput");
-        checkGlStatus(__FUNCTION__, "glGetUniformLocation(texInput)");
-
         glUniform1i(texInputUniform, 0);
         checkGlStatus(__FUNCTION__, "glUniform1i(texInputUniform)");
     }
@@ -365,32 +363,19 @@ namespace RealBloom
         }
 
         // Clean up
-        try
-        {
-            try
-            {
-                frameBuffer = nullptr;
-            }
-            catch (const std::exception& e)
-            {
-                printError("", "Cleanup (frameBuffer)", e.what());
-            }
 
-            glDeleteBuffers(1, &m_vbo);
-            glDeleteVertexArrays(1, &m_vao);
+        frameBuffer = nullptr;
 
-            glDeleteTextures(1, &m_texInput);
-            glDeleteProgram(m_shaderProgram);
-            glDeleteShader(m_vertexShader);
-            glDeleteShader(m_geometryShader);
-            glDeleteShader(m_fragmentShader);
+        glDeleteBuffers(1, &m_vbo);
+        glDeleteVertexArrays(1, &m_vao);
 
-            checkGlStatus("", "Cleanup");
-        }
-        catch (const std::exception& e)
-        {
-            printError(__FUNCTION__, "", e.what());
-        }
+        glDeleteTextures(1, &m_texInput);
+        glDeleteProgram(m_shaderProgram);
+        glDeleteShader(m_vertexShader);
+        glDeleteShader(m_geometryShader);
+        glDeleteShader(m_fragmentShader);
+
+        clearGlStatus();
     }
 
     const std::vector<float>& DispGpu::getBuffer() const

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 #ifndef GLEW_STATIC
@@ -33,7 +34,9 @@ public:
     GLuint getTexture() const;
 
     // RGBA32F
-    void upload(float* data);
+    void upload(const float* data);
     void bind(GLenum texUnit);
     void bind();
+    void setBorderColor(std::array<float, 4> color);
+
 };

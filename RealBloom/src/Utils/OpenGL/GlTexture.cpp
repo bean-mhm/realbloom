@@ -25,7 +25,7 @@ GlTexture::GlTexture(uint32_t width, uint32_t height, GLenum wrap, GLenum minFil
 GlTexture::~GlTexture()
 {
     glDeleteTextures(1, &m_texture);
-    checkGlStatus(__FUNCTION__, "glDeleteTextures");
+    clearGlStatus();
 }
 
 uint32_t GlTexture::getWidth() const
@@ -43,7 +43,7 @@ GLuint GlTexture::getTexture() const
     return m_texture;
 }
 
-void GlTexture::upload(float* data)
+void GlTexture::upload(const float* data)
 {
     glBindTexture(GL_TEXTURE_2D, m_texture);
     checkGlStatus(__FUNCTION__, "glBindTexture");
@@ -65,4 +65,10 @@ void GlTexture::bind()
 {
     glBindTexture(GL_TEXTURE_2D, m_texture);
     checkGlStatus(__FUNCTION__, "glBindTexture");
+}
+
+void GlTexture::setBorderColor(std::array<float, 4> color)
+{
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color.data());
+    checkGlStatus(__FUNCTION__, "glTexParameterfv(GL_TEXTURE_BORDER_COLOR)");
 }

@@ -45,7 +45,7 @@ GlFrameBuffer::~GlFrameBuffer()
 
     glDeleteTextures(1, &(m_texColorBuffer));
     glDeleteFramebuffers(1, &(m_frameBuffer));
-    checkGlStatus(__FUNCTION__, "Cleanup");
+    clearGlStatus();
 }
 
 uint32_t GlFrameBuffer::getWidth() const
