@@ -52,6 +52,7 @@ static bool dispInputTransformParamsChanged = false;
 static std::string convResUsage = "";
 
 // Constants
+static constexpr bool SHOW_DEBUG_PANEL = true;
 static constexpr float EXPOSURE_RANGE = 10.0f;
 
 // Dialog Params
@@ -299,6 +300,9 @@ void layoutAll()
     layoutMisc();
     layoutConvolution();
     layoutDiffraction();
+
+    if (SHOW_DEBUG_PANEL)
+        layoutDebug();
 }
 
 void layoutImagePanels()
@@ -1148,6 +1152,11 @@ void layoutDiffraction()
     ImGui::NewLine();
     imGuiDialogs();
     ImGui::End();
+}
+
+void layoutDebug()
+{
+    ImGui::Checkbox("Image Transform: Use GPU##Debug", &ImageTransform::S_USE_GPU);
 }
 
 bool layoutImageTransformParams(const std::string& imageName, const std::string& imGuiID, ImageTransformParams& params)

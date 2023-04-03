@@ -61,6 +61,7 @@ void layoutColorManagement();
 void layoutMisc();
 void layoutConvolution();
 void layoutDiffraction();
+void layoutDebug();
 
 bool layoutImageTransformParams(const std::string& imageName, const std::string& imGuiID, ImageTransformParams& params);
 
