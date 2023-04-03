@@ -78,7 +78,7 @@ float Random::nextFloat()
 
 float Random::nextFloat(float min, float max)
 {
-    return (double)min + (nextDouble() * (double)(max - min));
+    return min + (nextFloat() * (max - min));
 }
 
 double Random::nextDouble()
