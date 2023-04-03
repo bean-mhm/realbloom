@@ -63,13 +63,11 @@ struct ImageTransformParams
 class ImageTransform
 {
 private:
-    static bool USE_GPU;
-
     static GLuint m_vertShader;
     static GLuint m_fragShader;
     static GLuint m_program;
 
-    static void ensureInit();
+    static void ensureInitGPU();
 
     static void applyNoCropCPU(
         const ImageTransformParams& params,
@@ -98,6 +96,8 @@ private:
     static float getPreviewMarkValue(float originX, float originY, float squareRadius, float x, float y);
 
 public:
+    static bool S_USE_GPU;
+
     ImageTransform() = delete;
     ImageTransform(const ImageTransform&) = delete;
     ImageTransform& operator= (const ImageTransform&) = delete;

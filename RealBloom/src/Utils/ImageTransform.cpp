@@ -12,7 +12,7 @@ static const char* fragmentSource = R"glsl(
 
     uniform sampler2D img;
 
-    uniform float aspectRatio;
+    uniform vec2 resizedSize;
 
     uniform vec2 resize;
     uniform vec2 scale;
@@ -134,22 +134,19 @@ static const char* fragmentSource = R"glsl(
 
     void main()
     {
-        vec2 uv = vTexUV;
+        vec2 uv = vTexUV * resizedSize;
 
         // Translate
         uv -= translate;
 
         // Rotate
-        vec2 rotateOrigin = ((transformOrigin - UV_CENTER) * vec2(aspectRatio, 1.0)) + UV_CENTER;
-        uv = ((uv - UV_CENTER) * vec2(aspectRatio, 1.0)) + UV_CENTER;
-        uv = rotatePoint(uv.x, uv.y, rotateOrigin.x, rotateOrigin.y, -rotate);
-        uv = ((uv - UV_CENTER) / vec2(aspectRatio, 1.0)) + UV_CENTER;
+        uv = rotatePoint(uv.x, uv.y, transformOrigin.x, transformOrigin.y, -rotate);
 
         // Scale
         uv = ((uv - transformOrigin) / scale) + transformOrigin;
 
         // Sample the color and multiply by colorMul
-        outColor = texture(img, uv) * colorMul;
+        outColor = texture(img, uv / resizedSize) * colorMul;
 
         // Remove alpha if there's no transparency
         if (transparency == 0)
@@ -212,13 +209,13 @@ void ImageTransformParams::reset()
     transparency = false;
 }
 
-bool ImageTransform::USE_GPU = true;
+bool ImageTransform::S_USE_GPU = true;
 
 GLuint ImageTransform::m_vertShader = 0;
 GLuint ImageTransform::m_fragShader = 0;
 GLuint ImageTransform::m_program = 0;
 
-void ImageTransform::ensureInit()
+void ImageTransform::ensureInitGPU()
 {
     static bool init = true;
 
@@ -501,7 +498,7 @@ void ImageTransform::applyNoCropGPU(
 {
     try
     {
-        ensureInit();
+        ensureInitGPU();
 
         // Create a texture
         GlTexture texture(lastBufferWidth, lastBufferHeight, GL_CLAMP_TO_BORDER, GL_LINEAR, GL_LINEAR, GL_RGBA32F);
@@ -537,10 +534,10 @@ void ImageTransform::applyNoCropGPU(
             glUniform1i(imgUniform, 0);
             checkGlStatus("", "glUniform1i(imgUniform)");
 
-            // aspectRatio
-            GLint aspectRatioUniform = glGetUniformLocation(m_program, "aspectRatio");
-            glUniform1f(aspectRatioUniform, (float)lastBufferWidth / (float)lastBufferHeight);
-            checkGlStatus("", "glUniform1f(aspectRatioUniform)");
+            // resizedSize
+            GLint resizedSizeUniform = glGetUniformLocation(m_program, "resizedSize");
+            glUniform2f(resizedSizeUniform, resizedWidth, resizedHeight);
+            checkGlStatus("", "glUniform2f(resizedSizeUniform)");
 
             // resize
             GLint resizeUniform = glGetUniformLocation(m_program, "resize");
@@ -559,12 +556,18 @@ void ImageTransform::applyNoCropGPU(
 
             // translate
             GLint translateUniform = glGetUniformLocation(m_program, "translate");
-            glUniform2f(translateUniform, params.transform.translate[0], params.transform.translate[1]);
+            glUniform2f(
+                translateUniform,
+                params.transform.translate[0] * resizedWidth,
+                params.transform.translate[1] * resizedHeight);
             checkGlStatus("", "glUniform2f(translateUniform)");
 
             // transformOrigin
             GLint transformOriginUniform = glGetUniformLocation(m_program, "transformOrigin");
-            glUniform2f(transformOriginUniform, params.transform.origin[0], params.transform.origin[1]);
+            glUniform2f(
+                transformOriginUniform,
+                params.transform.origin[0] * resizedWidth,
+                params.transform.origin[1] * resizedHeight);
             checkGlStatus("", "glUniform2f(transformOriginUniform)");
 
             float expMul = getExposureMul(params.color.exposure);
@@ -781,7 +784,7 @@ void ImageTransform::apply(
     }
 
     // Call the appropraite function
-    if (USE_GPU)
+    if (S_USE_GPU)
     {
         applyNoCropGPU(
             params,
