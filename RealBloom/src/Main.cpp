@@ -300,9 +300,7 @@ void layoutAll()
     layoutMisc();
     layoutConvolution();
     layoutDiffraction();
-
-    if (SHOW_DEBUG_PANEL)
-        layoutDebug();
+    layoutDebug();
 }
 
 void layoutImagePanels()
@@ -1156,7 +1154,14 @@ void layoutDiffraction()
 
 void layoutDebug()
 {
+    if (!SHOW_DEBUG_PANEL)
+        return;
+
+    ImGui::Begin("Debug");
+
     ImGui::Checkbox("Image Transform: Use GPU##Debug", &ImageTransform::S_USE_GPU);
+
+    ImGui::End();
 }
 
 bool layoutImageTransformParams(const std::string& imageName, const std::string& imGuiID, ImageTransformParams& params)
