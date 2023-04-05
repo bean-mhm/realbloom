@@ -885,23 +885,24 @@ void layoutConvolution()
 
     if (convParams->methodInfo.method == RealBloom::ConvolutionMethod::FFT_CPU)
     {
-        // No parameters yet
+        // Deconvolve
+        ImGui::Checkbox("Deconvolve##Conv", &convParams->methodInfo.FFT_CPU_deconvolve);
     }
     else if (convParams->methodInfo.method == RealBloom::ConvolutionMethod::NAIVE_CPU)
     {
         // Threads
-        if (imGuiSliderUInt("Threads##Conv", &convParams->methodInfo.numThreads, 1, getMaxNumThreads()))
-            convParams->methodInfo.numThreads = std::clamp(convParams->methodInfo.numThreads, 1u, getMaxNumThreads());
+        if (imGuiSliderUInt("Threads##Conv", &convParams->methodInfo.NAIVE_CPU_numThreads, 1, getMaxNumThreads()))
+            convParams->methodInfo.NAIVE_CPU_numThreads = std::clamp(convParams->methodInfo.NAIVE_CPU_numThreads, 1u, getMaxNumThreads());
     }
     else if (convParams->methodInfo.method == RealBloom::ConvolutionMethod::NAIVE_GPU)
     {
         // Chunks
-        if (imGuiInputUInt("Chunks##Conv", &convParams->methodInfo.numChunks))
-            convParams->methodInfo.numChunks = std::clamp(convParams->methodInfo.numChunks, 1u, RealBloom::CONV_MAX_CHUNKS);
+        if (imGuiInputUInt("Chunks##Conv", &convParams->methodInfo.NAIVE_GPU_numChunks))
+            convParams->methodInfo.NAIVE_GPU_numChunks = std::clamp(convParams->methodInfo.NAIVE_GPU_numChunks, 1u, RealBloom::CONV_MAX_CHUNKS);
 
         // Chunk Sleep Time
-        if (imGuiInputUInt("Sleep (ms)##Conv", &convParams->methodInfo.chunkSleep))
-            convParams->methodInfo.chunkSleep = std::clamp(convParams->methodInfo.chunkSleep, 0u, RealBloom::CONV_MAX_SLEEP);
+        if (imGuiInputUInt("Sleep (ms)##Conv", &convParams->methodInfo.NAIVE_GPU_chunkSleep))
+            convParams->methodInfo.NAIVE_GPU_chunkSleep = std::clamp(convParams->methodInfo.NAIVE_GPU_chunkSleep, 0u, RealBloom::CONV_MAX_SLEEP);
     }
 
     if (ImGui::SliderFloat("Threshold##Conv", &convParams->threshold, 0.0f, 2.0f))
