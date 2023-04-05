@@ -159,14 +159,24 @@ namespace RealBloom
         m_kernelPadded[ch].reset();
     }
 
-    void ConvolutionFFT::multiply(uint32_t ch)
+    void ConvolutionFFT::multiplyOrDivide(uint32_t ch)
     {
         m_mulFT[ch].resize(m_paddedHeight, m_paddedWidth);
 
+        if (m_params.methodInfo.FFT_CPU_deconvolve)
+        {
 #pragma omp parallel for
-        for (int y = 0; y < m_paddedHeight; y++)
-            for (int x = 0; x < m_paddedWidth; x++)
-                m_mulFT[ch](y, x) = m_inputFT[ch](y, x) * m_kernelFT[ch](y, x);
+            for (int y = 0; y < m_paddedHeight; y++)
+                for (int x = 0; x < m_paddedWidth; x++)
+                    m_mulFT[ch](y, x) = m_inputFT[ch](y, x) / m_kernelFT[ch](y, x);
+        }
+        else
+        {
+#pragma omp parallel for
+            for (int y = 0; y < m_paddedHeight; y++)
+                for (int x = 0; x < m_paddedWidth; x++)
+                    m_mulFT[ch](y, x) = m_inputFT[ch](y, x) * m_kernelFT[ch](y, x);
+        }
 
         m_inputFT[ch].reset();
         m_kernelFT[ch].reset();

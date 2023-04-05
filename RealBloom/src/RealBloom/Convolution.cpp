@@ -374,7 +374,7 @@ namespace RealBloom
                 outStatus = strFormat(
                     "%u/%u chunks\n%s",
                     m_status.getNumChunksDone(),
-                    m_capturedParams.methodInfo.numChunks,
+                    m_capturedParams.methodInfo.NAIVE_GPU_numChunks,
                     strFromElapsed(elapsedSec).c_str());
             }
             else if (m_capturedParams.methodInfo.method == ConvolutionMethod::FFT_CPU)
@@ -418,9 +418,9 @@ namespace RealBloom
 
         // Number of pixels per thread/chunk
         if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
-            numPixelsPerBlock = numPixels / m_params.methodInfo.numThreads;
+            numPixelsPerBlock = numPixels / m_params.methodInfo.NAIVE_CPU_numThreads;
         else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
-            numPixelsPerBlock = numPixels / m_params.methodInfo.numChunks;
+            numPixelsPerBlock = numPixels / m_params.methodInfo.NAIVE_GPU_numChunks;
 
         // Input and kernel size in bytes
         uint64_t inputSizeBytes = (uint64_t)inputWidth * (uint64_t)inputHeight * 4 * sizeof(float);
@@ -442,7 +442,7 @@ namespace RealBloom
         }
         else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_CPU)
         {
-            ramUsage = inputSizeBytes + kernelSizeBytes + (inputSizeBytes * m_params.methodInfo.numThreads);
+            ramUsage = inputSizeBytes + kernelSizeBytes + (inputSizeBytes * m_params.methodInfo.NAIVE_CPU_numThreads);
         }
         else if (m_params.methodInfo.method == ConvolutionMethod::NAIVE_GPU)
         {
@@ -538,10 +538,16 @@ namespace RealBloom
 
                 if (m_status.mustCancel()) throw std::exception();
 
-                // Multiply the Fourier transforms
+                // Define the name of the arithmetic operation based on deconvolve
+                std::string arithmeticName =
+                    m_capturedParams.methodInfo.FFT_CPU_deconvolve
+                    ? "Dividing"
+                    : "Multiplying";
+
+                // Multiply/Divide the Fourier transforms
                 currStage++;
-                m_status.setFftStage(strFormat("%u/%u %s: Multiplying", currStage, numStages, strFromColorChannelID(i).c_str()));
-                fftConv.multiply(i);
+                m_status.setFftStage(strFormat("%u/%u %s: %s", currStage, numStages, strFromColorChannelID(i).c_str(), arithmeticName.c_str()));
+                fftConv.multiplyOrDivide(i);
 
                 if (m_status.mustCancel()) throw std::exception();
 
@@ -703,10 +709,10 @@ namespace RealBloom
     {
         // Clamp the number of threads
         uint32_t maxThreads = std::thread::hardware_concurrency();
-        uint32_t numThreads = m_capturedParams.methodInfo.numThreads;
+        uint32_t numThreads = m_capturedParams.methodInfo.NAIVE_CPU_numThreads;
         if (numThreads > maxThreads) numThreads = maxThreads;
         if (numThreads < 1) numThreads = 1;
-        m_capturedParams.methodInfo.numThreads = numThreads;
+        m_capturedParams.methodInfo.NAIVE_CPU_numThreads = numThreads;
 
         // Create and prepare threads
         for (uint32_t i = 0; i < numThreads; i++)
@@ -841,19 +847,26 @@ namespace RealBloom
         uint32_t inputBufferSize)
     {
         // Clamp numChunks
-        if (m_capturedParams.methodInfo.numChunks < 1) m_capturedParams.methodInfo.numChunks = 1;
-        if (m_capturedParams.methodInfo.numChunks > CONV_MAX_CHUNKS) m_capturedParams.methodInfo.numChunks = CONV_MAX_CHUNKS;
-        uint32_t numChunks = m_capturedParams.methodInfo.numChunks;
+
+        if (m_capturedParams.methodInfo.NAIVE_GPU_numChunks < 1)
+            m_capturedParams.methodInfo.NAIVE_GPU_numChunks = 1;
+
+        if (m_capturedParams.methodInfo.NAIVE_GPU_numChunks > CONV_MAX_CHUNKS)
+            m_capturedParams.methodInfo.NAIVE_GPU_numChunks = CONV_MAX_CHUNKS;
+
+        uint32_t numChunks = m_capturedParams.methodInfo.NAIVE_GPU_numChunks;
 
         // Clamp chunkSleep
-        if (m_capturedParams.methodInfo.chunkSleep > CONV_MAX_SLEEP) m_capturedParams.methodInfo.chunkSleep = CONV_MAX_SLEEP;
-        uint32_t chunkSleep = m_capturedParams.methodInfo.chunkSleep;
+
+        if (m_capturedParams.methodInfo.NAIVE_GPU_chunkSleep > CONV_MAX_SLEEP)
+            m_capturedParams.methodInfo.NAIVE_GPU_chunkSleep = CONV_MAX_SLEEP;
+
+        uint32_t chunkSleep = m_capturedParams.methodInfo.NAIVE_GPU_chunkSleep;
 
         // Create GpuHelper instance
         GpuHelper gpuHelper;
         std::string inpFilename = gpuHelper.getInpFilename();
         std::string outFilename = gpuHelper.getOutFilename();
-
         std::string statFilename = inpFilename + "stat";
         HANDLE statMutex = NULL;
 

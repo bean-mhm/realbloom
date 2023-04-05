@@ -47,9 +47,10 @@ namespace RealBloom
     struct ConvolutionMethodInfo
     {
         ConvolutionMethod method = ConvolutionMethod::FFT_CPU;
-        uint32_t numThreads = getDefNumThreads();
-        uint32_t numChunks = 10;
-        uint32_t chunkSleep = 0;
+        bool FFT_CPU_deconvolve = false;
+        uint32_t NAIVE_CPU_numThreads = getDefNumThreads();
+        uint32_t NAIVE_GPU_numChunks = 10;
+        uint32_t NAIVE_GPU_chunkSleep = 0;
     };
 
     struct ConvolutionParams
@@ -102,7 +103,7 @@ namespace RealBloom
 
         CmImage m_imgInputSrc;
         CmImage* m_imgInput = nullptr;
-        
+
         CmImage m_imgKernelSrc;
         CmImage* m_imgKernel = nullptr;
 

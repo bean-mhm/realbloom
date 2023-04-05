@@ -58,7 +58,7 @@ namespace RealBloom
         void pad();
         void inputFFT(uint32_t ch);
         void kernelFFT(uint32_t ch);
-        void multiply(uint32_t ch);
+        void multiplyOrDivide(uint32_t ch);
         void inverse(uint32_t ch);
         void output();
 
