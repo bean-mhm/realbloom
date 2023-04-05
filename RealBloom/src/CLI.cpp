@@ -460,13 +460,22 @@ namespace CLI
 
     void Interface::init(int& argc, char** argv)
     {
-        if (argc < 2)
-            return;
+        constexpr bool DEBUG_MODE = false;
 
-        if (strLowercase(std::string(argv[1])) == INIT_WORD)
+        if (DEBUG_MODE)
+        {
             S_ACTIVE = true;
+        }
         else
-            return;
+        {
+            if (argc < 2)
+                return;
+
+            if (strLowercase(std::string(argv[1])) == INIT_WORD)
+                S_ACTIVE = true;
+            else
+                return;
+        }
 
         // Define the supported commands
 
@@ -619,6 +628,7 @@ namespace CLI
 
             insertContents(cmd.arguments, {
                 {{"--use-origin", "-u"}, "Use the kernel transform origin in convolution", "", ArgumentType::Optional},
+                {{"--deconvolve", "-d"}, "Deconvolve", "", ArgumentType::Optional},
                 {{"--threshold", "-t"}, "Threshold", "0", ArgumentType::Optional},
                 {{"--knee", "-w"}, "Threshold knee", "0", ArgumentType::Optional},
                 {{"--autoexp", "-n"}, "Auto-Exposure", "", ArgumentType::Optional},
@@ -1112,6 +1122,8 @@ namespace CLI
 
         bool useKernelTransformOrigin = args.contains("--use-origin");
 
+        bool deconvolve = args.contains("--deconvolve");
+
         float threshold = 0;
         if (args.contains("--threshold"))
             threshold = strToFloat(args["--threshold"]);
@@ -1180,6 +1192,7 @@ namespace CLI
 
         RealBloom::ConvolutionParams* params = conv.getParams();
         params->methodInfo.method = RealBloom::ConvolutionMethod::FFT_CPU;
+        params->methodInfo.FFT_CPU_deconvolve = deconvolve;
         params->useKernelTransformOrigin = useKernelTransformOrigin;
         params->threshold = threshold;
         params->knee = knee;
