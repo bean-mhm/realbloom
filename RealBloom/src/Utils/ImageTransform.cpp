@@ -209,7 +209,7 @@ void ImageTransformParams::reset()
     transparency = false;
 }
 
-bool ImageTransform::S_USE_GPU = true;
+bool ImageTransform::S_USE_GPU = false;
 
 GLuint ImageTransform::m_vertShader = 0;
 GLuint ImageTransform::m_fragShader = 0;
