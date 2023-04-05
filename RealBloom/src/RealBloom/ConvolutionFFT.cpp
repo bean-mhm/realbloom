@@ -1,5 +1,7 @@
 #include "ConvolutionFFT.h"
 
+#include <omp.h>
+
 namespace RealBloom
 {
 
@@ -161,8 +163,9 @@ namespace RealBloom
     {
         m_mulFT[ch].resize(m_paddedHeight, m_paddedWidth);
 
-        for (size_t y = 0; y < m_paddedHeight; y++)
-            for (size_t x = 0; x < m_paddedWidth; x++)
+#pragma omp parallel for
+        for (int y = 0; y < m_paddedHeight; y++)
+            for (int x = 0; x < m_paddedWidth; x++)
                 m_mulFT[ch](y, x) = m_inputFT[ch](y, x) * m_kernelFT[ch](y, x);
 
         m_inputFT[ch].reset();
