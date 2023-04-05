@@ -211,52 +211,52 @@ void ImageTransformParams::reset()
 
 bool ImageTransform::S_USE_GPU = false;
 
-GLuint ImageTransform::m_vertShader = 0;
-GLuint ImageTransform::m_fragShader = 0;
-GLuint ImageTransform::m_program = 0;
+GLuint ImageTransform::s_vertShader = 0;
+GLuint ImageTransform::s_fragShader = 0;
+GLuint ImageTransform::s_program = 0;
+
+bool ImageTransform::s_gpuInitialized = false;
 
 void ImageTransform::ensureInitGPU()
 {
-    static bool init = true;
-
-    if (init)
-        init = false;
-    else
+    if (s_gpuInitialized)
         return;
+    else
+        s_gpuInitialized = true;
 
     try
     {
         std::string shaderLog;
 
         // Create and compile the vertex shader
-        if (!createShader(GL_VERTEX_SHADER, GL_BASE_VERTEX_SOURCE, m_vertShader, shaderLog))
+        if (!createShader(GL_VERTEX_SHADER, GL_BASE_VERTEX_SOURCE, s_vertShader, shaderLog))
             throw std::exception(
                 strFormat("Vertex shader compilation error: %s", shaderLog.c_str()).c_str()
             );
 
         // Create and compile the fragment shader
-        if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, m_fragShader, shaderLog))
+        if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, s_fragShader, shaderLog))
             throw std::exception(
                 strFormat("Fragment shader compilation error: %s", shaderLog.c_str()).c_str()
             );
 
         // Create the program
-        m_program = glCreateProgram();
+        s_program = glCreateProgram();
         checkGlStatus("", "glCreateProgram");
 
-        glAttachShader(m_program, m_vertShader);
+        glAttachShader(s_program, s_vertShader);
         checkGlStatus("", "glAttachShader(m_program, m_vertShader)");
 
-        glAttachShader(m_program, m_fragShader);
+        glAttachShader(s_program, s_fragShader);
         checkGlStatus("", "glAttachShader(m_program, m_fragShader)");
 
-        glBindFragDataLocation(m_program, 0, "outColor");
+        glBindFragDataLocation(s_program, 0, "outColor");
         checkGlStatus("", "glBindFragDataLocation");
 
-        glLinkProgram(m_program);
+        glLinkProgram(s_program);
         checkGlStatus("", "glLinkProgram");
 
-        glUseProgram(m_program);
+        glUseProgram(s_program);
         checkGlStatus("", "glUseProgram");
     }
     catch (const std::exception& e)
@@ -522,7 +522,7 @@ void ImageTransform::applyNoCropGPU(
         frameBuffer.viewport();
 
         // Use the shader program
-        glUseProgram(m_program);
+        glUseProgram(s_program);
         checkGlStatus("", "glUseProgram");
 
         // Configure the input textures and uniforms
@@ -530,32 +530,32 @@ void ImageTransform::applyNoCropGPU(
             texture.bind(GL_TEXTURE0);
 
             // img
-            GLint imgUniform = glGetUniformLocation(m_program, "img");
+            GLint imgUniform = glGetUniformLocation(s_program, "img");
             glUniform1i(imgUniform, 0);
             checkGlStatus("", "glUniform1i(imgUniform)");
 
             // resizedSize
-            GLint resizedSizeUniform = glGetUniformLocation(m_program, "resizedSize");
+            GLint resizedSizeUniform = glGetUniformLocation(s_program, "resizedSize");
             glUniform2f(resizedSizeUniform, resizedWidth, resizedHeight);
             checkGlStatus("", "glUniform2f(resizedSizeUniform)");
 
             // resize
-            GLint resizeUniform = glGetUniformLocation(m_program, "resize");
+            GLint resizeUniform = glGetUniformLocation(s_program, "resize");
             glUniform2f(resizeUniform, params.cropResize.resize[0], params.cropResize.resize[1]);
             checkGlStatus("", "glUniform2f(resizeUniform)");
 
             // scale
-            GLint scaleUniform = glGetUniformLocation(m_program, "scale");
+            GLint scaleUniform = glGetUniformLocation(s_program, "scale");
             glUniform2f(scaleUniform, params.transform.scale[0], params.transform.scale[1]);
             checkGlStatus("", "glUniform2f(scaleUniform)");
 
             // rotate
-            GLint rotateUniform = glGetUniformLocation(m_program, "rotate");
+            GLint rotateUniform = glGetUniformLocation(s_program, "rotate");
             glUniform1f(rotateUniform, params.transform.rotate);
             checkGlStatus("", "glUniform1f(rotateUniform)");
 
             // translate
-            GLint translateUniform = glGetUniformLocation(m_program, "translate");
+            GLint translateUniform = glGetUniformLocation(s_program, "translate");
             glUniform2f(
                 translateUniform,
                 params.transform.translate[0] * resizedWidth,
@@ -563,7 +563,7 @@ void ImageTransform::applyNoCropGPU(
             checkGlStatus("", "glUniform2f(translateUniform)");
 
             // transformOrigin
-            GLint transformOriginUniform = glGetUniformLocation(m_program, "transformOrigin");
+            GLint transformOriginUniform = glGetUniformLocation(s_program, "transformOrigin");
             glUniform2f(
                 transformOriginUniform,
                 params.transform.origin[0] * resizedWidth,
@@ -573,7 +573,7 @@ void ImageTransform::applyNoCropGPU(
             float expMul = getExposureMul(params.color.exposure);
 
             // colorMul
-            GLint colorMulUniform = glGetUniformLocation(m_program, "colorMul");
+            GLint colorMulUniform = glGetUniformLocation(s_program, "colorMul");
             glUniform4f(
                 colorMulUniform,
                 expMul * params.color.filter[0],
@@ -583,17 +583,17 @@ void ImageTransform::applyNoCropGPU(
             checkGlStatus("", "glUniform4f(colorMulUniform)");
 
             // contrast
-            GLint contrastUniform = glGetUniformLocation(m_program, "contrast");
+            GLint contrastUniform = glGetUniformLocation(s_program, "contrast");
             glUniform1f(contrastUniform, params.color.contrast);
             checkGlStatus("", "glUniform1f(contrastUniform)");
 
             // grayscaleType
-            GLint grayscaleTypeUniform = glGetUniformLocation(m_program, "grayscaleType");
+            GLint grayscaleTypeUniform = glGetUniformLocation(s_program, "grayscaleType");
             glUniform1i(grayscaleTypeUniform, params.color.grayscale ? ((int)params.color.grayscaleType) : -1);
             checkGlStatus("", "glUniform1i(grayscaleTypeUniform)");
 
             // transparency
-            GLint transparencyUniform = glGetUniformLocation(m_program, "transparency");
+            GLint transparencyUniform = glGetUniformLocation(s_program, "transparency");
             glUniform1i(transparencyUniform, params.transparency ? 1 : 0);
             checkGlStatus("", "glUniform1i(transparencyUniform)");
         }
@@ -605,13 +605,13 @@ void ImageTransform::applyNoCropGPU(
 
         // Draw
         {
-            GlFullPlaneVertices::enable(m_program);
+            GlFullPlaneVertices::enable(s_program);
 
             // Draw
             glDrawArrays(GL_TRIANGLES, 0, 6);
             checkGlStatus("", "glDrawArrays");
 
-            GlFullPlaneVertices::disable(m_program);
+            GlFullPlaneVertices::disable(s_program);
         }
 
         // Unbind the frame buffer
@@ -656,9 +656,12 @@ float ImageTransform::getPreviewMarkValue(float originX, float originY, float sq
 
 void ImageTransform::cleanUp()
 {
-    glDeleteProgram(m_program);
-    glDeleteShader(m_fragShader);
-    glDeleteShader(m_vertShader);
+    if (!s_gpuInitialized)
+        return;
+
+    glDeleteProgram(s_program);
+    glDeleteShader(s_fragShader);
+    glDeleteShader(s_vertShader);
     clearGlStatus();
 }
 

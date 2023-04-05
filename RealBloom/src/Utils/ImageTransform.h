@@ -63,10 +63,11 @@ struct ImageTransformParams
 class ImageTransform
 {
 private:
-    static GLuint m_vertShader;
-    static GLuint m_fragShader;
-    static GLuint m_program;
+    static GLuint s_vertShader;
+    static GLuint s_fragShader;
+    static GLuint s_program;
 
+    static bool s_gpuInitialized;
     static void ensureInitGPU();
 
     static void applyNoCropCPU(
