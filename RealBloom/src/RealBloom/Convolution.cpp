@@ -152,19 +152,19 @@ namespace RealBloom
                     uint32_t redIndex = (y * *outWidth + x) * 4;
 
                     float grayscale = rgbaToGrayscale(&(*outBuffer)[redIndex], GrayscaleType::Average);
-                    sumV += fmaxf(0.0f, grayscale);
+                    sumV += grayscale;
                 }
             }
 
-            // To avoid division by zero
-            sumV = fmaxf(EPSILON, sumV);
-
             // Divide by the sum, and cancel out the convolution multiplier
-            float mul = 1.0 / ((double)sumV * (double)CONV_MULTIPLIER);
-            for (uint32_t i = 0; i < (*outBuffer).size(); i++)
+            if (sumV != 0.0f)
             {
-                if (i % 4 != 3)
-                    (*outBuffer)[i] *= mul;
+                float mul = 1.0 / ((double)sumV * (double)CONV_MULTIPLIER);
+                for (uint32_t i = 0; i < (*outBuffer).size(); i++)
+                {
+                    if (i % 4 != 3)
+                        (*outBuffer)[i] *= mul;
+                }
             }
         }
     }
