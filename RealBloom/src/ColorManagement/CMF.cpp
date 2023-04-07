@@ -54,7 +54,6 @@ CmfTable::CmfTable(std::string filename)
         m_valuesZ = doc.GetColumn<float>(3);
 
         // Check if they all have the same number of entries
-        // Pretty long conditions in this function, eh
         if (!((m_valuesX.size() == m_count) &&
             (m_valuesY.size() == m_count) &&
             (m_valuesZ.size() == m_count)))
@@ -260,12 +259,12 @@ void CmfTable::sampleRGB(size_t numSamples, bool normalize, std::vector<float>& 
                 sumV += fmaxf(0.0f, grayscale);
             }
 
-            // To avoid division by zero
-            sumV = fmaxf(EPSILON, sumV);
-
             // Divide by the sum
-            for (auto& v : outSamples)
-                v /= sumV;
+            if (sumV != 0.0f)
+            {
+                for (auto& v : outSamples)
+                    v /= sumV;
+            }
         }
     }
     catch (std::exception& e)
