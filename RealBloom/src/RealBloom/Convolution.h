@@ -31,9 +31,9 @@
 namespace RealBloom
 {
 
-    constexpr float CONV_MULTIPLIER = 1.0 / 1024.0;
-    constexpr uint32_t CONV_MAX_CHUNKS = 2048;
-    constexpr uint32_t CONV_MAX_SLEEP = 5000;
+    constexpr float CONV_MULTIPLIER = 1.0f;
+    constexpr uint32_t CONV_NAIVE_GPU_MAX_CHUNKS = 2048;
+    constexpr uint32_t CONV_NAIVE_GPU_MAX_SLEEP = 5000;
 
     enum class ConvolutionMethod
     {

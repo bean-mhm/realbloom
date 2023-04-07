@@ -898,11 +898,11 @@ void layoutConvolution()
     {
         // Chunks
         if (imGuiInputUInt("Chunks##Conv", &convParams->methodInfo.NAIVE_GPU_numChunks))
-            convParams->methodInfo.NAIVE_GPU_numChunks = std::clamp(convParams->methodInfo.NAIVE_GPU_numChunks, 1u, RealBloom::CONV_MAX_CHUNKS);
+            convParams->methodInfo.NAIVE_GPU_numChunks = std::clamp(convParams->methodInfo.NAIVE_GPU_numChunks, 1u, RealBloom::CONV_NAIVE_GPU_MAX_CHUNKS);
 
         // Chunk Sleep Time
         if (imGuiInputUInt("Sleep (ms)##Conv", &convParams->methodInfo.NAIVE_GPU_chunkSleep))
-            convParams->methodInfo.NAIVE_GPU_chunkSleep = std::clamp(convParams->methodInfo.NAIVE_GPU_chunkSleep, 0u, RealBloom::CONV_MAX_SLEEP);
+            convParams->methodInfo.NAIVE_GPU_chunkSleep = std::clamp(convParams->methodInfo.NAIVE_GPU_chunkSleep, 0u, RealBloom::CONV_NAIVE_GPU_MAX_SLEEP);
     }
 
     if (ImGui::SliderFloat("Threshold##Conv", &convParams->threshold, 0.0f, 2.0f))

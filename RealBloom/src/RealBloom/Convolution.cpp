@@ -851,15 +851,15 @@ namespace RealBloom
         if (m_capturedParams.methodInfo.NAIVE_GPU_numChunks < 1)
             m_capturedParams.methodInfo.NAIVE_GPU_numChunks = 1;
 
-        if (m_capturedParams.methodInfo.NAIVE_GPU_numChunks > CONV_MAX_CHUNKS)
-            m_capturedParams.methodInfo.NAIVE_GPU_numChunks = CONV_MAX_CHUNKS;
+        if (m_capturedParams.methodInfo.NAIVE_GPU_numChunks > CONV_NAIVE_GPU_MAX_CHUNKS)
+            m_capturedParams.methodInfo.NAIVE_GPU_numChunks = CONV_NAIVE_GPU_MAX_CHUNKS;
 
         uint32_t numChunks = m_capturedParams.methodInfo.NAIVE_GPU_numChunks;
 
         // Clamp chunkSleep
 
-        if (m_capturedParams.methodInfo.NAIVE_GPU_chunkSleep > CONV_MAX_SLEEP)
-            m_capturedParams.methodInfo.NAIVE_GPU_chunkSleep = CONV_MAX_SLEEP;
+        if (m_capturedParams.methodInfo.NAIVE_GPU_chunkSleep > CONV_NAIVE_GPU_MAX_SLEEP)
+            m_capturedParams.methodInfo.NAIVE_GPU_chunkSleep = CONV_NAIVE_GPU_MAX_SLEEP;
 
         uint32_t chunkSleep = m_capturedParams.methodInfo.NAIVE_GPU_chunkSleep;
 
