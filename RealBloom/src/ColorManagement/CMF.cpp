@@ -222,26 +222,9 @@ void CmfTable::sampleRGB(size_t numSamples, bool normalize, std::vector<float>& 
             }
         }
 
-        // Eliminate negative values
+        // Eliminate negative values (disabled)
+        if (0)
         {
-            // Offset
-            if (0)
-            {
-                for (uint32_t i = 0; i < numSamples; i++)
-                {
-                    uint32_t redIndex = i * 3;
-
-                    float minV = fminf(fminf(outSamples[redIndex], outSamples[redIndex + 1]), outSamples[redIndex + 2]);
-                    if (minV < 0.0f)
-                    {
-                        outSamples[redIndex + 0] -= minV;
-                        outSamples[redIndex + 1] -= minV;
-                        outSamples[redIndex + 2] -= minV;
-                    }
-                }
-            }
-
-            // Clip
             for (auto& v : outSamples)
                 v = fmaxf(v, 0.0f);
         }
@@ -256,7 +239,7 @@ void CmfTable::sampleRGB(size_t numSamples, bool normalize, std::vector<float>& 
                 uint32_t redIndex = i * 3;
 
                 float grayscale = rgbToGrayscale(&outSamples[redIndex], GrayscaleType::Average);
-                sumV += fmaxf(0.0f, grayscale);
+                sumV += grayscale;
             }
 
             // Divide by the sum
