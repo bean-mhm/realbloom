@@ -7,8 +7,9 @@ static const char* glslVersion = "#version 150";
 static GLFWwindow* window = nullptr;
 static ImGuiIO* io = nullptr;
 static bool appRunning = true;
-static bool showRenderer = false;
+static bool showRendererName = false;
 static bool showFPS = false;
+static bool showDebugPanel = false;
 
 // Fonts
 static ImFont* fontRoboto = nullptr;
@@ -52,7 +53,6 @@ static bool dispInputTransformParamsChanged = false;
 static std::string convResUsage = "";
 
 // Constants
-static constexpr bool SHOW_DEBUG_PANEL = true;
 static constexpr float EXPOSURE_RANGE = 10.0f;
 
 // Dialog Params
@@ -782,7 +782,7 @@ void layoutMisc()
     }
 
     // UI Renderer
-    if (showRenderer)
+    if (showRendererName)
     {
         static std::string uiRenderer = strFormat("Renderer: %s", (const char*)glGetString(GL_RENDERER));
         ImGui::TextWrapped(uiRenderer.c_str());
@@ -1155,7 +1155,7 @@ void layoutDiffraction()
 
 void layoutDebug()
 {
-    if (!SHOW_DEBUG_PANEL)
+    if (!showDebugPanel)
         return;
 
     ImGui::Begin("Debug");
