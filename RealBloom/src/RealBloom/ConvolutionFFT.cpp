@@ -234,9 +234,9 @@ namespace RealBloom
 
                 // Get the output
                 redIndex = (y * m_inputWidth + x) * 4;
-                m_outputBuffer[redIndex + 0] = fmaxf(m_iFFT[0](transY2, transX2) * CONV_MULTIPLIER, 0.0f);
-                m_outputBuffer[redIndex + 1] = fmaxf(m_iFFT[1](transY2, transX2) * CONV_MULTIPLIER, 0.0f);
-                m_outputBuffer[redIndex + 2] = fmaxf(m_iFFT[2](transY2, transX2) * CONV_MULTIPLIER, 0.0f);
+                m_outputBuffer[redIndex + 0] = m_iFFT[0](transY2, transX2) * CONV_MULTIPLIER;
+                m_outputBuffer[redIndex + 1] = m_iFFT[1](transY2, transX2) * CONV_MULTIPLIER;
+                m_outputBuffer[redIndex + 2] = m_iFFT[2](transY2, transX2) * CONV_MULTIPLIER;
                 m_outputBuffer[redIndex + 3] = 1.0f;
             }
         }
