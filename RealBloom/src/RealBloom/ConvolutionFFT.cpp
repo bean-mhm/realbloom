@@ -122,7 +122,6 @@ namespace RealBloom
         pocketfft::shape_t shape{ m_paddedWidth, m_paddedHeight };
         pocketfft::stride_t strideIn{ sizeof(float), (ptrdiff_t)(m_paddedWidth * sizeof(float)) };
         pocketfft::stride_t strideOut{ sizeof(std::complex<float>), (ptrdiff_t)(m_paddedWidth * sizeof(std::complex<float>)) };
-        float fftScale = 1.0f / sqrtf((float)m_paddedWidth * (float)m_paddedHeight);
         pocketfft::r2c(
             shape,
             strideIn,
@@ -131,7 +130,7 @@ namespace RealBloom
             pocketfft::FORWARD,
             m_inputPadded[ch].getVector().data(),
             m_inputFT[ch].getVector().data(),
-            fftScale,
+            1.0f,
             0);
 
         m_inputPadded[ch].reset();
@@ -144,7 +143,6 @@ namespace RealBloom
         pocketfft::shape_t shape{ m_paddedWidth, m_paddedHeight };
         pocketfft::stride_t strideIn{ sizeof(float), (ptrdiff_t)(m_paddedWidth * sizeof(float)) };
         pocketfft::stride_t strideOut{ sizeof(std::complex<float>), (ptrdiff_t)(m_paddedWidth * sizeof(std::complex<float>)) };
-        float fftScale = 1.0f / sqrtf((float)m_paddedWidth * (float)m_paddedHeight);
         pocketfft::r2c(
             shape,
             strideIn,
@@ -153,7 +151,7 @@ namespace RealBloom
             pocketfft::FORWARD,
             m_kernelPadded[ch].getVector().data(),
             m_kernelFT[ch].getVector().data(),
-            fftScale,
+            1.0f,
             0);
 
         m_kernelPadded[ch].reset();
@@ -189,6 +187,7 @@ namespace RealBloom
         pocketfft::shape_t shape{ m_paddedWidth, m_paddedHeight };
         pocketfft::stride_t strideIn{ sizeof(std::complex<float>), (ptrdiff_t)(m_paddedWidth * sizeof(std::complex<float>)) };
         pocketfft::stride_t strideOut{ sizeof(float), (ptrdiff_t)(m_paddedWidth * sizeof(float)) };
+        float fftScale = 1.0f / ((float)m_paddedWidth * (float)m_paddedHeight);
         pocketfft::c2r(
             shape,
             strideIn,
@@ -197,7 +196,7 @@ namespace RealBloom
             pocketfft::BACKWARD,
             m_mulFT[ch].getVector().data(),
             m_iFFT[ch].getVector().data(),
-            1.0f,
+            fftScale,
             0);
 
         m_mulFT[ch].reset();
