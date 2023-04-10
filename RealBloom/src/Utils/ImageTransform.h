@@ -94,7 +94,7 @@ private:
         float resizeY,
         bool previewMode);
 
-    static float getPreviewMarkValue(float originX, float originY, float squareRadius, float x, float y);
+    static float getPreviewMarkValue(float x, float y, float originX, float originY, float squareRadius);
 
 public:
     static bool S_USE_GPU;

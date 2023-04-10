@@ -14,11 +14,12 @@ static const char* fragmentSource = R"glsl(
 
     uniform vec2 resizedSize;
 
-    uniform vec2 resize;
     uniform vec2 scale;
     uniform float rotate;
     uniform vec2 translate;
+
     uniform vec2 transformOrigin;
+    uniform vec2 cropOrigin;
 
     uniform vec4 colorMul;
     uniform float contrast;
@@ -26,9 +27,19 @@ static const char* fragmentSource = R"glsl(
 
     uniform int transparency;
 
-    #define DEG_TO_RAD 0.0174532925199432944
+    uniform int previewOriginCropResize;
+    uniform int previewOriginTransform;
 
-    #define UV_CENTER vec2(0.5, 0.5)
+    uniform vec4 previewMarksCropColor;
+    uniform vec4 previewMarksTransformColor;
+
+    uniform float previewMarksSquareRadius;
+    uniform float previewMarksSquareOutlineRadius;
+    uniform float previewMarksDotRadius;
+
+    uniform float previewMarksSoftness;
+
+    #define DEG_TO_RAD 0.0174532925199432944
 
     #define CONTRAST_PIVOT 0.5
 
@@ -112,22 +123,17 @@ static const char* fragmentSource = R"glsl(
         return rgba.x;
     }
 
-    float getPreviewMarkValue(float originX, float originY, float squareRadius, float x, float y)
+    float getPreviewMarkValue(vec2 uv, vec2 origin)
     {
-        // Parameters
-        const float softness = 1.0;
-        const float outlineRadius = 1.0;
-        const float dotRadius = 1.5;
-    
         // Chebyshev distance
-        float distSquare = max(abs(x - originX), abs(y - originY));
+        float distSquare = max(abs(uv.x - origin.x), abs(uv.y - origin.y));
     
         // Square
-        float v = min(max(abs(distSquare - squareRadius) - outlineRadius, 0.0) / softness, 1.0);
+        float v = min(max(abs(distSquare - previewMarksSquareRadius) - previewMarksSquareOutlineRadius, 0.0) / previewMarksSoftness, 1.0);
     
         // Dot
-        float distDot = sqrt(pow(x - originX, 2.0) + pow(y - originY, 2.0));
-        v *= min(max(distDot - dotRadius, 0.0) / softness, 1.0);
+        float distDot = distance(uv, origin);
+        v *= min(max(distDot - previewMarksDotRadius, 0.0) / previewMarksSoftness, 1.0);
     
         return 1.0 - v;
     }
@@ -137,16 +143,16 @@ static const char* fragmentSource = R"glsl(
         vec2 uv = vTexUV * resizedSize;
 
         // Translate
-        uv -= translate;
+        vec2 transUV = uv - translate;
 
         // Rotate
-        uv = rotatePoint(uv.x, uv.y, transformOrigin.x, transformOrigin.y, -rotate);
+        transUV = rotatePoint(transUV.x, transUV.y, transformOrigin.x, transformOrigin.y, -rotate);
 
         // Scale
-        uv = ((uv - transformOrigin) / scale) + transformOrigin;
+        transUV = ((transUV - transformOrigin) / scale) + transformOrigin;
 
         // Sample the color and multiply by colorMul
-        outColor = texture(img, uv / resizedSize) * colorMul;
+        outColor = texture(img, transUV / resizedSize) * colorMul;
 
         // Remove alpha if there's no transparency
         if (transparency == 0)
@@ -169,11 +175,33 @@ static const char* fragmentSource = R"glsl(
             outColor = vec4(v, v, v, 1.0);
         }
 
-        // TODO: Preview marks
+        // Preview marks
+        if (previewOriginCropResize != 0)
+        {
+            outColor += getPreviewMarkValue(uv, cropOrigin) * (previewMarksCropColor - outColor);
+        }
+        if (previewOriginTransform != 0)
+        {
+            outColor += getPreviewMarkValue(uv, transformOrigin) * (previewMarksTransformColor - outColor);
+        }
 
     }
 )glsl";
 #pragma endregion
+
+#pragma region Constants
+
+static constexpr std::array<float, 4> previewMarksCropColor{ 1.0f, 0.0f, 0.0f, 1.0f };
+static constexpr std::array<float, 4> previewMarksTransformColor{ 0.0f, 0.0f, 1.0f, 1.0f };
+
+static constexpr float previewMarksSquareRadiusRatio = 0.06f;
+static constexpr float previewMarksSquareOutlineRadius = 1.0f;
+static constexpr float previewMarksDotRadius = 1.5f;
+
+static constexpr float previewMarksSoftness = 1.0f;
+
+#pragma endregion
+
 
 void ImageTransformParams::CropResizeParams::reset()
 {
@@ -282,8 +310,12 @@ void ImageTransform::applyNoCropCPU(
     outputBuffer.resize(outputBufferSize);
 
     // Transform origin
-    float transformOriginX = params.transform.origin[0] * resizedWidth;
-    float transformOriginY = params.transform.origin[1] * resizedHeight;
+    const float transformOriginX = params.transform.origin[0] * resizedWidth;
+    const float transformOriginY = params.transform.origin[1] * resizedHeight;
+
+    // Crop origin
+    const float cropOriginX = params.cropResize.origin[0] * resizedWidth;
+    const float cropOriginY = params.cropResize.origin[1] * resizedHeight;
 
     // Scale (non-zero)
     float scaleX = params.transform.scale[0];
@@ -292,13 +324,16 @@ void ImageTransform::applyNoCropCPU(
     if (scaleY == 0.0f) scaleY == EPSILON;
 
     // Color multiplier
-    float expMul = getExposureMul(params.color.exposure);
-    float colorMulR = expMul * params.color.filter[0];
-    float colorMulG = expMul * params.color.filter[1];
-    float colorMulB = expMul * params.color.filter[2];
+    const float expMul = getExposureMul(params.color.exposure);
+    const float colorMulR = expMul * params.color.filter[0];
+    const float colorMulG = expMul * params.color.filter[1];
+    const float colorMulB = expMul * params.color.filter[2];
+
+    const bool grayscale = params.color.grayscale;
+    const bool transparency = params.transparency;
 
     // Check if we'll need to draw preview marks for crop and transform origins
-    bool previewOrigins = (params.cropResize.previewOrigin || params.transform.previewOrigin) && previewMode;
+    const bool previewOrigins = (params.cropResize.previewOrigin || params.transform.previewOrigin) && previewMode;
 
     // Check if there's no need for any transforms
     bool noTrans =
@@ -443,10 +478,7 @@ void ImageTransform::applyNoCropCPU(
     // Preview origins
     if (previewOrigins)
     {
-        float cropOriginX = params.cropResize.origin[0] * resizedWidth;
-        float cropOriginY = params.cropResize.origin[1] * resizedHeight;
-
-        float squareRadius = 0.06f * fminf(resizedWidth, resizedHeight);
+        const float squareRadius = previewMarksSquareRadiusRatio * fminf(resizedWidth, resizedHeight);
 
         // Draw
 #pragma omp parallel for
@@ -465,19 +497,17 @@ void ImageTransform::applyNoCropCPU(
                 // Crop origin
                 if (params.cropResize.previewOrigin)
                 {
-                    static constexpr std::array<float, 4> fillColor{ 1.0f, 0.0f, 0.0f, 1.0f };
-                    v = getPreviewMarkValue(cropOriginX, cropOriginY, squareRadius, fX, fY);
+                    v = getPreviewMarkValue(fX, fY, cropOriginX, cropOriginY, squareRadius);
                     for (uint32_t i = 0; i < 4; i++)
-                        outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], fillColor[i], v);
+                        outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], previewMarksCropColor[i], v);
                 }
 
                 // Transform origin
                 if (params.transform.previewOrigin)
                 {
-                    static constexpr std::array<float, 4> fillColor{ 0.0f, 0.0f, 1.0f, 1.0f };
-                    v = getPreviewMarkValue(transformOriginX, transformOriginY, squareRadius, fX, fY);
+                    v = getPreviewMarkValue(fX, fY, transformOriginX, transformOriginY, squareRadius);
                     for (uint32_t i = 0; i < 4; i++)
-                        outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], fillColor[i], v);
+                        outputBuffer[redIndex + i] = lerp(outputBuffer[redIndex + i], previewMarksTransformColor[i], v);
                 }
             }
         }
@@ -529,73 +559,76 @@ void ImageTransform::applyNoCropGPU(
         {
             texture.bind(GL_TEXTURE0);
 
-            // img
-            GLint imgUniform = glGetUniformLocation(s_program, "img");
-            glUniform1i(imgUniform, 0);
-            checkGlStatus("", "glUniform1i(imgUniform)");
+            findAndSetUniform1i(s_program, "img", 0);
 
-            // resizedSize
-            GLint resizedSizeUniform = glGetUniformLocation(s_program, "resizedSize");
-            glUniform2f(resizedSizeUniform, resizedWidth, resizedHeight);
-            checkGlStatus("", "glUniform2f(resizedSizeUniform)");
+            // Scale (non-zero)
+            float scaleX = params.transform.scale[0];
+            float scaleY = params.transform.scale[1];
+            if (scaleX == 0.0f) scaleX == EPSILON;
+            if (scaleY == 0.0f) scaleY == EPSILON;
 
-            // resize
-            GLint resizeUniform = glGetUniformLocation(s_program, "resize");
-            glUniform2f(resizeUniform, params.cropResize.resize[0], params.cropResize.resize[1]);
-            checkGlStatus("", "glUniform2f(resizeUniform)");
+            findAndSetUniform2f(s_program, "resizedSize", resizedWidth, resizedHeight);
+            findAndSetUniform2f(s_program, "scale", scaleX, scaleY);
+            findAndSetUniform1f(s_program, "rotate", params.transform.rotate);
 
-            // scale
-            GLint scaleUniform = glGetUniformLocation(s_program, "scale");
-            glUniform2f(scaleUniform, params.transform.scale[0], params.transform.scale[1]);
-            checkGlStatus("", "glUniform2f(scaleUniform)");
-
-            // rotate
-            GLint rotateUniform = glGetUniformLocation(s_program, "rotate");
-            glUniform1f(rotateUniform, params.transform.rotate);
-            checkGlStatus("", "glUniform1f(rotateUniform)");
-
-            // translate
-            GLint translateUniform = glGetUniformLocation(s_program, "translate");
-            glUniform2f(
-                translateUniform,
+            findAndSetUniform2f(
+                s_program,
+                "translate",
                 params.transform.translate[0] * resizedWidth,
                 params.transform.translate[1] * resizedHeight);
-            checkGlStatus("", "glUniform2f(translateUniform)");
 
-            // transformOrigin
-            GLint transformOriginUniform = glGetUniformLocation(s_program, "transformOrigin");
-            glUniform2f(
-                transformOriginUniform,
+            findAndSetUniform2f(
+                s_program,
+                "transformOrigin",
                 params.transform.origin[0] * resizedWidth,
                 params.transform.origin[1] * resizedHeight);
-            checkGlStatus("", "glUniform2f(transformOriginUniform)");
+
+            findAndSetUniform2f(
+                s_program,
+                "cropOrigin",
+                params.cropResize.origin[0] * resizedWidth,
+                params.cropResize.origin[1] * resizedHeight);
 
             float expMul = getExposureMul(params.color.exposure);
 
-            // colorMul
-            GLint colorMulUniform = glGetUniformLocation(s_program, "colorMul");
-            glUniform4f(
-                colorMulUniform,
+            findAndSetUniform4f(
+                s_program,
+                "colorMul",
                 expMul * params.color.filter[0],
                 expMul * params.color.filter[1],
                 expMul * params.color.filter[2],
                 1.0f);
-            checkGlStatus("", "glUniform4f(colorMulUniform)");
 
-            // contrast
-            GLint contrastUniform = glGetUniformLocation(s_program, "contrast");
-            glUniform1f(contrastUniform, params.color.contrast);
-            checkGlStatus("", "glUniform1f(contrastUniform)");
+            findAndSetUniform1f(s_program, "contrast", params.color.contrast);
+            findAndSetUniform1i(s_program, "grayscaleType", params.color.grayscale ? ((int)params.color.grayscaleType) : -1);
+            findAndSetUniform1i(s_program, "transparency", params.transparency ? 1 : 0);
 
-            // grayscaleType
-            GLint grayscaleTypeUniform = glGetUniformLocation(s_program, "grayscaleType");
-            glUniform1i(grayscaleTypeUniform, params.color.grayscale ? ((int)params.color.grayscaleType) : -1);
-            checkGlStatus("", "glUniform1i(grayscaleTypeUniform)");
+            findAndSetUniform1i(s_program, "previewOriginCropResize", params.cropResize.previewOrigin ? 1 : 0);
+            findAndSetUniform1i(s_program, "previewOriginTransform", params.transform.previewOrigin ? 1 : 0);
 
-            // transparency
-            GLint transparencyUniform = glGetUniformLocation(s_program, "transparency");
-            glUniform1i(transparencyUniform, params.transparency ? 1 : 0);
-            checkGlStatus("", "glUniform1i(transparencyUniform)");
+            findAndSetUniform4f(
+                s_program,
+                "previewMarksCropColor",
+                previewMarksCropColor[0],
+                previewMarksCropColor[1],
+                previewMarksCropColor[2],
+                previewMarksCropColor[3]);
+
+            findAndSetUniform4f(
+                s_program,
+                "previewMarksTransformColor",
+                previewMarksTransformColor[0],
+                previewMarksTransformColor[1],
+                previewMarksTransformColor[2],
+                previewMarksTransformColor[3]);
+
+            float previewMarksSquareRadius = previewMarksSquareRadiusRatio * fminf(resizedWidth, resizedHeight);
+
+            findAndSetUniform1f(s_program, "previewMarksSquareRadius", previewMarksSquareRadius);
+            findAndSetUniform1f(s_program, "previewMarksSquareOutlineRadius", previewMarksSquareOutlineRadius);
+            findAndSetUniform1f(s_program, "previewMarksDotRadius", previewMarksDotRadius);
+
+            findAndSetUniform1f(s_program, "previewMarksSoftness", previewMarksSoftness);
         }
 
         // Clear the buffer
@@ -634,22 +667,17 @@ void ImageTransform::applyNoCropGPU(
     }
 }
 
-float ImageTransform::getPreviewMarkValue(float originX, float originY, float squareRadius, float x, float y)
+float ImageTransform::getPreviewMarkValue(float x, float y, float originX, float originY, float squareRadius)
 {
-    // Parameters
-    static constexpr float softness = 1.0f;
-    static constexpr float outlineRadius = 1.0f;
-    static constexpr float dotRadius = 1.5f;
-
     // Chebyshev distance
     float distSquare = fmaxf(fabsf(x - originX), fabsf(y - originY));
 
     // Square
-    float v = fminf(fmaxf(fabsf(distSquare - squareRadius) - outlineRadius, 0.0f) / softness, 1.0f);
+    float v = fminf(fmaxf(fabsf(distSquare - squareRadius) - previewMarksSquareOutlineRadius, 0.0f) / previewMarksSoftness, 1.0f);
 
     // Dot
     float distDot = sqrtf(powf(x - originX, 2.0f) + powf(y - originY, 2.0f));
-    v *= fminf(fmaxf(distDot - dotRadius, 0.0f) / softness, 1.0f);
+    v *= fminf(fmaxf(distDot - previewMarksDotRadius, 0.0f) / previewMarksSoftness, 1.0f);
 
     return 1.0f - v;
 }
