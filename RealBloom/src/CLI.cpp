@@ -21,6 +21,7 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "Utils/ImageTransform.h"
 #include "Utils/Misc.h"
 
+#include "Async.h"
 #include "Config.h"
 
 namespace CLI
@@ -1056,6 +1057,9 @@ namespace CLI
                     disp.cancel();
                     return;
                 }
+                
+                Async::processJobs("CLI");
+
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP));
             }
 
@@ -1217,6 +1221,9 @@ namespace CLI
                     conv.cancel();
                     return;
                 }
+
+                Async::processJobs("CLI");
+
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP));
             }
 
