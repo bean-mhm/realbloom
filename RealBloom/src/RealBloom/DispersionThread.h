@@ -56,7 +56,7 @@ namespace RealBloom
         void start();
         void stop();
 
-        std::vector<float>& getBuffer();
+        std::vector<float>& getOutputBuffer();
         std::shared_ptr<std::jthread> getThread();
         void setThread(std::shared_ptr<std::jthread> thread);
 

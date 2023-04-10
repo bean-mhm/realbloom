@@ -1,7 +1,5 @@
 #include "DispersionThread.h"
 
-#include <omp.h>
-
 namespace RealBloom
 {
 
@@ -77,7 +75,6 @@ namespace RealBloom
             // Scale
             if (areEqual(scale, 1))
             {
-#pragma omp parallel for
                 for (int y = 0; y < m_inputHeight; y++)
                 {
                     for (int x = 0; x < m_inputWidth; x++)
@@ -93,7 +90,6 @@ namespace RealBloom
             }
             else
             {
-#pragma omp parallel for
                 for (int y = 0; y < m_inputHeight; y++)
                 {
                     float targetColor[3];
@@ -139,19 +135,16 @@ namespace RealBloom
             }
 
             // Colorize and add to dispBuffer
+            for (int y = 0; y < m_inputHeight; y++)
             {
-#pragma omp parallel for
-                for (int y = 0; y < m_inputHeight; y++)
+                for (int x = 0; x < m_inputWidth; x++)
                 {
-                    for (int x = 0; x < m_inputWidth; x++)
-                    {
-                        uint32_t redIndexScaled = (y * m_inputWidth + x) * 3;
-                        uint32_t redIndexOutput = (y * m_inputWidth + x) * 4;
+                    uint32_t redIndexScaled = (y * m_inputWidth + x) * 3;
+                    uint32_t redIndexOutput = (y * m_inputWidth + x) * 4;
 
-                        m_outputBuffer[redIndexOutput + 0] += scaledBuffer[redIndexScaled + 0] * wlR;
-                        m_outputBuffer[redIndexOutput + 1] += scaledBuffer[redIndexScaled + 1] * wlG;
-                        m_outputBuffer[redIndexOutput + 2] += scaledBuffer[redIndexScaled + 2] * wlB;
-                    }
+                    m_outputBuffer[redIndexOutput + 0] += scaledBuffer[redIndexScaled + 0] * wlR;
+                    m_outputBuffer[redIndexOutput + 1] += scaledBuffer[redIndexScaled + 1] * wlG;
+                    m_outputBuffer[redIndexOutput + 2] += scaledBuffer[redIndexScaled + 2] * wlB;
                 }
             }
 
@@ -166,7 +159,7 @@ namespace RealBloom
         m_mustStop = true;
     }
 
-    std::vector<float>& DispersionThread::getBuffer()
+    std::vector<float>& DispersionThread::getOutputBuffer()
     {
         return m_outputBuffer;
     }
