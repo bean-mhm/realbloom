@@ -208,27 +208,8 @@ int main(int argc, char** argv)
             ImGui::NewFrame();
             ImGui::DockSpaceOverViewport();
 
-            // Process queued tasks
-            {
-                std::unique_lock<std::mutex> lock(Async::S_TASKS_MUTEX);
-                while (!Async::S_TASKS.empty())
-                {
-                    auto task(std::move(Async::S_TASKS.front()));
-                    Async::S_TASKS.pop_front();
-
-                    // Unlock during the task
-                    lock.unlock();
-                    try
-                    {
-                        task();
-                    }
-                    catch (const std::exception& e)
-                    {
-                        printError("Main Loop", "Task", e.what());
-                    }
-                    lock.lock();
-                }
-            }
+            // Process scheduled jobs
+            Async::processJobs("Main");
 
             // UI Layout
             ImGui::PushFont(fontRoboto);
