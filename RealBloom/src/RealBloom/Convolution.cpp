@@ -244,14 +244,14 @@ namespace RealBloom
                 // Input buffer
                 std::vector<float> inputBuffer;
                 uint32_t inputWidth = 0, inputHeight = 0;
-                uint32_t inputBufferSize = inputWidth * inputHeight * 4;
                 previewInput(false, &inputBuffer, &inputWidth, &inputHeight);
+                uint32_t inputBufferSize = inputWidth * inputHeight * 4;
 
                 // Kernel buffer
                 std::vector<float> kernelBuffer;
                 uint32_t kernelWidth = 0, kernelHeight = 0;
-                uint32_t kernelBufferSize = kernelWidth * kernelHeight * 4;
                 previewKernel(false, &kernelBuffer, &kernelWidth, &kernelHeight);
+                uint32_t kernelBufferSize = kernelWidth * kernelHeight * 4;
 
                 // Call the appropriate function
                 switch (m_capturedParams.methodInfo.method)

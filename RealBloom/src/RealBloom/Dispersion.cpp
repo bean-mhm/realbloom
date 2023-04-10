@@ -119,8 +119,8 @@ namespace RealBloom
                     // Input buffer
                     std::vector<float> inputBuffer;
                     uint32_t inputWidth = 0, inputHeight = 0;
-                    uint32_t inputBufferSize = inputWidth * inputHeight * 4;
                     previewInput(false, &inputBuffer, &inputWidth, &inputHeight);
+                    uint32_t inputBufferSize = inputWidth * inputHeight * 4;
 
                     // Sample wavelengths
                     std::vector<float> cmfSamples;
@@ -267,11 +267,11 @@ namespace RealBloom
                     cmfSamples.data()
                     );
 
-                std::vector<float>& threadBuffer = ct->getBuffer();
+                std::vector<float>& threadBuffer = ct->getOutputBuffer();
+
                 threadBuffer.resize(inputBufferSize);
                 for (uint32_t j = 0; j < inputBufferSize; j++)
-                    if (j % 4 == 3) threadBuffer[j] = 1.0f;
-                    else threadBuffer[j] = 0.0f;
+                    threadBuffer[j] = (j % 4 == 3) ? 1.0f : 0.0f;
 
                 m_threads.push_back(ct);
             }
@@ -316,7 +316,7 @@ namespace RealBloom
 
                         for (auto& ct : m_threads)
                         {
-                            std::vector<float>& currentBuffer = ct->getBuffer();
+                            std::vector<float>& currentBuffer = ct->getOutputBuffer();
                             uint32_t redIndex;
                             for (uint32_t y = 0; y < inputHeight; y++)
                             {
@@ -362,7 +362,7 @@ namespace RealBloom
 
                 for (auto& ct : m_threads)
                 {
-                    std::vector<float>& threadBuffer = ct->getBuffer();
+                    std::vector<float>& threadBuffer = ct->getOutputBuffer();
                     uint32_t redIndex;
                     for (uint32_t y = 0; y < inputHeight; y++)
                     {

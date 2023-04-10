@@ -44,8 +44,8 @@ namespace RealBloom
             // Input buffer
             std::vector<float> inputBuffer;
             uint32_t inputWidth = 0, inputHeight = 0;
-            uint32_t inputBufferSize = inputWidth * inputHeight * 4;
             previewInput(false, &inputBuffer, &inputWidth, &inputHeight);
+            uint32_t inputBufferSize = inputWidth * inputHeight * 4;
 
             // Validate the dimensions
             if ((inputWidth < 4) || (inputHeight < 4))
