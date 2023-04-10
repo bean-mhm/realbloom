@@ -42,3 +42,9 @@ bool checkShader(GLuint shaderID, std::string& outLog);
 
 void checkGlStatus(const std::string& source, const std::string& stage);
 void clearGlStatus();
+
+void findAndSetUniform1i(GLuint program, const char* name, GLint v0);
+void findAndSetUniform1f(GLuint program, const char* name, GLfloat v0);
+void findAndSetUniform2f(GLuint program, const char* name, GLfloat v0, GLfloat v1);
+void findAndSetUniform3f(GLuint program, const char* name, GLfloat v0, GLfloat v1, GLfloat v2);
+void findAndSetUniform4f(GLuint program, const char* name, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
