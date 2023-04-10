@@ -1,15 +1,18 @@
 ﻿#include "Main.h"
 
 // GUI
+
 static int glVersionMajor = 3;
 static int glVersionMinor = 2;
 static const char* glslVersion = "#version 150";
+
 static GLFWwindow* window = nullptr;
 static ImGuiIO* io = nullptr;
 static bool appRunning = true;
-static bool showRendererName = false;
-static bool showFPS = false;
-static bool showDebugPanel = false;
+
+static bool showRendererName = true;
+static bool showFPS = true;
+static bool showDebugPanel = true;
 
 // Fonts
 static ImFont* fontRoboto = nullptr;
