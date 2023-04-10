@@ -10,9 +10,9 @@ static GLFWwindow* window = nullptr;
 static ImGuiIO* io = nullptr;
 static bool appRunning = true;
 
-static bool showRendererName = true;
-static bool showFPS = true;
-static bool showDebugPanel = true;
+static bool showRendererName = false;
+static bool showFPS = false;
+static bool showDebugPanel = false;
 
 // Fonts
 static ImFont* fontRoboto = nullptr;
