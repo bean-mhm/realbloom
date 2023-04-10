@@ -48,7 +48,6 @@ namespace RealBloom
         {
             *outWidth = transWidth;
             *outHeight = transHeight;
-            outBuffer->resize(transBuffer.size());
             *outBuffer = transBuffer;
         }
 

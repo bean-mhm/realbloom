@@ -4,7 +4,7 @@ CmImageIO::CmImageIoVars* CmImageIO::S_VARS = nullptr;
 
 static const std::string attribNameColorSpace = "colorspace";
 
-bool CmImageIO::init()
+void CmImageIO::init()
 {
     S_VARS = new CmImageIoVars();
 

@@ -38,7 +38,7 @@ public:
     CmImageIO(const CmImageIO&) = delete;
     CmImageIO& operator= (const CmImageIO&) = delete;
 
-    static bool init();
+    static void init();
     static void cleanUp();
 
     static const std::string& getInputSpace();
