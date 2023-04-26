@@ -1335,7 +1335,7 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
             if (ImGui::SliderFloat("Contrast##Color", &params.color.contrast, -1.0f, 1.0f))
                 changed = true;
 
-            // Grayscale
+            // Grayscale Type
             {
                 const char* const grayscaleItems[]{
                     "None",
@@ -1358,6 +1358,10 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
                     changed = true;
                 }
             }
+
+            // Grayscale Mix
+            if (ImGui::SliderFloat("Mix##Color", &params.color.grayscaleMix, -1.0f, 1.0f))
+                changed = true;
 
             // Reset
             if (ImGui::Button("Reset##Color", btnSize()))
