@@ -6,6 +6,15 @@
 static const char* fragmentSource = R"glsl(
     #version 150 core
 
+    #define DEG_TO_RAD 0.0174532925199432944
+
+    #define CONTRAST_PIVOT 0.5
+
+    // Magnitude
+    #define CONTRAST_GRAYSCALE_TYPE 6
+
+    #define SQRT3 1.7320508075688772935274463415059
+
     in vec2 vTexUV;
 
     out vec4 outColor;
@@ -39,18 +48,11 @@ static const char* fragmentSource = R"glsl(
 
     uniform float previewMarksSoftness;
 
-    #define DEG_TO_RAD 0.0174532925199432944
-
-    #define CONTRAST_PIVOT 0.5
-
-    // Magnitude
-    #define CONTRAST_GRAYSCALE_TYPE 3
-
     float applyContrast(float v, float contrast)
     {
         if (contrast == 0.0)
             return v;
-    
+
         // v0.5.2-dev
         float c =
             (contrast >= 0.0) ?
@@ -75,43 +77,63 @@ static const char* fragmentSource = R"glsl(
         switch (type)
         {
 
-        // Luminance
+        // None
         case 0:
+            return 0.0;
+            break;
+
+        // Luminance
+        case 1:
             return (rgba.x * 0.2126) + (rgba.y * 0.7152) + (rgba.z * 0.0722);
             break;
 
         // Average
-        case 1:
+        case 2:
             return (rgba.x + rgba.y + rgba.z) / 3.0;
             break;
 
+        // Sum
+        case 3:
+            return rgba.x + rgba.y + rgba.z;
+            break;
+
         // Maximum
-        case 2:
+        case 4:
             return max(max(rgba.x, rgba.y), rgba.z);
             break;
 
+        // Minimum
+        case 5:
+            return min(min(rgba.x, rgba.y), rgba.z);
+            break;
+
         // Magnitude
-        case 3:
+        case 6:
             return sqrt((rgba.x * rgba.x) + (rgba.y * rgba.y) + (rgba.z * rgba.z));
             break;
 
+        // MagOverSqrt3
+        case 7:
+            return sqrt((rgba.x * rgba.x) + (rgba.y * rgba.y) + (rgba.z * rgba.z)) / SQRT3;
+            break;
+
         // Red
-        case 4:
+        case 8:
             return rgba.x;
             break;
 
         // Green
-        case 5:
+        case 9:
             return rgba.y;
             break;
 
         // Blue
-        case 6:
+        case 10:
             return rgba.z;
             break;
 
         // Alpha
-        case 7:
+        case 11:
             return rgba.w;
             break;
 
@@ -169,7 +191,7 @@ static const char* fragmentSource = R"glsl(
         }
         
         // Grayscale
-        if (grayscaleType != -1)
+        if (grayscaleType != 0)
         {
             float v = rgbaToGrayscale(outColor, grayscaleType);
             outColor = vec4(v, v, v, 1.0);
@@ -225,8 +247,7 @@ void ImageTransformParams::ColorParams::reset()
     filter = { 1.0f, 1.0f, 1.0f };
     exposure = 0.0f;
     contrast = 0.0f;
-    grayscale = false;
-    grayscaleType = GrayscaleType::Luminance;
+    grayscaleType = GrayscaleType::None;
 }
 
 void ImageTransformParams::reset()
@@ -329,7 +350,7 @@ void ImageTransform::applyNoCropCPU(
     const float colorMulG = expMul * params.color.filter[1];
     const float colorMulB = expMul * params.color.filter[2];
 
-    const bool grayscale = params.color.grayscale;
+    const bool grayscale = (params.color.grayscaleType != GrayscaleType::None);
     const bool transparency = params.transparency;
 
     // Check if we'll need to draw preview marks for crop and transform origins
@@ -350,7 +371,7 @@ void ImageTransform::applyNoCropCPU(
         && (params.color.filter[2] == 1.0f)
         && (params.color.exposure == 0.0f)
         && (params.color.contrast == 0.0f)
-        && (!params.color.grayscale);
+        && (!grayscale);
 
     // Resize, Scale, Rotate, Translate, Color Transforms
     if (noTrans)
@@ -460,7 +481,7 @@ void ImageTransform::applyNoCropCPU(
                 }
 
                 // Grayscale
-                if (params.color.grayscale)
+                if (grayscale)
                 {
                     targetColor[0] = rgbaToGrayscale(targetColor, params.color.grayscaleType);
                     targetColor[1] = targetColor[0];
@@ -600,7 +621,7 @@ void ImageTransform::applyNoCropGPU(
                 1.0f);
 
             findAndSetUniform1f(s_program, "contrast", params.color.contrast);
-            findAndSetUniform1i(s_program, "grayscaleType", params.color.grayscale ? ((int)params.color.grayscaleType) : -1);
+            findAndSetUniform1i(s_program, "grayscaleType", (int)params.color.grayscaleType);
             findAndSetUniform1i(s_program, "transparency", params.transparency ? 1 : 0);
 
             findAndSetUniform1i(s_program, "previewOriginCropResize", params.cropResize.previewOrigin ? 1 : 0);
