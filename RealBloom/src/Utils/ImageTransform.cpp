@@ -31,6 +31,7 @@ static const char* fragmentSource = R"glsl(
     uniform float contrast;
     uniform int contrastGrayscaleType;
     uniform int grayscaleType;
+    uniform float grayscaleMix;
 
     uniform int transparency;
 
@@ -45,6 +46,11 @@ static const char* fragmentSource = R"glsl(
     uniform float previewMarksDotRadius;
 
     uniform float previewMarksSoftness;
+
+    float lerp(float a, float b, float t)
+    {
+        return a + ((b - a) * t);
+    }
 
     float applyContrast(float v, float contrast)
     {
@@ -192,7 +198,15 @@ static const char* fragmentSource = R"glsl(
         if (grayscaleType != 0)
         {
             float v = rgbaToGrayscale(outColor, grayscaleType);
-            outColor = vec4(v, v, v, 1.0);
+
+            if (grayscaleMix == 1.0)
+            {
+                outColor = vec4(v, v, v, 1.0);
+            }
+            else
+            {
+                outColor = vec4(lerp(outColor.x, v, grayscaleMix), lerp(outColor.y, v, grayscaleMix), lerp(outColor.z, v, grayscaleMix), 1.0);
+            }
         }
 
         // Preview marks
@@ -245,7 +259,9 @@ void ImageTransformParams::ColorParams::reset()
     filter = { 1.0f, 1.0f, 1.0f };
     exposure = 0.0f;
     contrast = 0.0f;
+    contrastGrayscaleType = GrayscaleType::MagOverSqrt3;
     grayscaleType = GrayscaleType::None;
+    grayscaleMix = 1.0f;
 }
 
 void ImageTransformParams::reset()
@@ -349,6 +365,8 @@ void ImageTransform::applyNoCropCPU(
     const float colorMulB = expMul * params.color.filter[2];
 
     const bool grayscale = (params.color.grayscaleType != GrayscaleType::None);
+    const bool grayscaleMixing = (params.color.grayscaleMix != 1.0f);
+
     const bool transparency = params.transparency;
 
     // Check if we'll need to draw preview marks for crop and transform origins
@@ -481,10 +499,22 @@ void ImageTransform::applyNoCropCPU(
                 // Grayscale
                 if (grayscale)
                 {
-                    targetColor[0] = rgbaToGrayscale(targetColor, params.color.grayscaleType);
-                    targetColor[1] = targetColor[0];
-                    targetColor[2] = targetColor[0];
-                    targetColor[3] = 1.0f;
+                    if (grayscaleMixing)
+                    {
+                        float v = rgbaToGrayscale(targetColor, params.color.grayscaleType);
+
+                        targetColor[0] = lerp(targetColor[0], v, params.color.grayscaleMix);
+                        targetColor[1] = lerp(targetColor[1], v, params.color.grayscaleMix);
+                        targetColor[2] = lerp(targetColor[2], v, params.color.grayscaleMix);
+                        targetColor[3] = 1.0f;
+                    }
+                    else
+                    {
+                        targetColor[0] = rgbaToGrayscale(targetColor, params.color.grayscaleType);
+                        targetColor[1] = targetColor[0];
+                        targetColor[2] = targetColor[0];
+                        targetColor[3] = 1.0f;
+                    }
                 }
 
                 // Put tagetColor in the output buffer
@@ -621,6 +651,7 @@ void ImageTransform::applyNoCropGPU(
             findAndSetUniform1f(s_program, "contrast", params.color.contrast);
             findAndSetUniform1i(s_program, "contrastGrayscaleType", (int)params.color.contrastGrayscaleType);
             findAndSetUniform1i(s_program, "grayscaleType", (int)params.color.grayscaleType);
+            findAndSetUniform1f(s_program, "grayscaleMix", params.color.grayscaleMix);
             findAndSetUniform1i(s_program, "transparency", params.transparency ? 1 : 0);
 
             findAndSetUniform1i(s_program, "previewOriginCropResize", params.cropResize.previewOrigin ? 1 : 0);

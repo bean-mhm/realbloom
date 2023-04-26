@@ -48,6 +48,7 @@ struct ImageTransformParams
         float contrast = 0.0f;
         GrayscaleType contrastGrayscaleType = GrayscaleType::MagOverSqrt3;
         GrayscaleType grayscaleType = GrayscaleType::None;
+        float grayscaleMix = 1.0f;
 
         void reset();
     };
