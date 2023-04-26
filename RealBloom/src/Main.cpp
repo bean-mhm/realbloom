@@ -12,7 +12,7 @@ static bool appRunning = true;
 
 static bool showRendererName = false;
 static bool showFPS = false;
-static bool showDebugPanel = false;
+static bool showDebugPanel = true;
 
 // Fonts
 static ImFont* fontRoboto = nullptr;
@@ -1334,19 +1334,24 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
 
             // Grayscale
             {
-                const char* const grayscaleItems[]{ "None", "Luminance", "Average", "Maximum", "Magnitude", "Red", "Green", "Blue", "Alpha" };
-                int selIndex = params.color.grayscale ? ((int)params.color.grayscaleType + 1) : 0;
+                const char* const grayscaleItems[]{
+                    "None",
+                    "Luminance",
+                    "Average",
+                    "Sum",
+                    "Maximum",
+                    "Minimum",
+                    "Magnitude",
+                    "Mag. Over Sqrt(3)",
+                    "Red",
+                    "Green",
+                    "Blue",
+                    "Alpha"
+                };
+                int selIndex = (int)params.color.grayscaleType;
                 if (ImGui::Combo("Grayscale##Color", &selIndex, grayscaleItems, sizeof(grayscaleItems) / sizeof(grayscaleItems[0])))
                 {
-                    if (selIndex > 0)
-                    {
-                        params.color.grayscale = true;
-                        params.color.grayscaleType = (GrayscaleType)(selIndex - 1);
-                    }
-                    else
-                    {
-                        params.color.grayscale = false;
-                    }
+                    params.color.grayscaleType = (GrayscaleType)(selIndex);
                     changed = true;
                 }
             }
