@@ -76,15 +76,15 @@ namespace CLI
             if (arg.type == ArgumentType::Optional)
                 std::cout
                 << "  "
-                << consoleColor(COL_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
-                << strWordWrap(desc, LINE_LENGTH, 26)
+                << consoleColor(COL_SEC) << strRightPadding(s_aliases, 28) << consoleColor()
+                << strWordWrap(desc, LINE_LENGTH, 30)
                 << consoleColor() << "\n";
             else
                 std::cout
                 << "  "
-                << consoleColor(COL_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
+                << consoleColor(COL_SEC) << strRightPadding(s_aliases, 28) << consoleColor()
                 << consoleColor(arg.type == ArgumentType::Required ? COL_ERR : COL_PRI) << "* " << consoleColor()
-                << strWordWrap(desc, LINE_LENGTH, 28)
+                << strWordWrap(desc, LINE_LENGTH, 32)
                 << consoleColor() << "\n";
         }
     }
@@ -144,8 +144,8 @@ namespace CLI
             for (const auto& cmd : commands)
                 std::cout
                 << "  "
-                << consoleColor(COL_SEC) << strRightPadding(cmd.name, 16) << consoleColor()
-                << strWordWrap(cmd.desc, LINE_LENGTH, 18) << "\n";
+                << consoleColor(COL_SEC) << strRightPadding(cmd.name, 18) << consoleColor()
+                << strWordWrap(cmd.desc, LINE_LENGTH, 20) << "\n";
 
             // Footer
             std::cout
@@ -366,8 +366,8 @@ namespace CLI
             },
             {
                 {argPrefix + "grayscale", aliasMap["grayscale"]},
-                descPrefix + "Grayscale",
-                "-1",
+                descPrefix + "Grayscale Type",
+                "0",
                 ArgumentType::Optional
             },
             {
@@ -378,18 +378,22 @@ namespace CLI
             }
             });
 
-        // Add notes
+        // Add notes if they haven't been added already
         if (imageIndex == 0)
         {
-            cmd.notes.push_back(strFromEnumValues("GrayscaleType", {
+            cmd.notes.push_back(strFromEnumValues("Grayscale Type", {
+                "None",
                 "Luminance",
                 "Average",
+                "Sum",
                 "Maximum",
+                "Minimum",
                 "Magnitude",
+                "Mag. Over Sqrt(3)",
                 "Red",
                 "Green",
                 "Blue",
-                "Alpha",
+                "Alpha"
                 }));
         }
     }
@@ -447,11 +451,10 @@ namespace CLI
         arg = "grayscale";
         if (args.contains(argPrefix + arg))
         {
-            int index = strToInt(args[argPrefix + arg]);
-            if (index >= 0 && index < GrayscaleType_EnumSize)
+            int enumIndex = strToInt(args[argPrefix + arg]);
+            if (enumIndex >= 0 && enumIndex < GrayscaleType_EnumSize)
             {
-                outParams.color.grayscale = true;
-                outParams.color.grayscaleType = (GrayscaleType)index;
+                outParams.color.grayscaleType = (GrayscaleType)enumIndex;
             }
         }
 
@@ -1057,7 +1060,7 @@ namespace CLI
                     disp.cancel();
                     return;
                 }
-                
+
                 Async::processJobs("CLI");
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP));
