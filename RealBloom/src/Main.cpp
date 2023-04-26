@@ -177,7 +177,7 @@ int main(int argc, char** argv)
                 auto lastTime = std::chrono::system_clock::now();
                 while (appRunning)
                 {
-                    if (getElapsedMs(lastTime) > 500)
+                    if (getElapsedMs(lastTime) > 700)
                     {
                         convResUsage = conv.getResourceInfo();
                         lastTime = std::chrono::system_clock::now();
@@ -824,7 +824,10 @@ void layoutConvolution()
     }
 
     if (layoutImageTransformParams("Input", "ConvInput", convParams->inputTransformParams))
+    {
         convInputTransformParamsChanged = true;
+        convThresholdChanged = true;
+    }
 
     if (convInputTransformParamsChanged)
     {
