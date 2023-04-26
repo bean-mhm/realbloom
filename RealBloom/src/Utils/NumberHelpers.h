@@ -7,6 +7,7 @@
 
 constexpr float DEG_TO_RAD = (float)std::numbers::pi / 180.0f;
 constexpr float EPSILON = 0.000001f;
+constexpr float SQRT3 = 1.7320508075688772935274463415059;
 
 inline bool areEqual(float a, float b, float epsilon = EPSILON)
 {
@@ -77,16 +78,20 @@ inline int u32ToI32(uint32_t v)
 
 enum class GrayscaleType
 {
+    None,
     Luminance,
     Average,
+    Sum,
     Maximum,
+    Minimum,
     Magnitude,
+    MagOverSqrt3,
     Red,
     Green,
     Blue,
     Alpha
 };
-constexpr uint32_t GrayscaleType_EnumSize = 8;
+constexpr uint32_t GrayscaleType_EnumSize = 12;
 
 constexpr GrayscaleType CONV_THRESHOLD_GRAYSCALE_TYPE = GrayscaleType::Luminance;
 
@@ -100,11 +105,20 @@ inline float rgbaToGrayscale(float* rgba, GrayscaleType type)
     case GrayscaleType::Average:
         return (rgba[0] + rgba[1] + rgba[2]) / 3.0f;
         break;
+    case GrayscaleType::Sum:
+        return rgba[0] + rgba[1] + rgba[2];
+        break;
     case GrayscaleType::Maximum:
         return std::max(std::max(rgba[0], rgba[1]), rgba[2]);
         break;
+    case GrayscaleType::Minimum:
+        return std::min(std::min(rgba[0], rgba[1]), rgba[2]);
+        break;
     case GrayscaleType::Magnitude:
         return sqrtf((rgba[0] * rgba[0]) + (rgba[1] * rgba[1]) + (rgba[2] * rgba[2]));
+        break;
+    case GrayscaleType::MagOverSqrt3:
+        return sqrtf((rgba[0] * rgba[0]) + (rgba[1] * rgba[1]) + (rgba[2] * rgba[2])) / SQRT3;
         break;
     case GrayscaleType::Red:
         return rgba[0];
