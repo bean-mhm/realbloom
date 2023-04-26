@@ -93,7 +93,7 @@ enum class GrayscaleType
 };
 constexpr uint32_t GrayscaleType_EnumSize = 12;
 
-constexpr GrayscaleType CONV_THRESHOLD_GRAYSCALE_TYPE = GrayscaleType::Luminance;
+constexpr GrayscaleType CONV_THRESHOLD_GRAYSCALE_TYPE = GrayscaleType::Average;
 
 inline float rgbaToGrayscale(float* rgba, GrayscaleType type)
 {
