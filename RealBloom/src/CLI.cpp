@@ -263,6 +263,7 @@ namespace CLI
                 map["exposure"] = "-E";
                 map["contrast"] = "-X";
                 map["grayscale"] = "-G";
+                map["grayscale-mix"] = "-Z";
                 map["transparency"] = "-W";
                 aliasMaps.push_back(map);
             }
@@ -281,6 +282,7 @@ namespace CLI
                 map["exposure"] = "-O";
                 map["contrast"] = "-P";
                 map["grayscale"] = "-Q";
+                map["grayscale-mix"] = "-Y";
                 map["transparency"] = "-M";
                 aliasMaps.push_back(map);
             }
@@ -371,6 +373,12 @@ namespace CLI
                 ArgumentType::Optional
             },
             {
+                {argPrefix + "grayscale-mix", aliasMap["grayscale-mix"]},
+                descPrefix + "Grayscale Mix",
+                "1",
+                ArgumentType::Optional
+            },
+            {
                 {argPrefix + "transparency", aliasMap["transparency"]},
                 descPrefix + "Transparency",
                 "",
@@ -457,6 +465,10 @@ namespace CLI
                 outParams.color.grayscaleType = (GrayscaleType)enumIndex;
             }
         }
+
+        arg = "grayscale-mix";
+        if (args.contains(argPrefix + arg))
+            outParams.color.grayscaleMix = strToFloat(args[argPrefix + arg]);
 
         arg = "transparency";
         outParams.transparency = args.contains(argPrefix + arg);
