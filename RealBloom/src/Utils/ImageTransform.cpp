@@ -10,9 +10,6 @@ static const char* fragmentSource = R"glsl(
 
     #define CONTRAST_PIVOT 0.5
 
-    // Magnitude
-    #define CONTRAST_GRAYSCALE_TYPE 6
-
     #define SQRT3 1.7320508075688772935274463415059
 
     in vec2 vTexUV;
@@ -32,6 +29,7 @@ static const char* fragmentSource = R"glsl(
 
     uniform vec4 colorMul;
     uniform float contrast;
+    uniform int contrastGrayscaleType;
     uniform int grayscaleType;
 
     uniform int transparency;
@@ -181,7 +179,7 @@ static const char* fragmentSource = R"glsl(
             outColor = vec4(outColor.xyz, 1.0);
 
         // Get the monotonic value for contrast
-        float mono = rgbaToGrayscale(outColor, CONTRAST_GRAYSCALE_TYPE);
+        float mono = rgbaToGrayscale(outColor, contrastGrayscaleType);
         
         // Contrast
         if (mono > 0.0)
@@ -469,7 +467,7 @@ void ImageTransform::applyNoCropCPU(
                 targetColor[2] *= colorMulB;
 
                 // Get the monotonic value for contrast
-                float mono = rgbaToGrayscale(targetColor, CONTRAST_GRAYSCALE_TYPE);
+                float mono = rgbaToGrayscale(targetColor, params.color.contrastGrayscaleType);
 
                 // Contrast
                 if (mono > 0.0f)
@@ -621,6 +619,7 @@ void ImageTransform::applyNoCropGPU(
                 1.0f);
 
             findAndSetUniform1f(s_program, "contrast", params.color.contrast);
+            findAndSetUniform1i(s_program, "contrastGrayscaleType", (int)params.color.contrastGrayscaleType);
             findAndSetUniform1i(s_program, "grayscaleType", (int)params.color.grayscaleType);
             findAndSetUniform1i(s_program, "transparency", params.transparency ? 1 : 0);
 

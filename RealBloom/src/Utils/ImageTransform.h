@@ -46,6 +46,7 @@ struct ImageTransformParams
         std::array<float, 3> filter{ 1.0f, 1.0f, 1.0f };
         float exposure = 0.0f;
         float contrast = 0.0f;
+        GrayscaleType contrastGrayscaleType = GrayscaleType::MagOverSqrt3;
         GrayscaleType grayscaleType = GrayscaleType::None;
 
         void reset();
