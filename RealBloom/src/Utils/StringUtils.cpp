@@ -175,7 +175,7 @@ std::string strFromColorChannelID(uint32_t ch)
 
 std::string strFromEnumValues(const std::string& name, const std::vector<std::string>& values, int startingIndex)
 {
-    std::string s = strFormat("Enum %s: ", name.c_str());
+    std::string s = strFormat("%s: ", name.c_str());
 
     for (uint32_t i = 0; i < values.size(); i++)
     {
