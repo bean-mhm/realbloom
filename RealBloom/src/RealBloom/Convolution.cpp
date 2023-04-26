@@ -2,6 +2,8 @@
 #include "ConvolutionThread.h"
 #include "ConvolutionFFT.h"
 
+#include <omp.h>
+
 namespace RealBloom
 {
 
@@ -79,7 +81,7 @@ namespace RealBloom
     {
         float threshold = m_params.threshold;
         float transKnee = transformKnee(m_params.knee);
-        size_t numPixels = 0;
+        std::atomic_uint64_t numPixels = 0;
 
         {
             // Input image
@@ -93,9 +95,10 @@ namespace RealBloom
             m_imgConvPreview->resize(inputWidth, inputHeight, false);
             float* prevBuffer = m_imgConvPreview->getImageData();
 
-            for (uint32_t y = 0; y < inputHeight; y++)
+#pragma omp parallel for
+            for (int y = 0; y < inputHeight; y++)
             {
-                for (uint32_t x = 0; x < inputWidth; x++)
+                for (int x = 0; x < inputWidth; x++)
                 {
                     uint32_t redIndex = (y * inputWidth + x) * 4;
                     prevBuffer[redIndex + 0] = 0;

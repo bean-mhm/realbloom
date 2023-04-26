@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <iostream>
 #include <fstream>
+#include <atomic>
 
 #include "GpuHelper.h"
 #include "Binary/BinaryData.h"
