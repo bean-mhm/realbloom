@@ -1,17 +1,15 @@
 #include "CmImageIO.h"
 
-CmImageIO::CmImageIoVars* CmImageIO::S_VARS = nullptr;
+CmImageIO::CmImageIoVars CmImageIO::S_VARS;
 
 static const std::string attribNameColorSpace = "colorspace";
 
 void CmImageIO::init()
 {
-    S_VARS = new CmImageIoVars();
-
     // Default values
-    S_VARS->inputSpace = CMS::getWorkingSpace();
-    S_VARS->outputSpace = S_VARS->inputSpace;
-    S_VARS->nonLinearSpace = S_VARS->inputSpace;
+    S_VARS.inputSpace = CMS::getWorkingSpace();
+    S_VARS.outputSpace = S_VARS.inputSpace;
+    S_VARS.nonLinearSpace = S_VARS.inputSpace;
 
     // Get the color spaces in the user config
     const std::vector<std::string>& userSpaces = CMS::getColorSpaces();
@@ -22,7 +20,7 @@ void CmImageIO::init()
         std::string spaceLower = strLowercase(space);
         if (spaceLower.starts_with("linear") && strContains(spaceLower, "709") && !strContains(spaceLower, "i-e"))
         {
-            S_VARS->inputSpace = space;
+            S_VARS.inputSpace = space;
             break;
         }
     }
@@ -32,7 +30,7 @@ void CmImageIO::init()
     {
         if (strLowercase(space).starts_with("srgb"))
         {
-            S_VARS->nonLinearSpace = space;
+            S_VARS.nonLinearSpace = space;
             break;
         }
     }
@@ -40,57 +38,57 @@ void CmImageIO::init()
 
 void CmImageIO::cleanUp()
 {
-    DELPTR(S_VARS);
+    //
 }
 
 const std::string& CmImageIO::getInputSpace()
 {
-    return S_VARS->inputSpace;
+    return S_VARS.inputSpace;
 }
 
 const std::string& CmImageIO::getOutputSpace()
 {
-    return S_VARS->outputSpace;
+    return S_VARS.outputSpace;
 }
 
 const std::string& CmImageIO::getNonLinearSpace()
 {
-    return S_VARS->nonLinearSpace;
+    return S_VARS.nonLinearSpace;
 }
 
 bool CmImageIO::getAutoDetect()
 {
-    return S_VARS->autoDetect;
+    return S_VARS.autoDetect;
 }
 
 bool CmImageIO::getApplyViewTransform()
 {
-    return S_VARS->applyViewTransform;
+    return S_VARS.applyViewTransform;
 }
 
 void CmImageIO::setInputSpace(const std::string& colorSpace)
 {
-    S_VARS->inputSpace = colorSpace;
+    S_VARS.inputSpace = colorSpace;
 }
 
 void CmImageIO::setOutputSpace(const std::string& colorSpace)
 {
-    S_VARS->outputSpace = colorSpace;
+    S_VARS.outputSpace = colorSpace;
 }
 
 void CmImageIO::setNonLinearSpace(const std::string& colorSpace)
 {
-    S_VARS->nonLinearSpace = colorSpace;
+    S_VARS.nonLinearSpace = colorSpace;
 }
 
 void CmImageIO::setAutoDetect(bool autoDetect)
 {
-    S_VARS->autoDetect = autoDetect;
+    S_VARS.autoDetect = autoDetect;
 }
 
 void CmImageIO::setApplyViewTransform(bool applyViewTransform)
 {
-    S_VARS->applyViewTransform = applyViewTransform;
+    S_VARS.applyViewTransform = applyViewTransform;
 }
 
 std::string makeIoError(const std::string& message, bool hasError, const std::string& error)
@@ -115,11 +113,11 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         std::string csName;
         if (contains(getLinearExtensions(), extension))
         {
-            csName = CMS::resolveColorSpace(S_VARS->inputSpace);
+            csName = CMS::resolveColorSpace(S_VARS.inputSpace);
         }
         else if (contains(getNonLinearExtensions(), extension))
         {
-            csName = CMS::resolveColorSpace(S_VARS->nonLinearSpace);
+            csName = CMS::resolveColorSpace(S_VARS.nonLinearSpace);
         }
         else
         {
@@ -140,7 +138,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         uint32_t channels = spec.nchannels;
 
         // Attempt to read the color space name
-        if (S_VARS->autoDetect && contains(getMetaExtensions(), extension))
+        if (S_VARS.autoDetect && contains(getMetaExtensions(), extension))
         {
             std::string attribColorSpace = spec.get_string_attribute(attribNameColorSpace, "");
             if (!attribColorSpace.empty())
@@ -307,9 +305,9 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
         OCIO::ConstConfigRcPtr config = CMS::getConfig();
 
         // Resolve the output color space name
-        std::string csName = CMS::resolveColorSpace(S_VARS->outputSpace);
+        std::string csName = CMS::resolveColorSpace(S_VARS.outputSpace);
 
-        bool viewTransform = S_VARS->applyViewTransform || nonLinear;
+        bool viewTransform = S_VARS.applyViewTransform || nonLinear;
 
         // Color transform
         if (viewTransform)

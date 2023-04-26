@@ -264,12 +264,12 @@ CmfTableInfo::CmfTableInfo(const std::string& name, const std::string& path)
 
 #pragma region CMF
 
-CMF::CmfVars* CMF::S_VARS = nullptr;
+CMF::CmfVars CMF::S_VARS;
 BaseStatus CMF::S_STATUS;
 
 void CMF::retrieveTables()
 {
-    S_VARS->tables.clear();
+    S_VARS.tables.clear();
 
     if (!(std::filesystem::exists(CMF_DIR) && std::filesystem::is_directory(CMF_DIR)))
         throw std::exception(strFormat("\"%s\" was not found.", CMF_DIR.c_str()).c_str());
@@ -282,7 +282,7 @@ void CMF::retrieveTables()
             {
                 std::string tableName = entry.path().filename().replace_extension().string();
                 std::string tablePath = std::filesystem::absolute(entry.path()).string();
-                S_VARS->tables.push_back(CmfTableInfo(tableName, tablePath));
+                S_VARS.tables.push_back(CmfTableInfo(tableName, tablePath));
             }
         }
     }
@@ -290,7 +290,6 @@ void CMF::retrieveTables()
 
 bool CMF::init()
 {
-    S_VARS = new CmfVars();
     try
     {
         retrieveTables();
@@ -303,7 +302,7 @@ bool CMF::init()
     // Load the default table if it is found
     if (S_STATUS.isOK())
     {
-        for (const auto& tbl : S_VARS->tables)
+        for (const auto& tbl : S_VARS.tables)
         {
             if (tbl.name == CMF_DEFAULT_TABLE)
             {
@@ -313,8 +312,8 @@ bool CMF::init()
         }
 
         // If the default wasn't found, load the first one available
-        if ((!CMF::hasTable()) && (S_VARS->tables.size() > 0))
-            setActiveTable(S_VARS->tables[0]);
+        if ((!CMF::hasTable()) && (S_VARS.tables.size() > 0))
+            setActiveTable(S_VARS.tables[0]);
     }
 
     return S_STATUS.isOK();
@@ -322,64 +321,64 @@ bool CMF::init()
 
 void CMF::cleanUp()
 {
-    DELPTR(S_VARS);
+    //
 }
 
 const std::vector<CmfTableInfo>& CMF::getTables()
 {
-    return S_VARS->tables;
+    return S_VARS.tables;
 }
 
 std::shared_ptr<CmfTable> CMF::getActiveTable()
 {
-    return S_VARS->activeTable;
+    return S_VARS.activeTable;
 }
 
 const CmfTableInfo& CMF::getActiveTableInfo()
 {
-    return S_VARS->activeTableInfo;
+    return S_VARS.activeTableInfo;
 }
 
 const std::string& CMF::getActiveTableDetails()
 {
-    return S_VARS->activeTableDetails;
+    return S_VARS.activeTableDetails;
 }
 
 void CMF::setActiveTable(const CmfTableInfo& tableInfo)
 {
     S_STATUS.reset();
 
-    S_VARS->activeTable = nullptr;
+    S_VARS.activeTable = nullptr;
     try
     {
         if (!tableInfo.path.empty())
         {
-            S_VARS->activeTable = std::make_shared<CmfTable>(tableInfo.path);
-            S_VARS->activeTableInfo = tableInfo;
+            S_VARS.activeTable = std::make_shared<CmfTable>(tableInfo.path);
+            S_VARS.activeTableInfo = tableInfo;
 
-            S_VARS->activeTableDetails = strFormat(
+            S_VARS.activeTableDetails = strFormat(
                 "%s\n"
                 "Count: %u\n"
                 "Range: %.3f - %.3f\n"
                 "Step: %.3f",
-                S_VARS->activeTableInfo.name.c_str(),
-                S_VARS->activeTable->getCount(),
-                S_VARS->activeTable->getStart(),
-                S_VARS->activeTable->getEnd(),
-                S_VARS->activeTable->getStep()
+                S_VARS.activeTableInfo.name.c_str(),
+                S_VARS.activeTable->getCount(),
+                S_VARS.activeTable->getStart(),
+                S_VARS.activeTable->getEnd(),
+                S_VARS.activeTable->getStep()
             );
         }
     }
     catch (const std::exception& e)
     {
-        S_VARS->activeTable = nullptr;
+        S_VARS.activeTable = nullptr;
         S_STATUS.setError(e.what());
     }
 }
 
 bool CMF::hasTable()
 {
-    return (S_VARS->activeTable.get() != nullptr);
+    return (S_VARS.activeTable.get() != nullptr);
 }
 
 const BaseStatus& CMF::getStatus()

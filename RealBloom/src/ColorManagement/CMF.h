@@ -60,7 +60,7 @@ private:
         CmfTableInfo activeTableInfo;
         std::string activeTableDetails = "";
     };
-    static CmfVars* S_VARS;
+    static CmfVars S_VARS;
     static BaseStatus S_STATUS;
 
     static void retrieveTables();

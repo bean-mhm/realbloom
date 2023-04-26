@@ -31,7 +31,7 @@ private:
         bool autoDetect = true;
         bool applyViewTransform = false;
     };
-    static CmImageIoVars* S_VARS;
+    static CmImageIoVars S_VARS;
 
 public:
     CmImageIO() = delete;

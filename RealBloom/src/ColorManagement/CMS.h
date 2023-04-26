@@ -58,7 +58,7 @@ private:
         void retrieveViews();
         void retrieveLooks();
     };
-    static CmVars* S_VARS;
+    static CmVars S_VARS;
     static BaseStatus S_STATUS;
 
     static void ensureProcessors();
