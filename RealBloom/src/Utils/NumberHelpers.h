@@ -206,7 +206,6 @@ inline double getExposureMul(double v)
     return pow(2.0, v);
 }
 
-constexpr GrayscaleType CONTRAST_GRAYSCALE_TYPE = GrayscaleType::Magnitude;
 float applyContrast(float v, float contrast);
 
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY);
