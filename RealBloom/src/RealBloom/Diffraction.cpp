@@ -147,14 +147,12 @@ namespace RealBloom
 #pragma omp parallel for
             for (int y = 0; y < fftHeight; y++)
             {
-                int transX, transY;
-
                 for (int x = 0; x < fftWidth; x++)
                 {
                     // Transform the sample coordinates
 
-                    transX = x;
-                    transY = y;
+                    int transX = x;
+                    int transY = y;
 
                     if (transY > centerY)
                     {
