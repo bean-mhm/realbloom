@@ -52,8 +52,8 @@ namespace RealBloom
                 throw std::exception("Input dimensions are too small.");
 
             // Output dimensions
-            uint32_t fftWidth = (inputWidth % 2 == 0) ? (inputWidth) : (inputWidth + 1);
-            uint32_t fftHeight = (inputHeight % 2 == 0) ? (inputHeight) : (inputHeight + 1);
+            uint32_t fftWidth = (inputWidth % 2 == 0) ? (inputWidth + 1) : (inputWidth);
+            uint32_t fftHeight = (inputHeight % 2 == 0) ? (inputHeight + 1) : (inputHeight);
 
             const bool grayscale = (m_params.inputTransformParams.color.grayscaleType != GrayscaleType::None);
             const int numChannels = grayscale ? 1 : 3;
@@ -129,16 +129,20 @@ namespace RealBloom
             // Store magnitude data
 
             Array2D<double> fftMag[3];
-            double maxMag[3]{ EPSILON, EPSILON, EPSILON };
+
+            double maxMags[3]{ EPSILON, EPSILON, EPSILON };
+            std::mutex maxMagsMutex;
 
             for (uint32_t i = 0; i < 3; i++)
+            {
                 if ((!grayscale) || (grayscale && (i == 0)))
                 {
                     fftMag[i].resize(fftHeight, fftWidth);
                 }
+            }
 
-            const int shiftX = (int)fftWidth / 2;
-            const int shiftY = (int)fftHeight / 2;
+            const int centerX = (int)fftWidth / 2;
+            const int centerY = (int)fftHeight / 2;
 
 #pragma omp parallel for
             for (int y = 0; y < fftHeight; y++)
@@ -147,17 +151,34 @@ namespace RealBloom
 
                 for (int x = 0; x < fftWidth; x++)
                 {
-                    // Shift and mirror
+                    // Transform the sample coordinates
 
-                    transX = shiftIndex(
-                        ((int)y < shiftY) ? (fftWidth - x) : x,
-                        shiftX,
-                        fftWidth);
+                    transX = x;
+                    transY = y;
 
-                    transY = shiftIndex(
-                        ((int)y <= shiftY) ? (fftHeight - y) : y,
-                        shiftY,
-                        fftHeight);
+                    if (transY > centerY)
+                    {
+                        transX = fftWidth - 1 - transX;
+                        transY = fftHeight - 1 - transY;
+                    }
+
+                    if (transY <= centerY)
+                    {
+                        transY = centerY - transY;
+                    }
+
+                    if (transX > centerX)
+                    {
+                        transX = centerX * 3 - transX + 1;
+                    }
+
+                    if (transX <= centerX)
+                    {
+                        transX = centerX - transX;
+                    }
+
+                    transX = std::clamp(transX, 0, (int)fftWidth - 1);
+                    transY = std::clamp(transY, 0, (int)fftHeight - 1);
 
                     // Save the results while finding the maximum magnitudes
                     for (uint32_t i = 0; i < numChannels; i++)
@@ -165,8 +186,9 @@ namespace RealBloom
                         double currentMag = getMagnitude(fftOutput[i](transY, transX));
                         fftMag[i](y, x) = currentMag;
 
-                        if (currentMag > maxMag[i])
-                            maxMag[i] = currentMag;
+                        std::scoped_lock lock(maxMagsMutex);
+                        if (currentMag > maxMags[i])
+                            maxMags[i] = currentMag;
                     }
                 }
             }
@@ -177,14 +199,14 @@ namespace RealBloom
                 double logsOfMaxMag[3];
                 for (uint32_t i = 0; i < 3; i++)
                 {
-                    logsOfMaxMag[i] = log(CONTRAST_CONSTANT * maxMag[i] + 1.0);
+                    logsOfMaxMag[i] = log(CONTRAST_CONSTANT * maxMags[i] + 1.0);
                 }
 
                 logOfMaxMag = fmax(fmax(logsOfMaxMag[0], logsOfMaxMag[1]), logsOfMaxMag[2]);
             }
             else
             {
-                logOfMaxMag = log(CONTRAST_CONSTANT * maxMag[0] + 1.0);
+                logOfMaxMag = log(CONTRAST_CONSTANT * maxMags[0] + 1.0);
             }
 
             // Update the output image
