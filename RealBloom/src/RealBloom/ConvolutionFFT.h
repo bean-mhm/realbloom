@@ -18,8 +18,25 @@
 namespace RealBloom
 {
 
+    // Convolution method: FFT CPU
     class ConvolutionFFT
     {
+    public:
+        ConvolutionFFT(
+            ConvolutionParams& convParams,
+            float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
+            float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight);
+        ~ConvolutionFFT();
+
+        void pad();
+        void inputFFT(uint32_t ch);
+        void kernelFFT(uint32_t ch);
+        void multiplyOrDivide(uint32_t ch);
+        void inverse(uint32_t ch);
+        void output();
+
+        const std::vector<float>& getBuffer() const;
+
     private:
         ConvolutionParams m_params;
 
@@ -47,22 +64,6 @@ namespace RealBloom
         Array2D<float> m_iFFT[3];
 
         std::vector<float> m_outputBuffer;
-
-    public:
-        ConvolutionFFT(
-            ConvolutionParams& convParams,
-            float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
-            float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight);
-        ~ConvolutionFFT();
-
-        void pad();
-        void inputFFT(uint32_t ch);
-        void kernelFFT(uint32_t ch);
-        void multiplyOrDivide(uint32_t ch);
-        void inverse(uint32_t ch);
-        void output();
-
-        const std::vector<float>& getBuffer() const;
 
     };
 

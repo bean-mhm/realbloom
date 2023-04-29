@@ -27,8 +27,24 @@ namespace RealBloom
         uint32_t numDone = 0;
     };
 
+    // Dispersion Thread, used for method: CPU
     class DispersionThread
     {
+    public:
+        DispersionThread(
+            uint32_t numThreads, uint32_t threadIndex, const DispersionParams& params,
+            float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
+            float* cmfSamples);
+
+        void start();
+        void stop();
+
+        std::vector<float>& getOutputBuffer();
+        std::shared_ptr<std::jthread> getThread();
+        void setThread(std::shared_ptr<std::jthread> thread);
+
+        DispersionThreadStats* getStats();
+
     private:
         uint32_t m_numThreads;
         uint32_t m_threadIndex;
@@ -47,20 +63,6 @@ namespace RealBloom
 
         std::vector<float> m_outputBuffer;
 
-    public:
-        DispersionThread(
-            uint32_t numThreads, uint32_t threadIndex, const DispersionParams& params,
-            float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
-            float* cmfSamples);
-
-        void start();
-        void stop();
-
-        std::vector<float>& getOutputBuffer();
-        std::shared_ptr<std::jthread> getThread();
-        void setThread(std::shared_ptr<std::jthread> thread);
-
-        DispersionThreadStats* getStats();
     };
 
 }

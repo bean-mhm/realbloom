@@ -29,17 +29,9 @@ namespace RealBloom
         ImageTransformParams inputTransformParams;
     };
 
+    // Diffraction module
     class Diffraction
     {
-    private:
-        BaseStatus m_status;
-        DiffractionParams m_params;
-
-        CmImage m_imgInputSrc;
-        CmImage* m_imgInput = nullptr;
-
-        CmImage* m_imgDiff = nullptr;
-
     public:
         Diffraction();
         DiffractionParams* getParams();
@@ -53,6 +45,16 @@ namespace RealBloom
         void compute();
 
         const BaseStatus& getStatus() const;
+
+    private:
+        BaseStatus m_status;
+        DiffractionParams m_params;
+
+        CmImage m_imgInputSrc;
+        CmImage* m_imgInput = nullptr;
+
+        CmImage* m_imgDiff = nullptr;
+
     };
 
 }

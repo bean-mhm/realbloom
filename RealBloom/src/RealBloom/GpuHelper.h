@@ -25,6 +25,7 @@ std::string strFromGpuHelperOperationType(GpuHelperOperationType opType);
 constexpr uint32_t GPU_HELPER_FILE_TIMEOUT = 5000;
 constexpr bool GPU_HELPER_DELETE_TEMP = true;
 
+// GPU Helper Execution Handler
 class GpuHelper
 {
 private:

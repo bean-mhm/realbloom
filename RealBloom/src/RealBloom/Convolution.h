@@ -72,13 +72,6 @@ namespace RealBloom
 
     struct ConvolutionStatus : public TimedWorkingStatus
     {
-    private:
-        typedef TimedWorkingStatus super;
-
-    private:
-        uint32_t m_numChunksDone = 0;
-        std::string m_fftStage = "";
-
     public:
         ConvolutionStatus() {};
         ~ConvolutionStatus() {};
@@ -91,32 +84,19 @@ namespace RealBloom
 
         virtual void reset() override;
 
+    private:
+        uint32_t m_numChunksDone = 0;
+        std::string m_fftStage = "";
+
+        typedef TimedWorkingStatus super;
+
     };
 
     class ConvolutionThread;
 
+    // Convolution module
     class Convolution
     {
-    private:
-        ConvolutionStatus m_status;
-        ConvolutionParams m_params;
-        ConvolutionParams m_capturedParams;
-
-        CmImage m_imgInputSrc;
-        CmImage* m_imgInput = nullptr;
-
-        CmImage m_imgKernelSrc;
-        CmImage* m_imgKernel = nullptr;
-
-        CmImage* m_imgConvPreview = nullptr;
-        CmImage* m_imgConvResult = nullptr;
-
-        CmImage m_imgInputCaptured;
-        CmImage m_imgOutput;
-
-        std::shared_ptr<std::jthread> m_thread = nullptr;
-        std::vector<std::shared_ptr<ConvolutionThread>> m_cpuThreads;
-
     public:
         Convolution();
         ConvolutionParams* getParams();
@@ -145,6 +125,26 @@ namespace RealBloom
         std::string getResourceInfo();
 
         static std::array<float, 2> getKernelOrigin(const ConvolutionParams& params);
+
+    private:
+        ConvolutionStatus m_status;
+        ConvolutionParams m_params;
+        ConvolutionParams m_capturedParams;
+
+        CmImage m_imgInputSrc;
+        CmImage* m_imgInput = nullptr;
+
+        CmImage m_imgKernelSrc;
+        CmImage* m_imgKernel = nullptr;
+
+        CmImage* m_imgConvPreview = nullptr;
+        CmImage* m_imgConvResult = nullptr;
+
+        CmImage m_imgInputCaptured;
+        CmImage m_imgOutput;
+
+        std::shared_ptr<std::jthread> m_thread = nullptr;
+        std::vector<std::shared_ptr<ConvolutionThread>> m_cpuThreads;
 
     private:
         void convFftCPU(

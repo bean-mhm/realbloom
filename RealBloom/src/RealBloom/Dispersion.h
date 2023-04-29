@@ -52,22 +52,9 @@ namespace RealBloom
 
     class DispersionThread;
 
+    // Dispersion module
     class Dispersion
     {
-    private:
-        TimedWorkingStatus m_status;
-        DispersionParams m_params;
-        DispersionParams m_capturedParams;
-
-        CmImage m_imgInputSrc;
-        CmImage* m_imgInput = nullptr;
-
-        CmImage* m_imgDisp = nullptr;
-
-
-        std::shared_ptr<std::jthread> m_thread = nullptr;
-        std::vector<std::shared_ptr<DispersionThread>> m_threads;
-
     public:
         Dispersion();
         DispersionParams* getParams();
@@ -85,6 +72,20 @@ namespace RealBloom
         const TimedWorkingStatus& getStatus() const;
         std::string getStatusText() const;
         uint32_t getNumStepsDoneCpu() const;
+
+    private:
+        TimedWorkingStatus m_status;
+        DispersionParams m_params;
+        DispersionParams m_capturedParams;
+
+        CmImage m_imgInputSrc;
+        CmImage* m_imgInput = nullptr;
+
+        CmImage* m_imgDisp = nullptr;
+
+
+        std::shared_ptr<std::jthread> m_thread = nullptr;
+        std::vector<std::shared_ptr<DispersionThread>> m_threads;
 
     private:
         void dispCPU(
