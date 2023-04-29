@@ -14,15 +14,9 @@
 
 typedef std::variant<void*, bool, int32_t, uint32_t, int64_t, uint64_t, float, double, std::string> SignalValue;
 
+// Synchronization and Job-Scheduling System (Global)
 class Async
 {
-private:
-    static std::vector<std::pair<std::string, SignalValue>> S_SIGNALS;
-    static std::mutex S_SIGNALS_MUTEX;
-
-    static std::deque<std::packaged_task<void()>> S_JOBS;
-    static std::mutex S_JOBS_MUTEX;
-
 public:
     Async() = delete;
     Async(const Async&) = delete;
@@ -34,5 +28,12 @@ public:
 
     static void scheduleJob(std::function<void()> job, bool wait);
     static void processJobs(const std::string& threadName);
+
+private:
+    static std::vector<std::pair<std::string, SignalValue>> S_SIGNALS;
+    static std::mutex S_SIGNALS_MUTEX;
+
+    static std::deque<std::packaged_task<void()>> S_JOBS;
+    static std::mutex S_JOBS_MUTEX;
 
 };

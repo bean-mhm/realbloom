@@ -7,10 +7,6 @@
 
 class BaseStatus
 {
-protected:
-    bool m_ok = true;
-    std::string m_error = "";
-
 public:
     BaseStatus() {};
     virtual ~BaseStatus() {};
@@ -21,17 +17,14 @@ public:
     virtual void setError(const std::string& message);
     virtual void reset();
 
+protected:
+    bool m_ok = true;
+    std::string m_error = "";
+
 };
 
 class WorkingStatus : public BaseStatus
 {
-private:
-    typedef BaseStatus super;
-
-protected:
-    bool m_working = false;
-    bool m_mustCancel = false;
-
 public:
     WorkingStatus() {};
     ~WorkingStatus() {};
@@ -46,18 +39,17 @@ public:
     virtual void setError(const std::string& message) override;
     virtual void reset() override;
 
+protected:
+    bool m_working = false;
+    bool m_mustCancel = false;
+
+private:
+    typedef BaseStatus super;
+
 };
 
 class TimedWorkingStatus : public WorkingStatus
 {
-private:
-    typedef WorkingStatus super;
-
-protected:
-    std::chrono::time_point<std::chrono::system_clock> m_timeStart;
-    std::chrono::time_point<std::chrono::system_clock> m_timeEnd;
-    bool m_hasTimestamps = false;
-
 public:
     TimedWorkingStatus() {};
     ~TimedWorkingStatus() {};
@@ -70,5 +62,13 @@ public:
 
     virtual void setError(const std::string& message) override;
     virtual void reset() override;
+
+protected:
+    std::chrono::time_point<std::chrono::system_clock> m_timeStart;
+    std::chrono::time_point<std::chrono::system_clock> m_timeEnd;
+    bool m_hasTimestamps = false;
+
+private:
+    typedef WorkingStatus super;
 
 };

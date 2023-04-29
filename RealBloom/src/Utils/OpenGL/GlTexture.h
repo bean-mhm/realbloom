@@ -10,15 +10,9 @@
 
 #include "GlUtils.h"
 
+// OpenGL Texture Wrapper
 class GlTexture : public GlWrapper
 {
-private:
-    uint32_t m_width;
-    uint32_t m_height;
-
-    GLuint m_texture = 0;
-    GLint m_internalFormat = 0;
-
 public:
     GlTexture(
         uint32_t width,
@@ -38,5 +32,12 @@ public:
     void bind(GLenum texUnit);
     void bind();
     void setBorderColor(std::array<float, 4> color);
+
+private:
+    uint32_t m_width;
+    uint32_t m_height;
+
+    GLuint m_texture = 0;
+    GLint m_internalFormat = 0;
 
 };

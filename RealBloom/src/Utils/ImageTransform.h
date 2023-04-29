@@ -61,42 +61,9 @@ struct ImageTransformParams
     void reset();
 };
 
+// Image Transform Tool
 class ImageTransform
 {
-private:
-    static GLuint s_vertShader;
-    static GLuint s_fragShader;
-    static GLuint s_program;
-
-    static bool s_gpuInitialized;
-    static void ensureInitGPU();
-
-    static void applyNoCropCPU(
-        const ImageTransformParams& params,
-        const std::vector<float>* lastBuffer,
-        uint32_t lastBufferWidth,
-        uint32_t lastBufferHeight,
-        std::vector<float>& outputBuffer,
-        uint32_t resizedWidth,
-        uint32_t resizedHeight,
-        float resizeX,
-        float resizeY,
-        bool previewMode);
-
-    static void applyNoCropGPU(
-        const ImageTransformParams& params,
-        const std::vector<float>* lastBuffer,
-        uint32_t lastBufferWidth,
-        uint32_t lastBufferHeight,
-        std::vector<float>& outputBuffer,
-        uint32_t resizedWidth,
-        uint32_t resizedHeight,
-        float resizeX,
-        float resizeY,
-        bool previewMode);
-
-    static float getPreviewMarkValue(float x, float y, float originX, float originY, float squareRadius);
-
 public:
     static bool S_USE_GPU;
 
@@ -137,5 +104,39 @@ public:
         uint32_t& outputWidth,
         uint32_t& outputHeight,
         bool previewMode);
+
+private:
+    static GLuint s_vertShader;
+    static GLuint s_fragShader;
+    static GLuint s_program;
+
+    static bool s_gpuInitialized;
+    static void ensureInitGPU();
+
+    static void applyNoCropCPU(
+        const ImageTransformParams& params,
+        const std::vector<float>* lastBuffer,
+        uint32_t lastBufferWidth,
+        uint32_t lastBufferHeight,
+        std::vector<float>& outputBuffer,
+        uint32_t resizedWidth,
+        uint32_t resizedHeight,
+        float resizeX,
+        float resizeY,
+        bool previewMode);
+
+    static void applyNoCropGPU(
+        const ImageTransformParams& params,
+        const std::vector<float>* lastBuffer,
+        uint32_t lastBufferWidth,
+        uint32_t lastBufferHeight,
+        std::vector<float>& outputBuffer,
+        uint32_t resizedWidth,
+        uint32_t resizedHeight,
+        float resizeX,
+        float resizeY,
+        bool previewMode);
+
+    static float getPreviewMarkValue(float x, float y, float originX, float originY, float squareRadius);
 
 };

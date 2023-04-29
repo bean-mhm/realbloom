@@ -17,8 +17,22 @@ namespace OCIO = OpenColorIO_v2_1;
 
 constexpr bool OCIO_SHADER_LOG = false;
 
+// OpenColorIO Shader
 class OcioShader : public GlWrapper
 {
+public:
+    OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc);
+    ~OcioShader();
+
+    GLuint getProgram() const;
+    void useProgram();
+
+    void setInputTexture(GLint tex);
+    void setExposureMul(float exposureMul);
+
+    void useLuts();
+    void useUniforms();
+
 private:
     struct TextureId
     {
@@ -78,18 +92,5 @@ private:
 
     void prepareLuts();
     void prepareUniforms();
-
-public:
-    OcioShader(OCIO::GpuShaderDescRcPtr shaderDesc);
-    ~OcioShader();
-
-    GLuint getProgram() const;
-    void useProgram();
-
-    void setInputTexture(GLint tex);
-    void setExposureMul(float exposureMul);
-
-    void useLuts();
-    void useUniforms();
 
 };

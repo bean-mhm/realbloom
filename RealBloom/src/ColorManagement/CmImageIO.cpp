@@ -314,14 +314,14 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
         {
             // Apply view transform
             std::shared_ptr<GlTexture> texture = nullptr;
-            std::shared_ptr<GlFrameBuffer> frameBuffer = nullptr;
+            std::shared_ptr<GlFramebuffer> framebuffer = nullptr;
             CmImage::applyViewTransform(
                 buffer.data(),
                 width,
                 height,
                 CMS::getExposure(),
                 texture,
-                frameBuffer,
+                framebuffer,
                 true,
                 true,
                 true,

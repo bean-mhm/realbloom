@@ -36,12 +36,9 @@ struct XyzConversionInfo
     std::string commonUser = "";
 };
 
+// XYZ Conversion Guide (Global)
 class CmXYZ
 {
-private:
-    static XyzConversionInfo S_INFO;
-    static BaseStatus S_STATUS;
-
 public:
     CmXYZ() = delete;
     CmXYZ(const CmXYZ&) = delete;
@@ -54,4 +51,9 @@ public:
 
     static const BaseStatus& getStatus();
     static void ensureOK();
+
+private:
+    static XyzConversionInfo S_INFO;
+    static BaseStatus S_STATUS;
+
 };

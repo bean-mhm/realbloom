@@ -285,7 +285,7 @@ namespace RealBloom
         }
 
         // Draw
-        std::shared_ptr<GlFrameBuffer> frameBuffer = nullptr;
+        std::shared_ptr<GlFramebuffer> framebuffer = nullptr;
         try
         {
             // Capabilities
@@ -294,10 +294,10 @@ namespace RealBloom
             glEnable(GL_BLEND);
             checkGlStatus("", "Capabilities");
 
-            // Frame buffer
-            frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
-            frameBuffer->bind();
-            frameBuffer->viewport();
+            // Framebuffer
+            framebuffer = std::make_shared<GlFramebuffer>(m_width, m_height);
+            framebuffer->bind();
+            framebuffer->viewport();
 
             // Upload the input texture to the GPU
             makeInputTexture(
@@ -326,12 +326,12 @@ namespace RealBloom
             // Draw
             drawScene(vertexData.size() / getNumAttribs());
             
-            // Copy pixel data from the frame buffer
+            // Copy pixel data from the framebuffer
             uint32_t fbSize = m_width * m_height * 4;
             std::vector<float> fbData;
             fbData.resize(fbSize);
             {
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer->getFrameBuffer());
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer->getFramebuffer());
                 checkGlStatus("", "glBindFramebuffer");
 
                 glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -364,7 +364,7 @@ namespace RealBloom
 
         // Clean up
 
-        frameBuffer = nullptr;
+        framebuffer = nullptr;
 
         glDeleteBuffers(1, &m_vbo);
         glDeleteVertexArrays(1, &m_vao);

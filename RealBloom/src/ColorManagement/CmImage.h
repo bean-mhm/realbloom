@@ -25,32 +25,10 @@
 #include "../Utils/NumberHelpers.h"
 #include "../Utils/Misc.h"
 
-// Color Managed Image
+// Color-Managed Image
 // Internal format is always RGBA32F
 class CmImage
 {
-private:
-    std::string m_id;
-    std::string m_name;
-    std::string m_sourceName = "";
-
-    uint32_t m_width, m_height;
-    bool m_useExposure = true;
-    bool m_useGlobalFB = true;
-
-    std::vector<float> m_imageData;
-
-    std::mutex m_mutex;
-
-    uint32_t m_oldWidth = 0, m_oldHeight = 0;
-    std::shared_ptr<GlTexture> m_texture = nullptr;
-
-    static std::shared_ptr<GlFrameBuffer> s_frameBuffer;
-    std::shared_ptr<GlFrameBuffer> m_localFrameBuffer = nullptr;
-
-    bool m_moveToGpu = true;
-    void moveToGPU_Internal();
-
 public:
     CmImage(
         const std::string& id = "",
@@ -104,9 +82,9 @@ public:
     /// <param name="height"></param>
     /// <param name="exposure"></param>
     /// <param name="texture">GlTexture instance to use for storing the output in CPU mode, or doing color transforms in GPU mode</param>
-    /// <param name="frameBuffer">GlFrameBuffer instance to store the color transform output in GPU mode</param>
-    /// <param name="recreate">Force recreate the texture and the frame buffer, even if they have the right size and aren't null</param>
-    /// <param name="uploadToGpu">Use the texture and the frame buffer to store the result. Disabling this will force enable CPU mode and leave texture and frameBuffer untouched</param>
+    /// <param name="framebuffer">GlFramebuffer instance to store the color transform output in GPU mode</param>
+    /// <param name="recreate">Force recreate the texture and the framebuffer, even if they have the right size and aren't null</param>
+    /// <param name="uploadToGpu">Use the texture and the framebuffer to store the result. Disabling this will force enable CPU mode and leave texture and framebuffer untouched</param>
     /// <param name="readback">Read back the result to outBuffer</param>
     /// <param name="outBuffer">Buffer for storing the result</param>
     static void applyViewTransform(
@@ -115,12 +93,34 @@ public:
         uint32_t height,
         float exposure,
         std::shared_ptr<GlTexture>& texture,
-        std::shared_ptr<GlFrameBuffer>& frameBuffer,
+        std::shared_ptr<GlFramebuffer>& framebuffer,
         bool recreate,
         bool uploadToGPU = true,
         bool readback = false,
         std::vector<float>* outBuffer = nullptr);
 
     static void cleanUp();
+
+private:
+    std::string m_id;
+    std::string m_name;
+    std::string m_sourceName = "";
+
+    uint32_t m_width, m_height;
+    bool m_useExposure = true;
+    bool m_useGlobalFB = true;
+
+    std::vector<float> m_imageData;
+
+    std::mutex m_mutex;
+
+    uint32_t m_oldWidth = 0, m_oldHeight = 0;
+    std::shared_ptr<GlTexture> m_texture = nullptr;
+
+    static std::shared_ptr<GlFramebuffer> s_framebuffer;
+    std::shared_ptr<GlFramebuffer> m_localFramebuffer = nullptr;
+
+    bool m_moveToGpu = true;
+    void moveToGPU_Internal();
 
 };

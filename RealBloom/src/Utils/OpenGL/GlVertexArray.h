@@ -9,11 +9,9 @@
 
 #include "GlUtils.h"
 
+// OpenGL Vertex Array Wrapper
 class GlVertexArray : public GlWrapper
 {
-private:
-    GLuint m_vao = 0;
-
 public:
     GlVertexArray();
     ~GlVertexArray();
@@ -22,5 +20,8 @@ public:
 
     void bind();
     void unbind();
+
+private:
+    GLuint m_vao = 0;
 
 };

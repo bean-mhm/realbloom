@@ -30,6 +30,7 @@ constexpr const char* GL_BASE_VERTEX_SOURCE = R"glsl(
     }
 )glsl";
 
+// Base class for OpenGL wrapper classes
 class GlWrapper
 {
 public:

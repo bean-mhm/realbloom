@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 
+// Bilinear interpolator
 struct Bilinear
 {
     int topLeftPos[2]{ 0, 0 };

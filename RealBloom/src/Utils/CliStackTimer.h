@@ -7,6 +7,7 @@
 #include "ConsoleColors.h"
 #include "Misc.h"
 
+// Scoped Timer for CLI Commands
 class CliStackTimer
 {
 private:

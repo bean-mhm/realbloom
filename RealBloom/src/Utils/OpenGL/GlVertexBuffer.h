@@ -9,11 +9,9 @@
 
 #include "GlUtils.h"
 
+// OpenGL Vertex Buffer Wrapper
 class GlVertexBuffer : public GlWrapper
 {
-private:
-    GLuint m_vbo = 0;
-
 public:
     GlVertexBuffer();
     ~GlVertexBuffer();
@@ -22,5 +20,8 @@ public:
 
     void upload(const void* data, GLsizeiptr size, GLenum usage = GL_STATIC_DRAW);
     void bind();
+
+private:
+    GLuint m_vbo = 0;
 
 };

@@ -11,11 +11,9 @@
 #include "GlUtils.h"
 #include "../Misc.h"
 
+// OpenGL Shader Storage Buffer Wrapper
 class GlShaderStorageBuffer : public GlWrapper
 {
-private:
-    GLuint m_ssbo = 0;
-
 public:
     GlShaderStorageBuffer();
     virtual ~GlShaderStorageBuffer();
@@ -28,5 +26,8 @@ public:
     void read(float* target, uint32_t size);
     void write(float* source, uint32_t size);
     void zeroFill(uint32_t size);
+
+private:
+    GLuint m_ssbo = 0;
 
 };

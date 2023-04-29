@@ -10,13 +10,9 @@
 // Source:
 // https://stackoverflow.com/a/868894/18049911
 
+// Command-Line Parser
 class CliParser
 {
-private:
-    std::vector<std::string> m_tokens;
-
-    void addToken(std::string s);
-
 public:
     CliParser(int& argc, char** argv);
     CliParser(std::string line);
@@ -35,5 +31,10 @@ public:
 
     bool first(const std::string& command) const;
     bool first(const std::vector<std::string>& commands) const;
+
+private:
+    std::vector<std::string> m_tokens;
+
+    void addToken(std::string s);
 
 };

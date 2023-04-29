@@ -43,11 +43,9 @@ namespace CLI
         bool hasVerbose = false;
     };
 
+    // Command-Line Interface (Global)
     class Interface
     {
-    private:
-        static bool S_ACTIVE;
-
     public:
         Interface() = delete;
         Interface(const Interface&) = delete;
@@ -58,6 +56,10 @@ namespace CLI
 
         static bool active();
         static void proceed();
+
+    private:
+        static bool S_ACTIVE;
+
     };
 
     struct OutputColorManagement

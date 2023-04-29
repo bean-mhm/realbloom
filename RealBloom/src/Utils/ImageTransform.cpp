@@ -591,14 +591,14 @@ void ImageTransform::applyNoCropGPU(
         // Upload the input buffer
         texture.upload(lastBuffer->data());
 
-        // Create a frame buffer
-        GlFrameBuffer frameBuffer(resizedWidth, resizedHeight);
+        // Create a framebuffer
+        GlFramebuffer framebuffer(resizedWidth, resizedHeight);
 
-        // Bind the frame buffer so we can render the transformed image into it
-        frameBuffer.bind();
+        // Bind the framebuffer so we can render the transformed image into it
+        framebuffer.bind();
 
         // Set the viewport
-        frameBuffer.viewport();
+        framebuffer.viewport();
 
         // Use the shader program
         glUseProgram(s_program);
@@ -698,15 +698,15 @@ void ImageTransform::applyNoCropGPU(
             GlFullPlaneVertices::disable(s_program);
         }
 
-        // Unbind the frame buffer
-        frameBuffer.unbind();
+        // Unbind the framebuffer
+        framebuffer.unbind();
 
         // Prepare the output buffer
-        outputBuffer.resize(frameBuffer.getWidth() * frameBuffer.getHeight() * 4);
+        outputBuffer.resize(framebuffer.getWidth() * framebuffer.getHeight() * 4);
 
         // Read back
 
-        glBindTexture(GL_TEXTURE_2D, frameBuffer.getColorBuffer());
+        glBindTexture(GL_TEXTURE_2D, framebuffer.getColorBuffer());
         checkGlStatus("", "Read back: glBindTexture");
 
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, outputBuffer.data());

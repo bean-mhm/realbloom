@@ -453,7 +453,7 @@ namespace RealBloom
             // + (numPoints * 5) + fbData (same size as input buffer)
             ramUsage = (inputSizeBytes * 4) + kernelSizeBytes + (numPixelsPerBlock * 5 * sizeof(float));
 
-            // (numPoints * 5) + kernel buffer + frame buffer (same size as input buffer)
+            // (numPoints * 5) + kernel buffer + framebuffer (same size as input buffer)
             vramUsage = (numPixelsPerBlock * 5 * sizeof(float)) + kernelSizeBytes + inputSizeBytes;
         }
 

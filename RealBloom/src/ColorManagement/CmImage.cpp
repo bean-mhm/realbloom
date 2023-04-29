@@ -1,6 +1,6 @@
 #include "CmImage.h"
 
-std::shared_ptr<GlFrameBuffer> CmImage::s_frameBuffer = nullptr;
+std::shared_ptr<GlFramebuffer> CmImage::s_framebuffer = nullptr;
 
 CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor, bool useExposure, bool useGlobalFB)
     : m_id(id), m_name(name), m_width(width), m_height(height), m_useExposure(useExposure), m_useGlobalFB(useGlobalFB)
@@ -71,13 +71,13 @@ uint32_t CmImage::getGlTexture()
 
     if (CMS::usingGPU())
     {
-        if (m_useGlobalFB && (s_frameBuffer.get() != nullptr))
+        if (m_useGlobalFB && (s_framebuffer.get() != nullptr))
         {
-            return s_frameBuffer->getColorBuffer();
+            return s_framebuffer->getColorBuffer();
         }
-        else if (!m_useGlobalFB && (m_localFrameBuffer.get() != nullptr))
+        else if (!m_useGlobalFB && (m_localFramebuffer.get() != nullptr))
         {
-            return m_localFrameBuffer->getColorBuffer();
+            return m_localFramebuffer->getColorBuffer();
         }
     }
     else if (m_texture.get())
@@ -238,7 +238,7 @@ void CmImage::moveToGPU_Internal()
             m_height,
             m_useExposure ? CMS::getExposure() : 0.0f,
             m_texture,
-            m_useGlobalFB ? s_frameBuffer : m_localFrameBuffer,
+            m_useGlobalFB ? s_framebuffer : m_localFramebuffer,
             !lastResult,
             true,
             false);
@@ -257,7 +257,7 @@ void CmImage::applyViewTransform(
     uint32_t height,
     float exposure,
     std::shared_ptr<GlTexture>& texture,
-    std::shared_ptr<GlFrameBuffer>& frameBuffer,
+    std::shared_ptr<GlFramebuffer>& framebuffer,
     bool recreate,
     bool uploadToGPU,
     bool readback,
@@ -355,28 +355,28 @@ void CmImage::applyViewTransform(
     {
         try
         {
-            // Recreate the frame buffer if needed
+            // Recreate the framebuffer if needed
             {
                 bool mustRecreate = false;
 
-                if (frameBuffer.get() == nullptr)
+                if (framebuffer.get() == nullptr)
                     mustRecreate = true;
-                else if ((frameBuffer->getWidth() != width) || (frameBuffer->getHeight() != height))
+                else if ((framebuffer->getWidth() != width) || (framebuffer->getHeight() != height))
                     mustRecreate = true;
 
                 mustRecreate |= recreate;
 
                 if (mustRecreate)
                 {
-                    frameBuffer = std::make_shared<GlFrameBuffer>(width, height);
+                    framebuffer = std::make_shared<GlFramebuffer>(width, height);
                 }
             }
 
-            // Bind the frame buffer so we can render the transformed image into it
-            frameBuffer->bind();
+            // Bind the framebuffer so we can render the transformed image into it
+            framebuffer->bind();
 
             // Set the viewport
-            frameBuffer->viewport();
+            framebuffer->viewport();
 
             // Use the shader program
             std::shared_ptr<OcioShader> shader = CMS::getShader();
@@ -406,8 +406,8 @@ void CmImage::applyViewTransform(
                 GlFullPlaneVertices::disable(shader->getProgram());
             }
 
-            // Unbind the frame buffer
-            frameBuffer->unbind();
+            // Unbind the framebuffer
+            framebuffer->unbind();
         }
         catch (const std::exception& e)
         {
@@ -429,7 +429,7 @@ void CmImage::applyViewTransform(
     {
         outBuffer->resize(size);
 
-        glBindTexture(GL_TEXTURE_2D, frameBuffer->getColorBuffer());
+        glBindTexture(GL_TEXTURE_2D, framebuffer->getColorBuffer());
         checkGlStatus("", "glBindTexture");
 
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, outBuffer->data());
@@ -443,5 +443,5 @@ void CmImage::applyViewTransform(
 
 void CmImage::cleanUp()
 {
-    s_frameBuffer = nullptr;
+    s_framebuffer = nullptr;
 }

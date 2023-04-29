@@ -10,12 +10,14 @@
 
 #include "Utils/Misc.h"
 
+// Program Details and Settings (Global)
 class Config
 {
-private:
-    static std::string CFG_FILENAME;
-
 public:
+    Config() = delete;
+    Config(const Config&) = delete;
+    Config& operator= (const Config&) = delete;
+
     // Const
     static const char* APP_TITLE;
     static const char* APP_VERSION;
@@ -32,5 +34,8 @@ public:
 
     static void load();
     static void save();
+
+private:
+    static std::string CFG_FILENAME;
 
 };

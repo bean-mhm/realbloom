@@ -13,14 +13,9 @@
 #include "GlVertexBuffer.h"
 #include "GlUtils.h"
 
+// OpenGL helper for "full-screen" rectangle vertex data
 class GlFullPlaneVertices
 {
-private:
-    static std::shared_ptr<GlVertexArray> m_vao;
-    static std::shared_ptr<GlVertexBuffer> m_vbo;
-
-    static void ensureInit();
-
 public:
     GlFullPlaneVertices() = delete;
     GlFullPlaneVertices(const GlFullPlaneVertices&) = delete;
@@ -40,5 +35,11 @@ public:
         GLuint program,
         const char* posAttribName = "pos",
         const char* texAttribName = "texUV");
+
+private:
+    static std::shared_ptr<GlVertexArray> m_vao;
+    static std::shared_ptr<GlVertexBuffer> m_vbo;
+
+    static void ensureInit();
 
 };
