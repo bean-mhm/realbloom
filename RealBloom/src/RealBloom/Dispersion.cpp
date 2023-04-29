@@ -44,7 +44,7 @@ namespace RealBloom
 
             // Get wavelength samples
             std::vector<float> samples;
-            table->sampleRGB(pWidth, true, samples);
+            table->sampleRGB(pWidth, false, samples);
 
             // Copy to buffer
             uint32_t redIndex, smpIndex;
