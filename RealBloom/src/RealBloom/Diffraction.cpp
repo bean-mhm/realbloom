@@ -55,7 +55,10 @@ namespace RealBloom
             uint32_t fftWidth = (inputWidth % 2 == 0) ? (inputWidth + 1) : (inputWidth);
             uint32_t fftHeight = (inputHeight % 2 == 0) ? (inputHeight + 1) : (inputHeight);
 
-            const bool grayscale = (m_params.inputTransformParams.color.grayscaleType != GrayscaleType::None);
+            const bool grayscale =
+                (m_params.inputTransformParams.color.grayscaleType != GrayscaleType::None)
+                && (m_params.inputTransformParams.color.grayscaleMix == 1.0f);
+
             const int numChannels = grayscale ? 1 : 3;
 
             // FFT buffers (RGB)
