@@ -53,6 +53,7 @@ static bool convBlendParamsChanged = false;
 static bool diffInputTransformParamsChanged = false;
 static bool dispInputTransformParamsChanged = false;
 
+static std::shared_ptr<std::jthread> convResUsageThread = nullptr;
 static std::string convResUsage = "";
 
 // Constants
@@ -60,6 +61,7 @@ static constexpr float EXPOSURE_RANGE = 10.0f;
 
 // Dialog Params
 DialogParams_MoveTo dialogParams_MoveTo;
+
 
 int main(int argc, char** argv)
 {
@@ -169,7 +171,6 @@ int main(int argc, char** argv)
     }
 
     // Update resource usage info for convolution (GUI)
-    std::shared_ptr<std::jthread> convResUsageThread = nullptr;
     if (!CLI::Interface::active())
     {
         convResUsageThread = std::make_shared<std::jthread>([]()
@@ -240,10 +241,10 @@ int main(int argc, char** argv)
         }
     }
 
-    // CLI-specific
+    // Start the CLI, then clean up when done
     if (CLI::Interface::active())
     {
-        // Create OpenGL context
+        // Create an OpenGL context
 
         std::string ctxError;
         bool ctxSuccess = oglOneTimeContext(
@@ -252,27 +253,19 @@ int main(int argc, char** argv)
             {
                 // Start the CLI
                 CLI::Interface::proceed();
+
+                // Clean up (calling it here so all OpenGL objects get deallocated)
+                cleanUp();
             },
             ctxError);
 
         if (!ctxSuccess)
             printError(__FUNCTION__, "", strFormat("OpenGL context initialization error: %s", ctxError.c_str()));
     }
-
-    // Quit
-
-    Config::save();
-
-    if (!CLI::Interface::active())
+    else
     {
-        convResUsageThread->join();
-        convResUsageThread = nullptr;
+        cleanUp();
     }
-
-    disp.cancel();
-    conv.cancel();
-
-    cleanUp();
 
     return 0;
 }
@@ -1795,6 +1788,17 @@ void applyStyle_RealBloomGray()
 
 void cleanUp()
 {
+    Config::save();
+
+    if (!CLI::Interface::active() && convResUsageThread)
+    {
+        convResUsageThread->join();
+        convResUsageThread = nullptr;
+    }
+
+    disp.cancel();
+    conv.cancel();
+
     ImageTransform::cleanUp();
 
     if (!CLI::Interface::active())
