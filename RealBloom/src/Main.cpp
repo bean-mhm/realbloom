@@ -1314,8 +1314,7 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
         {
 
             // Filter
-            if (ImGui::ColorEdit3("Filter##Color", params.color.filter.data(),
-                ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+            if (ImGui::ColorEdit3("Filter##Color", params.color.filter.data(), ImGuiColorEditFlags_RealBloom))
             {
                 changed = true;
             }
