@@ -265,18 +265,13 @@ namespace RealBloom
 
         for (uint32_t i = 0; i < steps; i++)
         {
-            float scale = lerp(
-                1.0f - (amount / 2.0f),
-                1.0f + (amount / 2.0f),
-                (i + 1.0f) / (float)steps);
-
-            float scaledArea = scale * scale;
-            float scaledMul = 1.0f / scaledArea;
+            float scale, areaMul;
+            calcDispScale(i, steps, amount, scale, areaMul);
 
             uint32_t smpIndex = i * 3;
-            float wlR = m_binInput->cmfSamples[smpIndex + 0] * scaledMul;
-            float wlG = m_binInput->cmfSamples[smpIndex + 1] * scaledMul;
-            float wlB = m_binInput->cmfSamples[smpIndex + 2] * scaledMul;
+            float wlR = m_binInput->cmfSamples[smpIndex + 0] * areaMul;
+            float wlG = m_binInput->cmfSamples[smpIndex + 1] * areaMul;
+            float wlB = m_binInput->cmfSamples[smpIndex + 2] * areaMul;
 
             vertexData.push_back(scale);
             vertexData.push_back(wlR);

@@ -55,18 +55,14 @@ namespace RealBloom
             if (i % m_numThreads != m_threadIndex)
                 continue;
 
-            float scale = lerp(
-                1.0f - (amount / 2.0f),
-                1.0f + (amount / 2.0f),
-                (i + 1.0f) / (float)steps);
+            float scale, areaMul;
+            calcDispScale(i, steps, amount, scale, areaMul);
 
-            float scaledArea = scale * scale;
-            float scaledMul = 1.0f / scaledArea;
-
+            // Wavelength to RGB
             uint32_t smpIndex = i * 3;
-            float wlR = m_cmfSamples[smpIndex + 0] * scaledMul;
-            float wlG = m_cmfSamples[smpIndex + 1] * scaledMul;
-            float wlB = m_cmfSamples[smpIndex + 2] * scaledMul;
+            float wlR = m_cmfSamples[smpIndex + 0] * areaMul;
+            float wlG = m_cmfSamples[smpIndex + 1] * areaMul;
+            float wlB = m_cmfSamples[smpIndex + 2] * areaMul;
 
             // Clear scaledBuffer
             for (auto& v : scaledBuffer)

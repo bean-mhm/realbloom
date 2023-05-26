@@ -107,6 +107,26 @@ void calcFftConvPadding(
     }
 }
 
+void calcDispScale(uint32_t index, uint32_t steps, float amount, float& outScale, float& outAreaMul)
+{
+    float t = (float)index / (float)steps;
+
+    // Calculate scale
+    outScale = 1.0f - amount * (1.0f - t);
+    outScale /= (1.0f - amount);
+
+    // Area compensation
+    float area = powf(
+        lerp(
+            1.0f - (amount / 2.0f),
+            1.0f + (amount / 2.0f),
+            t
+        ),
+        2.0f
+    );
+    outAreaMul = 1.0f / area;
+}
+
 float srgbToLinear_DEPRECATED(float x)
 {
     if (x <= 0.0f)

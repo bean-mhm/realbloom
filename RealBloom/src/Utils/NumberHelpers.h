@@ -223,5 +223,7 @@ void calcFftConvPadding(
     uint32_t& outPaddedWidth,
     uint32_t& outPaddedHeight);
 
+void calcDispScale(uint32_t index, uint32_t steps, float amount, float& outScale, float& outAreaMul);
+
 float srgbToLinear_DEPRECATED(float x);
 float linearToSrgb_DEPRECATED(float x);
