@@ -12,7 +12,7 @@ static bool appRunning = true;
 
 static bool showRendererName = false;
 static bool showFPS = false;
-static bool showDebugPanel = true;
+static bool showDebugPanel = false;
 
 // Fonts
 static ImFont* fontRoboto = nullptr;
