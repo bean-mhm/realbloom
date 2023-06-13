@@ -1056,6 +1056,8 @@ void layoutDiffraction()
         selImageID = "diff-input";
     }
 
+    ImGui::Checkbox("Logarithmic Normalization##Diff", &diffParams->logNorm);
+
     if (ImGui::Button("Compute##Diff", btnSize()))
     {
         selImageID = "diff-result";
