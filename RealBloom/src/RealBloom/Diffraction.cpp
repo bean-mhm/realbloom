@@ -5,7 +5,7 @@
 namespace RealBloom
 {
 
-    static constexpr double CONTRAST_CONSTANT = 0.0002187;
+    static constexpr double LOG_CONTRAST_CONSTANT = 0.0002187;
 
     Diffraction::Diffraction()
     {}
@@ -194,21 +194,9 @@ namespace RealBloom
                 }
             }
 
-            double logOfMaxMag;
-            if (grayscale)
-            {
-                double logsOfMaxMag[3];
-                for (uint32_t i = 0; i < 3; i++)
-                {
-                    logsOfMaxMag[i] = log(CONTRAST_CONSTANT * maxMags[i] + 1.0);
-                }
-
-                logOfMaxMag = fmax(fmax(logsOfMaxMag[0], logsOfMaxMag[1]), logsOfMaxMag[2]);
-            }
-            else
-            {
-                logOfMaxMag = log(CONTRAST_CONSTANT * maxMags[0] + 1.0);
-            }
+            // Maximum magnitude
+            double maxMag = grayscale ? maxMags[0] : fmax(fmax(maxMags[0], maxMags[1]), maxMags[2]);
+            double logOfMaxMag = log(LOG_CONTRAST_CONSTANT * maxMag + 1.0);
 
             // Update the output image
             {
@@ -224,16 +212,28 @@ namespace RealBloom
                         uint32_t redIndex = (y * fftWidth + x) * 4;
                         if (grayscale)
                         {
-                            float v = log(CONTRAST_CONSTANT * fftMag[0](y, x) + 1.0) / logOfMaxMag;
+                            float v = m_params.logNorm ?
+                                log(LOG_CONTRAST_CONSTANT * fftMag[0](y, x) + 1.0) / logOfMaxMag
+                                : fftMag[0](y, x) / maxMag;
+
                             imageBuffer[redIndex + 0] = v;
                             imageBuffer[redIndex + 1] = v;
                             imageBuffer[redIndex + 2] = v;
                         }
                         else
                         {
-                            imageBuffer[redIndex + 0] = log(CONTRAST_CONSTANT * fftMag[0](y, x) + 1.0) / logOfMaxMag;
-                            imageBuffer[redIndex + 1] = log(CONTRAST_CONSTANT * fftMag[1](y, x) + 1.0) / logOfMaxMag;
-                            imageBuffer[redIndex + 2] = log(CONTRAST_CONSTANT * fftMag[2](y, x) + 1.0) / logOfMaxMag;
+                            if (m_params.logNorm)
+                            {
+                                imageBuffer[redIndex + 0] = log(LOG_CONTRAST_CONSTANT * fftMag[0](y, x) + 1.0) / logOfMaxMag;
+                                imageBuffer[redIndex + 1] = log(LOG_CONTRAST_CONSTANT * fftMag[1](y, x) + 1.0) / logOfMaxMag;
+                                imageBuffer[redIndex + 2] = log(LOG_CONTRAST_CONSTANT * fftMag[2](y, x) + 1.0) / logOfMaxMag;
+                            }
+                            else
+                            {
+                                imageBuffer[redIndex + 0] = fftMag[0](y, x) / maxMag;
+                                imageBuffer[redIndex + 1] = fftMag[1](y, x) / maxMag;
+                                imageBuffer[redIndex + 2] = fftMag[2](y, x) / maxMag;
+                            }
                         }
                         imageBuffer[redIndex + 3] = 1.0f;
                     }

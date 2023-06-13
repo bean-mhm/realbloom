@@ -27,6 +27,7 @@ namespace RealBloom
     struct DiffractionParams
     {
         ImageTransformParams inputTransformParams;
+        bool logNorm = false;
     };
 
     // Diffraction module
