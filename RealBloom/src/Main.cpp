@@ -27,14 +27,11 @@ static const ImVec4 colorWarningText{ 0.940f, 0.578f, 0.282f, 1.0f };
 static const ImVec4 colorErrorText{ 0.950f, 0.300f, 0.228f, 1.0f };
 
 // Image slots
-static std::vector<std::shared_ptr<CmImage>> images;
-static std::vector<std::string> imageNames;
-static int selImageIndex = 0;
-static std::string selImageID = "";
+static std::vector<ImageSlot> slots;
+static std::vector<std::string> slotNames;
+static int selSlotIndex = 0;
+static std::string selSlotID = ""; // will be updated externally, causing the index to update
 static float imageZoom = 1.0f;
-
-// Map slot IDs to internal source images in modules
-static std::unordered_map<std::string, ImageSourceInfo> imageSourceInfoMap;
 
 // RealBloom modules
 static RealBloom::Diffraction diff;
@@ -43,15 +40,14 @@ static RealBloom::Convolution conv;
 
 // Variables for modules
 
-static bool convInputTransformParamsChanged = false;
-static bool convKernelTransformParamsChanged = false;
+static bool convInputUpdated = false;
+static bool convKernelUpdated = false;
 
-static bool convThresholdChanged = false;
-static bool convThresholdSwitchImage = false;
-static bool convBlendParamsChanged = false;
+static bool convThresholdUpdated = false;
+static bool convBlendParamsUpdated = false;
 
-static bool diffInputTransformParamsChanged = false;
-static bool dispInputTransformParamsChanged = false;
+static bool diffInputUpdated = false;
+static bool dispInputUpdated = false;
 
 static std::shared_ptr<std::jthread> convResUsageThread = nullptr;
 static std::string convResUsage = "";
@@ -128,35 +124,35 @@ int main(int argc, char** argv)
         // Native File Dialog Extended
         NFD_Init();
 
-        // Create images to be used throughout the program
-        addImage("diff-input", "Diffraction Input");
-        addImage("diff-result", "Diffraction Result");
-        addImage("disp-input", "Dispersion Input");
-        addImage("disp-result", "Dispersion Result");
-        addImage("cv-input", "Conv. Input");
-        addImage("cv-kernel", "Conv. Kernel");
-        addImage("cv-prev", "Conv. Preview");
-        addImage("cv-result", "Conv. Result");
+        // Create image slots to be used throughout the program
+        addImageSlot("diff-input", "Diffraction Input", true, diff.getImgInputSrc(), &diffInputUpdated);
+        addImageSlot("diff-result", "Diffraction Result", false);
+        addImageSlot("disp-input", "Dispersion Input", true, disp.getImgInputSrc(), &dispInputUpdated);
+        addImageSlot("disp-result", "Dispersion Result", false);
+        addImageSlot("cv-input", "Conv. Input", true, conv.getImgInputSrc(), &convInputUpdated);
+        addImageSlot("cv-kernel", "Conv. Kernel", true, conv.getImgKernelSrc(), &convKernelUpdated);
+        addImageSlot("cv-prev", "Conv. Preview", false);
+        addImageSlot("cv-result", "Conv. Result", false);
+
+        // Store a list of the names
+        for (auto& slot : slots)
+        {
+            slotNames.push_back(slot.name);
+        }
 
         // Set up images for diffraction
-        diff.setImgInput(getImageByID("diff-input"));
-        diff.setImgDiff(getImageByID("diff-result"));
+        diff.setImgInput(getSlotByID("diff-input").viewImage.get());
+        diff.setImgDiff(getSlotByID("diff-result").viewImage.get());
 
         // Set up images for dispersion
-        disp.setImgInput(getImageByID("disp-input"));
-        disp.setImgDisp(getImageByID("disp-result"));
+        disp.setImgInput(getSlotByID("disp-input").viewImage.get());
+        disp.setImgDisp(getSlotByID("disp-result").viewImage.get());
 
         // Set up images for convolution
-        conv.setImgInput(getImageByID("cv-input"));
-        conv.setImgKernel(getImageByID("cv-kernel"));
-        conv.setImgConvPreview(getImageByID("cv-prev"));
-        conv.setImgConvResult(getImageByID("cv-result"));
-
-        // Map slot IDs to internal source images in modules
-        imageSourceInfoMap["diff-input"] = { diff.getImgInputSrc(), &diffInputTransformParamsChanged };
-        imageSourceInfoMap["disp-input"] = { disp.getImgInputSrc(), &dispInputTransformParamsChanged };
-        imageSourceInfoMap["cv-input"] = { conv.getImgInputSrc(), &convInputTransformParamsChanged };
-        imageSourceInfoMap["cv-kernel"] = { conv.getImgKernelSrc(), &convKernelTransformParamsChanged };
+        conv.setImgInput(getSlotByID("cv-input").viewImage.get());
+        conv.setImgKernel(getSlotByID("cv-kernel").viewImage.get());
+        conv.setImgConvPreview(getSlotByID("cv-prev").viewImage.get());
+        conv.setImgConvResult(getSlotByID("cv-result").viewImage.get());
     }
 
     // To kill child processes when the parent dies
@@ -282,108 +278,126 @@ void layoutAll()
 
 void layoutImagePanels()
 {
-    // Selected image
-
+    // See if selSlotID needs to be updated
     {
         SignalValue v;
-        if (Async::readSignalLast("selImageID", v))
-            selImageID = std::get<std::string>(v);
+        if (Async::readSignalLast("selSlotID", v))
+            selSlotID = std::get<std::string>(v);
     }
 
-    if (!selImageID.empty())
+    // Update selSlotIndex if selSlotID was modified,
+    // then, reset selSlotID.
+    if (!selSlotID.empty())
     {
-        for (size_t i = 0; i < images.size(); i++)
+        for (size_t i = 0; i < slots.size(); i++)
         {
-            if (images[i]->getID() == selImageID)
+            if (slots[i].id == selSlotID)
             {
-                selImageIndex = i;
+                selSlotIndex = i;
                 break;
             }
         }
-        selImageID = "";
+        selSlotID = "";
     }
 
-    CmImage& selImage = *(images[selImageIndex]);
+    // Selected slot
+    ImageSlot& selSlot = slots[selSlotIndex];
 
-    static int lastSelImageIndex = selImageIndex;
-    if (selImageIndex != lastSelImageIndex)
+    // Move to GPU when switching slots
+    static int lastSelSlotIndex = selSlotIndex;
+    if (selSlotIndex != lastSelSlotIndex)
     {
-        selImage.moveToGPU();
-        lastSelImageIndex = selImageIndex;
+        selSlot.viewImage->moveToGPU();
+        lastSelSlotIndex = selSlotIndex;
     }
 
     // Image List
     {
-        ImGui::Begin("Image List");
+        ImGui::Begin("Image Slots");
 
         imGuiBold("SLOTS");
 
         ImGui::PushItemWidth(-1);
         ImGui::ListBox(
-            "##ImageList_Slots",
-            &selImageIndex,
+            "##ImageSlots_List",
+            &selSlotIndex,
             [](void* data, int index, const char** outText)
             {
-                *outText = imageNames[index].c_str();
+                *outText = slotNames[index].c_str();
                 return true;
             },
-            nullptr, images.size(), images.size());
+            nullptr, slots.size(), slots.size());
         ImGui::PopItemWidth();
 
         // Compare input and result slots
-        if ((selImage.getID() == "disp-input") || (selImage.getID() == "disp-result"))
+        if ((selSlot.id == "disp-input") || (selSlot.id == "disp-result"))
         {
-            if (ImGui::Button("Compare##ImageList_0", btnSize()))
+            if (ImGui::Button("Compare##ImageSlots_0", btnSize()))
             {
-                if (selImage.getID() == "disp-input") selImageID = "disp-result";
-                else selImageID = "disp-input";
+                if (selSlot.id == "disp-input") selSlotID = "disp-result";
+                else selSlotID = "disp-input";
             }
         }
-        else if ((selImage.getID() == "cv-input") || (selImage.getID() == "cv-result"))
+        else if ((selSlot.id == "cv-input") || (selSlot.id == "cv-result"))
         {
-            if (ImGui::Button("Compare##ImageList_1", btnSize()))
+            if (ImGui::Button("Compare##ImageSlots_1", btnSize()))
             {
-                if (selImage.getID() == "cv-input") selImageID = "cv-result";
-                else selImageID = "cv-input";
+                if (selSlot.id == "cv-input") selSlotID = "cv-result";
+                else selSlotID = "cv-input";
             }
         }
-        else if ((selImage.getID() == "diff-input") || (selImage.getID() == "diff-result"))
+        else if ((selSlot.id == "diff-input") || (selSlot.id == "diff-result"))
         {
-            if (ImGui::Button("Compare##ImageList_2", btnSize()))
+            if (ImGui::Button("Compare##ImageSlots_2", btnSize()))
             {
-                if (selImage.getID() == "diff-input") selImageID = "diff-result";
-                else selImageID = "diff-input";
+                if (selSlot.id == "diff-input") selSlotID = "diff-result";
+                else selSlotID = "diff-input";
             }
         }
 
         // Reset
-        if (ImGui::Button("Reset##ImageList", btnSize()))
+        if (ImGui::Button("Reset##ImageSlots", btnSize()))
         {
-            selImage.reset(true);
-
-            if (imageSourceInfoMap.contains(selImage.getID()))
+            selSlot.viewImage->reset(true);
+            if (selSlot.internalImage != nullptr)
             {
-                auto& srcInfo = imageSourceInfoMap[selImage.getID()];
-                srcInfo.imageSource->reset(true);
-                srcInfo.updateParamsChanged();
+                selSlot.internalImage->reset(true);
+                selSlot.indicateUpdate();
             }
         }
 
         // Move To
-        if (ImGui::Button("Move To##ImageList", btnSize()))
+        if (ImGui::Button("Move To##ImageSlots", btnSize()))
         {
-            dialogParams_MoveTo.selSourceImage = selImageIndex;
-            dialogParams_MoveTo.selDestImage = (selImageIndex + 1) % (int)images.size();
-
+            dialogParams_MoveTo.selSourceSlot = selSlotIndex;
+            dialogParams_MoveTo.selDestSlot = (selSlotIndex + 1) % (int)slots.size();
             ImGui::OpenPopup(DIALOG_TITLE_MOVETO);
         }
 
         // Save
+        try
         {
-            static std::string saveError = "";
-            if (ImGui::Button("Save##ImageList", btnSize()))
-                saveImage(selImage, selImage.getID(), saveError);
-            imGuiText(saveError, true, false);
+            if (ImGui::Button("Save##ImageSlots", btnSize()))
+            {
+                saveImageFromSlot(selSlot);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            imGuiText(e.what(), true, false);
+        }
+
+        // Browse
+        try
+        {
+            if (ImGui::Button("Browse##ImageSlots", btnSize()))
+            {
+                browseImageForSlot(selSlot);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            imGuiText(e.what(), true, false);
         }
 
         ImGui::NewLine();
@@ -398,10 +412,10 @@ void layoutImagePanels()
         // Name
 
         std::string imageName;
-        if (selImage.getSourceName().empty())
-            imageName = selImage.getName();
+        if (selSlot.viewImage->getSourceName().empty())
+            imageName = selSlot.name;
         else
-            imageName = strFormat("%s (%s)", selImage.getName().c_str(), selImage.getSourceName().c_str());
+            imageName = strFormat("%s (%s)", selSlot.name.c_str(), selSlot.viewImage->getSourceName().c_str());
 
         ImGui::PushFont(fontRobotoBold);
         ImGui::TextWrapped(imageName.c_str());
@@ -410,8 +424,8 @@ void layoutImagePanels()
         ImGui::PushFont(fontMono);
 
         // Size
-        uint32_t imageWidth = selImage.getWidth();
-        uint32_t imageHeight = selImage.getHeight();
+        uint32_t imageWidth = selSlot.viewImage->getWidth();
+        uint32_t imageHeight = selSlot.viewImage->getHeight();
         ImGui::Text("%dx%d", imageWidth, imageHeight);
 
         // Zoom
@@ -434,7 +448,7 @@ void layoutImagePanels()
         ImGui::PopFont();
 
         ImGui::Image(
-            (void*)(intptr_t)(selImage.getGlTexture()),
+            (void*)(intptr_t)(selSlot.viewImage->getGlTexture()),
             ImVec2((float)imageWidth * imageZoom, (float)imageHeight * imageZoom),
             { 0, 0 },
             { 1,1 },
@@ -512,8 +526,8 @@ void layoutColorManagement()
         if (cmsParamsChanged)
         {
             cmsParamsChanged = false;
-            for (auto& img : images)
-                img->moveToGPU();
+            for (auto& slot : slots)
+                slot.viewImage->moveToGPU();
         }
 
     }
@@ -637,7 +651,7 @@ void layoutColorManagement()
         {
             tableChanged = false;
             cmfPreviewError = "";
-            selImageID = "disp-result";
+            selSlotID = "disp-result";
 
             disp.cancel();
             try
@@ -791,67 +805,40 @@ void layoutMisc()
 
 void layoutConvolution()
 {
-    CmImage& imgConvInput = *getImageByID("cv-input");
-    CmImage& imgConvKernel = *getImageByID("cv-kernel");
-    CmImage& imgConvResult = *getImageByID("cv-result");
-
+    CmImage& imgConvInput = *getSlotByID("cv-input").viewImage;
+    CmImage& imgConvResult = *getSlotByID("cv-result").viewImage;
     RealBloom::ConvolutionParams* convParams = conv.getParams();
 
     ImGui::Begin("Convolution");
 
     imGuiBold("INPUT");
 
-    {
-        static std::string loadError;
-        if (ImGui::Button("Browse Input##Conv", btnSize()))
-        {
-            auto& srcInfo = imageSourceInfoMap["cv-input"];
-
-            if (openImage(*srcInfo.imageSource, imgConvInput.getID(), loadError))
-            {
-                srcInfo.updateParamsChanged();
-                convThresholdChanged = true;
-            }
-        }
-        imGuiText(loadError, true, false);
-    }
-
     if (layoutImageTransformParams("Input", "ConvInput", convParams->inputTransformParams))
     {
-        convInputTransformParamsChanged = true;
-        convThresholdChanged = true;
+        convInputUpdated = true;
     }
 
-    if (convInputTransformParamsChanged)
+    if (convInputUpdated)
     {
-        convInputTransformParamsChanged = false;
+        convInputUpdated = false;
         conv.previewInput();
-        selImageID = "cv-input";
+        conv.previewThreshold();
+        selSlotID = "cv-input";
     }
 
     imGuiDiv();
     imGuiBold("KERNEL");
 
+    if (layoutImageTransformParams("Kernel", "ConvKernel", convParams->kernelTransformParams))
     {
-        static std::string loadError;
-        if (ImGui::Button("Browse Kernel##Conv", btnSize()))
-        {
-            auto& srcInfo = imageSourceInfoMap["cv-kernel"];
-
-            if (openImage(*srcInfo.imageSource, imgConvKernel.getID(), loadError))
-                srcInfo.updateParamsChanged();
-        }
-        imGuiText(loadError, true, false);
+        convKernelUpdated = true;
     }
 
-    if (layoutImageTransformParams("Kernel", "ConvKernel", convParams->kernelTransformParams))
-        convKernelTransformParamsChanged = true;
-
-    if (convKernelTransformParamsChanged)
+    if (convKernelUpdated)
     {
-        convKernelTransformParamsChanged = false;
+        convKernelUpdated = false;
         conv.previewKernel();
-        selImageID = "cv-kernel";
+        selSlotID = "cv-kernel";
     }
 
     ImGui::Checkbox("Use Transform Origin##Conv", &convParams->useKernelTransformOrigin);
@@ -888,26 +875,20 @@ void layoutConvolution()
     if (ImGui::SliderFloat("Threshold##Conv", &convParams->threshold, 0.0f, 2.0f))
     {
         convParams->threshold = std::max(convParams->threshold, 0.0f);
-        convThresholdChanged = true;
-        convThresholdSwitchImage = true;
+        convThresholdUpdated = true;
     }
 
     if (ImGui::SliderFloat("Knee##Conv", &convParams->knee, 0.0f, 2.0f))
     {
         convParams->knee = std::max(convParams->knee, 0.0f);
-        convThresholdChanged = true;
-        convThresholdSwitchImage = true;
+        convThresholdUpdated = true;
     }
 
-    if (convThresholdChanged)
+    if (convThresholdUpdated)
     {
-        convThresholdChanged = false;
+        convThresholdUpdated = false;
         conv.previewThreshold();
-        if (convThresholdSwitchImage)
-        {
-            convThresholdSwitchImage = false;
-            selImageID = "cv-prev";
-        }
+        selSlotID = "cv-prev";
     }
 
     ImGui::Checkbox("Auto-Exposure##Conv", &convParams->autoExposure);
@@ -920,11 +901,10 @@ void layoutConvolution()
         imgConvResult.resize(imgConvInput.getWidth(), imgConvInput.getHeight(), true);
         imgConvResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
         imgConvResult.moveToGPU();
-        selImageID = "cv-result";
+        selSlotID = "cv-result";
 
         conv.convolve();
     }
-
     if (ImGui::IsItemHovered() && !convResUsage.empty())
         ImGui::SetTooltip(convResUsage.c_str());
 
@@ -967,20 +947,20 @@ void layoutConvolution()
     imGuiBold("BLENDING");
 
     if (ImGui::Checkbox("Additive##Conv", &convParams->blendAdditive))
-        convBlendParamsChanged = true;
+        convBlendParamsUpdated = true;
 
     if (convParams->blendAdditive)
     {
         if (ImGui::SliderFloat("Input##Conv", &convParams->blendInput, 0.0f, 1.0f))
         {
             convParams->blendInput = std::max(convParams->blendInput, 0.0f);
-            convBlendParamsChanged = true;
+            convBlendParamsUpdated = true;
         }
 
         if (ImGui::SliderFloat("Conv.##Conv", &convParams->blendConv, 0.0f, 1.0f))
         {
             convParams->blendConv = std::max(convParams->blendConv, 0.0f);
-            convBlendParamsChanged = true;
+            convBlendParamsUpdated = true;
         }
     }
     else
@@ -988,32 +968,32 @@ void layoutConvolution()
         if (ImGui::SliderFloat("Mix##Conv", &convParams->blendMix, 0.0f, 1.0f))
         {
             convParams->blendMix = std::clamp(convParams->blendMix, 0.0f, 1.0f);
-            convBlendParamsChanged = true;
+            convBlendParamsUpdated = true;
         }
     }
 
     if (ImGui::SliderFloat("Exposure##Conv", &convParams->blendExposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
-        convBlendParamsChanged = true;
+        convBlendParamsUpdated = true;
 
     if (ImGui::Button("Show Conv. Layer##Conv", btnSize()))
     {
         convParams->blendAdditive = false;
         convParams->blendMix = 1.0f;
         convParams->blendExposure = 0.0f;
-        convBlendParamsChanged = true;
+        convBlendParamsUpdated = true;
     }
 
     {
         SignalValue v;
-        convBlendParamsChanged |= Async::readSignalLast("convBlendParamsChanged", v);
+        convBlendParamsUpdated |= Async::readSignalLast("convBlendParamsChanged", v);
     }
 
 
-    if (convBlendParamsChanged)
+    if (convBlendParamsUpdated)
     {
-        convBlendParamsChanged = false;
+        convBlendParamsUpdated = false;
         conv.blend();
-        selImageID = "cv-result";
+        selSlotID = "cv-result";
     }
 
     ImGui::NewLine();
@@ -1023,9 +1003,8 @@ void layoutConvolution()
 
 void layoutDiffraction()
 {
-    CmImage& imgDiffInput = *getImageByID("diff-input");
-    CmImage& imgDispInput = *getImageByID("disp-input");
-    CmImage& imgDispResult = *getImageByID("disp-result");
+    CmImage& imgDispInput = *getSlotByID("disp-input").viewImage;
+    CmImage& imgDispResult = *getSlotByID("disp-result").viewImage;
 
     RealBloom::DiffractionParams* diffParams = diff.getParams();
     RealBloom::DispersionParams* dispParams = disp.getParams();
@@ -1034,33 +1013,23 @@ void layoutDiffraction()
 
     imGuiBold("DIFFRACTION");
 
+    if (layoutImageTransformParams("Input", "DiffInput", diffParams->inputTransformParams))
     {
-        static std::string loadError = "";
-        if (ImGui::Button("Browse Input##Diff", btnSize()))
-        {
-            auto& srcInfo = imageSourceInfoMap["diff-input"];
-
-            if (openImage(*srcInfo.imageSource, imgDiffInput.getID(), loadError))
-                srcInfo.updateParamsChanged();
-        }
-        imGuiText(loadError, true, false);
+        diffInputUpdated = true;
     }
 
-    if (layoutImageTransformParams("Input", "DiffInput", diffParams->inputTransformParams))
-        diffInputTransformParamsChanged = true;
-
-    if (diffInputTransformParamsChanged)
+    if (diffInputUpdated)
     {
-        diffInputTransformParamsChanged = false;
+        diffInputUpdated = false;
         diff.previewInput();
-        selImageID = "diff-input";
+        selSlotID = "diff-input";
     }
 
     ImGui::Checkbox("Logarithmic Normalization##Diff", &diffParams->logNorm);
 
     if (ImGui::Button("Compute##Diff", btnSize()))
     {
-        selImageID = "diff-result";
+        selSlotID = "diff-result";
         diff.compute();
     }
 
@@ -1073,26 +1042,14 @@ void layoutDiffraction()
     imGuiDiv();
     imGuiBold("DISPERSION");
 
-    {
-        static std::string loadError;
-        if (ImGui::Button("Browse Input##Disp", btnSize()))
-        {
-            auto& srcInfo = imageSourceInfoMap["disp-input"];
-
-            if (openImage(*srcInfo.imageSource, imgDispInput.getID(), loadError))
-                srcInfo.updateParamsChanged();
-        }
-        imGuiText(loadError, true, false);
-    }
-
     if (layoutImageTransformParams("Input", "DispInput", dispParams->inputTransformParams))
-        dispInputTransformParamsChanged = true;
+        dispInputUpdated = true;
 
-    if (dispInputTransformParamsChanged)
+    if (dispInputUpdated)
     {
-        dispInputTransformParamsChanged = false;
+        dispInputUpdated = false;
         disp.previewInput();
-        selImageID = "disp-input";
+        selSlotID = "disp-input";
     }
 
     if (ImGui::SliderFloat("Amount##Disp", &dispParams->amount, 0.0f, 1.0f))
@@ -1116,7 +1073,7 @@ void layoutDiffraction()
         imgDispResult.resize(imgDispInput.getWidth(), imgDispInput.getHeight(), true);
         imgDispResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
         imgDispResult.moveToGPU();
-        selImageID = "disp-result";
+        selSlotID = "disp-result";
 
         disp.compute();
     }
@@ -1480,38 +1437,37 @@ void imGuiDialogs()
     if (ImGui::BeginPopupModal(DIALOG_TITLE_MOVETO, 0, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("Source:");
-        imGuiCombo("##Dialog_MoveTo_SourceImage", imageNames, &dialogParams_MoveTo.selSourceImage, true);
+        imGuiCombo("##Dialog_MoveTo_SourceSlot", slotNames, &dialogParams_MoveTo.selSourceSlot, true);
 
         ImGui::Text("Destination:");
-        imGuiCombo("##Dialog_MoveTo_DestImage", imageNames, &dialogParams_MoveTo.selDestImage, true);
+        imGuiCombo("##Dialog_MoveTo_DestSlot", slotNames, &dialogParams_MoveTo.selDestSlot, true);
 
         ImGui::Checkbox("Preserve Original##Dialog_MoveTo", &dialogParams_MoveTo.preserveOriginal);
 
         if (ImGui::Button("OK##Dialog_MoveTo", dlgBtnSize()))
         {
             bool validParams =
-                dialogParams_MoveTo.selSourceImage >= 0
-                && dialogParams_MoveTo.selDestImage >= 0;
+                dialogParams_MoveTo.selSourceSlot >= 0
+                && dialogParams_MoveTo.selDestSlot >= 0;
 
-            validParams &= (dialogParams_MoveTo.selSourceImage != dialogParams_MoveTo.selDestImage);
+            validParams &= (dialogParams_MoveTo.selSourceSlot != dialogParams_MoveTo.selDestSlot);
 
             if (validParams)
             {
-                std::shared_ptr<CmImage> sourceImage = images[dialogParams_MoveTo.selSourceImage];
-                std::shared_ptr<CmImage> destImage = images[dialogParams_MoveTo.selDestImage];
+                ImageSlot& sourceSlot = slots[dialogParams_MoveTo.selSourceSlot];
+                ImageSlot& destSlot = slots[dialogParams_MoveTo.selDestSlot];
 
-                if (imageSourceInfoMap.contains(destImage->getID()))
+                if (destSlot.internalImage != nullptr)
                 {
-                    auto& srcInfo = imageSourceInfoMap[destImage->getID()];
-                    sourceImage->moveContent(*srcInfo.imageSource, dialogParams_MoveTo.preserveOriginal);
-                    srcInfo.updateParamsChanged();
+                    sourceSlot.viewImage->moveContent(*destSlot.internalImage, dialogParams_MoveTo.preserveOriginal);
+                    destSlot.indicateUpdate();
                 }
                 else
                 {
-                    sourceImage->moveContent(*destImage, dialogParams_MoveTo.preserveOriginal);
+                    sourceSlot.viewImage->moveContent(*destSlot.viewImage, dialogParams_MoveTo.preserveOriginal);
                 }
 
-                selImageID = destImage->getID();
+                selSlotID = destSlot.id;
             }
 
             ImGui::CloseCurrentPopup();
@@ -1525,56 +1481,64 @@ void imGuiDialogs()
 
 }
 
-void addImage(const std::string& id, const std::string& name)
+void addImageSlot(const std::string& id, const std::string& name, bool canLoad, CmImage* internalImage, bool* updateIndicator)
 {
-    std::shared_ptr<CmImage> img = std::make_shared<CmImage>(id, name);
-    images.push_back(img);
-    imageNames.push_back(name);
+    ImageSlot slot;
+    slot.id = id;
+    slot.name = name;
+    slot.canLoad = canLoad;
+    slot.viewImage = std::make_shared<CmImage>(id, name);
+    slot.internalImage = internalImage;
+    slot.updateIndicator = updateIndicator;
+
+    slots.push_back(slot);
 }
 
-CmImage* getImageByID(const std::string& id)
+ImageSlot& getSlotByID(const std::string& id)
 {
-    for (auto& img : images)
-        if (img->getID() == id)
-            return img.get();
-    return nullptr;
+    for (auto& slot : slots)
+        if (slot.id == id)
+            return slot;
+
+    static ImageSlot s{};
+    return s;
 }
 
-bool openImage(CmImage& image, const std::string& dlgID, std::string& outError)
+void loadImageToSlot(ImageSlot& slot, const std::string& filename)
 {
-    std::string filename;
-    if (FileDialogs::openDialog(dlgID, CmImageIO::getOpenFilterList(), filename))
+    if (slot.internalImage != nullptr)
     {
-        outError = "";
-        try
-        {
-            CmImageIO::readImage(image, filename);
-            selImageID = image.getID();
-            return true;
-        }
-        catch (const std::exception& e)
-        {
-            outError = e.what();
-        }
+        CmImageIO::readImage(*slot.internalImage, filename);
+        slot.indicateUpdate();
+    }
+    else
+    {
+        CmImageIO::readImage(*slot.viewImage, filename);
+    }
+    selSlotID = slot.id;
+}
+
+bool browseImageForSlot(ImageSlot& slot)
+{
+    if (!slot.canLoad)
+        return false;
+
+    std::string filename;
+    if (FileDialogs::openDialog(slot.id, CmImageIO::getOpenFilterList(), filename))
+    {
+        loadImageToSlot(slot, filename);
+        return true;
     }
     return false;
 }
 
-bool saveImage(CmImage& image, const std::string& dlgID, std::string& outError)
+bool saveImageFromSlot(ImageSlot& slot)
 {
     std::string filename;
-    if (FileDialogs::saveDialog(dlgID, CmImageIO::getSaveFilterList(), CmImageIO::getDefaultFilename(), filename))
+    if (FileDialogs::saveDialog(slot.id, CmImageIO::getSaveFilterList(), CmImageIO::getDefaultFilename(), filename))
     {
-        outError = "";
-        try
-        {
-            CmImageIO::writeImage(image, filename);
-            return true;
-        }
-        catch (const std::exception& e)
-        {
-            outError = e.what();
-        }
+        CmImageIO::writeImage(*slot.viewImage, filename);
+        return true;
     }
     return false;
 }
@@ -1616,6 +1580,9 @@ bool setupGLFW()
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
+
+    // Set Drag-Drop callback
+    glfwSetDropCallback(window, dragDropCallback);
 
     return true;
 }
@@ -1804,7 +1771,7 @@ void cleanUp()
 
     if (!CLI::Interface::active())
     {
-        clearVector(images);
+        clearVector(slots);
         imgui_widgets_cleanup_cmimages();
     }
 
@@ -1830,8 +1797,24 @@ void cleanUp()
     CLI::Interface::cleanUp();
 }
 
-void ImageSourceInfo::updateParamsChanged()
+void dragDropCallback(GLFWwindow* window, int count, const char** paths)
 {
-    if (paramsChanged != nullptr)
-        *paramsChanged = true;
+    if (count < 1)
+        return;
+
+    std::string lastPath = paths[count - 1];
+
+    if (!std::filesystem::exists(lastPath))
+        return;
+
+    if (std::filesystem::is_directory(lastPath))
+        return;
+
+    std::cout << strFormat("got valid file path: \"%s\"\n", lastPath.c_str());
+}
+
+void ImageSlot::indicateUpdate()
+{
+    if (updateIndicator != nullptr)
+        *updateIndicator = true;
 }

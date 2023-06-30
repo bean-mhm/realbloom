@@ -147,7 +147,7 @@ namespace RealBloom
 
                     // Update the dispersion image
                     m_imgDisp->moveToGPU();
-                    Async::emitSignal("selImageID", m_imgDisp->getID());
+                    Async::emitSignal("selSlotID", m_imgDisp->getID());
 
                     m_status.setDone();
                 }

@@ -54,6 +54,28 @@
 #include "Utils/NumberHelpers.h"
 #include "Utils/Misc.h"
 
+struct ImageSlot
+{
+    std::string id;
+    std::string name;
+    bool canLoad;
+    std::shared_ptr<CmImage> viewImage;
+
+    CmImage* internalImage;
+    bool* updateIndicator;
+
+    void indicateUpdate();
+};
+
+constexpr const char* DIALOG_TITLE_MOVETO = "Move To";
+
+struct DialogParams_MoveTo
+{
+    int selSourceSlot = -1;
+    int selDestSlot = -1;
+    bool preserveOriginal = false;
+};
+
 void layoutAll();
 
 void layoutImagePanels();
@@ -73,11 +95,12 @@ bool imGuiInputUInt(const std::string& label, uint32_t* v);
 bool imGuiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth);
 void imGuiDialogs();
 
-void addImage(const std::string& id, const std::string& name);
-CmImage* getImageByID(const std::string& id);
+void addImageSlot(const std::string& id, const std::string& name, bool canLoad, CmImage* internalImage = nullptr, bool* updateIndicator = nullptr);
+ImageSlot& getSlotByID(const std::string& id);
 
-bool openImage(CmImage& image, const std::string& dlgID, std::string& outError);
-bool saveImage(CmImage& image, const std::string& dlgID, std::string& outError);
+void loadImageToSlot(ImageSlot& slot, const std::string& filename);
+bool browseImageForSlot(ImageSlot& slot);
+bool saveImageFromSlot(ImageSlot& slot);
 
 inline ImVec2 btnSize();
 inline ImVec2 dlgBtnSize();
@@ -87,19 +110,4 @@ bool setupImGui();
 void applyStyle_RealBloomGray();
 void cleanUp();
 
-constexpr const char* DIALOG_TITLE_MOVETO = "Move To";
-
-struct DialogParams_MoveTo
-{
-    int selSourceImage = -1;
-    int selDestImage = -1;
-    bool preserveOriginal = false;
-};
-
-struct ImageSourceInfo
-{
-    CmImage* imageSource;
-    bool* paramsChanged;
-
-    void updateParamsChanged();
-};
+void dragDropCallback(GLFWwindow* window, int count, const char** paths);
