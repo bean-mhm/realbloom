@@ -784,7 +784,7 @@ void layoutMisc()
 
     imGuiBold("INTERFACE");
 
-    if (ImGui::InputFloat("Scale", &Config::UI_SCALE, 0.125f, 0.125f, "%.3f"))
+    if (ImGui::SliderFloat("Scale##Misc", &Config::UI_SCALE, Config::UI_MIN_SCALE, Config::UI_MAX_SCALE))
     {
         Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::UI_MIN_SCALE), Config::UI_MAX_SCALE);
         io->FontGlobalScale = Config::UI_SCALE / Config::UI_MAX_SCALE;
@@ -813,9 +813,9 @@ void layoutMisc()
     ImGui::TextWrapped("%s v%s", Config::APP_TITLE, Config::APP_VERSION);
 
     // GitHub
-    if (ImGui::Button("GitHub", btnSize()))
+    if (ImGui::Button("GitHub##Misc", btnSize()))
         openURL(Config::GITHUB_URL);
-    if (ImGui::Button("Tutorial", btnSize()))
+    if (ImGui::Button("Tutorial##Misc", btnSize()))
         openURL(Config::DOCS_URL);
 
     ImGui::End();
@@ -1665,7 +1665,7 @@ bool setupImGui()
 
     fontRobotoBold = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/RobotoCondensed-Bold.ttf").c_str(),
-        19.0f * Config::UI_MAX_SCALE);
+        20.0f * Config::UI_MAX_SCALE);
 
     fontMono = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/mono/RobotoMono-Regular.ttf").c_str(),
