@@ -1530,6 +1530,9 @@ ImageSlot& getSlotByID(const std::string& id)
 
 void loadImageToSlot(ImageSlot& slot, const std::string& filename)
 {
+    if (!slot.canLoad)
+        return;
+
     if (slot.internalImage != nullptr)
     {
         CmImageIO::readImage(*slot.internalImage, filename);
@@ -1832,7 +1835,14 @@ void dragDropCallback(GLFWwindow* window, int count, const char** paths)
     if (std::filesystem::is_directory(lastPath))
         return;
 
-    std::cout << strFormat("got valid file path: \"%s\"\n", lastPath.c_str());
+    try
+    {
+        loadImageToSlot(slots[selSlotIndex], lastPath);
+    }
+    catch (const std::exception& e)
+    {
+        printError(__FUNCTION__, "", e.what());
+    }
 }
 
 void ImageSlot::indicateUpdate()
