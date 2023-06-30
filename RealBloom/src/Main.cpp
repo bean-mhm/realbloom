@@ -330,29 +330,43 @@ void layoutImagePanels()
         ImGui::PopItemWidth();
 
         // Browse
-        try
         {
-            if (ImGui::Button("Browse##ImageSlots", btnSize()))
+            static std::string error = "";
+
+            if (!selSlot.canLoad)
+                ImGui::BeginDisabled();
+            try
             {
-                browseImageForSlot(selSlot);
+                if (ImGui::Button("Browse##ImageSlots", btnSize()))
+                {
+                    browseImageForSlot(selSlot);
+                }
             }
-        }
-        catch (const std::exception& e)
-        {
-            imGuiText(e.what(), true, false);
+            catch (const std::exception& e)
+            {
+                error = e.what();
+            }
+            if (!selSlot.canLoad)
+                ImGui::EndDisabled();
+
+            if (!error.empty()) imGuiText(error, true, false);
         }
 
         // Save
-        try
         {
-            if (ImGui::Button("Save##ImageSlots", btnSize()))
+            static std::string error = "";
+            try
             {
-                saveImageFromSlot(selSlot);
+                if (ImGui::Button("Save##ImageSlots", btnSize()))
+                {
+                    saveImageFromSlot(selSlot);
+                }
             }
-        }
-        catch (const std::exception& e)
-        {
-            imGuiText(e.what(), true, false);
+            catch (const std::exception& e)
+            {
+                error = e.what();
+            }
+            if (!error.empty()) imGuiText(error, true, false);
         }
 
         // Move To
@@ -387,6 +401,12 @@ void layoutImagePanels()
                 if (selSlot.id == "diff-input") selSlotID = "diff-result";
                 else selSlotID = "diff-input";
             }
+        }
+        else
+        {
+            ImGui::BeginDisabled();
+            ImGui::Button("Compare##ImageSlots", btnSize());
+            ImGui::EndDisabled();
         }
 
         ImGui::NewLine();
@@ -431,8 +451,6 @@ void layoutImagePanels()
                 imageZoom = 1.0f;
         }
 
-        imGuiHorzDiv();
-
         // Clear
         ImGui::SameLine();
         if (ImGui::SmallButton("Clear##ImageViewer"))
@@ -449,7 +467,7 @@ void layoutImagePanels()
 
         ImGui::Image(
             (void*)(intptr_t)(selSlot.viewImage->getGlTexture()),
-            ImVec2((float)imageWidth * imageZoom, (float)imageHeight * imageZoom),
+            ImVec2((float)imageWidth* imageZoom, (float)imageHeight* imageZoom),
             { 0, 0 },
             { 1,1 },
             { 1, 1, 1, 1 },
@@ -1809,10 +1827,8 @@ void dragDropCallback(GLFWwindow* window, int count, const char** paths)
         return;
 
     std::string lastPath = paths[count - 1];
-
     if (!std::filesystem::exists(lastPath))
         return;
-
     if (std::filesystem::is_directory(lastPath))
         return;
 
