@@ -88,6 +88,7 @@ void layoutDebug();
 bool layoutImageTransformParams(const std::string& imageName, const std::string& imGuiID, ImageTransformParams& params);
 
 void imGuiDiv();
+void imGuiHorzDiv();
 void imGuiBold(const std::string& s);
 void imGuiText(const std::string& s, bool isError, bool newLine);
 bool imGuiSliderUInt(const std::string& label, uint32_t* v, uint32_t min, uint32_t max);

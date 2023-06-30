@@ -329,6 +329,40 @@ void layoutImagePanels()
             nullptr, slots.size(), slots.size());
         ImGui::PopItemWidth();
 
+        // Browse
+        try
+        {
+            if (ImGui::Button("Browse##ImageSlots", btnSize()))
+            {
+                browseImageForSlot(selSlot);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            imGuiText(e.what(), true, false);
+        }
+
+        // Save
+        try
+        {
+            if (ImGui::Button("Save##ImageSlots", btnSize()))
+            {
+                saveImageFromSlot(selSlot);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            imGuiText(e.what(), true, false);
+        }
+
+        // Move To
+        if (ImGui::Button("Move To##ImageSlots", btnSize()))
+        {
+            dialogParams_MoveTo.selSourceSlot = selSlotIndex;
+            dialogParams_MoveTo.selDestSlot = (selSlotIndex + 1) % (int)slots.size();
+            ImGui::OpenPopup(DIALOG_TITLE_MOVETO);
+        }
+
         // Compare input and result slots
         if ((selSlot.id == "disp-input") || (selSlot.id == "disp-result"))
         {
@@ -353,51 +387,6 @@ void layoutImagePanels()
                 if (selSlot.id == "diff-input") selSlotID = "diff-result";
                 else selSlotID = "diff-input";
             }
-        }
-
-        // Reset
-        if (ImGui::Button("Reset##ImageSlots", btnSize()))
-        {
-            selSlot.viewImage->reset(true);
-            if (selSlot.internalImage != nullptr)
-            {
-                selSlot.internalImage->reset(true);
-                selSlot.indicateUpdate();
-            }
-        }
-
-        // Move To
-        if (ImGui::Button("Move To##ImageSlots", btnSize()))
-        {
-            dialogParams_MoveTo.selSourceSlot = selSlotIndex;
-            dialogParams_MoveTo.selDestSlot = (selSlotIndex + 1) % (int)slots.size();
-            ImGui::OpenPopup(DIALOG_TITLE_MOVETO);
-        }
-
-        // Save
-        try
-        {
-            if (ImGui::Button("Save##ImageSlots", btnSize()))
-            {
-                saveImageFromSlot(selSlot);
-            }
-        }
-        catch (const std::exception& e)
-        {
-            imGuiText(e.what(), true, false);
-        }
-
-        // Browse
-        try
-        {
-            if (ImGui::Button("Browse##ImageSlots", btnSize()))
-            {
-                browseImageForSlot(selSlot);
-            }
-        }
-        catch (const std::exception& e)
-        {
-            imGuiText(e.what(), true, false);
         }
 
         ImGui::NewLine();
@@ -426,23 +415,34 @@ void layoutImagePanels()
         // Size
         uint32_t imageWidth = selSlot.viewImage->getWidth();
         uint32_t imageHeight = selSlot.viewImage->getHeight();
-        ImGui::Text("%dx%d", imageWidth, imageHeight);
+        ImGui::Text("Size: %dx%d", imageWidth, imageHeight);
+
+        imGuiHorzDiv();
 
         // Zoom
         {
-            ImGui::Text(strRightPadding(std::to_string((int)roundf(imageZoom * 100.0f)) + "%%", 5, false).c_str());
+            ImGui::SameLine();
+            ImGui::PushItemWidth(70);
+            ImGui::DragFloat("##ImageViewer_Zoom", &imageZoom, 0.005, 0.1, 2.0, "%.2f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat);
+            ImGui::PopItemWidth();
 
             ImGui::SameLine();
-            if (ImGui::SmallButton("+"))
-                imageZoom = fminf(fmaxf(imageZoom + 0.125f, 0.25f), 2.0f);
-
-            ImGui::SameLine();
-            if (ImGui::SmallButton("-"))
-                imageZoom = fminf(fmaxf(imageZoom - 0.125f, 0.25f), 2.0f);
-
-            ImGui::SameLine();
-            if (ImGui::SmallButton("R"))
+            if (ImGui::SmallButton("R##ImageViewer"))
                 imageZoom = 1.0f;
+        }
+
+        imGuiHorzDiv();
+
+        // Clear
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Clear##ImageViewer"))
+        {
+            selSlot.viewImage->reset(true);
+            if (selSlot.internalImage != nullptr)
+            {
+                selSlot.internalImage->reset(true);
+                selSlot.indicateUpdate();
+            }
         }
 
         ImGui::PopFont();
@@ -1355,6 +1355,12 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
 void imGuiDiv()
 {
     ImGui::NewLine();
+}
+
+void imGuiHorzDiv()
+{
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 0.3), " | ");
 }
 
 void imGuiBold(const std::string& s)
