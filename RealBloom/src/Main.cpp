@@ -1155,6 +1155,7 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
         imGuiBold("CROP & RESIZE");
 
         {
+            ImGui::Indent();
 
             // Crop
             if (ImGui::Checkbox("Lock Crop##CropResize", &lockCrop[imGuiID]))
@@ -1233,12 +1234,14 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
                 changed = true;
             }
 
+            ImGui::Unindent();
         }
 
         imGuiDiv();
         imGuiBold("TRANSFORM");
 
         {
+            ImGui::Indent();
 
             // Scale
             if (ImGui::Checkbox("Lock Scale##Transform", &lockScale[imGuiID]))
@@ -1292,12 +1295,14 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
                 changed = true;
             }
 
+            ImGui::Unindent();
         }
 
         imGuiDiv();
         imGuiBold("COLOR");
 
         {
+            ImGui::Indent();
 
             // Filter
             if (ImGui::ColorEdit3("Filter##Color", params.color.filter.data(), ImGuiColorEditFlags_RealBloom))
@@ -1348,12 +1353,14 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
                 changed = true;
             }
 
+            ImGui::Unindent();
         }
 
         imGuiDiv();
         imGuiBold("GENERAL");
 
         {
+            ImGui::Indent();
 
             // Transparency
             if (ImGui::Checkbox("Transparency##General", &params.transparency))
@@ -1369,6 +1376,7 @@ bool layoutImageTransformParams(const std::string& imageName, const std::string&
                 changed = true;
             }
 
+            ImGui::Unindent();
         }
 
         ImGui::NewLine();
@@ -1670,15 +1678,15 @@ bool setupImGui()
 
     fontRoboto = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/RobotoCondensed-Regular.ttf").c_str(),
-        18.0f * Config::UI_MAX_SCALE);
+        17.5f * Config::UI_MAX_SCALE);
 
     fontRobotoBold = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/RobotoCondensed-Bold.ttf").c_str(),
-        20.0f * Config::UI_MAX_SCALE);
+        19.5f * Config::UI_MAX_SCALE);
 
     fontMono = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/mono/RobotoMono-Regular.ttf").c_str(),
-        18.0f * Config::UI_MAX_SCALE);
+        17.5f * Config::UI_MAX_SCALE);
 
     if (fontRoboto && fontRobotoBold && fontMono)
         return true;
