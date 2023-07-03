@@ -329,46 +329,6 @@ void layoutImagePanels()
             nullptr, slots.size(), slots.size());
         ImGui::PopItemWidth();
 
-        // Browse
-        {
-            static std::string error = "";
-
-            if (!selSlot.canLoad)
-                ImGui::BeginDisabled();
-            try
-            {
-                if (ImGui::Button("Browse##ImageSlots", btnSize()))
-                {
-                    browseImageForSlot(selSlot);
-                }
-            }
-            catch (const std::exception& e)
-            {
-                error = e.what();
-            }
-            if (!selSlot.canLoad)
-                ImGui::EndDisabled();
-
-            if (!error.empty()) imGuiText(error, true, false);
-        }
-
-        // Save
-        {
-            static std::string error = "";
-            try
-            {
-                if (ImGui::Button("Save##ImageSlots", btnSize()))
-                {
-                    saveImageFromSlot(selSlot);
-                }
-            }
-            catch (const std::exception& e)
-            {
-                error = e.what();
-            }
-            if (!error.empty()) imGuiText(error, true, false);
-        }
-
         // Move To
         if (ImGui::Button("Move To##ImageSlots", btnSize()))
         {
@@ -442,8 +402,8 @@ void layoutImagePanels()
         // Zoom
         {
             ImGui::SameLine();
-            ImGui::PushItemWidth(70);
-            ImGui::DragFloat("##ImageViewer_Zoom", &imageZoom, 0.005, 0.1, 2.0, "%.2f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat);
+            ImGui::PushItemWidth(70.0f * Config::UI_SCALE);
+            ImGui::DragFloat("##ImageViewer_Zoom", &imageZoom, 0.005f, 0.1f, 2.0f, "%.2f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat);
             ImGui::PopItemWidth();
 
             ImGui::SameLine();
@@ -451,10 +411,54 @@ void layoutImagePanels()
                 imageZoom = 1.0f;
         }
 
+        imGuiHorzDiv();
+
+        static std::string ioError = "";
+        static auto ioErrorTime = std::chrono::system_clock::now();
+
+        // Browse
+        {
+            ImGui::SameLine();
+            if (!selSlot.canLoad)
+                ImGui::BeginDisabled();
+            try
+            {
+                if (ImGui::SmallButton("Browse##ImageViewer"))
+                {
+                    browseImageForSlot(selSlot);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                ioError = e.what();
+                ioErrorTime = std::chrono::system_clock::now();
+            }
+            if (!selSlot.canLoad)
+                ImGui::EndDisabled();
+        }
+
+        // Save
+        {
+            ImGui::SameLine();
+            try
+            {
+                if (ImGui::SmallButton("Save##ImageViewer"))
+                {
+                    saveImageFromSlot(selSlot);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                ioError = e.what();
+                ioErrorTime = std::chrono::system_clock::now();
+            }
+        }
+
         // Clear
         ImGui::SameLine();
         if (ImGui::SmallButton("Clear##ImageViewer"))
         {
+            ioError = "";
             selSlot.viewImage->reset(true);
             if (selSlot.internalImage != nullptr)
             {
@@ -465,9 +469,14 @@ void layoutImagePanels()
 
         ImGui::PopFont();
 
+        // Show IO Error
+        if (getElapsedMs(ioErrorTime) > 5000) ioError = "";
+        if (!ioError.empty()) imGuiText(ioError, true, false);
+
+        // Image
         ImGui::Image(
             (void*)(intptr_t)(selSlot.viewImage->getGlTexture()),
-            ImVec2((float)imageWidth* imageZoom, (float)imageHeight* imageZoom),
+            ImVec2((float)imageWidth * imageZoom, (float)imageHeight * imageZoom),
             { 0, 0 },
             { 1,1 },
             { 1, 1, 1, 1 },
