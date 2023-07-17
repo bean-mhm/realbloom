@@ -5,7 +5,7 @@ environment:
 search_path: LUTs
 strictparsing: true
 luma: [0.2126, 0.7152, 0.0722]
-
+description: grace v1.0 - https://github.com/bean-mhm/grace
 
 roles:
   color_picking: BT.2020 2.4 I-E
@@ -21,157 +21,66 @@ roles:
   scene_linear: Linear BT.2020 I-E
   texture_paint: sRGB 2.2
   XYZ: Linear CIE-XYZ I-D65
-  
+
 file_rules:
   - !<Rule> {name: Default, colorspace: default}
 
 displays:
   sRGB:
     - !<View> {name: Display's Native, colorspace: sRGB 2.2}
+    - !<View> {name: flim (default), colorspace: flim (default)}
+    - !<View> {name: flim (silver), colorspace: flim (silver)}
     - !<View> {name: AgX, colorspace: AgX Base}
-    - !<View> {name: AgX Log,colorspace: AgX Log}
-    - !<View> {name: AgX False Color, colorspace: AgX False Color sRGB}
     - !<View> {name: None, colorspace: Generic Data}
   BT.1886:
     - !<View> {name: Display's Native, colorspace: BT.1886 2.4}
+    - !<View> {name: flim (default), colorspace: flim (default) - BT.1886 2.4}
+    - !<View> {name: flim (silver), colorspace: flim (silver) - BT.1886 2.4}
     - !<View> {name: AgX, colorspace: AgX Base BT.1886}
-    - !<View> {name: AgX Log,colorspace: AgX Log}
-    - !<View> {name: AgX False Color, colorspace: AgX False Color sRGB}
     - !<View> {name: None, colorspace: Generic Data}
   Display P3:
     - !<View> {name: Display's Native, colorspace: Display P3 2.2}
     - !<View> {name: AgX, colorspace: AgX Base Display P3}
-    - !<View> {name: AgX Log,colorspace: AgX Log}
-    - !<View> {name: AgX False Color, colorspace: AgX False Color Display P3}
     - !<View> {name: None, colorspace: Generic Data}
   BT.2020:
     - !<View> {name: Display's Native, colorspace: BT.2020 2.4}
     - !<View> {name: AgX, colorspace: AgX Base BT.2020}
-    - !<View> {name: AgX Log,colorspace: AgX Log}
-    - !<View> {name: AgX False Color, colorspace: AgX False Color BT.2020}
     - !<View> {name: None, colorspace: Generic Data}
+
 active_displays: []
 active_views: []
-inactive_colorspaces: [Moment Spherical Compression, Display P3 2.2 I-E, sRGB 2.2 I-E, BT.2020 2.4 I-E, AgX False Color sRGB, AgX False Color Display P3, AgX False Color BT.2020]
-
 
 looks:
   - !<Look>
     name: Punchy
-    process_space: AgX Log
+    process_space: Linear BT.709 I-D65
     description: A punchy look
-    transform: !<CDLTransform> {power: [1.1865, 1.1865, 1.1865]}
-
-  - !<Look>
-    name: Grayscale
-    process_space: Linear BT.709 I-E
-    description: A Black and White Look with Illuminance Coefficient Processed in Linear BT.709 I-E
-    transform: !<CDLTransform> {sat: 0}
-
-  - !<Look>
-    name: Grayscale AgX
-    process_space: AgX Log
-    description: A Black and White Look with Illuminance Coefficient Processed in AgX Log
-    transform: !<CDLTransform> {sat: 0}
-
-  - !<Look>
-    name: Very High Contrast
-    process_space: AgX Log
-    description: A Very High Contrast Look
-    transform: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: AgX Log, dst: Moment Spherical Compression}
-        - !<ColorSpaceTransform> {src: AgX Log, dst: Linear CIE-XYZ I-E, direction: inverse}
-        - !<GradingPrimaryTransform>
-          style: log
-          contrast: {rgb: [1.57, 1.57, 1.57], master: 1}
-          saturation: 0.9
-          pivot: {contrast: 0.21212}
-
-  - !<Look>
-    name: High Contrast
-    process_space: AgX Log
-    description: A High Contrast Look
-    transform: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: AgX Log, dst: Moment Spherical Compression}
-        - !<ColorSpaceTransform> {src: AgX Log, dst: Linear CIE-XYZ I-E, direction: inverse}
-        - !<GradingPrimaryTransform>
-          style: log
-          contrast: {rgb: [1.4, 1.4, 1.4], master: 1}
-          saturation: 0.95
-          pivot: {contrast: 0.21212}
-
-  - !<Look>
-    name: Medium High Contrast
-    process_space: AgX Log
-    description: A Medium High Contrast Look
-    transform: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: AgX Log, dst: Moment Spherical Compression}
-        - !<ColorSpaceTransform> {src: AgX Log, dst: Linear CIE-XYZ I-E, direction: inverse}
-        - !<GradingPrimaryTransform>
-          style: log
-          contrast: {rgb: [1.2, 1.2, 1.2], master: 1}
-          saturation: 1
-          pivot: {contrast: 0.21212}
-
-  - !<Look>
-    name: Base Contrast
-    process_space: AgX Log
-    description: A Base Contrast Look
-    transform: !<GroupTransform>
-      children:
-        - !<GradingPrimaryTransform>
-          style: log
-          contrast: {rgb: [1, 1, 1], master: 1}
-          saturation: 1
-          pivot: {contrast: 0.21212}
-
-  - !<Look>
-    name: Medium Low Contrast
-    process_space: AgX Log
-    description: A Medium Low Contrast Look
-    transform: !<GroupTransform>
-      children:
-        - !<GradingPrimaryTransform>
-          style: log
-          contrast: {rgb: [0.9, 0.9, 0.9], master: 1}
-          saturation: 1.05
-          pivot: {contrast: 0.21212}
-
-  - !<Look>
-    name: Low Contrast
-    process_space: AgX Log
-    description: A Low Contrast Look
-    transform: !<GroupTransform>
-      children:
-        - !<GradingPrimaryTransform>
-          style: log
-          contrast: {rgb: [0.8, 0.8, 0.8], master: 1}
-          saturation: 1.1
-          pivot: {contrast: 0.21212}
-
-  - !<Look>
-    name: Very Low Contrast
-    process_space: AgX Log
-    description: A Very Low Contrast Look
-    transform: !<GroupTransform>
-      children:
-        - !<GradingPrimaryTransform>
-          style: log
-          contrast: {rgb: [0.7, 0.7, 0.7], master: 1}
-          saturation: 1.15
-          pivot: {contrast: 0.21212}
+    transform: !<CDLTransform> {slope: [1.1, 1.1, 1.1], power: [1.1, 1.1, 1.1]}
 
 colorspaces:
+
+# Misc
+#--------------------------------------------
+
+  - !<ColorSpace>
+    name: Generic Data
+    aliases: [Non-Color, Raw]
+    family: Data/Generic Data
+    equalitygroup: ""
+    bitdepth: unknown
+    description: Generic data encoding
+    isdata: true
+    allocation: uniform
+
+# XYZ Spaces
+#--------------------------------------------
+
   - !<ColorSpace>
     name: Linear CIE-XYZ I-E
     family: Chromaticity
     equalitygroup: ""
     bitdepth: 32f
-    description: |
-      XYZ transform with assumed I-E white point
+    description: XYZ transform with assumed I-E white point
     isdata: false
     allocation: lg2
     allocationvars: [-12.4739, 12.5261]
@@ -181,17 +90,19 @@ colorspaces:
     family: Chromaticity
     equalitygroup:
     bitdepth: 32f
-    description: |
-      XYZ transform with adapted I-D65 white point
+    description: XYZ transform with adapted I-D65 white point
     isdata: false
     from_scene_reference: !<GroupTransform>
       children:
         - !<FileTransform> {src: xyz_D65_to_E.spimtx, interpolation: linear, direction: inverse}
 
+# Linear Spaces
+#--------------------------------------------
+
   - !<ColorSpace>
     name: Linear BT.709 I-E
     aliases: []
-    family: Colourspaces
+    family: Color Spaces
     equalitygroup: ""
     bitdepth: unknown
     description: Open Domain Linear BT.709 Tristimulus with I-E white point
@@ -204,7 +115,7 @@ colorspaces:
   - !<ColorSpace>
     name: Linear BT.709 I-D65
     aliases: [Linear, Linear BT.709, Linear Tristimulus]
-    family: Colourspaces
+    family: Color Spaces
     equalitygroup: ""
     bitdepth: unknown
     description: Open Domain Linear BT.709 Tristimulus with I-D65 white point
@@ -217,7 +128,7 @@ colorspaces:
 
   - !<ColorSpace>
     name: Linear DCI-P3 I-E
-    family: Colourspaces
+    family: Color Spaces
     equalitygroup: ""
     bitdepth: 32f
     description: Open Domain Linear DCI-P3 Tristimulus with I-E white point
@@ -230,7 +141,7 @@ colorspaces:
 
   - !<ColorSpace>
     name: Linear DCI-P3 I-D65
-    family: Colourspaces
+    family: Color Spaces
     equalitygroup: ""
     bitdepth: 32f
     description: Open Domain Linear DCI-P3 Tristimulus with I-D65 white point
@@ -244,7 +155,7 @@ colorspaces:
 
   - !<ColorSpace>
     name: Linear BT.2020 I-E
-    family: Colourspaces
+    family: Color Spaces
     equalitygroup: ""
     bitdepth: 32f
     description: Open Domain Linear BT.2020 Tristimulus with I-E white point
@@ -256,7 +167,7 @@ colorspaces:
 
   - !<ColorSpace>
     name: Linear BT.2020 I-D65
-    family: Colourspaces
+    family: Color Spaces
     equalitygroup: ""
     bitdepth: 32f
     description: Open Domain Linear BT.2020 Tristimulus with I-D65 white point
@@ -267,9 +178,172 @@ colorspaces:
         - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear CIE-XYZ I-D65}
         - !<MatrixTransform> {matrix: [ 1.7166634277958805, -0.3556733197301399, -0.2533680878902478, 0, -0.6666738361988869, 1.6164557398246981, 0.0157682970961337, 0, 0.0176424817849772, -0.0427769763827532, 0.9422432810184308, 0, 0, 0, 0, 1]}
 
+# Display Formats
+#--------------------------------------------
+
+  - !<ColorSpace>
+    name: sRGB 2.2
+    aliases: [sRGB, sRGB 2.2 I-D65]
+    family: Displays/SDR
+    equalitygroup: ""
+    bitdepth: unknown
+    description: sRGB IEC 61966-2-1 2.2 Exponent Reference EOTF Display
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.709 I-D65}
+        - !<ExponentTransform> {value: 2.2, direction: inverse}
+
+  - !<ColorSpace>
+    name: sRGB 2.2 I-E
+    aliases: []
+    family: Displays/SDR
+    equalitygroup: ""
+    bitdepth: unknown
+    description: sRGB IEC 61966-2-1 2.2 Exponent Reference EOTF Display with I-E white point
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.709 I-E}
+        - !<ExponentTransform> {value: 2.2, direction: inverse}
+
+  - !<ColorSpace>
+    name: BT.1886 2.4
+    aliases: [BT.1886, BT.1886 2.4 I-D65]
+    family: Displays/SDR
+    equalitygroup: ""
+    bitdepth: unknown
+    description: BT.1886 2.4 Exponent EOTF Display
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.709 I-D65}
+        - !<ExponentTransform> {value: 2.4, direction: inverse}
+
+  - !<ColorSpace>
+    name: Display P3 2.2
+    aliases: [Display P3, Display P3 2.2 I-D65]
+    family: Displays/SDR
+    equalitygroup: ""
+    bitdepth: unknown
+    description: Display P3 2.2 Exponent EOTF Display
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear DCI-P3 I-D65}
+        - !<ExponentTransform> {value: 2.2, direction: inverse}
+
+  - !<ColorSpace>
+    name: Display P3 2.2 I-E
+    aliases: []
+    family: Displays/SDR
+    equalitygroup: ""
+    bitdepth: unknown
+    description: Display P3 2.2 Exponent EOTF Display with I-E white point
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear DCI-P3 I-E}
+        - !<ExponentTransform> {value: 2.2, direction: inverse}
+
+  - !<ColorSpace>
+    name: BT.2020 2.4
+    aliases: [BT.2020, BT.2020 2.4 I-D65]
+    family: Displays/SDR
+    equalitygroup: ""
+    bitdepth: unknown
+    description: BT.2020 2.4 Exponent EOTF Display
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.2020 I-D65}
+        - !<ExponentTransform> {value: 2.4, direction: inverse}
+
+  - !<ColorSpace>
+    name: BT.2020 2.4 I-E
+    aliases: []
+    family: Displays/SDR
+    equalitygroup: ""
+    bitdepth: unknown
+    description: BT.2020 2.4 Exponent EOTF Display with I-E white point
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.2020 I-E}
+        - !<ExponentTransform> {value: 2.4, direction: inverse}
+
+# flim
+#--------------------------------------------
+
+  - !<ColorSpace>
+    name: flim (default)
+    family: Image Formation
+    equalitygroup: ""
+    bitdepth: unknown
+    description: flim v1.1.0 - https://github.com/bean-mhm/flim
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: reference, dst: Linear BT.709 I-D65}
+        - !<RangeTransform> {min_in_value: 0., min_out_value: 0.}
+        - !<AllocationTransform> {allocation: lg2, vars: [-10, 10, 0.0009765625]}
+        - !<FileTransform> {src: flim_default.spi3d, interpolation: linear}
+  
+  - !<ColorSpace>
+    name: flim (default) - BT.1886 2.4
+    family: Image Formation
+    equalitygroup: ""
+    bitdepth: unknown
+    description: flim v1.1.0 - https://github.com/bean-mhm/flim
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: reference, dst: flim (default)}
+        - !<ColorSpaceTransform> {src: sRGB 2.2, dst: BT.1886 2.4}
+  
+  - !<ColorSpace>
+    name: flim (silver)
+    family: Image Formation
+    equalitygroup: ""
+    bitdepth: unknown
+    description: flim v1.1.0 - https://github.com/bean-mhm/flim
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: reference, dst: Linear BT.709 I-D65}
+        - !<RangeTransform> {min_in_value: 0., min_out_value: 0.}
+        - !<AllocationTransform> {allocation: lg2, vars: [-10, 10, 0.0009765625]}
+        - !<FileTransform> {src: flim_silver.spi3d, interpolation: linear}
+  
+  - !<ColorSpace>
+    name: flim (silver) - BT.1886 2.4
+    family: Image Formation
+    equalitygroup: ""
+    bitdepth: unknown
+    description: flim v1.1.0 - https://github.com/bean-mhm/flim
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: reference, dst: flim (silver)}
+        - !<ColorSpaceTransform> {src: sRGB 2.2, dst: BT.1886 2.4}
+
+# AgX
+#--------------------------------------------
+
   - !<ColorSpace>
     name: AgX Log (SB2383)
-    aliases: [Log, AgX Log, SB2383, AgX SB2383 Log]
+    aliases: [AgX Log, SB2383, AgX SB2383 Log]
     family: Log Encodings
     equalitygroup: ""
     bitdepth: unknown
@@ -278,7 +352,6 @@ colorspaces:
     allocation: uniform
     from_scene_reference: !<GroupTransform>
       children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Moment Spherical Compression}
         - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.709 I-D65}
         - !<RangeTransform> {min_in_value: 0, min_out_value: 0}
         - !<MatrixTransform> {matrix: [0.913500795022407, 0.0447436243802432, 0.0417555805973491, 0, 0.0808718821432087, 0.815474287341219, 0.103653830515573, 0, 0.0359397231776182, 0.0342846039509056, 0.929775672871476, 0, 0, 0, 0, 1]}
@@ -311,8 +384,7 @@ colorspaces:
     from_scene_reference: !<GroupTransform>
       children:
         - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: AgX Base}
-        - !<ExponentTransform> {value: 2.2}
-        - !<ExponentTransform> {value: 2.4, direction: inverse}
+        - !<ColorSpaceTransform> {src: sRGB 2.2, dst: BT.1886 2.4}
 
   - !<ColorSpace>
     name: AgX Base Display P3
@@ -325,198 +397,17 @@ colorspaces:
     from_scene_reference: !<GroupTransform>
       children:
         - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: AgX Base}
-        - !<ColorSpaceTransform> {src: sRGB 2.2, dst: Display P3}
+        - !<ColorSpaceTransform> {src: sRGB 2.2, dst: Display P3 2.2}
 
   - !<ColorSpace>
     name: AgX Base BT.2020
     family: Views/AgX BT.2020
     equalitygroup: ""
     bitdepth: unknown
-    description: AgX Base Image Encoding for BT.2020 2.4 Dipsplay
+    description: AgX Base Image Encoding for BT.2020 2.4 Displays
     isdata: false
     allocation: uniform
     from_scene_reference: !<GroupTransform>
       children:
         - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: AgX Base}
         - !<ColorSpaceTransform> {src: sRGB 2.2, dst: BT.2020 2.4}
-
-  - !<ColorSpace>
-    name: AgX False Color sRGB
-    aliases: [False Color, False Colour]
-    family: Imagery
-    equalitygroup:
-    bitdepth: 32f
-    description: |
-      AgX false color view transform
-    isdata: false
-    from_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: AgX Base}
-        - !<ColorSpaceTransform> {src: sRGB 2.2, dst: Linear BT.709 I-D65}
-        - !<MatrixTransform> {matrix: [0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0, 0, 0, 1]}
-        - !<ColorSpaceTransform> {src: Linear BT.709 I-D65, dst: sRGB 2.2}
-        - !<ColorSpaceTransform> {src: AgX Base, dst: AgX Log}
-        - !<FileTransform> {src: False_Color.spi3d, interpolation: best}
-        - !<ExposureContrastTransform> {contrast: 1.5, pivot: 0.5}
-        - !<RangeTransform> {max_in_value: 1, max_out_value: 1}
-
-  - !<ColorSpace>
-    name: AgX False Color Display P3
-    aliases: []
-    family: Imagery
-    equalitygroup:
-    bitdepth: 32f
-    description: |
-      AgX false color view transform for Display P3
-    isdata: false
-    from_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: AgX Base Display P3}
-        - !<ColorSpaceTransform> {src: Display P3 2.2, dst: Linear DCI-P3 I-D65}
-        - !<MatrixTransform> {matrix: [0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0, 0, 0, 1]}
-        - !<ColorSpaceTransform> {src: Linear DCI-P3 I-D65, dst: Display P3 2.2}
-        - !<ColorSpaceTransform> {src: AgX Base Display P3, dst: AgX Log}
-        - !<FileTransform> {src: False_Color.spi3d, interpolation: best}
-        - !<ExposureContrastTransform> {contrast: 1.5, pivot: 0.5}
-        - !<RangeTransform> {max_in_value: 1, max_out_value: 1}
-        
-  - !<ColorSpace>
-    name: AgX False Color BT.2020
-    aliases: []
-    family: Imagery
-    equalitygroup:
-    bitdepth: 32f
-    description: |
-      AgX false color view transform for Display P3
-    isdata: false
-    from_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: AgX Base BT.2020}
-        - !<ColorSpaceTransform> {src: BT.2020 2.4, dst: Linear BT.2020 I-D65}
-        - !<MatrixTransform> {matrix: [0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0.2126729, 0.7151521, 0.0721750, 0, 0, 0, 0, 1]}
-        - !<ColorSpaceTransform> {src: Linear BT.2020 I-D65, dst: BT.2020 2.4}
-        - !<ColorSpaceTransform> {src: AgX Base BT.2020, dst: AgX Log}
-        - !<FileTransform> {src: False_Color.spi3d, interpolation: best}
-        
-  - !<ColorSpace>
-    name: sRGB 2.2
-    aliases: [sRGB, sRGB 2.2 I-D65]
-    family: Displays/SDR
-    equalitygroup: ""
-    bitdepth: unknown
-    description: sRGB IEC 61966-2-1 2.2 Exponent Reference EOTF Display
-    isdata: false
-    allocation: uniform
-    from_scene_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.709 I-D65}
-        - !<ExponentTransform> {value: 2.2, direction: inverse}
-
-  - !<ColorSpace>
-    name: sRGB 2.2 I-E
-    aliases: []
-    family: Displays/SDR
-    equalitygroup: ""
-    bitdepth: unknown
-    description: sRGB IEC 61966-2-1 2.2 Exponent Reference EOTF Display with I-E white point
-    isdata: false
-    allocation: uniform
-    from_scene_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.709 I-E}
-        - !<ExponentTransform> {value: 2.2, direction: inverse}
-        
-  - !<ColorSpace>
-    name: Display P3 2.2 I-E
-    aliases: []
-    family: Displays/SDR
-    equalitygroup: ""
-    bitdepth: unknown
-    description: Display P3 2.2 Exponent EOTF Display with I-E white point
-    isdata: false
-    allocation: uniform
-    from_scene_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear DCI-P3 I-E}
-        - !<ExponentTransform> {value: 2.2, direction: inverse}
-
-  - !<ColorSpace>
-    name: BT.1886 2.4
-    aliases: [BT.1886, BT.1886 2.4 I-D65]
-    family: Displays/SDR
-    equalitygroup: ""
-    bitdepth: unknown
-    description: BT.1886 2.4 Exponent EOTF Display
-    isdata: false
-    allocation: uniform
-    from_scene_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.709 I-D65}
-        - !<ExponentTransform> {value: 2.4, direction: inverse}
-
-  - !<ColorSpace>
-    name: Display P3 2.2
-    aliases: [Display P3, Display P3 2.2 I-D65]
-    family: Displays/SDR
-    equalitygroup: ""
-    bitdepth: unknown
-    description: Display P3 2.2 Exponent EOTF Display
-    isdata: false
-    allocation: uniform
-    from_scene_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear DCI-P3 I-D65}
-        - !<ExponentTransform> {value: 2.2, direction: inverse}
-
-  - !<ColorSpace>
-    name: BT.2020 2.4
-    aliases: [BT.2020, BT.2020 2.4 I-D65]
-    family: Displays/SDR
-    equalitygroup: ""
-    bitdepth: unknown
-    description: BT.2020 2.4 Exponent EOTF Display
-    isdata: false
-    allocation: uniform
-    from_scene_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.2020 I-D65}
-        - !<ExponentTransform> {value: 2.4, direction: inverse}
-
-  - !<ColorSpace>
-    name: BT.2020 2.4 I-E
-    aliases: []
-    family: Displays/SDR
-    equalitygroup: ""
-    bitdepth: unknown
-    description: BT.2020 2.4 Exponent EOTF Display with I-E white point
-    isdata: false
-    allocation: uniform
-    from_scene_reference: !<GroupTransform>
-      children:
-        - !<ColorSpaceTransform> {src: Linear CIE-XYZ I-E, dst: Linear BT.2020 I-E}
-        - !<ExponentTransform> {value: 2.4, direction: inverse}
-
-  - !<ColorSpace>
-    name: Moment Spherical Compression
-    aliases: []
-    family: Utilities
-    equalitygroup: ""
-    bitdepth: unknown
-    description: Compress Pre-Formation Chroma Both in the Moment Plane and Spherically, Processed in Linear CIE-XYZ I-E
-    isdata: false
-    allocation: uniform
-    from_scene_reference: !<GroupTransform>
-      children:
-        - !<AllocationTransform> {allocation: lg2, vars: [-12.4739311883, 7.52606881167]}
-        - !<FileTransform> {src: moment_spherical_compression.cube, interpolation: best}
-        - !<AllocationTransform> {allocation: lg2, vars: [-12.4739311883, 7.52606881167], direction: inverse}
-
-  - !<ColorSpace>
-    name: Generic Data
-    aliases: [Non-Color, Raw]
-    family: Data/Generic Data
-    equalitygroup: ""
-    bitdepth: unknown
-    description: Generic data encoding
-    isdata: true
-    allocation: uniform
