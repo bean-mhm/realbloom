@@ -370,6 +370,18 @@ std::string CMS::getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::str
     return cs->getDescription();
 }
 
+std::string CMS::getRoleColorSpaceByName(OCIO::ConstConfigRcPtr config, const std::string& roleName)
+{
+    for (uint32_t i = 0; i < config->getNumRoles(); i++)
+    {
+        if (std::string(config->getRoleName(i)) == roleName)
+        {
+            return config->getRoleColorSpace(i);
+        }
+    }
+    return "";
+}
+
 std::array<float, 4> CMS::getDisplayColor(std::array<float, 4> v)
 {
     try

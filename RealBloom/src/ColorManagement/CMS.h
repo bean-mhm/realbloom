@@ -63,6 +63,7 @@ public:
 
     static std::string resolveColorSpace(const std::string& name, bool preserve = true);
     static std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace);
+    static std::string getRoleColorSpaceByName(OCIO::ConstConfigRcPtr config, const std::string& role);
     static std::array<float, 4> getDisplayColor(std::array<float, 4> v);
     static std::array<float, 3> getDisplayColor(const std::array<float, 3>& v);
 

@@ -11,27 +11,45 @@ void CmImageIO::init()
     S_VARS.outputSpace = S_VARS.inputSpace;
     S_VARS.nonLinearSpace = S_VARS.inputSpace;
 
-    // Get the color spaces in the user config
+    // Get the user config and the color spaces in it
+    OCIO::ConstConfigRcPtr config = CMS::getConfig();
     const std::vector<std::string>& userSpaces = CMS::getColorSpaces();
 
-    // Find Linear BT.709 I-D65
-    for (const auto& space : userSpaces)
+    // Find the appropriate color space for linear image files (OpenEXR, HDR, etc.)
+    if (config->hasRole("default_float"))
     {
-        std::string spaceLower = strLowercase(space);
-        if (spaceLower.starts_with("linear") && strContains(spaceLower, "709") && !strContains(spaceLower, "i-e"))
+        S_VARS.inputSpace = CMS::getRoleColorSpaceByName(config, "default_float");
+    }
+    else
+    {
+        // Manually look for Linear BT.709
+        for (const auto& space : userSpaces)
         {
-            S_VARS.inputSpace = space;
-            break;
+            std::string spaceLower = strLowercase(space);
+            if (spaceLower.starts_with("linear") && strContains(spaceLower, "709") && !strContains(spaceLower, "i-e"))
+            {
+                S_VARS.inputSpace = space;
+                break;
+            }
         }
     }
 
-    // Find sRGB
-    for (const auto& space : userSpaces)
+    // Find the appropriate color space for non-linear image files (PNG, JPEG, etc.)
+    if (config->hasRole("default_byte"))
     {
-        if (strLowercase(space).starts_with("srgb"))
+        S_VARS.nonLinearSpace = CMS::getRoleColorSpaceByName(config, "default_byte");
+    }
+    else
+    {
+        // Manually look for sRGB
+        for (const auto& space : userSpaces)
         {
-            S_VARS.nonLinearSpace = space;
-            break;
+            std::string spaceLower = strLowercase(space);
+            if (spaceLower.starts_with("srgb") && !strContains(spaceLower, "i-e"))
+            {
+                S_VARS.nonLinearSpace = space;
+                break;
+            }
         }
     }
 }
