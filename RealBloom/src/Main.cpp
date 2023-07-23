@@ -29,6 +29,8 @@ static const ImVec4 colorErrorText{ 0.950f, 0.300f, 0.228f, 1.0f };
 // Image slots
 static std::vector<ImageSlot> slots;
 static std::vector<std::string> slotNames;
+std::vector<std::string> loadableSlotNames;
+std::vector<uint32_t> loadableSlotIndices;
 static int selSlotIndex = 0;
 static std::string selSlotID = ""; // will be updated externally, causing the index to update
 static float imageZoom = 1.0f;
@@ -134,10 +136,20 @@ int main(int argc, char** argv)
         addImageSlot("cv-prev", "Conv. Preview", false);
         addImageSlot("cv-result", "Conv. Result", false);
 
-        // Store a list of the names
+        // Store a list of the slot names
         for (auto& slot : slots)
         {
             slotNames.push_back(slot.name);
+        }
+
+        // Store a list of slots that allow externally loading images
+        for (uint32_t i = 0; i < slots.size(); i++)
+        {
+            if (slots[i].canLoad)
+            {
+                loadableSlotNames.push_back(slots[i].name);
+                loadableSlotIndices.push_back(i);
+            }
         }
 
         // Set up images for diffraction
@@ -317,6 +329,7 @@ void layoutImagePanels()
 
         imGuiBold("SLOTS");
 
+        // Slots
         ImGui::PushItemWidth(-1);
         ImGui::ListBox(
             "##ImageSlots_List",
@@ -328,14 +341,6 @@ void layoutImagePanels()
             },
             nullptr, slots.size(), slots.size());
         ImGui::PopItemWidth();
-
-        // Move To
-        if (ImGui::Button("Move To##ImageSlots", btnSize()))
-        {
-            dialogParams_MoveTo.selSourceSlot = selSlotIndex;
-            dialogParams_MoveTo.selDestSlot = (selSlotIndex + 1) % (int)slots.size();
-            ImGui::OpenPopup(DIALOG_TITLE_MOVETO);
-        }
 
         // Compare input and result slots
         if ((selSlot.id == "disp-input") || (selSlot.id == "disp-result"))
@@ -367,6 +372,27 @@ void layoutImagePanels()
             ImGui::BeginDisabled();
             ImGui::Button("Compare##ImageSlots", btnSize());
             ImGui::EndDisabled();
+        }
+
+        // Move To
+        if (ImGui::Button("Move To##ImageSlots", btnSize()))
+        {
+            dialogParams_MoveTo.selSourceSlot = selSlotIndex;
+            dialogParams_MoveTo.selDestSlot = selSlotIndex;
+
+            // Try to auto-select the destination slot
+            for (uint32_t i = 0; i < loadableSlotIndices.size(); i++)
+            {
+                if (strContains(strLowercase(loadableSlotNames[i]), " result")
+                    && loadableSlotIndices[i] > selSlotIndex
+                    && (loadableSlotIndices[i] - selSlotIndex) < 3)
+                {
+                    dialogParams_MoveTo.selDestSlot = i;
+                    break;
+                }
+            }
+
+            ImGui::OpenPopup(DIALOG_TITLE_MOVETO);
         }
 
         ImGui::NewLine();
@@ -478,7 +504,7 @@ void layoutImagePanels()
             (void*)(intptr_t)(selSlot.viewImage->getGlTexture()),
             ImVec2((float)imageWidth * imageZoom, (float)imageHeight * imageZoom),
             { 0, 0 },
-            { 1,1 },
+            { 1, 1 },
             { 1, 1, 1, 1 },
             colorImageBorder);
 
@@ -1477,26 +1503,38 @@ void imGuiDialogs()
     // Move To
     if (ImGui::BeginPopupModal(DIALOG_TITLE_MOVETO, 0, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::Text("Source:");
-        imGuiCombo("##Dialog_MoveTo_SourceSlot", slotNames, &dialogParams_MoveTo.selSourceSlot, true);
+        // Draw controls
+        {
 
-        ImGui::Text("Destination:");
-        imGuiCombo("##Dialog_MoveTo_DestSlot", slotNames, &dialogParams_MoveTo.selDestSlot, true);
+            ImGui::Text("Source:");
+            imGuiCombo("##Dialog_MoveTo_SourceSlot", slotNames, &dialogParams_MoveTo.selSourceSlot, true);
 
-        ImGui::Checkbox("Preserve Original##Dialog_MoveTo", &dialogParams_MoveTo.preserveOriginal);
+            ImGui::Text("Destination:");
+            imGuiCombo("##Dialog_MoveTo_DestSlot", loadableSlotNames, &dialogParams_MoveTo.selDestSlot, true);
+
+            ImGui::Checkbox("Preserve Original##Dialog_MoveTo", &dialogParams_MoveTo.preserveOriginal);
+
+        }
 
         if (ImGui::Button("OK##Dialog_MoveTo", dlgBtnSize()))
         {
-            bool validParams =
-                dialogParams_MoveTo.selSourceSlot >= 0
-                && dialogParams_MoveTo.selDestSlot >= 0;
+            int sourceSlotGlobalIndex = -1;
+            int destSlotGlobalIndex = -1;
 
-            validParams &= (dialogParams_MoveTo.selSourceSlot != dialogParams_MoveTo.selDestSlot);
+            bool validParams = false;
+            if (dialogParams_MoveTo.selSourceSlot >= 0
+                && dialogParams_MoveTo.selDestSlot >= 0)
+            {
+                sourceSlotGlobalIndex = dialogParams_MoveTo.selSourceSlot;
+                destSlotGlobalIndex = loadableSlotIndices[dialogParams_MoveTo.selDestSlot];
+
+                validParams = (sourceSlotGlobalIndex != destSlotGlobalIndex);
+            }
 
             if (validParams)
             {
-                ImageSlot& sourceSlot = slots[dialogParams_MoveTo.selSourceSlot];
-                ImageSlot& destSlot = slots[dialogParams_MoveTo.selDestSlot];
+                ImageSlot& sourceSlot = slots[sourceSlotGlobalIndex];
+                ImageSlot& destSlot = slots[destSlotGlobalIndex];
 
                 if (destSlot.internalImage != nullptr)
                 {
