@@ -378,13 +378,12 @@ void layoutImagePanels()
         if (ImGui::Button("Move To##ImageSlots", btnSize()))
         {
             dialogParams_MoveTo.selSourceSlot = selSlotIndex;
-            dialogParams_MoveTo.selDestSlot = selSlotIndex;
+            dialogParams_MoveTo.selDestSlot = -1;
 
             // Try to auto-select the destination slot
             for (uint32_t i = 0; i < loadableSlotIndices.size(); i++)
             {
-                if (strContains(strLowercase(loadableSlotNames[i]), " result")
-                    && loadableSlotIndices[i] > selSlotIndex
+                if (loadableSlotIndices[i] > selSlotIndex
                     && (loadableSlotIndices[i] - selSlotIndex) < 3)
                 {
                     dialogParams_MoveTo.selDestSlot = i;
