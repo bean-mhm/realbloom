@@ -257,7 +257,8 @@ namespace RealBloom
         m_height = m_binInput->inputHeight;
 
         uint32_t steps = m_binInput->dp_steps;
-        float amount = m_binInput->dp_amount;
+        float amount = fmaxf(m_binInput->dp_amount, 0.0f);
+        float edgeOffset = std::clamp(m_binInput->dp_edgeOffset, -1.0f, 1.0f);
 
         // Vertex data
         std::vector<float> vertexData;
@@ -266,7 +267,7 @@ namespace RealBloom
         for (uint32_t i = 0; i < steps; i++)
         {
             float scale, areaMul;
-            calcDispScale(i, steps, amount, scale, areaMul);
+            calcDispScale(i, steps, amount, edgeOffset, scale, areaMul);
 
             uint32_t smpIndex = i * 3;
             float wlR = m_binInput->cmfSamples[smpIndex + 0] * areaMul;

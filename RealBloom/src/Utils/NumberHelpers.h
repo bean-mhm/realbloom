@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <numbers>
 #include <complex>
 #include <cstdint>
@@ -54,6 +55,17 @@ inline float getDistance(float x1, float y1, float x2, float y2)
 inline float lerp(float a, float b, float t)
 {
     return a + ((b - a) * t);
+}
+
+inline float mapRange(float value, float inpStart, float inpEnd, float outStart, float outEnd)
+{
+    return outStart + ((outEnd - outStart) / (inpEnd - inpStart)) * (value - inpStart);
+}
+
+inline float mapRangeClamp(float value, float inpStart, float inpEnd, float outStart, float outEnd)
+{
+    float t = std::clamp((value - inpStart) / (inpEnd - inpStart), 0.0f, 1.0f);
+    return outStart + t * (outEnd - outStart);
 }
 
 inline uint32_t upperPowerOf2(uint32_t v)
@@ -223,7 +235,7 @@ void calcFftConvPadding(
     uint32_t& outPaddedWidth,
     uint32_t& outPaddedHeight);
 
-void calcDispScale(uint32_t index, uint32_t steps, float amount, float& outScale, float& outAreaMul);
+void calcDispScale(uint32_t index, uint32_t steps, float amount, float edgeOffset, float& outScale, float& outAreaMul);
 
 float srgbToLinear_DEPRECATED(float x);
 float linearToSrgb_DEPRECATED(float x);

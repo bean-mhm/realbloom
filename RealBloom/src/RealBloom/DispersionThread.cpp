@@ -30,7 +30,8 @@ namespace RealBloom
             if (i % m_numThreads == m_threadIndex)
                 m_state.numSteps++;
 
-        float amount = fminf(fmaxf(m_params.amount, 0.0f), 1.0f);
+        float amount = fmaxf(m_params.amount, 0.0f);
+        float edgeOffset = std::clamp(m_params.edgeOffset, -1.0f, 1.0f);
 
         float centerX = (float)m_inputWidth / 2.0f;
         float centerY = (float)m_inputHeight / 2.0f;
@@ -56,7 +57,7 @@ namespace RealBloom
                 continue;
 
             float scale, areaMul;
-            calcDispScale(i, steps, amount, scale, areaMul);
+            calcDispScale(i, steps, amount, edgeOffset, scale, areaMul);
 
             // Wavelength to RGB
             uint32_t smpIndex = i * 3;

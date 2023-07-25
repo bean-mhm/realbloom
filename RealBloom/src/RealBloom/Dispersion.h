@@ -47,6 +47,7 @@ namespace RealBloom
         DispersionMethodInfo methodInfo;
         ImageTransformParams inputTransformParams;
         float amount = 0.4f;
+        float edgeOffset = 0.0f;
         uint32_t steps = 32;
     };
 

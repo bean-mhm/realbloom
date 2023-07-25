@@ -1107,6 +1107,9 @@ void layoutDiffraction()
     if (ImGui::SliderFloat("Amount##Disp", &dispParams->amount, 0.0f, 1.0f))
         dispParams->amount = std::clamp(dispParams->amount, 0.0f, 1.0f);
 
+    if (ImGui::SliderFloat("Edge Offset##Disp", &dispParams->edgeOffset, -1.0f, 1.0f))
+        dispParams->edgeOffset = std::clamp(dispParams->edgeOffset, -1.0f, 1.0f);
+
     if (imGuiSliderUInt("Steps##Disp", &dispParams->steps, 32, 1024))
         dispParams->steps = std::clamp(dispParams->steps, 1u, RealBloom::DISP_MAX_STEPS);
 

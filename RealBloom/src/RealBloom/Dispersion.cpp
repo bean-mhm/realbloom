@@ -403,6 +403,7 @@ namespace RealBloom
             // Prepare input data
             BinaryDispGpuInput binInput;
             binInput.dp_amount = m_capturedParams.amount;
+            binInput.dp_edgeOffset = m_capturedParams.edgeOffset;
             binInput.dp_steps = m_capturedParams.steps;
             binInput.inputWidth = inputWidth;
             binInput.inputHeight = inputHeight;
