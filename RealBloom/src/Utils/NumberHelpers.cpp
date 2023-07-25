@@ -109,15 +109,15 @@ void calcFftConvPadding(
 
 void calcDispScale(uint32_t index, uint32_t steps, float amount, float edgeOffset, float& outScale, float& outAreaMul)
 {
-    float minLogScale = amount * mapRangeClamp(edgeOffset, -1.0f, 1.0f, -1.0f, 0.0f);
-    float maxLogScale = amount * mapRangeClamp(edgeOffset, -1.0f, 1.0f, 0.0f, 1.0f);
+    float minLogScale = amount * mapRangeClamp(edgeOffset, -1, 1, -1, 0);
+    float maxLogScale = amount * mapRangeClamp(edgeOffset, -1, 1, 0, 1);
 
     float t = (float)index / (float)steps;
     float logScale = lerp(minLogScale, maxLogScale, t);
     outScale = powf(2.0f, logScale);
 
     // Area compensation
-    float innerScale = powf(2.0f, lerp(-amount, 0.0f, t));
+    float innerScale = powf(2.0f, lerp(-amount * 0.5, amount * 0.5, t));
     float area = innerScale * innerScale;
     outAreaMul = 1.0f / area;
 }
