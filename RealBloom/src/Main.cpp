@@ -1105,7 +1105,7 @@ void layoutDiffraction()
     }
 
     if (ImGui::SliderFloat("Amount##Disp", &dispParams->amount, 0.0f, 1.0f))
-        dispParams->amount = std::clamp(dispParams->amount, 0.0f, 1.0f);
+        dispParams->amount = fmaxf(dispParams->amount, 0.0f);
 
     if (ImGui::SliderFloat("Edge Offset##Disp", &dispParams->edgeOffset, -1.0f, 1.0f))
         dispParams->edgeOffset = std::clamp(dispParams->edgeOffset, -1.0f, 1.0f);
