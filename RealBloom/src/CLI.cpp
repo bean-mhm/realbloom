@@ -603,6 +603,7 @@ namespace CLI
 
             insertContents(cmd.arguments, {
                 {{"--amount", "-d"}, "Amount of dispersion", "", ArgumentType::Required},
+                {{"--edge", "-e"}, "Edge offset", "", ArgumentType::Required},
                 {{"--steps", "-s"}, "Number of wavelengths to sample", "", ArgumentType::Required},
 
                 {{"--gpu", "-g"}, "Use the GPU method", "", ArgumentType::Optional},
@@ -1000,6 +1001,7 @@ namespace CLI
         OutputColorManagement outputCM(args, outFilename);
 
         float amount = strToFloat(args["--amount"]);
+        float edgeOffset = strToFloat(args["--edge"]);
         uint32_t steps = strToInt(args["--steps"]);
 
         float exposure = 0;
@@ -1056,6 +1058,7 @@ namespace CLI
             useGpu ? RealBloom::DispersionMethod::GPU : RealBloom::DispersionMethod::CPU;
         params->methodInfo.numThreads = numThreads;
         params->amount = amount;
+        params->edgeOffset = edgeOffset;
         params->steps = steps;
 
         // Compute
