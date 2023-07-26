@@ -82,6 +82,7 @@ void layoutImagePanels();
 void layoutColorManagement();
 void layoutMisc();
 void layoutConvolution();
+void layoutDispersion();
 void layoutDiffraction();
 void layoutDebug();
 

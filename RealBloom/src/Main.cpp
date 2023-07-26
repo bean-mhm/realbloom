@@ -284,6 +284,7 @@ void layoutAll()
     layoutColorManagement();
     layoutMisc();
     layoutConvolution();
+    layoutDispersion();
     layoutDiffraction();
     layoutDebug();
 }
@@ -1053,46 +1054,16 @@ void layoutConvolution()
     ImGui::End();
 }
 
-void layoutDiffraction()
+void layoutDispersion()
 {
+    RealBloom::DispersionParams* dispParams = disp.getParams();
+
     CmImage& imgDispInput = *getSlotByID("disp-input").viewImage;
     CmImage& imgDispResult = *getSlotByID("disp-result").viewImage;
 
-    RealBloom::DiffractionParams* diffParams = diff.getParams();
-    RealBloom::DispersionParams* dispParams = disp.getParams();
+    ImGui::Begin("Dispersion");
 
-    ImGui::Begin("Diffraction");
-
-    imGuiBold("DIFFRACTION");
-
-    if (layoutImageTransformParams("Input", "DiffInput", diffParams->inputTransformParams))
-    {
-        diffInputUpdated = true;
-    }
-
-    if (diffInputUpdated)
-    {
-        diffInputUpdated = false;
-        diff.previewInput();
-        selSlotID = "diff-input";
-    }
-
-    ImGui::Checkbox("Logarithmic Normalization##Diff", &diffParams->logNorm);
-
-    if (ImGui::Button("Compute##Diff", btnSize()))
-    {
-        selSlotID = "diff-result";
-        diff.compute();
-    }
-
-    if (!diff.getStatus().isOK())
-    {
-        std::string dpError = diff.getStatus().getError();
-        imGuiText(dpError, true, false);
-    }
-
-    imGuiDiv();
-    imGuiBold("DISPERSION");
+    imGuiBold("INPUT");
 
     if (layoutImageTransformParams("Input", "DispInput", dispParams->inputTransformParams))
         dispInputUpdated = true;
@@ -1103,6 +1074,9 @@ void layoutDiffraction()
         disp.previewInput();
         selSlotID = "disp-input";
     }
+
+    imGuiDiv();
+    imGuiBold("DISPERSION");
 
     if (ImGui::SliderFloat("Amount##Disp", &dispParams->amount, 0.0f, 1.0f))
         dispParams->amount = fmaxf(dispParams->amount, 0.0f);
@@ -1141,6 +1115,48 @@ void layoutDiffraction()
 
     std::string dispStats = disp.getStatusText();
     imGuiText(dispStats, !disp.getStatus().isOK(), false);
+
+    ImGui::NewLine();
+    imGuiDialogs();
+    ImGui::End();
+}
+
+void layoutDiffraction()
+{
+    RealBloom::DiffractionParams* diffParams = diff.getParams();
+
+    ImGui::Begin("Diffraction");
+
+    imGuiBold("INPUT");
+
+    if (layoutImageTransformParams("Input", "DiffInput", diffParams->inputTransformParams))
+    {
+        diffInputUpdated = true;
+    }
+
+    if (diffInputUpdated)
+    {
+        diffInputUpdated = false;
+        diff.previewInput();
+        selSlotID = "diff-input";
+    }
+
+    imGuiDiv();
+    imGuiBold("DIFFRACTION");
+
+    ImGui::Checkbox("Logarithmic Normalization##Diff", &diffParams->logNorm);
+
+    if (ImGui::Button("Compute##Diff", btnSize()))
+    {
+        selSlotID = "diff-result";
+        diff.compute();
+    }
+
+    if (!diff.getStatus().isOK())
+    {
+        std::string dpError = diff.getStatus().getError();
+        imGuiText(dpError, true, false);
+    }
 
     ImGui::NewLine();
     imGuiDialogs();
