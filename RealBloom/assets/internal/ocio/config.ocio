@@ -5,10 +5,10 @@ environment:
 search_path: LUTs
 strictparsing: true
 luma: [0.2126, 0.7152, 0.0722]
-description: grace v1.0 - https://github.com/bean-mhm/grace
+description: grace v1.1 - https://github.com/bean-mhm/grace
 
 roles:
-  color_picking: BT.2020 2.4 I-E
+  color_picking: Linear BT.2020 I-E
   color_timing: sRGB 2.2
   compositing_log: sRGB 2.2
   data: Generic Data
