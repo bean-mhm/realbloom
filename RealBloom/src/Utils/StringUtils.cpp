@@ -136,7 +136,7 @@ std::string strFromDataSize(uint64_t bytes)
 
     uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bytes) / log(1024.0))));
     if (mag == 0)
-        return strFormat("%lu %s", bytes, suffixes[mag]);
+        return strFormat("%llu %s", bytes, suffixes[mag]);
     else
         return strFormat("%.1f %s", (double)bytes / powers[mag], suffixes[mag]);
 }
@@ -155,7 +155,7 @@ std::string strFromBigInteger(uint64_t bigInteger)
 
     uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bigInteger) / log(1000.0))));
     if (mag == 0)
-        return strFormat("%lu", bigInteger);
+        return strFormat("%llu", bigInteger);
     else
         return strFormat("%.1f%s", (double)bigInteger / powers[mag], suffixes[mag]);
 }
