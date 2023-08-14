@@ -1,86 +1,101 @@
-
-
-
 # Quick Start
 
-This tutorial intends to get your hands on RealBloom as quickly as possible. Below, we'll go through the process of applying convolutional bloom - A.K.A. the physically accurate RTX bloom sauce - on a 3D render. So buckle up, run the [latest release](https://github.com/bean-mhm/realbloom/releases), and let's get started.
+**This tutorial is for RealBloom v0.7.0-beta.**
 
-## Wait
-
-First off, I highly suggest you to watch [this video](https://www.youtube.com/watch?v=QWqb5Gewbx8) by AngeTheGreat, if you want to have a general idea of what we're gonna do in this tutorial, and how RealBloom works in general.
+This is a step-by-step guide with occasional tips to quickly get your hands on RealBloom. Below, we'll apply a convolutional bloom effect on a 3D render, and explore different parts of RealBloom. So buckle up, run the [latest release](https://github.com/bean-mhm/realbloom/releases), and let's get started.
 
 ## Getting Started
 
-RealBloom provides 3 main functionalities, in order to achieve the so-called physically accurate bloom effect.
+First off, I highly suggest you watch [this video](https://www.youtube.com/watch?v=QWqb5Gewbx8) by AngeTheGreat, if you want to have a general idea of what we're gonna do in this tutorial, and how RealBloom works in general.
 
- 1. Simulating the **Diffraction Pattern** of an aperture
- 2. Applying **Dispersion** on the pattern
- 3. Performing **Convolution** to achieve bloom
+RealBloom provides 3 main functionalities in order to achieve the so-called physically accurate bloom effect.
+
+ 1. Simulating the **Diffraction Pattern** of an aperture.
+ 2. Applying **Dispersion** on the pattern.
+ 3. Performing **Convolution** to achieve bloom.
 
 If any or all of these terms sound alien to you, fear not, as they'll be explained below.
 
 ## Interface
 
-RealBloom provides a GUI (Graphical User Interface) and a CLI (Command Line Interface). We'll start by observing the GUI, and briefly talk about the CLI later. The layout is rather simple, as there's a single main window that provides everything we need.
+RealBloom provides a GUI (Graphical User Interface) and a CLI (Command Line Interface). We'll start by learning the GUI, and briefly talk about the CLI later. The layout is rather simple, as there's a single main window that provides everything we need.
 
 ![RealBloom Screenshot](images/tutorial/0-interface.png)
 
-As of now, there are 6 panels, each for a specific purpose. A panel can be docked or floating, and you can resize it to your liking.
+There are a total of 7 different panels. A panel can be docked or floating, and you can resize it to your liking. Each panel may contain one or more "sections" that are shown by bold labels with uppercase letters.
 
+ - **Image Slots**: A static list of image slots that serve different purposes. You can switch to another slot by clicking on its name. We'll go through what each slot is used for later.
 
- - **Image List**: A static list of image slots that serve different purposes. You can switch to another slot by clicking on it. We'll go through what each slot is used for later.
-
- - **Color Management**: We'll use this panel to change how we import, view, and export images, as well as options that'll come handy when simulating dispersion.
+ - **Color Management**: Use this panel to define how importing, displaying, and exporting images will be done, as well as some other color-related options.
 
  - **Misc**: Miscellaneous information, along with a slider for the UI scale.
 
  - **Image Viewer**:  Displays the image contained in the current slot.
 
-- **Diffraction**: We'll use this to generate the light diffraction pattern of an aperture, and to apply dispersion on it. Again, don't worry if this seems confusing to you.
+- **Diffraction**: This module is used to generate the light diffraction pattern of an aperture, it uses a 2D FFT algorithm under the hood.
 
-- **Convolution**: This is where we can apply the bloom effect. We can do lots of other things using convolution, so it's not necessarily limited to bloom.
+- **Dispersion**: This module is used to simulate the light dispersion effect on an arbitrary image.
+
+- **Convolution**: This module convolves two two-dimensional images together. We can apply different effects using convolution, including bloom, halation, motion blur with custom curves, uniform lens blur, and other effects.
 
 ## Aperture
 
-An [aperture](https://en.wikipedia.org/wiki/Aperture) defines the shape of the hole through which light passes to reach the camera sensor. Because of light's wave-like properties, this causes a [diffraction](https://en.wikipedia.org/wiki/Diffraction) pattern to form, which affects every image captured by the camera. The diffraction pattern usually looks like a star with a halo, but it generally depends on the shape of the aperture. Diffraction is what makes stars have *the star shape*.
+An [aperture](https://en.wikipedia.org/wiki/Aperture) is a hole through which light travels, usually in order to reach the camera sensor or the film. Because of light's wave properties, this causes a [diffraction](https://en.wikipedia.org/wiki/Diffraction) pattern to form, affecting all images captured by the camera. The diffraction pattern usually looks like a star or a halo, but it generally depends on the shape of the aperture. Diffraction is what makes stars have *the star shape*.
 
-Let's start by loading in an image that represents the geometric shape of our aperture. Click *Browse Aperture* in the top right panel *Diffraction*. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Octagon.png`.
+Let's start by loading an image that represents the geometric shape of our aperture. Select the first slot, *Diffraction Input*. In the *Image Viewer* panel, click *Browse* and choose your image. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Octagon.png`.
 
 ![An octagonal aperture](images/tutorial/1-aperture.png)
+
+> I've slightly reduced the zoom level in the *Image Viewer* panel for the image to fit into the screen. The zoom control is placed to the right of the image size indicator.
  
 ## Diffraction
 
-Let's see what the diffraction pattern of our aperture looks like. We'll continue by clicking on *Compute* in the *DIFFRACTION* section. This will generate the diffraction pattern using an [FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform). Keep in mind that we are referring to the far-field [Fraunhofer diffraction pattern](https://en.wikipedia.org/wiki/Fraunhofer_diffraction) here.
+Let's now see what the diffraction pattern of our aperture looks like, but first, let's look at the input options and controls in the *Diffraction* panel.
+
+You'll notice a collapsed group of controls named *Input Transform* in the *INPUT* section under the *Diffraction* panel. RealBloom applies an Image Transform on any input image used by any module. An Image Transform lets us apply basic corrections and modifications to our input images before feeding them to said modules. You'll see Image Transform controls in the other panels as well. Here's what you can generally achieve with an Image Transform.
+
+- **CROP & RESIZE**: Literally cropping and/or resizing the image.
+- **TRANSFORM**: Simple transforms including scaling, rotation, and translation.
+- **COLOR**: Basic color operations.
+
+The *Logarithmic Normalization* option in the *DIFFRACTION* section can be used to generate images with visually less dynamic range or contrast. For more realistic results, we'll leave this off.
+
+Continue by clicking on the *Compute* button in the *DIFFRACTION* section. This will generate the diffraction pattern of our aperture shape using a [2D FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform). Keep in mind we're referring to the far-field [Fraunhofer diffraction pattern](https://en.wikipedia.org/wiki/Fraunhofer_diffraction) here.
 
 ![Diffraction pattern of an octagon](images/tutorial/2-diff.png)
 
-> The *Grayscale* checkbox can be enabled for colored images, in order to make the image black-and-white before feeding it to the FFT algorithm. If disabled, FFT will be performed on all color channels separately.
+> I've temporarily increased my view exposure in the *Color Management* panel so that we can see the image properly. This doesn't affect the original image in any way, it only alters how the image is displayed.
 
-I've temporarily increased my view exposure in the *Color Management* panel so that we can see the image properly.
-
-Notice how the selected image slot has changed to *Dispersion Input*. We could use any arbitrary image as the dispersion input, but the diffraction pattern will automatically get loaded into this slot.
+> Notice how the selected image slot has changed to *Diffraction Result*.
 
 ## Dispersion
 
-Our little star pattern isn't quite ready to be used yet. In the real world, the scale of the pattern depends on the wavelength of the light, making it appear colorful and "rainbow-ey". We can simulate [this phenomenon](https://en.wikipedia.org/wiki/Dispersion_%28optics%29) in the *DISPERSION* section. Here's what each slider does:
+Our little star pattern isn't quite ready to be used yet. In the real world, the scale of the pattern depends on the wavelength of the light, making it appear colorful and "rainbowy". We can simulate [this phenomenon](https://en.wikipedia.org/wiki/Dispersion_%28optics%29) in the *Dispersion* panel.
 
-| Parameter | Description |
-|--|--|
-| Exposure | Exposure adjustment |
-| Contrast | Contrast adjustment |
-| Color | Multiplies the dispersion result with a custom color. |
-| Amount | Amount of dispersion. This defines the difference between the largest and the smallest scale. |
-| Steps | Number of wavelengths to sample from the visible light spectrum. A value of 32 is only enough for previewing. |
-| Method | Dispersion method |
+In this case, we want to apply dispersion on the diffraction pattern that we just generated above. The diffraction pattern is in the *Diffraction Result* slot, but we need it to be in the *Dispersion Input* slot. *If only there was a quick way to move images between slots!* Yes, yes, there is a quick and convenient way.
+1. Switch to the *Diffraction Result* slot.
+2. Click the *Move To* button in the *Image Slots* panel.
+3. Set the *Destination* slot to *Dispersion Input* if it's not already set to that.
+4. You can enable the *Preserve Original* option if you want to keep the original image in the source destination and only make a copy of it.
+5. Hit *OK*.
+
+Back to the *Dispersion* panel. The following explains what the controls in the *DISPERSION* section do.
+
+| Parameter | Description | Range |
+|--|--|--|
+| Amount | Amount of dispersion. This defines the logarithmic difference between the largest and the smallest scale. | [0, +inf) |
+| Edge Offset | Offset for the range of the scales used. | [-1, +1] |
+| Steps | Number of wavelengths to sample from the visible light spectrum. A value of 32 is only enough for previewing. | [1, 2048] |
+| Method | Dispersion method | - |
 | Threads | Number of threads to use in the CPU method |
 
-After adjusting the sliders to your liking - or copying the values from the screenshot below - hit *Apply Dispersion* and wait for the simulation to end.
+After adjusting the parameters to your liking - or copying the values from the screenshot below - hit *Apply Dispersion*.
 
 ![Dispersion result](images/tutorial/3-disp.png)
 
-> In the *Color Management* panel, I've set my view transform to *AgX*, and I'm using the *Punchy* artistic look. More on this in a second. 
+> In the *Color Management* panel, I've set my view transform to *flim (default)*, and I'm using the *Punchy* look. More on this in a minute.
 
-Now, hit *Save* in the *Image List* panel, and save the dispersion result as `kernel.exr`.
+Now, use the *Move To* button again to move the *Dispersion Result* into the *Conv. Kernel* slot. We'll explore this slot right below.
 
 ## Convolution Input
 
