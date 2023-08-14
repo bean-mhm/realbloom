@@ -5,7 +5,7 @@ std::string Config::CFG_FILENAME = getLocalPath("config.xml");
 // Const
 
 const char* Config::APP_TITLE = "RealBloom";
-const char* Config::APP_VERSION = "0.5.2-dev";
+const char* Config::APP_VERSION = "0.7.0-beta";
 const char* Config::APP_LOCALE = "en_US.UTF-8";
 
 const uint32_t Config::WINDOW_WIDTH = 1440;
