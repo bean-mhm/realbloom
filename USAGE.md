@@ -97,11 +97,17 @@ After adjusting the parameters to your liking - or copying the values from the s
 
 Now, use the *Move To* button again to move the *Dispersion Result* into the *Conv. Kernel* slot. We'll explore this slot right below.
 
-## Convolution Input
+## Convolution
 
-This is the image we want to apply bloom on. We'll need an open-domain image for this, which preserves pixel values outside the 0-1 range. If you're confused, here are some questions and answers to hopefully help you better understand how open-domain (A.K.A. HDR) images work. If you're a nerd in this field, feel free to skip this part.
+Convolution is a generic operation that can be used to achieve many different things. It's like a moving weighted average that can be performed on a 1D signal like audio, a 2D image, or any number of dimensions. Convolution is very powerful and can be used to achieve lots of cool audio and image effects, and many other things in different fields. I highly, highly, recommend watching [this video](https://youtu.be/KuXjwB4LzSA) by 3Blue1Brown to get a better understanding of convolution.
 
-> Q: **What on earth is an Open-Domain Image?**
+### The Inputs
+
+Let's talk about the two inputs the *Convolution* module needs: *Conv. Input*, and *Conv. Kernel*. Mathematically, the input and the kernel are just two images that will be convolved together. Convolution is commutative, just like multiplication: A\*B = B\*A. So, technically, we don't really have to treat them as if they have different functionalities. However, the input is generally the image we want to apply our effect on, like bloom, for example, and the kernel is what defines the "shape" of the effect in a sense. My hope is to give you an intuition of convolution in this tutorial.
+
+We'll generally need to use open-domain images for convolution, which preserve pixel values outside the [0, 1] range. If you're confused, here are some questions and answers to hopefully help you better understand how open-domain (A.K.A. HDR) images work. If you're a nerd in this field, feel free to skip this part.
+
+> Q: **What is an open-domain Image?**
 
 > A: Most everyday image formats such as PNG and JPEG can only have RGB values from 0-1, which translates to 0-255 when stored using unsigned 8-bit integers. Hence, they are closed-domain formats. Most closed-domain images have some form of an [OETF](https://en.wikipedia.org/wiki/Transfer_functions_in_imaging), widely known as a "Gamma" function, applied on the pixel values, therefore they may be called non-linear images. On the other hand, an open-domain image accepts any real number for its pixel values, while also providing more depth and precision, as it is typically stored using a 32-bit or 16-bit floating-point number per color channel. It is very common for these images to have linear pixel values. They may also be called "HDR" images in some places.
 
@@ -111,35 +117,37 @@ This is the image we want to apply bloom on. We'll need an open-domain image for
 
 > Q: **How do you display them on a monitor?**
 
-> A: This is a huge topic, but I'll try to summarize what you'll need to know. Pixel values higher than 1 usually just get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out, and introducing weird hue skews. Some games and programs support proper display/view transforms to nicely convert linear RGB tristimulus into something that can be correctly displayed on your monitor. Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the pixel values being clamped and/or transformed when *displayed*, they are still *stored* as their original floating-point values.
+> A: This is a huge topic, but I'll try to summarize what you'll need to know. Pixel values higher than 1 (100% brightness that the monitor supports) usually just get clamped down to 1 before being displayed on your monitor, making the bright parts of the image look overexposed and blown out, and introducing weird hue skews. Some games and programs use custom display/view transforms to nicely convert linear RGB values into something that can be correctly displayed on your monitor (usually called "tone-mapping"). Some games can produce true HDR output if your monitor supports it, but that's another story. Despite the pixel values being clamped and/or transformed when *displayed*, they are still *stored* as their original floating-point values in memory.
 
 > Q: **Does RealBloom support display transforms?**
 
-> A: Yes. RealBloom supports display/view transforms through [OpenColorIO](https://opencolorio.org/). In the *Color Management* panel, you can switch the view to *AgX* to have a better view of 3D scenes. Note that this may ruin images that have already been transformed and gone through a camera, so this works best on raw linear tristimulus output from your rendering software, or a carefully developed RAW image, typically stored in the OpenEXR format.
+> A: Yes. RealBloom supports display/view transforms through [OpenColorIO](https://opencolorio.org/). In the *Color Management* panel, you can switch the view to *[AgX](https://github.com/sobotka/SB2383-Configuration-Generation)* or one of [flim](https://github.com/bean-mhm/flim)'s presets to have a better view of 3D scenes and HDR images in general. Note that this may ruin images that have already been transformed and processed through camera software, so this works best on raw linear tristimulus output from your rendering software, or a carefully developed RAW image, typically stored in the OpenEXR format.
 
 > Q: **What is AgX?**
 
-> A: [AgX](https://www.elsksa.me/scientia/cgi-offline-rendering/rendering-transform) is an experimental OCIO config, made by [Troy James Sobotka](https://twitter.com/troy_s), aimed at cinematic and filmic color transforms. Troy is the author of the famous Filmic config for Blender, and a true master of color science. RealBloom uses a custom version of AgX as its default user config, as well as its internal config (we'll discuss that later).
+> A: [AgX](https://www.elsksa.me/scientia/cgi-offline-rendering/rendering-transform) is an experimental OCIO config, made by [Troy James Sobotka](https://twitter.com/troy_s), aimed at cinematic and filmic color transforms. Troy is the author of the famous Filmic config for Blender, and a true master of color science.
 
-> Q: **Are you an expert?**
+> Q: **What is flim?**
 
-> A: Absolutely not. I've only been learning about color science for a couple of months. But, I have asked Troy (indirectly, thanks to Nihal) to review this part, and he's corrected a few things.
+> A: [flim](https://github.com/bean-mhm/flim) is a filmic transform I've made, inspired by AgX and made with the help of Troy.
 
-In the *Convolution* panel, click on *Browse Input* and select an HDR (open-domain) image. I have included some example images in `demo/Images`. For this tutorial, I'll be using `Leaves.exr`, which is a render I made in Blender for demonstrating convolutional bloom.
+> Q: **What is grace?**
 
-> Bloom works best on scenes with extremely bright spots on dark backgrounds. Forcing bloom on low-contrast and flat images may take away from the realism.
+> A: [grace](https://github.com/bean-mhm/grace) is a small generic OpenColorIO config for rendering, photography, and other stuff involving color management or tone mapping. grace contains both AgX's and flim's transforms. RealBloom uses grace as its default user config, as well as its internal config which we'll discuss later.
 
-You can safely use the *AgX* view for this image, as this is (almost) raw HDR data from a 3D scene. I will reset the look, and increase my viewing exposure slightly.
+Now, select the *Conv. Input* slot and hit *Browse* to choose an image. I have included some open-domain images in `demo/Images`. For this tutorial, I'll be using `Leaves.exr`, which is a render I made in Blender to demonstrate convolutional bloom.
+
+> Bloom works best on scenes with extremely bright spots on dark backgrounds. Forcing bloom on low-contrast and flat images may take away from realism.
+
+You can use one of the filmic view transforms for this image, as this is (almost) raw linear data from a 3D scene. I will reset the look, and increase my viewing exposure slightly.
  
-![An HDR image loaded as the convolution input](images/tutorial/4-conv-input.png)
+![An image loaded as the convolution input](images/tutorial/4-conv-input.png)
 
-## Convolution Kernel
 
-The kernel is what defines the "shape" of the bloom effect. Meaning, convolution will be performed on the input image using this kernel.
 
-> Q: **What is Convolution?**
+# TODO: Continue
 
-> A: Convolution is like a moving weighted average that can be performed on a 1D signal like audio, a 2D image, or any number of dimensions really. It's very powerful, and can be used to achieve lots of cool audio and image effects, as well as many other things in different fields. I highly recommend watching [this video](https://youtu.be/KuXjwB4LzSA) by 3Blue1Brown to get a better understanding of convolution.
+
 
 Click on *Browse Kernel* and choose the dispersion result that we saved before. This will switch the current slot to *Conv. Kernel*. I'll also reset my view exposure.
 
