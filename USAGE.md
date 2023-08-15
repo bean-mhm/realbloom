@@ -4,11 +4,9 @@
 
 This is a step-by-step guide with occasional tips to quickly get your hands on RealBloom. Below, we'll apply a convolutional bloom effect on a 3D render, and explore different parts of RealBloom. So buckle up, run the [latest release](https://github.com/bean-mhm/realbloom/releases), and let's get started.
 
-## Getting Started
-
 First off, I highly suggest you watch [this video](https://www.youtube.com/watch?v=QWqb5Gewbx8) by AngeTheGreat, if you want to have a general idea of what we're gonna do in this tutorial, and how RealBloom works in general.
 
-RealBloom provides 3 main functionalities in order to achieve the so-called physically accurate bloom effect.
+RealBloom provides 3 main functionalities in order to achieve a photorealistic bloom effect.
 
  1. Simulating the **Diffraction Pattern** of an aperture.
  2. Applying **Dispersion** on the pattern.
@@ -16,7 +14,7 @@ RealBloom provides 3 main functionalities in order to achieve the so-called phys
 
 If any or all of these terms sound alien to you, fear not, as they'll be explained below.
 
-## Interface
+# Interface
 
 RealBloom provides a GUI (Graphical User Interface) and a CLI (Command Line Interface). We'll start by learning the GUI, and briefly talk about the CLI later. The layout is rather simple, as there's a single main window that provides everything we need.
 
@@ -38,7 +36,7 @@ There are a total of 7 different panels. A panel can be docked or floating, and 
 
 - **Convolution**: This module convolves two two-dimensional images together. We can apply different effects using convolution, including bloom, halation, motion blur with custom curves, uniform lens blur, and other effects.
 
-## Aperture
+# Aperture
 
 An [aperture](https://en.wikipedia.org/wiki/Aperture) is a hole through which light travels, usually in order to reach the camera sensor or the film. Because of light's wave properties, this causes a [diffraction](https://en.wikipedia.org/wiki/Diffraction) pattern to form, affecting all images captured by the camera. The diffraction pattern usually looks like a star or a halo, but it generally depends on the shape of the aperture. Diffraction is what makes stars have *the star shape*.
 
@@ -48,15 +46,17 @@ Let's start by loading an image that represents the geometric shape of our apert
 
 > I've slightly reduced the zoom level in the *Image Viewer* panel for the image to fit into the screen. The zoom control is placed to the right of the image size indicator.
  
-## Diffraction
+# Diffraction
 
 Let's now see what the diffraction pattern of our aperture looks like, but first, let's look at the input options and controls in the *Diffraction* panel.
 
-You'll notice a collapsed group of controls named *Input Transform* in the *INPUT* section under the *Diffraction* panel. RealBloom applies an Image Transform on any input image used by any module. An Image Transform lets us apply basic corrections and modifications to our input images before feeding them to said modules. You'll see Image Transform controls in the other panels as well. Here's what you can generally achieve with an Image Transform.
+You'll notice a collapsed group of controls named *Input Transform* in the *INPUT* section under the *Diffraction* panel. RealBloom applies what's called an *Image Transform* on any input image used by any module. An *Image Transform* lets us apply basic corrections and modifications to our input images before feeding them to said modules. You'll see *Image Transform* controls in the other panels as well. Here's what you can generally achieve with an *Image Transform*.
 
-- **CROP & RESIZE**: Cropping and/or resizing the image.
-- **TRANSFORM**: Simple transforms including scaling, rotation, and translation.
-- **COLOR**: Basic color operations.
+| Section | Description |
+|--|--|
+| CROP & RESIZE | Controls for cropping and/or resizing the image |
+| TRANSFORM | Simple linear transformations including scaling, rotation, and translation |
+| COLOR | Basic color transformations |
 
 We'll leave the *Input Transform* settings unchanged in this case.
 
@@ -70,7 +70,7 @@ Continue by clicking on the *Compute* button in the *DIFFRACTION* section. This 
 
 > Notice how the selected image slot has changed to *Diffraction Result*.
 
-## Dispersion
+# Dispersion
 
 Our little star pattern isn't quite ready to be used yet. In the real world, the scale of the pattern depends on the wavelength of the light, making it appear colorful and "rainbowy". We can simulate [this phenomenon](https://en.wikipedia.org/wiki/Dispersion_%28optics%29) in the *Dispersion* panel.
 
@@ -99,11 +99,11 @@ After adjusting the parameters to your liking - or copying the values from the s
 
 Now, use the *Move To* button again to move the *Dispersion Result* into the *Conv. Kernel* slot. We'll explore this slot right below.
 
-## Convolution
+# Convolution
 
 Convolution is a generic operation that can be used to achieve many different things. It's like a moving weighted average that can be performed on a 1D signal like audio, a 2D image, or any number of dimensions. Convolution is very powerful and can be used to achieve lots of cool audio and image effects, and many other things in different fields. I highly, highly, recommend watching [this video](https://youtu.be/KuXjwB4LzSA) by 3Blue1Brown to get a better understanding of convolution.
 
-### The Input Images
+## The Input Images
 
 Let's talk about the two inputs the *Convolution* module needs: *Conv. Input*, and *Conv. Kernel*. Mathematically, the input and the kernel are just two images that will be convolved together. Convolution is commutative, just like multiplication: A\*B = B\*A. So, technically, we don't really have to treat them as if they have different functionalities. However, the input is typically the image we want to apply our effect on, like bloom, for example, and the kernel is what defines the "shape" of the effect in a sense. My hope is to give you an intuition of convolution in this tutorial.
 
@@ -149,7 +149,7 @@ We have already moved our dispersion result to the *Conv. Kernel* slot, so at th
 
 > The kernel doesn't necessarily have to be a diffraction pattern. You can use anything as the kernel, so try experimenting with it.
 
-### The *KERNEL* Section
+## The *KERNEL* Section
 
 I'll continue by modifying the *Kernel Transform* settings slightly, while leaving the *Input Transform* settings unchanged. I'll set the *Crop* value to 0.9, and *Resize* to 1.1. I'll then use the following tristimulus for the *Filter* color in the *COLOR* section.
 
@@ -165,21 +165,28 @@ At this point, our input images for convolution are ready.
 
 ![Convolution kernel](images/tutorial/5-kernel.png)
 
-### The *CONVOLUTION* Section
+## The *CONVOLUTION* Section
 
 Further down the *Convolution* panel, there are a few important controls in the *CONVOLUTION* section that we'll quickly go through.
 
-### Convolution Method
+## Convolution Method
 
-Currently, RealBloom provides 3* underlying methods to perform convolution.
+RealBloom provides 4 underlying methods to perform convolution.
 
- - **FFT CPU**: This method uses the [FFT](https://en.wikipedia.org/wiki/Fast_Fourier_transform) algorithm and the [convolution theorem](https://en.wikipedia.org/wiki/Convolution_theorem) to perform convolution in a faster and much more optimized manner. So far, this is the fastest implementation available.
+| Method | Description |
+|--|--|
+| FFT CPU | Uses the [FFT](https://en.wikipedia.org/wiki/Fast_Fourier_transform) algorithm and the [convolution theorem](https://en.wikipedia.org/wiki/Convolution_theorem) to perform convolution in a much more optimized way. So far, this is the fastest implementation available. |
+| FFT GPU (Experimental) | Same as the previous method, but runs on the GPU instead. This method is in an experimental phase and performs poorly in the current version. |
+| Naive CPU | Uses the traditional algorithm for convolution, which is inefficient for large inputs. |
+| Naive GPU | Same as the previous method, but runs on the GPU instead. Usually quite a lot faster than the CPU method. |
 
- - **Naive CPU**: This method uses the traditional algorithm for convolution, which is inefficient for large inputs.
+For this tutorial, we'll go with *FFT CPU*.
 
- - **Naive GPU**: Same as the previous method, but runs on the GPU instead. Usually quite a lot faster than the CPU method.
+### Deconvolution
 
-\*The latest version, as of writing, supports a GPU FFT method, but it's in an experimental phase and performs poorly at the moment.
+If you have selected the *FFT CPU* method, you'll see an option called *Deconvolve* show up. This is an experimental feature for applying what I call "reverse convolutions". We won't use this feature in this tutorial.
+
+### Threads & Chunks
 
 In the *Naive CPU* method, you can split the job between multiple threads that run simultaneously. In *Naive GPU*, you can split the input data into several chunks to avoid overloading the GPU.
 
@@ -190,11 +197,9 @@ In the *Naive CPU* method, you can split the job between multiple threads that r
 
 > *FFT CPU* will automatically decide the optimal number of threads to use.
 
-For this tutorial, we'll go with *FFT CPU*.
+## Convolution Threshold
 
-### Convolution Threshold
-
-The threshold defines the darkest a pixel can go before being ignored by the convolution process. This can be used to only select the brighter parts of the image for convolution. We can increase the threshold to skip pixels that aren't bright enough to contribute to the final result. The *Knee* parameter defines how smooth the transition will be. A higher threshold speeds up the process in naive convolution, but it does not affect the performance in the FFT method(s).
+A brightness threshold can be optionally applied to the input image to only select the brighter parts of the image for convolution. We can increase the threshold to skip pixels that aren't bright enough to contribute to the final result. The *Knee* parameter defines how smooth the transition will be. A higher threshold speeds up the process in naive convolution, but it does not affect the performance in the FFT method(s).
 
 In the *Conv. Preview* slot, we can observe what the convolution process will see after the threshold is applied.
 
@@ -202,15 +207,15 @@ In the *Conv. Preview* slot, we can observe what the convolution process will se
 
 Using a threshold of 0 and mixing the convolution output with the original input generally gives more realistic and appealing results, so we'll set the threshold parameters to 0 for this tutorial, which will leave the input image unchanged.
 
-### Auto-Exposure
+## Auto-Exposure
 
 This option will adjust the exposure of the kernel so that the convolution output and the input image match in brightness. This is done by making the pixel values in the kernel add up to 1, hence preserving the overall brightness. We'll have this on for this demonstration.
 
-### Convolve
+## Convolve
 
 We now have all our input images and parameters ready, so we can finally hit *Convolve* to perform convolution. The output will be blended with the original input image afterward. We can change the mixing parameters in the *BLENDING* section.
 
-### The *BLENDING* Section
+## The *BLENDING* Section
 
 ![Convolution result](images/tutorial/7-convmix.png)
 
@@ -226,19 +231,19 @@ You can enable additive blending using the *Additive* checkbox, although it is u
 
 Finally, having selected the *Conv. Result* slot, click the *Save* button in the *Image Viewer* panel to export the result into an image file.
 
-## Congratulations
+# Congratulations
 
 The tutorial is done. Take a small break or something. Below, we'll explore the other parts of RealBloom and its internals.
 
-## Color Management
+# Color Management
 
 RealBloom uses [OpenColorIO](https://opencolorio.org/) for color management. For those of you interested, I'll quickly explain the Color Management panel and what it provides. For more information, there will be links to some helpful articles about color management below.
 
-### VIEW
+## VIEW
 
 Here we can alter how we *view* the image contained in the current slot, by adjusting the exposure, the *Display* type, and the *View* transform, and optionally choosing an artistic *Look*. This does not affect the pixel values of the image in any way, it just defines how the image is displayed.
 
-### INFO
+## INFO
 
 This section displays the working color space of the current OCIO config, or more specifically, the color space associated with the `scene_linear` role. If there are any errors in RealBloom's Color Management System (CMS), they will also be shown in this section.
 
@@ -246,7 +251,7 @@ This section displays the working color space of the current OCIO config, or mor
 
 > RealBloom also has an internal OCIO config which can be used for XYZ conversions. This will be explained below.
 
-### IMAGE IO
+## IMAGE IO
 
 These settings define how images are imported and exported.
 
@@ -262,11 +267,11 @@ These settings define how images are imported and exported.
 
 > *Display*, *View*, and *Look* are always considered together. If no view transform is applied, all three of them will be discarded. Otherwise, all three of them will be used to apply the view transform.
 
-### COLOR MATCHING
+## COLOR MATCHING
 
 Color Matching Functions (CMF) help us go from light wavelengths to [XYZ tristimulus](https://en.wikipedia.org/wiki/CIE_1931_color_space) when simulating dispersion. RealBloom looks for [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) files in the `cmf` folder located in the program directory, in order to recognize and parse the available CMF tables. There are a few CMF tables included by default. You can hit *Preview* to see what will be sampled for dispersion.
 
-### XYZ CONVERSION
+## XYZ CONVERSION
 
 Here we can alter how the XYZ values from a CMF table get transformed into RGB tristimulus in the working space. The *User Config* method should be used if the CIE XYZ I-E color space exists in the user config. Otherwise, you can use the *Common Space* method and choose a color space that exists in both your config and RealBloom's internal OCIO config.
 
@@ -275,19 +280,15 @@ The following is the order of color space conversions when using the *Common Spa
 1. Using the internal config, convert from CIE XYZ I-E to the common color space.
 2. Using the user config, convert from the common color space to the working space.
 
-## Command Line Interface
+# Command Line Interface
 
 RealBloom provides a CLI that can be used from within a terminal or any other program. This can be useful for animations, batch processing, and automated scripts. The commands are self-explanatory, as they deliver the same functionality as the GUI.
 
-You can enter the CLI by running `realbloom cli` in the program directory. Type `help` to see a list of the supported commands. Use `quit` to exit the program.
+You can enter the CLI by running `realbloom cli` in the program directory. Type `help` to see a list of the supported commands. Use `quit` to exit the program. If you run RealBloom with an empty command, or anything other than `cli`, it will start the GUI.
 
-> If you run RealBloom with an empty command, or anything other than `cli`, it will start the GUI.
+If you're interested in using RealBloom for animations, you can take a look at `demo/Scripts/anim_conv.py` which is a basic Python script for performing convolution on a sequence of frames.
 
-### Animations
-
-As mentioned above, a CLI opens the possibility to use RealBloom for animations. You can get started by taking a look at `demo/Scripts/anim_conv.py` which is a basic Python script for performing convolution on a sequence of frames.
-
-## GPU Helper
+# GPU Helper
 
 Some of the modules may use RealBloom's GPU helper program if needed. The GPU helper tries to perform operations on the dedicated GPU, while the main program and its GUI are intended to run on the integrated GPU. This is only relevant for Dual-GPU systems.
 
@@ -295,21 +296,19 @@ You can check your `%TEMP%` directory and look for the most recent text file, th
 
 > There's no official way to choose a specific GPU device using OpenGL on Windows. However, we can "signal" to NVIDIA and AMD drivers that "this program needs the high-performance GPU". RealBloom's main program does not contain this signal, while the GPU helper does. This makes the process easier on most Dual-GPU systems, as the UI continues to render smoothly while the dedicated GPU is busy.
 
-## Community
+# Community
 
 If you use RealBloom to improve your artwork or make an artwork using RealBloom, feel free to publish it on social media under #realbloom.
 
 ☀️ **RealBloom Community Server:** [Discord](https://discord.gg/Xez5yec8Hh)
 
-## Thank You
+# Thank You!
 
 If you find RealBloom useful, consider introducing it to a friend or anyone who you think would be interested. Don't forget to give the project a star! I appreciate your time, have a bloomy day!
 
-## Special Thanks
+I'd also like to say a huge thank you to [Nihal](https://twitter.com/Mulana3D) and their colleagues for supporting the development of RealBloom, by helping with research, testing dev builds, finding bugs, suggesting new features - including a CLI, the use of OCIO, adding demo kernels, etc. - and trying out RealBloom on their renders.
 
-I'd like to say a huge thank you to [Nihal](https://twitter.com/Mulana3D) and their colleagues for supporting the development of RealBloom, by helping with research, testing dev builds, finding bugs, suggesting new features - including a CLI, the use of OCIO, adding demo kernels, etc. - and trying out RealBloom on their renders.
-
-## Read More
+# Read More
 
  - [Convolutional Bloom in Unreal Engine](https://docs.unrealengine.com/5.0/en-US/bloom-in-unreal-engine/#bloom-convolution:~:text=%235-,Bloom%20Convolution,-The%20Bloom%20Convolution)
  - [The Hitchhiker's Guide to Digital Colour](https://hg2dc.com/)
