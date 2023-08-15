@@ -47,7 +47,7 @@
 
 
 <!-- INTRODUCTION -->
-## Introduction
+# Introduction
 
 RealBloom is a bloom simulation / post processing tool for achieving more realism in 3D renders and HDR images.
 
@@ -65,11 +65,11 @@ RealBloom can be used to produce some other effects, including film halation, mo
 - Dispersion
 - Convolution
 
-## How It's Made
+# How It's Made
 
 RealBloom is written in C++ with Visual Studio 2022. The target platform is Windows. However, considering all the libraries used and most of the code for RealBloom are platform-independent, it should be fairly easy (ish) to port to other major desktop platforms.
 
-### Libraries Used
+## Libraries Used
 | Library | Used for |
 |--|--|
 | [GLEW](https://glew.sourceforge.net/) | OpenGL extensions |
@@ -88,11 +88,11 @@ RealBloom is written in C++ with Visual Studio 2022. The target platform is Wind
 
 
 <!-- RUNNING -->
-## How To Run
+# How To Run
 
 RealBloom requires [Microsoft Visual C++ Runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) in order to run properly. To get RealBloom, you can [download the latest release here](https://github.com/bean-mhm/realbloom/releases).
 
-### Minimum Requirements
+## Minimum Requirements
 
  - 64-bit version of Windows
 
@@ -105,7 +105,7 @@ RealBloom requires [Microsoft Visual C++ Runtime](https://learn.microsoft.com/en
 
 
 <!-- USAGE -->
-## How To Use
+# How To Use
 
 If you're using RealBloom for the first time, check out [this article](USAGE.md) for a step-by-step tutorial on getting started with RealBloom, along with more details and information about the project. This will cover most of what you need to know.
 
@@ -114,9 +114,9 @@ If you're using RealBloom for the first time, check out [this article](USAGE.md)
 
 
 <!-- BUILDING -->
-## How To Build
+# How To Build
 
-### Prerequisites
+## Prerequisites
 
 The project was made for Windows and built with MSVC. To build a local copy of RealBloom, have a recent version of Visual Studio ready.
 
@@ -131,7 +131,7 @@ RealBloom uses [vcpkg](https://vcpkg.io/en/index.html) to link some of the libra
 
 Note that this might take some time to finish.
 
-### Build
+## Build
 
 Now, to build RealBloom,
 
@@ -149,7 +149,7 @@ Now, to build RealBloom,
 
 
 <!-- ROADMAP -->
-## Roadmap
+# Roadmap
 
 - [x] Color Management System
 - [x] OpenEXR support
@@ -168,7 +168,7 @@ See [open issues](https://github.com/bean-mhm/realbloom/issues) for a full list 
 
 
 <!-- CONTRIBUTING -->
-## Contributing
+# Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
@@ -186,7 +186,7 @@ Don't forget to give the project a star! Thanks again!
 
 
 <!-- LICENSE -->
-## License
+# License
 
 Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/blob/main/LICENSE.md). See [LICENSE.md](LICENSE.md) for more information.
 
@@ -195,7 +195,7 @@ Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/b
 
 
 <!-- CONTACT -->
-## Contact
+# Contact
 
 ☀️ **RealBloom Community Server:** [Discord](https://discord.gg/Xez5yec8Hh)
 
@@ -210,6 +210,3 @@ Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/b
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [product-screenshot]: images/screenshot.png
-
-
-
