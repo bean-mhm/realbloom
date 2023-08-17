@@ -274,9 +274,7 @@ These settings define how images are imported and exported.
 | Output | The output color space when exporting images in linear formats without a display/view transform. |
 | Non-Linear | The interpreted color space when importing images in non-linear formats like PNG and JPEG. |
 | Auto-Detect | If enabled, RealBloom will try to detect the color space when loading linear images, and discard the *Input* setting if a color space was detected. |
-| Apply View Transform | If enabled, the current display/view transform will be applied when exporting linear images. |
-
-> The display/view transform is always applied to non-linear images.
+| Apply View Transform | If enabled, the current display/view transform will be applied when exporting linear images. The display/view transform is always applied to non-linear images. |
 
 ## COLOR MATCHING
 
