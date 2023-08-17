@@ -14,7 +14,7 @@ const float Config::UI_MAX_SCALE = 1.50f;
 const float Config::UI_MIN_SCALE = 0.75f;
 
 const char* Config::GITHUB_URL = "https://github.com/bean-mhm/realbloom";
-const char* Config::DOCS_URL = "https://github.com/bean-mhm/realbloom/blob/main/USAGE.md";
+const char* Config::DOCS_URL = "https://github.com/bean-mhm/realbloom/blob/main/docs/v0.7.0-beta/tutorial.md";
 
 // Variable
 float Config::UI_SCALE = 1.0f;
