@@ -20,7 +20,7 @@
     <br />
     <a href="https://github.com/bean-mhm/realbloom/releases">Latest Release</a>
     ·
-    <a href="https://github.com/bean-mhm/realbloom/blob/main/USAGE.md">Tutorial</a>
+    <a href="https://github.com/bean-mhm/realbloom/blob/main/docs/">Documentation</a>
     ·
     <a href="https://github.com/bean-mhm/realbloom/issues">Report Bug</a>
   </p>
@@ -107,7 +107,7 @@ RealBloom requires [Microsoft Visual C++ Runtime](https://learn.microsoft.com/en
 <!-- USAGE -->
 # How To Use
 
-If you're using RealBloom for the first time, check out [this step-by-step tutorial](USAGE.md) on getting started with RealBloom, along with more details and information about the project. This will cover most of what you need to know.
+If you're using RealBloom for the first time, check out [this step-by-step tutorial][tutorial] on getting started with RealBloom, along with more details and information about the project. This will cover most of what you need to know.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -210,3 +210,4 @@ Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/b
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [product-screenshot]: images/screenshot.png
+[tutorial]: https://github.com/bean-mhm/realbloom/blob/main/docs/v0.7.0-beta/tutorial.md
