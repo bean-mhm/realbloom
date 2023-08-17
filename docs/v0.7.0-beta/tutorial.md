@@ -18,7 +18,7 @@ If any of these terms sound alien to you, fear not, as they will be explained be
 
 RealBloom provides a GUI (Graphical User Interface) and a CLI (Command Line Interface). We'll start by learning the GUI, and briefly talk about the CLI later. The layout is rather simple, as there's a single main window that provides everything we need.
 
-![RealBloom Screenshot](../images/tutorial/0-interface.png)
+![RealBloom Screenshot](../../images/tutorial/0-interface.png)
 
 There are a total of 7 different panels. A panel can be docked or floating, and you can resize it to your liking. Each panel may contain one or more "sections" that are shown by bold labels with uppercase letters.
 
@@ -42,7 +42,7 @@ An [aperture](https://en.wikipedia.org/wiki/Aperture) is a hole through which li
 
 Let's start by loading an image that represents the geometric shape of our aperture. In the *Image Slots* panel, select the first slot, *Diffraction Input*. Then, in the *Image Viewer* panel, click *Browse* and choose your image. There are a bunch of example aperture shapes in `demo/Apertures` ready for you. I will be using `Octagon.png`.
 
-![An octagonal aperture](../images/tutorial/1-aperture.png)
+![An octagonal aperture](../../images/tutorial/1-aperture.png)
 
 > I've slightly reduced the zoom level in the *Image Viewer* panel for the image to fit into the screen. The zoom control is placed to the right of the image size indicator.
  
@@ -64,7 +64,7 @@ The *Logarithmic Normalization* option in the *DIFFRACTION* section can be used 
 
 Continue by clicking the *Compute* button in the *DIFFRACTION* section. This will generate the diffraction pattern of our aperture shape using a [2D FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform). Keep in mind we're referring to the far-field [Fraunhofer diffraction pattern](https://en.wikipedia.org/wiki/Fraunhofer_diffraction) here.
 
-![Diffraction pattern of an octagon](../images/tutorial/2-diff.png)
+![Diffraction pattern of an octagon](../../images/tutorial/2-diff.png)
 
 > I've temporarily increased my view exposure in the *Color Management* panel so that we can see the image properly. This doesn't affect the original image in any way, it only alters how the image is displayed.
 
@@ -93,7 +93,7 @@ Back to the *Dispersion* panel. We'll leave the *Input Transform* settings uncha
 
 After adjusting the parameters to your liking - or copying the values from the screenshot below - hit *Apply Dispersion*.
 
-![Dispersion result](../images/tutorial/3-disp.png)
+![Dispersion result](../../images/tutorial/3-disp.png)
 
 > In the *Color Management* panel, I've set my *View* to *flim (default)*, and I'm using the *Punchy* look. More on this in a minute.
 
@@ -143,7 +143,7 @@ Now, select the *Conv. Input* slot and hit *Browse* to choose an image. I have i
 
 You can use one of the filmic transforms for this image, as this is (almost) raw linear data from a 3D scene. I will reset the look, and increase my view exposure slightly.
  
-![An image loaded as the convolution input](../images/tutorial/4-conv-input.png)
+![An image loaded as the convolution input](../../images/tutorial/4-conv-input.png)
 
 We have already moved our dispersion result to the *Conv. Kernel* slot, so at this point, all the inputs are loaded.
 
@@ -153,7 +153,7 @@ We have already moved our dispersion result to the *Conv. Kernel* slot, so at th
 
 I'll continue by modifying the *Kernel Transform* settings slightly, while leaving the *Input Transform* settings unchanged. I'll set *Crop* to 0.9, and *Resize* to 1.1. I'll then use the following tristimulus for the *Filter* in the *COLOR* section.
 
-![RGB Tristimulus](../images/tutorial/kernel-filter.png)
+![RGB Tristimulus](../../images/tutorial/kernel-filter.png)
 
 Also in the *COLOR* section, I'll set the *Exposure* to 6.0, and *Contrast* to 0.2.
 
@@ -163,7 +163,7 @@ In the *KERNEL* section, the *Use Transform Origin* option defines whether the o
 
 At this point, our input images for convolution are ready.
 
-![Convolution kernel](../images/tutorial/5-kernel.png)
+![Convolution kernel](../../images/tutorial/5-kernel.png)
 
 ## The *CONVOLUTION* Section
 
@@ -203,7 +203,7 @@ A brightness threshold can be optionally applied to the input image to only sele
 
 In the *Conv. Preview* slot, we can observe what the convolution process will see after the threshold is applied.
 
-![Threshold preview](../images/tutorial/6-threshold.png)
+![Threshold preview](../../images/tutorial/6-threshold.png)
 
 Using a threshold of 0 and mixing the convolution output with the original input generally gives more realistic and appealing results, so we'll set the threshold parameters to 0 for this tutorial, which will leave the input image unchanged.
 
@@ -217,11 +217,11 @@ We now have all our input images and parameters ready, so we can finally hit *Co
 
 ## The *BLENDING* Section
 
-![Convolution result](../images/tutorial/7-convmix.png)
+![Convolution result](../../images/tutorial/7-convmix.png)
 
 Let's hit *Show Conv. Layer* to see how the convolution output looks on its own.
 
-![Convolution layer](../images/tutorial/8-convlayer.png)
+![Convolution layer](../../images/tutorial/8-convlayer.png)
 
 Generally speaking, the convolution layer should have the same overall brightness as the input. We can use the *Exposure* slider to adjust the exposure of the convolution layer. In this case, we don't need to do this, as we had enabled the *Auto-Exposure* option.
 
