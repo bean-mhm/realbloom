@@ -1,6 +1,6 @@
 #include "CmImage.h"
 
-std::shared_ptr<GlFrameBuffer> CmImage::s_frameBuffer = nullptr;
+std::shared_ptr<GlFramebuffer> CmImage::s_framebuffer = nullptr;
 
 CmImage::CmImage(const std::string& id, const std::string& name, uint32_t width, uint32_t height, std::array<float, 4> fillColor, bool useExposure, bool useGlobalFB)
     : m_id(id), m_name(name), m_width(width), m_height(height), m_useExposure(useExposure), m_useGlobalFB(useGlobalFB)
@@ -56,6 +56,11 @@ float* CmImage::getImageData()
     return m_imageData.data();
 }
 
+std::vector<float>& CmImage::getImageDataVector()
+{
+    return m_imageData;
+}
+
 uint32_t CmImage::getGlTexture()
 {
     if (m_moveToGpu)
@@ -66,13 +71,13 @@ uint32_t CmImage::getGlTexture()
 
     if (CMS::usingGPU())
     {
-        if (m_useGlobalFB && (s_frameBuffer.get() != nullptr))
+        if (m_useGlobalFB && (s_framebuffer.get() != nullptr))
         {
-            return s_frameBuffer->getColorBuffer();
+            return s_framebuffer->getColorBuffer();
         }
-        else if (!m_useGlobalFB && (m_localFrameBuffer.get() != nullptr))
+        else if (!m_useGlobalFB && (m_localFramebuffer.get() != nullptr))
         {
-            return m_localFrameBuffer->getColorBuffer();
+            return m_localFramebuffer->getColorBuffer();
         }
     }
     else if (m_texture.get())
@@ -120,6 +125,20 @@ void CmImage::resize(uint32_t newWidth, uint32_t newHeight, bool shouldLock)
     m_height = newHeight;
 
     m_imageData.resize(m_width * m_height * 4);
+
+    if (shouldLock) unlock();
+}
+
+void CmImage::reset(bool shouldLock)
+{
+    if (shouldLock) lock();
+
+    m_sourceName = "";
+
+    clearVector(m_imageData);
+    resize(1, 1, false);
+
+    moveToGPU();
 
     if (shouldLock) unlock();
 }
@@ -180,6 +199,31 @@ void CmImage::renderUV()
     }
 }
 
+void CmImage::moveContent(CmImage& target, bool copy)
+{
+    std::scoped_lock lock1(m_mutex);
+    std::scoped_lock lock2(target);
+
+    // Copy the source name
+    target.m_sourceName = m_sourceName;
+
+    // Resize the target
+    target.resize(m_width, m_height, false);
+
+    // Move / Copy the buffer
+    if (copy)
+        target.m_imageData = m_imageData;
+    else
+        target.m_imageData = std::move(m_imageData);
+
+    // Reset self if moving
+    if (!copy)
+        reset(false);
+
+    // Move to GPU
+    target.moveToGPU();
+}
+
 void CmImage::moveToGPU_Internal()
 {
     std::scoped_lock lock(m_mutex);
@@ -194,7 +238,7 @@ void CmImage::moveToGPU_Internal()
             m_height,
             m_useExposure ? CMS::getExposure() : 0.0f,
             m_texture,
-            m_useGlobalFB ? s_frameBuffer : m_localFrameBuffer,
+            m_useGlobalFB ? s_framebuffer : m_localFramebuffer,
             !lastResult,
             true,
             false);
@@ -213,7 +257,7 @@ void CmImage::applyViewTransform(
     uint32_t height,
     float exposure,
     std::shared_ptr<GlTexture>& texture,
-    std::shared_ptr<GlFrameBuffer>& frameBuffer,
+    std::shared_ptr<GlFramebuffer>& framebuffer,
     bool recreate,
     bool uploadToGPU,
     bool readback,
@@ -229,7 +273,7 @@ void CmImage::applyViewTransform(
     }
 
     uint32_t size = width * height * 4;
-    float exposureMul = powf(2, exposure);
+    float expMul = getExposureMul(exposure);
     bool gpuMode = CMS::usingGPU() && uploadToGPU;
 
     // Temporary buffer to apply transforms on (CPU)
@@ -243,7 +287,7 @@ void CmImage::applyViewTransform(
 
         if (exposure != 0.0f)
             for (uint32_t i = 0; i < size; i++)
-                if (i % 4 != 3) transBuffer[i] *= exposureMul;
+                if (i % 4 != 3) transBuffer[i] *= expMul;
 
         try
         {
@@ -311,67 +355,41 @@ void CmImage::applyViewTransform(
     {
         try
         {
-            // Recreate the frame buffer if needed
+            // Recreate the framebuffer if needed
             {
                 bool mustRecreate = false;
 
-                if (frameBuffer.get() == nullptr)
+                if (framebuffer.get() == nullptr)
                     mustRecreate = true;
-                else if ((frameBuffer->getWidth() != width) || (frameBuffer->getHeight() != height))
+                else if ((framebuffer->getWidth() != width) || (framebuffer->getHeight() != height))
                     mustRecreate = true;
 
                 mustRecreate |= recreate;
 
                 if (mustRecreate)
                 {
-                    frameBuffer = std::make_shared<GlFrameBuffer>(width, height);
+                    framebuffer = std::make_shared<GlFramebuffer>(width, height);
                 }
             }
 
-            // Bind the frame buffer so we can render the transformed image into it
-            frameBuffer->bind();
+            // Bind the framebuffer so we can render the transformed image into it
+            framebuffer->bind();
 
             // Set the viewport
-            frameBuffer->viewport();
+            framebuffer->viewport();
 
             // Use the shader program
             std::shared_ptr<OcioShader> shader = CMS::getShader();
             shader->useProgram();
 
-            // Set the input uniforms
+            // Configure the input textures and uniforms
             texture->bind(GL_TEXTURE0);
             shader->setInputTexture(0);
-            shader->setExposureMul(exposureMul);
+            shader->setExposureMul(expMul);
 
             // Use the LUTs and uniforms associated with the shader
             shader->useLuts();
             shader->useUniforms();
-
-            // Define vertex data
-            GLuint vao;
-            GLuint vbo;
-            {
-                GLfloat vertices[] = {
-                    //  Pos           UV
-                        -1.0f,  1.0f, 0.0f, 1.0f, // Top-left
-                         1.0f,  1.0f, 1.0f, 1.0f, // Top-right
-                         1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
-                         1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
-                        -1.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
-                        -1.0f,  1.0f, 0.0f, 1.0f  // Top-left
-                };
-
-                // Create Vertex Array Object
-                glGenVertexArrays(1, &vao);
-                glBindVertexArray(vao);
-                checkGlStatus("", "VAO");
-
-                // Create a Vertex Buffer Object and copy the vertex data to it
-                glGenBuffers(1, &vbo);
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-                checkGlStatus("", "VBO");
-            }
 
             // Clear the buffer
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -380,27 +398,16 @@ void CmImage::applyViewTransform(
 
             // Draw
             {
-                glBindVertexArray(vao);
-                checkGlStatus("", "glBindVertexArray(vao)");
-
-                shader->enableAttribs();
+                GlFullPlaneVertices::enable(shader->getProgram());
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
                 checkGlStatus("", "glDrawArrays");
 
-                shader->disableAttribs();
-
-                glBindVertexArray(0);
-                checkGlStatus("", "glBindVertexArray(0)");
+                GlFullPlaneVertices::disable(shader->getProgram());
             }
 
-            // Unbind the frame buffer so we can continue rendering to the screen
-            frameBuffer->unbind();
-
-            // Clean up
-            glDeleteBuffers(1, &vbo);
-            glDeleteVertexArrays(1, &vao);
-            checkGlStatus("", "Cleanup");
+            // Unbind the framebuffer
+            framebuffer->unbind();
         }
         catch (const std::exception& e)
         {
@@ -422,7 +429,7 @@ void CmImage::applyViewTransform(
     {
         outBuffer->resize(size);
 
-        glBindTexture(GL_TEXTURE_2D, frameBuffer->getColorBuffer());
+        glBindTexture(GL_TEXTURE_2D, framebuffer->getColorBuffer());
         checkGlStatus("", "glBindTexture");
 
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, outBuffer->data());
@@ -436,5 +443,5 @@ void CmImage::applyViewTransform(
 
 void CmImage::cleanUp()
 {
-    s_frameBuffer = nullptr;
+    s_framebuffer = nullptr;
 }

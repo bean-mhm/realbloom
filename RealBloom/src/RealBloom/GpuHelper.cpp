@@ -67,9 +67,10 @@ void GpuHelper::run()
         m_hasHandles = true;
 
         // Close when the parent dies
-        HANDLE hJobObject = Async::getShared("hJobObject");
-        if (hJobObject)
-            AssignProcessToJobObject(hJobObject, m_processInfo.hProcess);
+        
+        SignalValue hJobObject;
+        if (Async::readSignal("hJobObject", hJobObject))
+            AssignProcessToJobObject(std::get<void*>(hJobObject), m_processInfo.hProcess);
     }
     else
     {

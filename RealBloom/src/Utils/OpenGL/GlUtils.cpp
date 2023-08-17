@@ -15,7 +15,8 @@ bool createShader(GLenum shaderType, const char* shaderSource, GLuint& outShader
 
         bool shaderStatus = checkShader(outShaderID, outLog);
         return shaderStatus;
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         outLog = e.what();
         return false;
@@ -69,6 +70,47 @@ void checkGlStatus(const std::string& source, const std::string& stage)
     {
         throw std::exception(makeError(source, stage, errors).c_str());
     }
+}
+
+void clearGlStatus()
+{
+    std::string errors;
+    getGlErrors(errors);
+}
+
+void findAndSetUniform1i(GLuint program, const char* name, GLint v0)
+{
+    GLint uniform = glGetUniformLocation(program, name);
+    glUniform1i(uniform, v0);
+    checkGlStatus(__FUNCTION__, name);
+}
+
+void findAndSetUniform1f(GLuint program, const char* name, GLfloat v0)
+{
+    GLint uniform = glGetUniformLocation(program, name);
+    glUniform1f(uniform, v0);
+    checkGlStatus(__FUNCTION__, name);
+}
+
+void findAndSetUniform2f(GLuint program, const char* name, GLfloat v0, GLfloat v1)
+{
+    GLint uniform = glGetUniformLocation(program, name);
+    glUniform2f(uniform, v0, v1);
+    checkGlStatus(__FUNCTION__, name);
+}
+
+void findAndSetUniform3f(GLuint program, const char* name, GLfloat v0, GLfloat v1, GLfloat v2)
+{
+    GLint uniform = glGetUniformLocation(program, name);
+    glUniform3f(uniform, v0, v1, v2);
+    checkGlStatus(__FUNCTION__, name);
+}
+
+void findAndSetUniform4f(GLuint program, const char* name, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
+{
+    GLint uniform = glGetUniformLocation(program, name);
+    glUniform4f(uniform, v0, v1, v2, v3);
+    checkGlStatus(__FUNCTION__, name);
 }
 
 GlWrapper::GlWrapper()

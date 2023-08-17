@@ -21,8 +21,18 @@
 namespace RealBloom
 {
 
+    // Dispersion method: GPU
     class DispGpu
     {
+    public:
+        DispGpu(BinaryDispGpuInput* binInput);
+        void process();
+
+        const std::vector<float>& getBuffer() const;
+        const BaseStatus& getStatus() const;
+
+        static uint32_t getNumAttribs();
+
     private:
         BaseStatus m_status;
         BinaryDispGpuInput* m_binInput;
@@ -52,15 +62,6 @@ namespace RealBloom
         void setUniforms();
         void specifyLayout();
         void drawScene(uint32_t numPoints);
-
-    public:
-        DispGpu(BinaryDispGpuInput* binInput);
-        void process();
-
-        const std::vector<float>& getBuffer() const;
-        const BaseStatus& getStatus() const;
-
-        static uint32_t getNumAttribs();
 
     };
 

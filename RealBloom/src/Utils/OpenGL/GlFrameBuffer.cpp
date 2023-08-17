@@ -1,15 +1,15 @@
 #include "GlFrameBuffer.h"
 
-GlFrameBuffer::GlFrameBuffer(uint32_t width, uint32_t height)
+GlFramebuffer::GlFramebuffer(uint32_t width, uint32_t height)
     : m_width(width), m_height(height)
 {
-    glGenFramebuffers(1, &m_frameBuffer);
+    glGenFramebuffers(1, &m_framebuffer);
     checkGlStatus(__FUNCTION__, "glGenFramebuffers");
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
     checkGlStatus(__FUNCTION__, "glBindFramebuffer");
 
-    // Make a color buffer for our frame buffer (render target)
+    // Make a color buffer for our framebuffer (render target)
     glGenTextures(1, &m_texColorBuffer);
     glBindTexture(GL_TEXTURE_2D, m_texColorBuffer);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -28,11 +28,11 @@ GlFrameBuffer::GlFrameBuffer(uint32_t width, uint32_t height)
 
     if (fbStatus != GL_FRAMEBUFFER_COMPLETE)
         throw std::exception(
-            makeError(__FUNCTION__, "", strFormat("Frame buffer was not ready. Status: %s", toHexStr(fbStatus).c_str())).c_str()
+            makeError(__FUNCTION__, "", strFormat("Framebuffer was not ready. Status: %s", toHexStr(fbStatus).c_str())).c_str()
         );
 }
 
-GlFrameBuffer::~GlFrameBuffer()
+GlFramebuffer::~GlFramebuffer()
 {
     try
     {
@@ -44,37 +44,37 @@ GlFrameBuffer::~GlFrameBuffer()
     }
 
     glDeleteTextures(1, &(m_texColorBuffer));
-    glDeleteFramebuffers(1, &(m_frameBuffer));
-    checkGlStatus(__FUNCTION__, "Cleanup");
+    glDeleteFramebuffers(1, &(m_framebuffer));
+    clearGlStatus();
 }
 
-uint32_t GlFrameBuffer::getWidth() const
+uint32_t GlFramebuffer::getWidth() const
 {
     return m_width;
 }
 
-uint32_t GlFrameBuffer::getHeight() const
+uint32_t GlFramebuffer::getHeight() const
 {
     return m_height;
 }
 
-GLuint GlFrameBuffer::getFrameBuffer() const
+GLuint GlFramebuffer::getFramebuffer() const
 {
-    return m_frameBuffer;
+    return m_framebuffer;
 }
 
-GLuint GlFrameBuffer::getColorBuffer() const
+GLuint GlFramebuffer::getColorBuffer() const
 {
     return m_texColorBuffer;
 }
 
-void GlFrameBuffer::bind()
+void GlFramebuffer::bind()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
     checkGlStatus(__FUNCTION__, "glBindFramebuffer");
 }
 
-void GlFrameBuffer::unbind()
+void GlFramebuffer::unbind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     checkGlStatus(__FUNCTION__, "glBindFramebuffer");
@@ -83,7 +83,7 @@ void GlFrameBuffer::unbind()
     checkGlStatus(__FUNCTION__, "glDrawBuffer");
 }
 
-void GlFrameBuffer::viewport()
+void GlFramebuffer::viewport()
 {
     glViewport(0, 0, m_width, m_height);
     checkGlStatus(__FUNCTION__, "glViewport");

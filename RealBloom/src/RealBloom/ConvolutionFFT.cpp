@@ -1,5 +1,7 @@
 #include "ConvolutionFFT.h"
 
+#include <omp.h>
+
 namespace RealBloom
 {
 
@@ -14,13 +16,14 @@ namespace RealBloom
 
     void ConvolutionFFT::pad()
     {
-        // Padded size
+        std::array<float, 2> kernelOrigin = Convolution::getKernelOrigin(m_params);
 
+        // Padded size
         calcFftConvPadding(
             false, false,
             m_inputWidth, m_inputHeight,
             m_kernelWidth, m_kernelHeight,
-            m_params.kernelCenterX, m_params.kernelCenterY,
+            kernelOrigin[0], kernelOrigin[1],
             m_paddedWidth, m_paddedHeight
         );
 
@@ -29,8 +32,8 @@ namespace RealBloom
         m_inputLeftPadding = floorf((float)(m_paddedWidth - m_inputWidth) / 2.0f);
         m_inputTopPadding = floorf((float)(m_paddedHeight - m_inputHeight) / 2.0f);
 
-        m_kernelLeftPadding = floorf(((float)m_paddedWidth / 2.0f) - ((float)m_kernelWidth * m_params.kernelCenterX));
-        m_kernelTopPadding = floorf(((float)m_paddedHeight / 2.0f) - ((float)m_kernelHeight * m_params.kernelCenterY));
+        m_kernelLeftPadding = floorf(((float)m_paddedWidth / 2.0f) - ((float)m_kernelWidth * kernelOrigin[0]));
+        m_kernelTopPadding = floorf(((float)m_paddedHeight / 2.0f) - ((float)m_kernelHeight * kernelOrigin[1]));
 
         if (m_kernelWidth % 2 == 1) m_kernelLeftPadding += 1;
         if (m_kernelHeight % 2 == 1) m_kernelTopPadding += 1;
@@ -70,7 +73,7 @@ namespace RealBloom
                     inpColor[1] = m_inputBuffer[redIndex + 1];
                     inpColor[2] = m_inputBuffer[redIndex + 2];
 
-                    float v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
+                    float v = rgbToGrayscale(inpColor, CONV_THRESHOLD_GRAYSCALE_TYPE);
                     if (v > threshold)
                     {
                         // Smooth Transition
@@ -119,7 +122,6 @@ namespace RealBloom
         pocketfft::shape_t shape{ m_paddedWidth, m_paddedHeight };
         pocketfft::stride_t strideIn{ sizeof(float), (ptrdiff_t)(m_paddedWidth * sizeof(float)) };
         pocketfft::stride_t strideOut{ sizeof(std::complex<float>), (ptrdiff_t)(m_paddedWidth * sizeof(std::complex<float>)) };
-        float fftScale = 1.0f / sqrtf((float)m_paddedWidth * (float)m_paddedHeight);
         pocketfft::r2c(
             shape,
             strideIn,
@@ -128,7 +130,7 @@ namespace RealBloom
             pocketfft::FORWARD,
             m_inputPadded[ch].getVector().data(),
             m_inputFT[ch].getVector().data(),
-            fftScale,
+            1.0f,
             0);
 
         m_inputPadded[ch].reset();
@@ -141,7 +143,6 @@ namespace RealBloom
         pocketfft::shape_t shape{ m_paddedWidth, m_paddedHeight };
         pocketfft::stride_t strideIn{ sizeof(float), (ptrdiff_t)(m_paddedWidth * sizeof(float)) };
         pocketfft::stride_t strideOut{ sizeof(std::complex<float>), (ptrdiff_t)(m_paddedWidth * sizeof(std::complex<float>)) };
-        float fftScale = 1.0f / sqrtf((float)m_paddedWidth * (float)m_paddedHeight);
         pocketfft::r2c(
             shape,
             strideIn,
@@ -150,19 +151,30 @@ namespace RealBloom
             pocketfft::FORWARD,
             m_kernelPadded[ch].getVector().data(),
             m_kernelFT[ch].getVector().data(),
-            fftScale,
+            1.0f,
             0);
 
         m_kernelPadded[ch].reset();
     }
 
-    void ConvolutionFFT::multiply(uint32_t ch)
+    void ConvolutionFFT::multiplyOrDivide(uint32_t ch)
     {
         m_mulFT[ch].resize(m_paddedHeight, m_paddedWidth);
 
-        for (size_t y = 0; y < m_paddedHeight; y++)
-            for (size_t x = 0; x < m_paddedWidth; x++)
-                m_mulFT[ch](y, x) = m_inputFT[ch](y, x) * m_kernelFT[ch](y, x);
+        if (m_params.methodInfo.FFT_CPU_deconvolve)
+        {
+#pragma omp parallel for
+            for (int y = 0; y < m_paddedHeight; y++)
+                for (int x = 0; x < m_paddedWidth; x++)
+                    m_mulFT[ch](y, x) = m_inputFT[ch](y, x) / m_kernelFT[ch](y, x);
+        }
+        else
+        {
+#pragma omp parallel for
+            for (int y = 0; y < m_paddedHeight; y++)
+                for (int x = 0; x < m_paddedWidth; x++)
+                    m_mulFT[ch](y, x) = m_inputFT[ch](y, x) * m_kernelFT[ch](y, x);
+        }
 
         m_inputFT[ch].reset();
         m_kernelFT[ch].reset();
@@ -175,6 +187,7 @@ namespace RealBloom
         pocketfft::shape_t shape{ m_paddedWidth, m_paddedHeight };
         pocketfft::stride_t strideIn{ sizeof(std::complex<float>), (ptrdiff_t)(m_paddedWidth * sizeof(std::complex<float>)) };
         pocketfft::stride_t strideOut{ sizeof(float), (ptrdiff_t)(m_paddedWidth * sizeof(float)) };
+        float fftScale = 1.0f / ((float)m_paddedWidth * (float)m_paddedHeight);
         pocketfft::c2r(
             shape,
             strideIn,
@@ -183,7 +196,7 @@ namespace RealBloom
             pocketfft::BACKWARD,
             m_mulFT[ch].getVector().data(),
             m_iFFT[ch].getVector().data(),
-            1.0f,
+            fftScale,
             0);
 
         m_mulFT[ch].reset();
@@ -221,9 +234,9 @@ namespace RealBloom
 
                 // Get the output
                 redIndex = (y * m_inputWidth + x) * 4;
-                m_outputBuffer[redIndex + 0] = fmaxf(m_iFFT[0](transY2, transX2) * CONV_MULTIPLIER, 0.0f);
-                m_outputBuffer[redIndex + 1] = fmaxf(m_iFFT[1](transY2, transX2) * CONV_MULTIPLIER, 0.0f);
-                m_outputBuffer[redIndex + 2] = fmaxf(m_iFFT[2](transY2, transX2) * CONV_MULTIPLIER, 0.0f);
+                m_outputBuffer[redIndex + 0] = m_iFFT[0](transY2, transX2) * CONV_MULTIPLIER;
+                m_outputBuffer[redIndex + 1] = m_iFFT[1](transY2, transX2) * CONV_MULTIPLIER;
+                m_outputBuffer[redIndex + 2] = m_iFFT[2](transY2, transX2) * CONV_MULTIPLIER;
                 m_outputBuffer[redIndex + 3] = 1.0f;
             }
         }

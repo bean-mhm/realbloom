@@ -1,7 +1,7 @@
 #include "DispGpu.h"
 
 #pragma region Shaders
-const char* dispGpuVertexSource = R"glsl(
+static const char* vertexSource = R"glsl(
     #version 150 core
 
     in float scale;
@@ -16,9 +16,9 @@ const char* dispGpuVertexSource = R"glsl(
         vScale = scale;
         vColor = color;
     }
-    )glsl";
+)glsl";
 
-const char* dispGpuGeometrySource = R"glsl(
+static const char* geometrySource = R"glsl(
     #version 150 core
 
     layout(points) in;
@@ -75,9 +75,9 @@ const char* dispGpuGeometrySource = R"glsl(
 
         EndPrimitive();
     }
-    )glsl";
+)glsl";
 
-const char* dispGpuFragmentSource = R"glsl(
+static const char* fragmentSource = R"glsl(
     #version 150 core
 
     in vec3 gColor;
@@ -91,7 +91,7 @@ const char* dispGpuFragmentSource = R"glsl(
     {
         outColor = texture(texInput, gTexUV) * vec4(gColor, 1.0);
     }
-    )glsl";
+)glsl";
 #pragma endregion
 
 namespace RealBloom
@@ -127,17 +127,17 @@ namespace RealBloom
         // Create and compile shaders
         std::string shaderLog;
 
-        if (!createShader(GL_VERTEX_SHADER, dispGpuVertexSource, m_vertexShader, shaderLog))
+        if (!createShader(GL_VERTEX_SHADER, vertexSource, m_vertexShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
-        if (!createShader(GL_GEOMETRY_SHADER, dispGpuGeometrySource, m_geometryShader, shaderLog))
+        if (!createShader(GL_GEOMETRY_SHADER, geometrySource, m_geometryShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
-        if (!createShader(GL_FRAGMENT_SHADER, dispGpuFragmentSource, m_fragmentShader, shaderLog))
+        if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, m_fragmentShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
             );
@@ -212,8 +212,6 @@ namespace RealBloom
     void DispGpu::setUniforms()
     {
         GLint texInputUniform = glGetUniformLocation(m_shaderProgram, "texInput");
-        checkGlStatus(__FUNCTION__, "glGetUniformLocation(texInput)");
-
         glUniform1i(texInputUniform, 0);
         checkGlStatus(__FUNCTION__, "glUniform1i(texInputUniform)");
     }
@@ -259,7 +257,8 @@ namespace RealBloom
         m_height = m_binInput->inputHeight;
 
         uint32_t steps = m_binInput->dp_steps;
-        float amount = m_binInput->dp_amount;
+        float amount = fmaxf(m_binInput->dp_amount, 0.0f);
+        float edgeOffset = std::clamp(m_binInput->dp_edgeOffset, -1.0f, 1.0f);
 
         // Vertex data
         std::vector<float> vertexData;
@@ -267,18 +266,13 @@ namespace RealBloom
 
         for (uint32_t i = 0; i < steps; i++)
         {
-            float scale = lerp(
-                1.0f - (amount / 2.0f),
-                1.0f + (amount / 2.0f),
-                (i + 1.0f) / (float)steps);
-
-            float scaledArea = scale * scale;
-            float scaledMul = 1.0f / scaledArea;
+            float scale, areaMul;
+            calcDispScale(i, steps, amount, edgeOffset, scale, areaMul);
 
             uint32_t smpIndex = i * 3;
-            float wlR = m_binInput->cmfSamples[smpIndex + 0] * scaledMul;
-            float wlG = m_binInput->cmfSamples[smpIndex + 1] * scaledMul;
-            float wlB = m_binInput->cmfSamples[smpIndex + 2] * scaledMul;
+            float wlR = m_binInput->cmfSamples[smpIndex + 0] * areaMul;
+            float wlG = m_binInput->cmfSamples[smpIndex + 1] * areaMul;
+            float wlB = m_binInput->cmfSamples[smpIndex + 2] * areaMul;
 
             vertexData.push_back(scale);
             vertexData.push_back(wlR);
@@ -287,7 +281,7 @@ namespace RealBloom
         }
 
         // Draw
-        std::shared_ptr<GlFrameBuffer> frameBuffer = nullptr;
+        std::shared_ptr<GlFramebuffer> framebuffer = nullptr;
         try
         {
             // Capabilities
@@ -296,10 +290,10 @@ namespace RealBloom
             glEnable(GL_BLEND);
             checkGlStatus("", "Capabilities");
 
-            // Frame buffer
-            frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
-            frameBuffer->bind();
-            frameBuffer->viewport();
+            // Framebuffer
+            framebuffer = std::make_shared<GlFramebuffer>(m_width, m_height);
+            framebuffer->bind();
+            framebuffer->viewport();
 
             // Upload the input texture to the GPU
             makeInputTexture(
@@ -328,12 +322,12 @@ namespace RealBloom
             // Draw
             drawScene(vertexData.size() / getNumAttribs());
             
-            // Copy pixel data from the frame buffer
+            // Copy pixel data from the framebuffer
             uint32_t fbSize = m_width * m_height * 4;
             std::vector<float> fbData;
             fbData.resize(fbSize);
             {
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer->getFrameBuffer());
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer->getFramebuffer());
                 checkGlStatus("", "glBindFramebuffer");
 
                 glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -365,32 +359,19 @@ namespace RealBloom
         }
 
         // Clean up
-        try
-        {
-            try
-            {
-                frameBuffer = nullptr;
-            }
-            catch (const std::exception& e)
-            {
-                printError("", "Cleanup (frameBuffer)", e.what());
-            }
 
-            glDeleteBuffers(1, &m_vbo);
-            glDeleteVertexArrays(1, &m_vao);
+        framebuffer = nullptr;
 
-            glDeleteTextures(1, &m_texInput);
-            glDeleteProgram(m_shaderProgram);
-            glDeleteShader(m_vertexShader);
-            glDeleteShader(m_geometryShader);
-            glDeleteShader(m_fragmentShader);
+        glDeleteBuffers(1, &m_vbo);
+        glDeleteVertexArrays(1, &m_vao);
 
-            checkGlStatus("", "Cleanup");
-        }
-        catch (const std::exception& e)
-        {
-            printError(__FUNCTION__, "", e.what());
-        }
+        glDeleteTextures(1, &m_texInput);
+        glDeleteProgram(m_shaderProgram);
+        glDeleteShader(m_vertexShader);
+        glDeleteShader(m_geometryShader);
+        glDeleteShader(m_fragmentShader);
+
+        clearGlStatus();
     }
 
     const std::vector<float>& DispGpu::getBuffer() const

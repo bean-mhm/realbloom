@@ -38,15 +38,14 @@ namespace CLI
         std::string desc;
         std::string example;
         std::vector<Argument> arguments;
+        std::vector<std::string> notes;
         std::function<void(const Command&, const CliParser&, StringMap&, bool)> action;
         bool hasVerbose = false;
     };
 
+    // Command-Line Interface (Global)
     class Interface
     {
-    private:
-        static bool S_ACTIVE;
-
     public:
         Interface() = delete;
         Interface(const Interface&) = delete;
@@ -57,9 +56,11 @@ namespace CLI
 
         static bool active();
         static void proceed();
-    };
 
-    void handleXyzArgs(StringMap& args);
+    private:
+        static bool S_ACTIVE;
+
+    };
 
     struct OutputColorManagement
     {

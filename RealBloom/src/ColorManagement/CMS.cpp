@@ -5,7 +5,7 @@ std::string CMS::INTERNAL_CONFIG_PATH = getLocalPath("assets/internal/ocio/confi
 std::string CMS::INTERNAL_XYZ_IE = "Linear CIE-XYZ I-E";
 bool CMS::USE_GPU = true;
 
-CMS::CmVars* CMS::S_VARS = nullptr;
+CMS::CmVars CMS::S_VARS;
 BaseStatus CMS::S_STATUS;
 
 void CMS::CmVars::retrieveColorSpaces()
@@ -83,15 +83,14 @@ void CMS::CmVars::retrieveLooks()
 
 void CMS::ensureProcessors()
 {
-    if (S_VARS->initProcessors)
+    if (S_VARS.initProcessors)
         return;
-    S_VARS->initProcessors = true;
+    S_VARS.initProcessors = true;
     updateProcessors();
 }
 
 bool CMS::init()
 {
-    S_VARS = new CmVars();
     std::string stage = "";
 
     try
@@ -99,27 +98,27 @@ bool CMS::init()
         // Internal config
         stage = "Internal config";
         {
-            S_VARS->internalConfig = OCIO::Config::CreateFromFile(INTERNAL_CONFIG_PATH.c_str());
-            S_VARS->internalXyzSpace = INTERNAL_XYZ_IE;
+            S_VARS.internalConfig = OCIO::Config::CreateFromFile(INTERNAL_CONFIG_PATH.c_str());
+            S_VARS.internalXyzSpace = INTERNAL_XYZ_IE;
         }
 
         // User config
         stage = "User config";
         {
-            S_VARS->config = OCIO::Config::CreateFromFile(CONFIG_PATH.c_str());
+            S_VARS.config = OCIO::Config::CreateFromFile(CONFIG_PATH.c_str());
 
-            OCIO::ConstColorSpaceRcPtr sceneLinear = S_VARS->config->getColorSpace(OCIO::ROLE_SCENE_LINEAR);
-            S_VARS->workingSpace = sceneLinear->getName();
-            S_VARS->workingSpaceDesc = sceneLinear->getDescription();
+            OCIO::ConstColorSpaceRcPtr sceneLinear = S_VARS.config->getColorSpace(OCIO::ROLE_SCENE_LINEAR);
+            S_VARS.workingSpace = sceneLinear->getName();
+            S_VARS.workingSpaceDesc = sceneLinear->getDescription();
 
-            S_VARS->activeDisplay = S_VARS->config->getDefaultDisplay();
-            S_VARS->activeView = S_VARS->config->getDefaultView(S_VARS->activeDisplay.c_str());
+            S_VARS.activeDisplay = S_VARS.config->getDefaultDisplay();
+            S_VARS.activeView = S_VARS.config->getDefaultView(S_VARS.activeDisplay.c_str());
         }
 
-        S_VARS->retrieveColorSpaces();
-        S_VARS->retrieveDisplays();
-        S_VARS->retrieveViews();
-        S_VARS->retrieveLooks();
+        S_VARS.retrieveColorSpaces();
+        S_VARS.retrieveDisplays();
+        S_VARS.retrieveViews();
+        S_VARS.retrieveLooks();
     }
     catch (std::exception& e)
     {
@@ -131,102 +130,102 @@ bool CMS::init()
 
 void CMS::cleanUp()
 {
-    DELPTR(S_VARS);
+    S_VARS.shader = nullptr;
 }
 
 OCIO::ConstConfigRcPtr CMS::getInternalConfig()
 {
-    return S_VARS->internalConfig;
+    return S_VARS.internalConfig;
 }
 
 OCIO::ConstConfigRcPtr CMS::getConfig()
 {
-    return S_VARS->config;
+    return S_VARS.config;
 }
 
 const std::string& CMS::getInternalXyzSpace()
 {
-    return S_VARS->internalXyzSpace;
+    return S_VARS.internalXyzSpace;
 }
 
 const std::string& CMS::getWorkingSpace()
 {
-    return S_VARS->workingSpace;
+    return S_VARS.workingSpace;
 }
 
 const std::string& CMS::getWorkingSpaceDesc()
 {
-    return S_VARS->workingSpaceDesc;
+    return S_VARS.workingSpaceDesc;
 }
 
 const std::vector<std::string>& CMS::getInternalColorSpaces()
 {
-    return S_VARS->internalColorSpaces;
+    return S_VARS.internalColorSpaces;
 }
 
 const std::vector<std::string>& CMS::getColorSpaces()
 {
-    return S_VARS->colorSpaces;
+    return S_VARS.colorSpaces;
 }
 
 const std::vector<std::string>& CMS::getDisplays()
 {
-    return S_VARS->displays;
+    return S_VARS.displays;
 }
 
 const std::vector<std::string>& CMS::getViews()
 {
-    return S_VARS->views;
+    return S_VARS.views;
 }
 
 const std::vector<std::string>& CMS::getLooks()
 {
-    return S_VARS->looks;
+    return S_VARS.looks;
 }
 
 const std::string& CMS::getActiveDisplay()
 {
-    return S_VARS->activeDisplay;
+    return S_VARS.activeDisplay;
 }
 
 const std::string& CMS::getActiveView()
 {
-    return S_VARS->activeView;
+    return S_VARS.activeView;
 }
 
 const std::string& CMS::getActiveLook()
 {
-    return S_VARS->activeLook;
+    return S_VARS.activeLook;
 }
 
 void CMS::setActiveDisplay(const std::string& display)
 {
-    S_VARS->activeDisplay = display;
-    S_VARS->retrieveViews();
-    if (!contains(S_VARS->views, S_VARS->activeView))
+    S_VARS.activeDisplay = display;
+    S_VARS.retrieveViews();
+    if (!contains(S_VARS.views, S_VARS.activeView))
     {
-        S_VARS->activeView = S_VARS->config->getDefaultView(S_VARS->activeDisplay.c_str());
+        S_VARS.activeView = S_VARS.config->getDefaultView(S_VARS.activeDisplay.c_str());
     }
 }
 
 void CMS::setActiveView(const std::string& view)
 {
-    S_VARS->activeView = view;
+    S_VARS.activeView = view;
 }
 
 void CMS::setActiveLook(const std::string& look)
 {
-    S_VARS->activeLook = look;
+    S_VARS.activeLook = look;
 }
 
 float CMS::getExposure()
 {
-    return S_VARS->exposure;
+    return S_VARS.exposure;
 }
 
 void CMS::setExposure(float exposure)
 {
-    S_VARS->exposure = exposure;
+    S_VARS.exposure = exposure;
 }
 
 void CMS::updateProcessors()
@@ -239,11 +238,11 @@ void CMS::updateProcessors()
         OCIO::ConstConfigRcPtr config = getConfig();
 
         // Create group transform
-        S_VARS->groupTransform = OCIO::GroupTransform::Create();
+        S_VARS.groupTransform = OCIO::GroupTransform::Create();
 
         // Look transform
 
-        std::string lookName = S_VARS->activeLook;
+        std::string lookName = S_VARS.activeLook;
         std::string lookOutput = "";
         bool useLook = (!lookName.empty()) && (lookName != "None");
 
@@ -259,7 +258,7 @@ void CMS::updateProcessors()
                 lookTransform->setSrc(OCIO::ROLE_SCENE_LINEAR);
                 lookTransform->setDst(lookOutputCC);
                 lookTransform->setLooks(lookName.c_str());
-                S_VARS->groupTransform->appendTransform(lookTransform);
+                S_VARS.groupTransform->appendTransform(lookTransform);
             }
             else
             {
@@ -272,14 +271,14 @@ void CMS::updateProcessors()
         OCIO::DisplayViewTransformRcPtr displayViewTransform = OCIO::DisplayViewTransform::Create();
         displayViewTransform->setSrc(useLook ? lookOutput.c_str() : OCIO::ROLE_SCENE_LINEAR);
         displayViewTransform->setLooksBypass(useLook);
-        displayViewTransform->setView(S_VARS->activeView.c_str());
-        displayViewTransform->setDisplay(S_VARS->activeDisplay.c_str());
-        S_VARS->groupTransform->appendTransform(displayViewTransform);
+        displayViewTransform->setView(S_VARS.activeView.c_str());
+        displayViewTransform->setDisplay(S_VARS.activeDisplay.c_str());
+        S_VARS.groupTransform->appendTransform(displayViewTransform);
 
         // Get processors
-        S_VARS->processor = S_VARS->config->getProcessor(S_VARS->groupTransform);
-        S_VARS->cpuProcessor = S_VARS->processor->getDefaultCPUProcessor();
-        S_VARS->gpuProcessor = S_VARS->processor->getDefaultGPUProcessor();
+        S_VARS.processor = S_VARS.config->getProcessor(S_VARS.groupTransform);
+        S_VARS.cpuProcessor = S_VARS.processor->getDefaultCPUProcessor();
+        S_VARS.gpuProcessor = S_VARS.processor->getDefaultGPUProcessor();
 
         if (USE_GPU)
         {
@@ -290,10 +289,10 @@ void CMS::updateProcessors()
             shaderDesc->setResourcePrefix("ocio_");
 
             // Extract shader info into shaderDesc
-            S_VARS->gpuProcessor->extractGpuShaderInfo(shaderDesc);
+            S_VARS.gpuProcessor->extractGpuShaderInfo(shaderDesc);
 
             // Recreate the OCIO shader
-            S_VARS->shader = std::make_shared<OcioShader>(shaderDesc);
+            S_VARS.shader = std::make_shared<OcioShader>(shaderDesc);
         }
     }
     catch (const std::exception& e)
@@ -307,7 +306,7 @@ OCIO::ConstCPUProcessorRcPtr CMS::getCpuProcessor()
     ensureProcessors();
 
     if (S_STATUS.isOK())
-        return S_VARS->cpuProcessor;
+        return S_VARS.cpuProcessor;
 
     return nullptr;
 }
@@ -317,7 +316,7 @@ OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
     ensureProcessors();
 
     if (S_STATUS.isOK())
-        return S_VARS->gpuProcessor;
+        return S_VARS.gpuProcessor;
 
     return nullptr;
 }
@@ -325,7 +324,7 @@ OCIO::ConstGPUProcessorRcPtr CMS::getGpuProcessor()
 std::shared_ptr<OcioShader> CMS::getShader()
 {
     ensureProcessors();
-    return S_VARS->shader;
+    return S_VARS.shader;
 }
 
 const BaseStatus& CMS::getStatus()
@@ -351,7 +350,7 @@ std::string CMS::resolveColorSpace(const std::string& name, bool preserve)
     if ((strLowercase(csName) == "working") || (strLowercase(csName) == "w"))
         csName = OCIO::ROLE_SCENE_LINEAR;
 
-    OCIO::ConstColorSpaceRcPtr cs = S_VARS->config->getColorSpace(csName.c_str());
+    OCIO::ConstColorSpaceRcPtr cs = S_VARS.config->getColorSpace(csName.c_str());
     if (cs.get())
     {
         csName = cs->getName();
@@ -369,6 +368,18 @@ std::string CMS::getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::str
     if (cs.get() == nullptr)
         return "";
     return cs->getDescription();
+}
+
+std::string CMS::getRoleColorSpaceByName(OCIO::ConstConfigRcPtr config, const std::string& roleName)
+{
+    for (uint32_t i = 0; i < config->getNumRoles(); i++)
+    {
+        if (std::string(config->getRoleName(i)) == roleName)
+        {
+            return config->getRoleColorSpace(i);
+        }
+    }
+    return "";
 }
 
 std::array<float, 4> CMS::getDisplayColor(std::array<float, 4> v)

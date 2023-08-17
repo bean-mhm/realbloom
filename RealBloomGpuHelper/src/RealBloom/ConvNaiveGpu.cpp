@@ -1,7 +1,7 @@
 #include "ConvNaiveGpu.h"
 
 #pragma region Shaders
-const char* convNaiveGpuVertexSource = R"glsl(
+static const char* vertexSource = R"glsl(
     #version 150 core
 
     in vec2 pos;
@@ -14,9 +14,9 @@ const char* convNaiveGpuVertexSource = R"glsl(
         gl_Position = vec4(pos, 0.0, 1.0);
         vColor = color;
     }
-    )glsl";
+)glsl";
 
-const char* convNaiveGpuGeometrySource = R"glsl(
+static const char* geometrySource = R"glsl(
     #version 150 core
 
     layout(points) in;
@@ -74,9 +74,9 @@ const char* convNaiveGpuGeometrySource = R"glsl(
 
         EndPrimitive();
     }
-    )glsl";
+)glsl";
 
-const char* convNaiveGpuFragmentSource = R"glsl(
+static const char* fragmentSource = R"glsl(
     #version 150 core
 
     in vec3 gColor;
@@ -90,7 +90,7 @@ const char* convNaiveGpuFragmentSource = R"glsl(
     {
         outColor = texture(texKernel, gTexUV) * vec4(gColor, 1.0);
     }
-    )glsl";
+)glsl";
 #pragma endregion
 
 namespace RealBloom
@@ -122,17 +122,17 @@ namespace RealBloom
         // Create and compile shaders
         std::string shaderLog;
 
-        if (!createShader(GL_VERTEX_SHADER, convNaiveGpuVertexSource, m_vertexShader, shaderLog))
+        if (!createShader(GL_VERTEX_SHADER, vertexSource, m_vertexShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Vertex shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
-        if (!createShader(GL_GEOMETRY_SHADER, convNaiveGpuGeometrySource, m_geometryShader, shaderLog))
+        if (!createShader(GL_GEOMETRY_SHADER, geometrySource, m_geometryShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Geometry shader compilation error: %s", shaderLog.c_str())).c_str()
             );
 
-        if (!createShader(GL_FRAGMENT_SHADER, convNaiveGpuFragmentSource, m_fragmentShader, shaderLog))
+        if (!createShader(GL_FRAGMENT_SHADER, fragmentSource, m_fragmentShader, shaderLog))
             throw std::exception(
                 makeError(__FUNCTION__, "", strFormat("Fragment shader compilation error: %s", shaderLog.c_str())).c_str()
             );
@@ -207,20 +207,14 @@ namespace RealBloom
     void ConvNaiveGpu::setUniforms(uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize)
     {
         GLint kernelTopLeftUniform = glGetUniformLocation(m_shaderProgram, "kernelTopLeft");
-        checkGlStatus(__FUNCTION__, "glGetUniformLocation(kernelTopLeft)");
-
         glUniform2f(kernelTopLeftUniform, kernelTopLeft[0], kernelTopLeft[1]);
         checkGlStatus(__FUNCTION__, "glUniform2f(kernelTopLeftUniform)");
 
         GLint kernelSizeUniform = glGetUniformLocation(m_shaderProgram, "kernelSize");
-        checkGlStatus(__FUNCTION__, "glGetUniformLocation(kernelSize)");
-
         glUniform2f(kernelSizeUniform, kernelSize[0], kernelSize[1]);
         checkGlStatus(__FUNCTION__, "glUniform2f(kernelSizeUniform)");
 
         GLint texKernelUniform = glGetUniformLocation(m_shaderProgram, "texKernel");
-        checkGlStatus(__FUNCTION__, "glGetUniformLocation(texKernel)");
-
         glUniform1i(texKernelUniform, 0);
         checkGlStatus(__FUNCTION__, "glUniform1i(texKernelUniform)");
 
@@ -302,11 +296,11 @@ namespace RealBloom
         float threshold = m_binInput->cp_convThreshold;
         float transKnee = transformKnee(m_binInput->cp_convKnee);
 
-        float kernelCenterX = (int)floorf(m_binInput->cp_kernelCenterX * (float)kernelWidth);
-        float kernelCenterY = (int)floorf(m_binInput->cp_kernelCenterY * (float)kernelHeight);
+        float kernelOriginX = (int)floorf(m_binInput->cp_kernelOriginX * (float)kernelWidth);
+        float kernelOriginY = (int)floorf(m_binInput->cp_kernelOriginY * (float)kernelHeight);
 
-        float offsetX = floorf((float)kernelWidth / 2.0f) - kernelCenterX;
-        float offsetY = floorf((float)kernelHeight / 2.0f) - kernelCenterY;
+        float offsetX = floorf((float)kernelWidth / 2.0f) - kernelOriginX;
+        float offsetY = floorf((float)kernelHeight / 2.0f) - kernelOriginY;
 
         // Collect points (vertex data)
         clearVector(m_vertexData);
@@ -321,7 +315,7 @@ namespace RealBloom
                 color[1] = m_binInput->inputBuffer[redIndex + 1];
                 color[2] = m_binInput->inputBuffer[redIndex + 2];
 
-                float v = rgbToGrayscale(color[0], color[1], color[2]);
+                float v = rgbToGrayscale(color, CONV_THRESHOLD_GRAYSCALE_TYPE);
                 if (v > threshold)
                 {
                     uint32_t ix = i % m_width;
@@ -353,7 +347,7 @@ namespace RealBloom
         }
 
         // Draw
-        std::shared_ptr<GlFrameBuffer> frameBuffer = nullptr;
+        std::shared_ptr<GlFramebuffer> framebuffer = nullptr;
         try
         {
             // Capabilities
@@ -362,10 +356,10 @@ namespace RealBloom
             glEnable(GL_BLEND);
             checkGlStatus("", "Capabilities");
 
-            // Frame buffer
-            frameBuffer = std::make_shared<GlFrameBuffer>(m_width, m_height);
-            frameBuffer->bind();
-            frameBuffer->viewport();
+            // Framebuffer
+            framebuffer = std::make_shared<GlFramebuffer>(m_width, m_height);
+            framebuffer->bind();
+            framebuffer->viewport();
 
             // Upload vertex data
             definePoints(m_vertexData.data(), m_vertexData.size());
@@ -390,12 +384,12 @@ namespace RealBloom
             // Draw
             drawScene(m_vertexData.size() / getNumAttribs());
 
-            // Copy pixel data from the frame buffer
+            // Copy pixel data from the framebuffer
             uint32_t fbSize = m_width * m_height * 4;
             std::vector<float> fbData;
             fbData.resize(fbSize);
             {
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer->getFrameBuffer());
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer->getFramebuffer());
                 checkGlStatus("", "glBindFramebuffer");
 
                 glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -430,19 +424,12 @@ namespace RealBloom
         // Clean up
         try
         {
-            try
-            {
-                frameBuffer = nullptr;
-            }
-            catch (const std::exception& e)
-            {
-                printError("", "Cleanup (frameBuffer)", e.what());
-            }
+            framebuffer = nullptr;
 
             glDeleteBuffers(1, &m_vbo);
             glDeleteVertexArrays(1, &m_vao);
 
-            checkGlStatus("", "Cleanup");
+            clearGlStatus();
         }
         catch (const std::exception& e)
         {
@@ -452,19 +439,12 @@ namespace RealBloom
 
     void ConvNaiveGpu::cleanUp()
     {
-        try
-        {
-            glDeleteTextures(1, &m_texKernel);
-            glDeleteProgram(m_shaderProgram);
-            glDeleteShader(m_vertexShader);
-            glDeleteShader(m_geometryShader);
-            glDeleteShader(m_fragmentShader);
-            checkGlStatus("", "Cleanup");
-        }
-        catch (const std::exception& e)
-        {
-            printError(__FUNCTION__, "", e.what());
-        }
+        glDeleteTextures(1, &m_texKernel);
+        glDeleteProgram(m_shaderProgram);
+        glDeleteShader(m_vertexShader);
+        glDeleteShader(m_geometryShader);
+        glDeleteShader(m_fragmentShader);
+        clearGlStatus();
     }
 
     uint32_t ConvNaiveGpu::getNumVertices() const

@@ -1,5 +1,19 @@
 #include "StringUtils.h"
 
+// https://stackoverflow.com/a/3418285/18049911
+void strReplace(std::string& s, const std::string& from, const std::string& to)
+{
+    if (from.empty())
+        return;
+
+    size_t start_pos = 0;
+    while ((start_pos = s.find(from, start_pos)) != std::string::npos)
+    {
+        s.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
+}
+
 bool strContains(const std::string& source, const std::string& substring)
 {
     return (source.find(substring) != std::string::npos);
@@ -122,7 +136,7 @@ std::string strFromDataSize(uint64_t bytes)
 
     uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bytes) / log(1024.0))));
     if (mag == 0)
-        return strFormat("%lu %s", bytes, suffixes[mag]);
+        return strFormat("%llu %s", bytes, suffixes[mag]);
     else
         return strFormat("%.1f %s", (double)bytes / powers[mag], suffixes[mag]);
 }
@@ -141,7 +155,7 @@ std::string strFromBigInteger(uint64_t bigInteger)
 
     uint64_t mag = (uint64_t)fmin(4, fmax(0, floor(log((double)bigInteger) / log(1000.0))));
     if (mag == 0)
-        return strFormat("%lu", bigInteger);
+        return strFormat("%llu", bigInteger);
     else
         return strFormat("%.1f%s", (double)bigInteger / powers[mag], suffixes[mag]);
 }
@@ -157,6 +171,21 @@ std::string strFromColorChannelID(uint32_t ch)
     if (ch == 2) return "B";
     if (ch == 1) return "G";
     return "R";
+}
+
+std::string strFromEnumValues(const std::string& name, const std::vector<std::string>& values, int startingIndex)
+{
+    std::string s = strFormat("%s: ", name.c_str());
+
+    for (uint32_t i = 0; i < values.size(); i++)
+    {
+        if (i > 0)
+            s += ", ";
+
+        s += strFormat("%s = %d", values[i].c_str(), i + startingIndex);
+    }
+
+    return s;
 }
 
 std::string strFromDuration(float seconds)

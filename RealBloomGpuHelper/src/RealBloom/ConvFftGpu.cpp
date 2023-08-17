@@ -20,7 +20,7 @@ namespace RealBloom
             true, true,
             m_binInput->inputWidth, m_binInput->inputHeight,
             m_binInput->kernelWidth, m_binInput->kernelHeight,
-            m_binInput->cp_kernelCenterX, m_binInput->cp_kernelCenterY,
+            m_binInput->cp_kernelOriginX, m_binInput->cp_kernelOriginY,
             m_paddedWidth, m_paddedHeight
         );
 
@@ -29,8 +29,8 @@ namespace RealBloom
         m_inputLeftPadding = floorf((float)(m_paddedWidth - m_binInput->inputWidth) / 2.0f);
         m_inputTopPadding = floorf((float)(m_paddedHeight - m_binInput->inputHeight) / 2.0f);
 
-        m_kernelLeftPadding = floorf(((float)m_paddedWidth / 2.0f) - ((float)m_binInput->kernelWidth * m_binInput->cp_kernelCenterX));
-        m_kernelTopPadding = floorf(((float)m_paddedHeight / 2.0f) - ((float)m_binInput->kernelHeight * m_binInput->cp_kernelCenterY));
+        m_kernelLeftPadding = floorf(((float)m_paddedWidth / 2.0f) - ((float)m_binInput->kernelWidth * m_binInput->cp_kernelOriginX));
+        m_kernelTopPadding = floorf(((float)m_paddedHeight / 2.0f) - ((float)m_binInput->kernelHeight * m_binInput->cp_kernelOriginY));
 
         if (m_binInput->kernelWidth % 2 == 1) m_kernelLeftPadding += 1;
         if (m_binInput->kernelHeight % 2 == 1) m_kernelTopPadding += 1;
@@ -73,7 +73,7 @@ namespace RealBloom
                     inpColor[1] = m_binInput->inputBuffer[redIndex + 1];
                     inpColor[2] = m_binInput->inputBuffer[redIndex + 2];
 
-                    float v = rgbToGrayscale(inpColor[0], inpColor[1], inpColor[2]);
+                    float v = rgbToGrayscale(inpColor, CONV_THRESHOLD_GRAYSCALE_TYPE);
                     if (v > threshold)
                     {
                         float mul = fftScale * softThreshold(v, threshold, transKnee);

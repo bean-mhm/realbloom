@@ -7,7 +7,7 @@
 #include <memory>
 #include <filesystem>
 
-#include "OpenImageIO/imageio.h"
+#include <OpenImageIO/imageio.h>
 
 #include <OpenColorIO/OpenColorIO.h>
 namespace OCIO = OpenColorIO_v2_1;
@@ -20,25 +20,15 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "../Utils/OpenGL/GlUtils.h"
 #include "../Utils/Misc.h"
 
+// Color-Managed Image IO (Global)
 class CmImageIO
 {
-private:
-    struct CmImageIoVars
-    {
-        std::string inputSpace = "";
-        std::string outputSpace = "";
-        std::string nonLinearSpace = "";
-        bool autoDetect = true;
-        bool applyViewTransform = false;
-    };
-    static CmImageIoVars* S_VARS;
-
 public:
     CmImageIO() = delete;
     CmImageIO(const CmImageIO&) = delete;
     CmImageIO& operator= (const CmImageIO&) = delete;
 
-    static bool init();
+    static void init();
     static void cleanUp();
 
     static const std::string& getInputSpace();
@@ -66,5 +56,16 @@ public:
     static const std::vector<std::string>& getOpenFilterList();
     static const std::vector<std::string>& getSaveFilterList();
     static std::string getDefaultFilename();
+
+private:
+    struct CmImageIoVars
+    {
+        std::string inputSpace = "";
+        std::string outputSpace = "";
+        std::string nonLinearSpace = "";
+        bool autoDetect = true;
+        bool applyViewTransform = false;
+    };
+    static CmImageIoVars S_VARS;
 
 };

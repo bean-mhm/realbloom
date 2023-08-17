@@ -1,4 +1,3 @@
-
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
 <!--
@@ -17,11 +16,11 @@
   </a>
 <h3 align="center">RealBloom</h3>
   <p align="center">
-    Physically Accurate Bloom Simulation Software
+    Bloom Simulation Software
     <br />
     <a href="https://github.com/bean-mhm/realbloom/releases">Latest Release</a>
     ·
-    <a href="https://github.com/bean-mhm/realbloom/blob/main/USAGE.md">Tutorial</a>
+    <a href="https://github.com/bean-mhm/realbloom/blob/main/docs/">Documentation</a>
     ·
     <a href="https://github.com/bean-mhm/realbloom/issues">Report Bug</a>
   </p>
@@ -34,11 +33,11 @@
   <summary>Table of Contents</summary>
   <ol>
     <li><a href="#introduction">Introduction</a></li>
-    <li><a href="#running-realbloom">Running RealBloom</a></li>
-    <li><a href="#using-realbloom">Using RealBloom</a></li>
-    <li><a href="#building-realbloom">Building RealBloom</a></li>
+    <li><a href="#how-its-made">How It's Made</a></li>
+    <li><a href="#how-to-run">How To Run</a></li>
+    <li><a href="#how-to-use">How To Use</a></li>
+    <li><a href="#how-to-build">How To Build</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#nodes">Nodes</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -48,31 +47,37 @@
 
 
 <!-- INTRODUCTION -->
-## Introduction
+# Introduction
 
-RealBloom is a sophisticated bloom simulation tool for achieving more realism in 3D renders and HDR images.
+RealBloom is a bloom simulation / post processing tool for achieving more realism in 3D renders and HDR images.
 
 ![RealBloom Screenshot](images/1-main.png)
 
 ![RealBloom Screenshot](images/2-main-conv.png)
 
-RealBloom was started as a hobby project in late August 2022, inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it in a physically accurate manner. **I highly recommend watching this video** to get a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets!
+RealBloom was started as a hobby project in late August 2022, inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it in a physically accurate manner. I highly recommend watching this video to get a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets!
 
-The ultimate goal is to achieve more realism in 3D renders that contain bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night, bright lights at a concert, a flashlight pointing directly at the camera, you name it. RealBloom can be used to produce some other effects, including film halation, motion blur with arbitrary curves, uniform lens blur, etc.
+The ultimate goal of bloom is to achieve more realism in 3D renders that contain bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night, bright lights at a concert, a flashlight pointing directly at the camera, you name it.
 
-### How It's Made
+RealBloom can be used to produce some other effects, including film halation, motion blur with arbitrary curves, uniform lens blur, etc. These, and more, can be achieved with the three main modules in RealBloom:
+
+- Diffraction (2D FFT)
+- Dispersion
+- Convolution
+
+# How It's Made
 
 RealBloom is written in C++ with Visual Studio 2022. The target platform is Windows. However, considering all the libraries used and most of the code for RealBloom are platform-independent, it should be fairly easy (ish) to port to other major desktop platforms.
 
-RealBloom uses the following libraries:
+## Libraries Used
 | Library | Used for |
 |--|--|
 | [GLEW](https://glew.sourceforge.net/) | OpenGL extensions |
-| [GLFW](https://www.glfw.org/) | Window and context creation for use in ImGui |
+| [GLFW](https://www.glfw.org/) | Window and context creation |
 | [Dear ImGui](https://github.com/ocornut/imgui) | Graphical user interface |
 | [NFD Extended](https://github.com/btzy/nativefiledialog-extended) | Native file dialogs |
 | [OpenColorIO](https://opencolorio.org/) | Color management |
-| [OpenImageIO](https://sites.google.com/site/openimageio/) | Reading and writing images |
+| [OpenImageIO](https://github.com/OpenImageIO/oiio) | Reading and writing images |
 | [PocketFFT](https://github.com/mreineck/pocketfft) | 2D Fast Fourier Transforms |
 | [dj_fft](https://github.com/jdupuy/dj_fft) | 2D FFT on the GPU |
 | [pugixml](https://pugixml.org/) | Parsing and serializing XML files |
@@ -83,11 +88,11 @@ RealBloom uses the following libraries:
 
 
 <!-- RUNNING -->
-## Running RealBloom
+# How To Run
 
-RealBloom requires [Microsoft Visual C++ Runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) to run properly. Chances are you already have it installed, though. To get RealBloom, you can [download the latest release here](https://github.com/bean-mhm/realbloom/releases).
+RealBloom requires [Microsoft Visual C++ Runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) in order to run properly. To get RealBloom, you can [download the latest release here](https://github.com/bean-mhm/realbloom/releases).
 
-### Minimum Requirements
+## Minimum Requirements
 
  - 64-bit version of Windows
 
@@ -100,21 +105,35 @@ RealBloom requires [Microsoft Visual C++ Runtime](https://learn.microsoft.com/en
 
 
 <!-- USAGE -->
-## Using RealBloom
+# How To Use
 
-Check out [this page](USAGE.md) for a step-by-step tutorial on getting started with RealBloom, along with more details and information about the project. This will cover most of what you need to know.
+If you're using RealBloom for the first time, check out [this step-by-step tutorial][tutorial] on getting started with RealBloom, along with more details and information about the project. This will cover most of what you need to know.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-<!-- BUILDING -->
-## Building RealBloom
 
-### Prerequisites
+<!-- BUILDING -->
+# How To Build
+
+## Prerequisites
 
 The project was made for Windows and built with MSVC. To build a local copy of RealBloom, have a recent version of Visual Studio ready.
 
-### Build
+RealBloom uses [vcpkg](https://vcpkg.io/en/index.html) to link some of the libraries, specifically, [OpenColorIO](https://opencolorio.org/) and [OpenImageIO](https://github.com/OpenImageIO/oiio). Here are the basic steps to install vcpkg and the mentioned libraries.
+
+1. Follow the [vcpkg installation instructions](https://github.com/Microsoft/vcpkg#quick-start-windows) to install vcpkg and **enable Visual Studio integration**.
+
+2. Run the following command from vcpkg's root directory:
+   ```sh
+   vcpkg install openimageio[opencolorio,tools]:x64-windows --recurse
+   ```
+
+Note that this might take some time to finish.
+
+## Build
+
+Now, to build RealBloom,
 
 1. Clone the repo:
    ```sh
@@ -130,7 +149,7 @@ The project was made for Windows and built with MSVC. To build a local copy of R
 
 
 <!-- ROADMAP -->
-## Roadmap
+# Roadmap
 
 - [x] Color Management System
 - [x] OpenEXR support
@@ -138,7 +157,7 @@ The project was made for Windows and built with MSVC. To build a local copy of R
 - [x] GPU Dispersion
 - [ ] [WIP] GPU FFT Convolution
 - [ ] GPU Image Transforms
-- [ ] Node-based workflow
+- [ ] ~~Node-based workflow~~
 - [ ] ~~Support for animated apertures, kernels and input images~~ 
 - [ ] ~~GPU Diffraction Pattern~~
 
@@ -148,24 +167,8 @@ See [open issues](https://github.com/bean-mhm/realbloom/issues) for a full list 
 
 
 
-## Nodes
-
-I have in mind to make RealBloom's interface more generic and robust by making it node-based. Here's the concept represented using Blender's node system:
-
-![Node-based approach](images/3-nodes.png)
-
-Unfortunately, I can't afford the time to work on this as of now, but I do plan on doing it whenever possible. If you do have the time and some knowledge on node-based applications, feel free to fork the repo and work on it, which would be really appreciated!
-
-For some initial ideas, there could be a specific text format - based on XML, JSON, or anything else - for representing nodes, a core library that runs a node-tree, and a GUI for creating, managing, and displaying nodes.
-
-Nodes could have unique IDs, cached buffers that only get reprocessed when the node's input parameters change, status and progress indicators, etc. You can see some example nodes in the image above.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
 <!-- CONTRIBUTING -->
-## Contributing
+# Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
@@ -183,7 +186,7 @@ Don't forget to give the project a star! Thanks again!
 
 
 <!-- LICENSE -->
-## License
+# License
 
 Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/blob/main/LICENSE.md). See [LICENSE.md](LICENSE.md) for more information.
 
@@ -192,7 +195,7 @@ Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/b
 
 
 <!-- CONTACT -->
-## Contact
+# Contact
 
 ☀️ **RealBloom Community Server:** [Discord](https://discord.gg/Xez5yec8Hh)
 
@@ -207,5 +210,4 @@ Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/b
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [product-screenshot]: images/screenshot.png
-
-
+[tutorial]: https://github.com/bean-mhm/realbloom/blob/main/docs/v0.7.0-beta/tutorial.md

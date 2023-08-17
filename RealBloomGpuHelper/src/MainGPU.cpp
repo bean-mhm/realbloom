@@ -35,7 +35,7 @@ extern "C" {
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-constexpr const char* APP_TITLE = "RealBloom GPU Helper";
+static constexpr const char* APP_TITLE = "RealBloom GPU Helper";
 
 typedef std::function<void(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile)> GpuHelperOperation;
 
@@ -43,7 +43,7 @@ void runDisp(std::string inpFilename, std::string outFilename, std::ifstream& in
 void runConvFFT(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
 void runConvNaive(std::string inpFilename, std::string outFilename, std::ifstream& inpFile, std::ofstream& outFile);
 
-std::ofstream logFile;
+static std::ofstream logFile;
 
 enum class LogLevel
 {
@@ -117,12 +117,12 @@ int main(int argc, char* argv[])
     else
     {
         std::cout << "Further information will be written into \"" << logFilename << "\".\n";
-        logAdd(LogLevel::Info, strFormat("%s v%s", APP_TITLE, Config::S_APP_VERSION));
+        logAdd(LogLevel::Info, strFormat("%s v%s", APP_TITLE, Config::APP_VERSION));
     }
 
     // Set Locale
-    if (!std::setlocale(LC_ALL, Config::S_APP_LOCALE))
-        logAdd(LogLevel::Warning, strFormat("Couldn't set locale to \"%s\".", Config::S_APP_LOCALE));
+    if (!std::setlocale(LC_ALL, Config::APP_LOCALE))
+        logAdd(LogLevel::Warning, strFormat("Couldn't set locale to \"%s\".", Config::APP_LOCALE));
 
     // Log printErr
     setPrintHandler(

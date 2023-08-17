@@ -8,18 +8,32 @@
 #include <future>
 #include <functional>
 #include <unordered_map>
+#include <variant>
 
+#include "Utils/Misc.h"
+
+typedef std::variant<void*, bool, int32_t, uint32_t, int64_t, uint64_t, float, double, std::string> SignalValue;
+
+// Synchronization and Job-Scheduling System (Global)
 class Async
 {
-private:
-    static std::unordered_map<std::string, void*> S_SHARED;
-    static std::mutex S_SHARED_MUTEX;
-
 public:
-    static std::deque<std::packaged_task<void()>> S_TASKS;
-    static std::mutex S_TASKS_MUTEX;
-    static void schedule(std::function<void()> job);
+    Async() = delete;
+    Async(const Async&) = delete;
+    Async& operator= (const Async&) = delete;
 
-    static void putShared(std::string key, void* value);
-    static void* getShared(std::string key);
+    static void emitSignal(const std::string& name, const SignalValue& value);
+    static bool readSignal(const std::string& name, SignalValue& outValue);
+    static bool readSignalLast(const std::string& name, SignalValue& outValue);
+
+    static void scheduleJob(std::function<void()> job, bool wait);
+    static void processJobs(const std::string& threadName);
+
+private:
+    static std::vector<std::pair<std::string, SignalValue>> S_SIGNALS;
+    static std::mutex S_SIGNALS_MUTEX;
+
+    static std::deque<std::packaged_task<void()>> S_JOBS;
+    static std::mutex S_JOBS_MUTEX;
+
 };

@@ -100,6 +100,7 @@ bool CliParser::hasValue(const std::string& argument) const
             }
         }
     }
+
     return false;
 }
 
@@ -120,6 +121,7 @@ const std::string& CliParser::get(const std::string& argument) const
     itr = std::find(this->m_tokens.begin(), this->m_tokens.end(), argument);
     if ((itr != this->m_tokens.end()) && (++itr != this->m_tokens.end()))
         return *itr;
+
     return "";
 }
 
@@ -130,6 +132,7 @@ const std::string& CliParser::get(const std::vector<std::string>& aliases) const
 
     for (const auto& alias : aliases)
         if (hasValue(alias)) return get(alias);
+
     return "";
 }
 

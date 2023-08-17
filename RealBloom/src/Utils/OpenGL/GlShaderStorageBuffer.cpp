@@ -13,7 +13,7 @@ GlShaderStorageBuffer::~GlShaderStorageBuffer()
 {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glDeleteBuffers(1, &m_ssbo);
-    checkGlStatus(__FUNCTION__, "Cleanup");
+    clearGlStatus();
 }
 
 GLuint GlShaderStorageBuffer::getSSBO() const

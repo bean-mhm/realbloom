@@ -1,49 +1,71 @@
 ﻿#include "Main.h"
 
 // GUI
-int glVersionMajor = 3;
-int glVersionMinor = 2;
-const char* glslVersion = "#version 150";
-GLFWwindow* window = nullptr;
-ImGuiIO* io = nullptr;
-bool appRunning = true;
-bool showFPS = false;
+
+static int glVersionMajor = 3;
+static int glVersionMinor = 2;
+static const char* glslVersion = "#version 150";
+
+static GLFWwindow* window = nullptr;
+static ImGuiIO* io = nullptr;
+static bool appRunning = true;
+
+static bool showRendererName = false;
+static bool showFPS = false;
+static bool showDebugPanel = false;
 
 // Fonts
-ImFont* fontRoboto = nullptr;
-ImFont* fontRobotoBold = nullptr;
-ImFont* fontMono = nullptr;
+static ImFont* fontRoboto = nullptr;
+static ImFont* fontRobotoBold = nullptr;
+static ImFont* fontMono = nullptr;
 
 // Colors
-const ImVec4 bgColor{ 0.13f, 0.13f, 0.13f, 1.00f };
-const ImVec4 colorInfoText{ 0.328f, 0.735f, 0.910f, 1.0f };
-const ImVec4 colorWarningText{ 0.940f, 0.578f, 0.282f, 1.0f };
-const ImVec4 colorErrorText{ 0.950f, 0.300f, 0.228f, 1.0f };
-
-// Used for ImGui::Combo
-std::vector<std::string> activeComboList;
+static const ImVec4 colorBackground{ 0.13f, 0.13f, 0.13f, 1.00f };
+static const ImVec4 colorImageBorder{ 0.05f, 0.05f, 0.05f, 1.0f };
+static const ImVec4 colorInfoText{ 0.328f, 0.735f, 0.910f, 1.0f };
+static const ImVec4 colorWarningText{ 0.940f, 0.578f, 0.282f, 1.0f };
+static const ImVec4 colorErrorText{ 0.950f, 0.300f, 0.228f, 1.0f };
 
 // Image slots
-std::vector<std::shared_ptr<CmImage>> images;
-std::vector<std::string> imageNames;
-int selImageIndex = 0;
-std::string selImageID = "";
-float imageZoom = 1.0f;
+static std::vector<ImageSlot> slots;
+static std::vector<std::string> slotNames;
+std::vector<std::string> loadableSlotNames;
+std::vector<uint32_t> loadableSlotIndices;
+static int selSlotIndex = 0;
+static std::string selSlotID = ""; // will be updated externally, causing the index to update
+static float imageZoom = 1.0f;
 
 // RealBloom modules
-RealBloom::DiffractionPattern diff;
-RealBloom::Dispersion disp;
-RealBloom::Convolution conv;
+static RealBloom::Diffraction diff;
+static RealBloom::Dispersion disp;
+static RealBloom::Convolution conv;
 
-// Variables for controls
-UiVars vars;
-std::string convResUsage = "";
+// Variables for modules
+
+static bool convInputUpdated = false;
+static bool convKernelUpdated = false;
+
+static bool convThresholdUpdated = false;
+static bool convBlendParamsUpdated = false;
+
+static bool diffInputUpdated = false;
+static bool dispInputUpdated = false;
+
+static std::shared_ptr<std::jthread> convResUsageThread = nullptr;
+static std::string convResUsage = "";
+
+// Constants
+static constexpr float EXPOSURE_RANGE = 10.0f;
+
+// Dialog Params
+DialogParams_MoveTo dialogParams_MoveTo;
+
 
 int main(int argc, char** argv)
 {
     // Set Locale
-    if (!std::setlocale(LC_ALL, Config::S_APP_LOCALE))
-        std::cout << "Couldn't set locale to \"" << Config::S_APP_LOCALE << "\".\n";
+    if (!std::setlocale(LC_ALL, Config::APP_LOCALE))
+        std::cout << "Couldn't set locale to \"" << Config::APP_LOCALE << "\".\n";
 
     // Load config
     Config::load();
@@ -58,14 +80,28 @@ int main(int argc, char** argv)
         // config properly
         SetCurrentDirectoryA(getExecDir().c_str());
 
-        // Setup GLFW and ImGui
+        // Setup GLFW
         if (!setupGLFW())
+        {
+            std::cout << "Failed to initialize GLFW.\n";
             return 1;
-        if (!setupImGui())
-            return 1;
+        }
 
         // GLEW for loading OpenGL extensions
-        glewInit();
+        glewExperimental = GL_TRUE;
+        GLenum glewInitResult = glewInit();
+        if (glewInitResult != GLEW_OK)
+        {
+            std::cout << "Failed to initialize GLEW: " << glewInitResult << "\n";
+            return 1;
+        }
+
+        // Setup ImGui
+        if (!setupImGui())
+        {
+            std::cout << "Failed to initialize ImGui.\n";
+            return 1;
+        }
     }
 
     // Color Management System
@@ -84,38 +120,51 @@ int main(int argc, char** argv)
     // GUI-specific
     if (!CLI::Interface::active())
     {
-        // Hide the console window
-        ShowWindow(GetConsoleWindow(), SW_HIDE);
+        // Minimize the console window
+        PostMessage(GetConsoleWindow(), WM_SYSCOMMAND, SC_MINIMIZE, 0);
 
         // Native File Dialog Extended
         NFD_Init();
 
-        // Create images to be used throughout the program
-        addImage("aperture", "Aperture");
-        addImage("disp-input", "Dispersion Input");
-        addImage("disp-result", "Dispersion Result");
-        addImage("cv-input", "Conv. Input");
-        addImage("cv-kernel", "Conv. Kernel");
-        addImage("cv-prev", "Conv. Preview");
-        addImage("cv-result", "Conv. Result");
+        // Create image slots to be used throughout the program
+        addImageSlot("diff-input", "Diffraction Input", true, diff.getImgInputSrc(), &diffInputUpdated);
+        addImageSlot("diff-result", "Diffraction Result", false);
+        addImageSlot("disp-input", "Dispersion Input", true, disp.getImgInputSrc(), &dispInputUpdated);
+        addImageSlot("disp-result", "Dispersion Result", false);
+        addImageSlot("cv-input", "Conv. Input", true, conv.getImgInputSrc(), &convInputUpdated);
+        addImageSlot("cv-kernel", "Conv. Kernel", true, conv.getImgKernelSrc(), &convKernelUpdated);
+        addImageSlot("cv-prev", "Conv. Preview", false);
+        addImageSlot("cv-result", "Conv. Result", false);
 
-        // Set up images for diffraction pattern
-        diff.setImgAperture(getImageByID("aperture"));
-        diff.setImgDiffPattern(disp.getImgInputSrc());
+        // Store a list of the slot names
+        for (auto& slot : slots)
+        {
+            slotNames.push_back(slot.name);
+        }
+
+        // Store a list of slots that allow externally loading images
+        for (uint32_t i = 0; i < slots.size(); i++)
+        {
+            if (slots[i].canLoad)
+            {
+                loadableSlotNames.push_back(slots[i].name);
+                loadableSlotIndices.push_back(i);
+            }
+        }
+
+        // Set up images for diffraction
+        diff.setImgInput(getSlotByID("diff-input").viewImage.get());
+        diff.setImgDiff(getSlotByID("diff-result").viewImage.get());
 
         // Set up images for dispersion
-        disp.setImgInput(getImageByID("disp-input"));
-        disp.setImgDisp(getImageByID("disp-result"));
+        disp.setImgInput(getSlotByID("disp-input").viewImage.get());
+        disp.setImgDisp(getSlotByID("disp-result").viewImage.get());
 
         // Set up images for convolution
-        conv.setImgInput(getImageByID("cv-input"));
-        conv.setImgKernel(getImageByID("cv-kernel"));
-        conv.setImgConvPreview(getImageByID("cv-prev"));
-        conv.setImgConvMix(getImageByID("cv-result"));
-
-        // Will be shared with Convolution and Dispersion
-        Async::putShared("convMixParamsChanged", &(vars.convMixParamsChanged));
-        Async::putShared("selImageID", &selImageID);
+        conv.setImgInput(getSlotByID("cv-input").viewImage.get());
+        conv.setImgKernel(getSlotByID("cv-kernel").viewImage.get());
+        conv.setImgConvPreview(getSlotByID("cv-prev").viewImage.get());
+        conv.setImgConvResult(getSlotByID("cv-result").viewImage.get());
     }
 
     // To kill child processes when the parent dies
@@ -126,11 +175,10 @@ int main(int argc, char** argv)
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = { 0 };
         jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
         SetInformationJobObject(hJobObject, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
-        Async::putShared("hJobObject", hJobObject);
+        Async::emitSignal("hJobObject", (void*)hJobObject);
     }
 
     // Update resource usage info for convolution (GUI)
-    std::shared_ptr<std::jthread> convResUsageThread = nullptr;
     if (!CLI::Interface::active())
     {
         convResUsageThread = std::make_shared<std::jthread>([]()
@@ -138,9 +186,8 @@ int main(int argc, char** argv)
                 auto lastTime = std::chrono::system_clock::now();
                 while (appRunning)
                 {
-                    if (getElapsedMs(lastTime) > 500)
+                    if (getElapsedMs(lastTime) > 700)
                     {
-                        updateConvParams();
                         convResUsage = conv.getResourceInfo();
                         lastTime = std::chrono::system_clock::now();
                     }
@@ -170,27 +217,8 @@ int main(int argc, char** argv)
             ImGui::NewFrame();
             ImGui::DockSpaceOverViewport();
 
-            // Process queued tasks
-            {
-                std::unique_lock<std::mutex> lock(Async::S_TASKS_MUTEX);
-                while (!Async::S_TASKS.empty())
-                {
-                    auto task(std::move(Async::S_TASKS.front()));
-                    Async::S_TASKS.pop_front();
-
-                    // Unlock during the task
-                    lock.unlock();
-                    try
-                    {
-                        task();
-                    }
-                    catch (const std::exception& e)
-                    {
-                        printError("Main Loop", "Task", e.what());
-                    }
-                    lock.lock();
-                }
-            }
+            // Process scheduled jobs
+            Async::processJobs("Main");
 
             // UI Layout
             ImGui::PushFont(fontRoboto);
@@ -202,7 +230,7 @@ int main(int argc, char** argv)
             int display_w, display_h;
             glfwGetFramebufferSize(window, &display_w, &display_h);
             glViewport(0, 0, display_w, display_h);
-            glClearColor(bgColor.x * bgColor.w, bgColor.y * bgColor.w, bgColor.z * bgColor.w, bgColor.w);
+            glClearColor(colorBackground.x * colorBackground.w, colorBackground.y * colorBackground.w, colorBackground.z * colorBackground.w, colorBackground.w);
             glClear(GL_COLOR_BUFFER_BIT);
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -221,10 +249,10 @@ int main(int argc, char** argv)
         }
     }
 
-    // CLI-specific
+    // Start the CLI, then clean up when done
     if (CLI::Interface::active())
     {
-        // Create OpenGL context
+        // Create an OpenGL context
 
         std::string ctxError;
         bool ctxSuccess = oglOneTimeContext(
@@ -233,27 +261,19 @@ int main(int argc, char** argv)
             {
                 // Start the CLI
                 CLI::Interface::proceed();
+
+                // Clean up (calling it here so all OpenGL objects get deallocated)
+                cleanUp();
             },
             ctxError);
 
         if (!ctxSuccess)
             printError(__FUNCTION__, "", strFormat("OpenGL context initialization error: %s", ctxError.c_str()));
     }
-
-    // Quit
-
-    Config::save();
-
-    if (!CLI::Interface::active())
+    else
     {
-        convResUsageThread->join();
-        convResUsageThread = nullptr;
+        cleanUp();
     }
-
-    disp.cancel();
-    conv.cancel();
-
-    cleanUp();
 
     return 0;
 }
@@ -264,77 +284,115 @@ void layoutAll()
     layoutColorManagement();
     layoutMisc();
     layoutConvolution();
+    layoutDispersion();
     layoutDiffraction();
+    layoutDebug();
 }
 
 void layoutImagePanels()
 {
-    // Selected image
-
-    if (!selImageID.empty())
+    // See if selSlotID needs to be updated
     {
-        for (size_t i = 0; i < images.size(); i++)
+        SignalValue v;
+        if (Async::readSignalLast("selSlotID", v))
+            selSlotID = std::get<std::string>(v);
+    }
+
+    // Update selSlotIndex if selSlotID was modified,
+    // then, reset selSlotID.
+    if (!selSlotID.empty())
+    {
+        for (size_t i = 0; i < slots.size(); i++)
         {
-            if (images[i]->getID() == selImageID)
+            if (slots[i].id == selSlotID)
             {
-                selImageIndex = i;
+                selSlotIndex = i;
                 break;
             }
         }
-        selImageID = "";
+        selSlotID = "";
     }
 
-    CmImage& selImage = *(images[selImageIndex]);
+    // Selected slot
+    ImageSlot& selSlot = slots[selSlotIndex];
 
-    static int lastSelImageIndex = selImageIndex;
-    if (selImageIndex != lastSelImageIndex)
+    // Move to GPU when switching slots
+    static int lastSelSlotIndex = selSlotIndex;
+    if (selSlotIndex != lastSelSlotIndex)
     {
-        selImage.moveToGPU();
-        lastSelImageIndex = selImageIndex;
+        selSlot.viewImage->moveToGPU();
+        lastSelSlotIndex = selSlotIndex;
     }
 
     // Image List
     {
-        ImGui::Begin("Image List");
+        ImGui::Begin("Image Slots");
 
         imGuiBold("SLOTS");
 
+        // Slots
         ImGui::PushItemWidth(-1);
         ImGui::ListBox(
-            "##Slots",
-            &selImageIndex,
+            "##ImageSlots_List",
+            &selSlotIndex,
             [](void* data, int index, const char** outText)
             {
-                *outText = imageNames[index].c_str();
+                *outText = slotNames[index].c_str();
                 return true;
             },
-            nullptr, images.size(), images.size());
+            nullptr, slots.size(), slots.size());
         ImGui::PopItemWidth();
 
-        // For comparing conv. input and result
-        if ((selImage.getID() == "cv-input") || (selImage.getID() == "cv-result"))
+        // Compare input and result slots
+        if ((selSlot.id == "disp-input") || (selSlot.id == "disp-result"))
         {
-            if (ImGui::Button("Compare", btnSize()))
+            if (ImGui::Button("Compare##ImageSlots_0", btnSize()))
             {
-                if (selImage.getID() == "cv-input") selImageID = "cv-result";
-                else selImageID = "cv-input";
+                if (selSlot.id == "disp-input") selSlotID = "disp-result";
+                else selSlotID = "disp-input";
             }
         }
-        else if ((selImage.getID() == "disp-input") || (selImage.getID() == "disp-result"))
+        else if ((selSlot.id == "cv-input") || (selSlot.id == "cv-result"))
         {
-            if (ImGui::Button("Compare", btnSize()))
+            if (ImGui::Button("Compare##ImageSlots_1", btnSize()))
             {
-                if (selImage.getID() == "disp-input") selImageID = "disp-result";
-                else selImageID = "disp-input";
+                if (selSlot.id == "cv-input") selSlotID = "cv-result";
+                else selSlotID = "cv-input";
             }
+        }
+        else if ((selSlot.id == "diff-input") || (selSlot.id == "diff-result"))
+        {
+            if (ImGui::Button("Compare##ImageSlots_2", btnSize()))
+            {
+                if (selSlot.id == "diff-input") selSlotID = "diff-result";
+                else selSlotID = "diff-input";
+            }
+        }
+        else
+        {
+            ImGui::BeginDisabled();
+            ImGui::Button("Compare##ImageSlots", btnSize());
+            ImGui::EndDisabled();
         }
 
-        // Save
+        // Move To
+        if (ImGui::Button("Move To##ImageSlots", btnSize()))
         {
-            static std::string saveError = "";
-            if (ImGui::Button("Save", btnSize()))
-                saveImage(selImage, selImage.getID(), saveError);
-            imGuiText(saveError, true, false);
+            dialogParams_MoveTo.selSourceSlot = selSlotIndex;
+            dialogParams_MoveTo.selDestSlot = -1;
+
+            // Try to auto-select the destination slot
+            for (uint32_t i = 0; i < loadableSlotIndices.size(); i++)
+            {
+                if (loadableSlotIndices[i] > selSlotIndex
+                    && (loadableSlotIndices[i] - selSlotIndex) < 3)
+                {
+                    dialogParams_MoveTo.selDestSlot = i;
+                    break;
+                }
+            }
+
+            ImGui::OpenPopup(DIALOG_TITLE_MOVETO);
         }
 
         ImGui::NewLine();
@@ -349,10 +407,10 @@ void layoutImagePanels()
         // Name
 
         std::string imageName;
-        if (selImage.getSourceName().empty())
-            imageName = selImage.getName();
+        if (selSlot.viewImage->getSourceName().empty())
+            imageName = selSlot.name;
         else
-            imageName = strFormat("%s (%s)", selImage.getName().c_str(), selImage.getSourceName().c_str());
+            imageName = strFormat("%s (%s)", selSlot.name.c_str(), selSlot.viewImage->getSourceName().c_str());
 
         ImGui::PushFont(fontRobotoBold);
         ImGui::TextWrapped(imageName.c_str());
@@ -361,35 +419,94 @@ void layoutImagePanels()
         ImGui::PushFont(fontMono);
 
         // Size
-        uint32_t imageWidth = selImage.getWidth();
-        uint32_t imageHeight = selImage.getHeight();
-        ImGui::Text("%dx%d", imageWidth, imageHeight);
+        uint32_t imageWidth = selSlot.viewImage->getWidth();
+        uint32_t imageHeight = selSlot.viewImage->getHeight();
+        ImGui::Text("Size: %dx%d", imageWidth, imageHeight);
+
+        imGuiHorzDiv();
 
         // Zoom
         {
-            ImGui::Text(strRightPadding(std::to_string((int)roundf(imageZoom * 100.0f)) + "%%", 5, false).c_str());
+            ImGui::SameLine();
+            ImGui::PushItemWidth(70.0f * Config::UI_SCALE);
+            ImGui::DragFloat("##ImageViewer_Zoom", &imageZoom, 0.005f, 0.1f, 2.0f, "%.2f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat);
+            ImGui::PopItemWidth();
 
             ImGui::SameLine();
-            if (ImGui::SmallButton("+"))
-                imageZoom = fminf(fmaxf(imageZoom + 0.125f, 0.25f), 2.0f);
-
-            ImGui::SameLine();
-            if (ImGui::SmallButton("-"))
-                imageZoom = fminf(fmaxf(imageZoom - 0.125f, 0.25f), 2.0f);
-
-            ImGui::SameLine();
-            if (ImGui::SmallButton("R"))
+            if (ImGui::SmallButton("R##ImageViewer"))
                 imageZoom = 1.0f;
+        }
+
+        imGuiHorzDiv();
+
+        static std::string ioError = "";
+        static auto ioErrorTime = std::chrono::system_clock::now();
+
+        // Browse
+        {
+            ImGui::SameLine();
+            if (!selSlot.canLoad)
+                ImGui::BeginDisabled();
+            try
+            {
+                if (ImGui::SmallButton("Browse##ImageViewer"))
+                {
+                    browseImageForSlot(selSlot);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                ioError = e.what();
+                ioErrorTime = std::chrono::system_clock::now();
+            }
+            if (!selSlot.canLoad)
+                ImGui::EndDisabled();
+        }
+
+        // Save
+        {
+            ImGui::SameLine();
+            try
+            {
+                if (ImGui::SmallButton("Save##ImageViewer"))
+                {
+                    saveImageFromSlot(selSlot);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                ioError = e.what();
+                ioErrorTime = std::chrono::system_clock::now();
+            }
+        }
+
+        // Clear
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Clear##ImageViewer"))
+        {
+            ioError = "";
+            selSlot.viewImage->reset(true);
+            if (selSlot.internalImage != nullptr)
+            {
+                selSlot.internalImage->reset(true);
+                selSlot.indicateUpdate();
+            }
         }
 
         ImGui::PopFont();
 
+        // Show IO Error
+        if (getElapsedMs(ioErrorTime) > 5000) ioError = "";
+        if (!ioError.empty()) imGuiText(ioError, true, false);
+
+        // Image
         ImGui::Image(
-            (void*)(intptr_t)(selImage.getGlTexture()),
-            ImVec2(
-                (float)imageWidth * imageZoom,
-                (float)imageHeight * imageZoom
-            ));
+            (void*)(intptr_t)(selSlot.viewImage->getGlTexture()),
+            ImVec2((float)imageWidth * imageZoom, (float)imageHeight * imageZoom),
+            { 0, 0 },
+            { 1, 1 },
+            { 1, 1, 1, 1 },
+            colorImageBorder);
 
         ImGui::End();
     }
@@ -400,6 +517,8 @@ void layoutColorManagement()
     const std::vector<std::string>& internalSpaces = CMS::getInternalColorSpaces();
     const std::vector<std::string>& userSpaces = CMS::getColorSpaces();
 
+    static bool cmsParamsChanged = false;
+
     ImGui::Begin("Color Management");
 
     imGuiBold("VIEW");
@@ -407,10 +526,11 @@ void layoutColorManagement()
     {
 
         // Exposure
-        if (ImGui::SliderFloat("Exposure##CMS", &(vars.cms_exposure), -10, 10))
+        float cmsExposure = CMS::getExposure();
+        if (ImGui::SliderFloat("Exposure##CMS", &cmsExposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
         {
-            CMS::setExposure(vars.cms_exposure);
-            vars.cmsParamsChanged = true;
+            CMS::setExposure(cmsExposure);
+            cmsParamsChanged = true;
         }
 
         const std::vector<std::string>& displays = CMS::getDisplays();
@@ -431,7 +551,7 @@ void layoutColorManagement()
         {
             CMS::setActiveDisplay(displays[selDisplay]);
             CMS::updateProcessors();
-            vars.cmsParamsChanged = true;
+            cmsParamsChanged = true;
 
             // Update selView
             ptrdiff_t activeViewIndex = std::distance(views.begin(), std::find(views.begin(), views.end(), activeView));
@@ -444,7 +564,7 @@ void layoutColorManagement()
         {
             CMS::setActiveView(views[selView]);
             CMS::updateProcessors();
-            vars.cmsParamsChanged = true;
+            cmsParamsChanged = true;
         }
 
         // Look
@@ -452,15 +572,15 @@ void layoutColorManagement()
         {
             CMS::setActiveLook(looks[selLook]);
             CMS::updateProcessors();
-            vars.cmsParamsChanged = true;
+            cmsParamsChanged = true;
         }
 
         // Update
-        if (vars.cmsParamsChanged)
+        if (cmsParamsChanged)
         {
-            vars.cmsParamsChanged = false;
-            for (auto& img : images)
-                img->moveToGPU();
+            cmsParamsChanged = false;
+            for (auto& slot : slots)
+                slot.viewImage->moveToGPU();
         }
 
     }
@@ -584,7 +704,7 @@ void layoutColorManagement()
         {
             tableChanged = false;
             cmfPreviewError = "";
-            selImageID = "disp-result";
+            selSlotID = "disp-result";
 
             disp.cancel();
             try
@@ -699,14 +819,18 @@ void layoutMisc()
 
     imGuiBold("INTERFACE");
 
-    if (ImGui::InputFloat("Scale", &(Config::UI_SCALE), 0.125f, 0.125f, "%.3f"))
+    if (ImGui::SliderFloat("Scale##Misc", &Config::UI_SCALE, Config::UI_MIN_SCALE, Config::UI_MAX_SCALE))
     {
-        Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::S_UI_MIN_SCALE), Config::S_UI_MAX_SCALE);
-        io->FontGlobalScale = Config::UI_SCALE / Config::S_UI_MAX_SCALE;
+        Config::UI_SCALE = fminf(fmaxf(Config::UI_SCALE, Config::UI_MIN_SCALE), Config::UI_MAX_SCALE);
+        io->FontGlobalScale = Config::UI_SCALE / Config::UI_MAX_SCALE;
     }
 
     // UI Renderer
-    static std::string uiRenderer = strFormat("UI Renderer:\n%s", (const char*)glGetString(GL_RENDERER));
+    if (showRendererName)
+    {
+        static std::string uiRenderer = strFormat("Renderer: %s", (const char*)glGetString(GL_RENDERER));
+        ImGui::TextWrapped(uiRenderer.c_str());
+    }
 
     // FPS
     if (showFPS)
@@ -715,209 +839,112 @@ void layoutMisc()
             "%.3f ms (%.1f FPS)",
             1000.0f / ImGui::GetIO().Framerate,
             ImGui::GetIO().Framerate);
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip(uiRenderer.c_str());
     }
 
     imGuiDiv();
     imGuiBold("INFO");
 
     // Version
-    ImGui::TextWrapped("%s v%s", Config::S_APP_TITLE, Config::S_APP_VERSION);
+    ImGui::TextWrapped("%s v%s", Config::APP_TITLE, Config::APP_VERSION);
 
     // GitHub
-    if (ImGui::Button("GitHub", btnSize()))
-        openURL(Config::S_GITHUB_URL);
-    if (ImGui::Button("Tutorial", btnSize()))
-        openURL(Config::S_DOCS_URL);
+    if (ImGui::Button("GitHub##Misc", btnSize()))
+        openURL(Config::GITHUB_URL);
+    if (ImGui::Button("Tutorial##Misc", btnSize()))
+        openURL(Config::DOCS_URL);
 
     ImGui::End();
 }
 
 void layoutConvolution()
 {
-    CmImage& imgConvInput = *getImageByID("cv-input");
-    CmImage& imgConvKernel = *getImageByID("cv-kernel");
-    CmImage& imgConvResult = *getImageByID("cv-result");
+    CmImage& imgConvInput = *getSlotByID("cv-input").viewImage;
+    CmImage& imgConvResult = *getSlotByID("cv-result").viewImage;
+    RealBloom::ConvolutionParams* convParams = conv.getParams();
 
     ImGui::Begin("Convolution");
 
     imGuiBold("INPUT");
 
+    if (layoutImageTransformParams("Input", "ConvInput", convParams->inputTransformParams))
     {
-        static std::string loadError;
-        if (ImGui::Button("Browse Input##Conv", btnSize()))
-        {
-            if (openImage(imgConvInput, imgConvInput.getID(), loadError))
-                vars.convThresholdChanged = true;
-        }
-        imGuiText(loadError, true, false);
+        convInputUpdated = true;
+    }
+
+    if (convInputUpdated)
+    {
+        convInputUpdated = false;
+        conv.previewInput();
+        conv.previewThreshold();
+        selSlotID = "cv-input";
     }
 
     imGuiDiv();
     imGuiBold("KERNEL");
 
+    if (layoutImageTransformParams("Kernel", "ConvKernel", convParams->kernelTransformParams))
     {
-        static std::string loadError;
-        if (ImGui::Button("Browse Kernel##Conv", btnSize()))
-        {
-            CmImage* kernelSrc = conv.getImgKernelSrc();
-            if (openImage(*kernelSrc, imgConvKernel.getID(), loadError))
-                vars.convParamsChanged = true;
-        }
-        imGuiText(loadError, true, false);
+        convKernelUpdated = true;
     }
 
-    if (ImGui::SliderFloat("Exposure##Kernel", &(vars.cv_kernelExposure), -10, 10))
-        vars.convParamsChanged = true;
-
-    if (ImGui::SliderFloat("Contrast##Kernel", &(vars.cv_kernelContrast), -1, 1))
-        vars.convParamsChanged = true;
-
-    if (ImGui::ColorEdit3("Color##Kernel", vars.cv_kernelColor,
-        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
+    if (convKernelUpdated)
     {
-        vars.convParamsChanged = true;
+        convKernelUpdated = false;
+        conv.previewKernel();
+        selSlotID = "cv-kernel";
     }
 
-    if (ImGui::SliderFloat("Rotation##Kernel", &(vars.cv_kernelRotation), -180.0f, 180.0f))
-        vars.convParamsChanged = true;
-
-    // Scale
-    {
-        if (ImGui::Checkbox("Lock Scale##Kernel", &(vars.cv_kernelLockScale)))
-        {
-            if (vars.cv_kernelLockScale)
-            {
-                vars.cv_kernelScale[0] = (vars.cv_kernelScale[0] + vars.cv_kernelScale[1]) / 2.0f;
-                vars.cv_kernelScale[1] = vars.cv_kernelScale[0];
-            }
-            vars.convParamsChanged = true;
-        }
-        if (vars.cv_kernelLockScale)
-        {
-            if (ImGui::SliderFloat("Scale##Kernel", &(vars.cv_kernelScale[0]), 0.1f, 2))
-            {
-                vars.cv_kernelScale[0] = std::max(vars.cv_kernelScale[0], 0.01f);
-                vars.cv_kernelScale[1] = vars.cv_kernelScale[0];
-                vars.convParamsChanged = true;
-            }
-        }
-        else
-        {
-            if (ImGui::SliderFloat2("Scale##Kernel", vars.cv_kernelScale, 0.1f, 2))
-            {
-                vars.cv_kernelScale[0] = std::max(vars.cv_kernelScale[0], 0.01f);
-                vars.cv_kernelScale[1] = std::max(vars.cv_kernelScale[1], 0.01f);
-                vars.convParamsChanged = true;
-            }
-        }
-    }
-
-    // Crop
-    {
-        if (ImGui::Checkbox("Lock Crop##Kernel", &(vars.cv_kernelLockCrop)))
-        {
-            if (vars.cv_kernelLockCrop)
-            {
-                vars.cv_kernelCrop[0] = (vars.cv_kernelCrop[0] + vars.cv_kernelCrop[1]) / 2.0f;
-                vars.cv_kernelCrop[1] = vars.cv_kernelCrop[0];
-            }
-            vars.convParamsChanged = true;
-        }
-        if (vars.cv_kernelLockCrop)
-        {
-            if (ImGui::SliderFloat("Crop##Kernel", &(vars.cv_kernelCrop[0]), 0.1f, 1.0f))
-            {
-                vars.cv_kernelCrop[0] = std::clamp(vars.cv_kernelCrop[0], 0.1f, 1.0f);
-                vars.cv_kernelCrop[1] = vars.cv_kernelCrop[0];
-                vars.convParamsChanged = true;
-            }
-        }
-        else
-        {
-            if (ImGui::SliderFloat2("Crop##Kernel", vars.cv_kernelCrop, 0.1f, 1.0f))
-            {
-                vars.cv_kernelCrop[0] = std::clamp(vars.cv_kernelCrop[0], 0.1f, 1.0f);
-                vars.cv_kernelCrop[1] = std::clamp(vars.cv_kernelCrop[1], 0.1f, 1.0f);
-                vars.convParamsChanged = true;
-            }
-        }
-    }
-
-    if (ImGui::Checkbox("Preview Center##Kernel", &(vars.cv_kernelPreviewCenter)))
-        vars.convParamsChanged = true;
-
-    if (ImGui::SliderFloat2("Center##Kernel", vars.cv_kernelCenter, 0, 1))
-    {
-        vars.cv_kernelCenter[0] = std::clamp(vars.cv_kernelCenter[0], 0.0f, 1.0f);
-        vars.cv_kernelCenter[1] = std::clamp(vars.cv_kernelCenter[1], 0.0f, 1.0f);
-        vars.convParamsChanged = true;
-    }
-
-    if (vars.convParamsChanged)
-    {
-        vars.convParamsChanged = false;
-        updateConvParams();
-        conv.kernel();
-        selImageID = "cv-kernel";
-    }
+    ImGui::Checkbox("Use Transform Origin##Conv", &convParams->useKernelTransformOrigin);
 
     imGuiDiv();
     imGuiBold("CONVOLUTION");
 
     const char* const convMethodItems[]{ "FFT CPU", "FFT GPU (Experimental)", "Naive CPU", "Naive GPU" };
-    if (ImGui::Combo("Method##Conv", &(vars.cv_method), convMethodItems, 4))
+    if (ImGui::Combo("Method##Conv", (int*)(&convParams->methodInfo.method), convMethodItems, RealBloom::ConvolutionMethod_EnumSize))
         conv.cancel();
 
-    if (vars.cv_method == (int)RealBloom::ConvolutionMethod::FFT_CPU)
+    if (convParams->methodInfo.method == RealBloom::ConvolutionMethod::FFT_CPU)
     {
-        // No parameters yet
+        // Deconvolve
+        ImGui::Checkbox("Deconvolve##Conv", &convParams->methodInfo.FFT_CPU_deconvolve);
     }
-    else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_CPU)
+    else if (convParams->methodInfo.method == RealBloom::ConvolutionMethod::NAIVE_CPU)
     {
         // Threads
-        if (ImGui::SliderInt("Threads##Conv", &(vars.cv_numThreads), 1, getMaxNumThreads()))
-            vars.cv_numThreads = std::clamp(vars.cv_numThreads, 1, (int)getMaxNumThreads());
+        if (imGuiSliderUInt("Threads##Conv", &convParams->methodInfo.NAIVE_CPU_numThreads, 1, getMaxNumThreads()))
+            convParams->methodInfo.NAIVE_CPU_numThreads = std::clamp(convParams->methodInfo.NAIVE_CPU_numThreads, 1u, getMaxNumThreads());
     }
-    else if (vars.cv_method == (int)RealBloom::ConvolutionMethod::NAIVE_GPU)
+    else if (convParams->methodInfo.method == RealBloom::ConvolutionMethod::NAIVE_GPU)
     {
         // Chunks
-        if (ImGui::InputInt("Chunks##Conv", &(vars.cv_numChunks)))
-            vars.cv_numChunks = std::clamp(vars.cv_numChunks, 1, RealBloom::CONV_MAX_CHUNKS);
+        if (imGuiInputUInt("Chunks##Conv", &convParams->methodInfo.NAIVE_GPU_numChunks))
+            convParams->methodInfo.NAIVE_GPU_numChunks = std::clamp(convParams->methodInfo.NAIVE_GPU_numChunks, 1u, RealBloom::CONV_NAIVE_GPU_MAX_CHUNKS);
 
         // Chunk Sleep Time
-        if (ImGui::InputInt("Sleep (ms)##Conv", &(vars.cv_chunkSleep)))
-            vars.cv_chunkSleep = std::clamp(vars.cv_chunkSleep, 0, RealBloom::CONV_MAX_SLEEP);
+        if (imGuiInputUInt("Sleep (ms)##Conv", &convParams->methodInfo.NAIVE_GPU_chunkSleep))
+            convParams->methodInfo.NAIVE_GPU_chunkSleep = std::clamp(convParams->methodInfo.NAIVE_GPU_chunkSleep, 0u, RealBloom::CONV_NAIVE_GPU_MAX_SLEEP);
     }
 
-    if (ImGui::SliderFloat("Threshold##Conv", &(vars.cv_convThreshold), 0, 2))
+    if (ImGui::SliderFloat("Threshold##Conv", &convParams->threshold, 0.0f, 2.0f))
     {
-        vars.cv_convThreshold = std::max(vars.cv_convThreshold, 0.0f);
-        vars.convThresholdChanged = true;
-        vars.convThresholdSwitchImage = true;
+        convParams->threshold = std::max(convParams->threshold, 0.0f);
+        convThresholdUpdated = true;
     }
 
-    if (ImGui::SliderFloat("Knee##Conv", &(vars.cv_convKnee), 0, 2))
+    if (ImGui::SliderFloat("Knee##Conv", &convParams->knee, 0.0f, 2.0f))
     {
-        vars.cv_convKnee = std::max(vars.cv_convKnee, 0.0f);
-        vars.convThresholdChanged = true;
-        vars.convThresholdSwitchImage = true;
+        convParams->knee = std::max(convParams->knee, 0.0f);
+        convThresholdUpdated = true;
     }
 
-    if (vars.convThresholdChanged)
+    if (convThresholdUpdated)
     {
-        updateConvParams();
+        convThresholdUpdated = false;
         conv.previewThreshold();
-        if (vars.convThresholdSwitchImage)
-        {
-            selImageID = "cv-prev";
-            vars.convThresholdSwitchImage = false;
-        }
-        vars.convThresholdChanged = false;
+        selSlotID = "cv-prev";
     }
 
-    ImGui::Checkbox("Auto-Exposure##Kernel", &(vars.cv_autoExposure));
+    ImGui::Checkbox("Auto-Exposure##Conv", &convParams->autoExposure);
 
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Adjust the exposure to preserve the overall brightness");
@@ -927,12 +954,10 @@ void layoutConvolution()
         imgConvResult.resize(imgConvInput.getWidth(), imgConvInput.getHeight(), true);
         imgConvResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
         imgConvResult.moveToGPU();
-        selImageID = "cv-result";
+        selSlotID = "cv-result";
 
-        updateConvParams();
         conv.convolve();
     }
-
     if (ImGui::IsItemHovered() && !convResUsage.empty())
         ImGui::SetTooltip(convResUsage.c_str());
 
@@ -972,53 +997,56 @@ void layoutConvolution()
     }
 
     imGuiDiv();
-    imGuiBold("LAYERS");
+    imGuiBold("BLENDING");
 
-    if (ImGui::Checkbox("Additive##Conv", &(vars.cm_additive)))
-        vars.convMixParamsChanged = true;
+    if (ImGui::Checkbox("Additive##Conv", &convParams->blendAdditive))
+        convBlendParamsUpdated = true;
 
-    if (vars.cm_additive)
+    if (convParams->blendAdditive)
     {
-        if (ImGui::SliderFloat("Input##Conv", &(vars.cm_inputMix), 0, 1))
+        if (ImGui::SliderFloat("Input##Conv", &convParams->blendInput, 0.0f, 1.0f))
         {
-            vars.cm_inputMix = std::max(vars.cm_inputMix, 0.0f);
-            vars.convMixParamsChanged = true;
+            convParams->blendInput = std::max(convParams->blendInput, 0.0f);
+            convBlendParamsUpdated = true;
         }
 
-        if (ImGui::SliderFloat("Conv.##Conv", &(vars.cm_convMix), 0, 1))
+        if (ImGui::SliderFloat("Conv.##Conv", &convParams->blendConv, 0.0f, 1.0f))
         {
-            vars.cm_convMix = std::max(vars.cm_convMix, 0.0f);
-            vars.convMixParamsChanged = true;
+            convParams->blendConv = std::max(convParams->blendConv, 0.0f);
+            convBlendParamsUpdated = true;
         }
-
-        if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
-            vars.convMixParamsChanged = true;
     }
     else
     {
-        if (ImGui::SliderFloat("Mix##Conv", &(vars.cm_mix), 0, 1))
+        if (ImGui::SliderFloat("Mix##Conv", &convParams->blendMix, 0.0f, 1.0f))
         {
-            vars.cm_mix = std::clamp(vars.cm_mix, 0.0f, 1.0f);
-            vars.convMixParamsChanged = true;
+            convParams->blendMix = std::clamp(convParams->blendMix, 0.0f, 1.0f);
+            convBlendParamsUpdated = true;
         }
-
-        if (ImGui::SliderFloat("Exposure##Conv", &(vars.cm_convExposure), -10, 10))
-            vars.convMixParamsChanged = true;
     }
+
+    if (ImGui::SliderFloat("Exposure##Conv", &convParams->blendExposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
+        convBlendParamsUpdated = true;
 
     if (ImGui::Button("Show Conv. Layer##Conv", btnSize()))
     {
-        vars.cm_additive = false;
-        vars.cm_mix = 1.0f;
-        vars.cm_convExposure = 0.0f;
-        vars.convMixParamsChanged = true;
+        convParams->blendAdditive = false;
+        convParams->blendMix = 1.0f;
+        convParams->blendExposure = 0.0f;
+        convBlendParamsUpdated = true;
     }
 
-    if (vars.convMixParamsChanged)
     {
-        vars.convMixParamsChanged = false;
-        conv.mix(vars.cm_additive, vars.cm_inputMix, vars.cm_convMix, vars.cm_mix, vars.cm_convExposure);
-        selImageID = "cv-result";
+        SignalValue v;
+        convBlendParamsUpdated |= Async::readSignalLast("convBlendParamsChanged", v);
+    }
+
+
+    if (convBlendParamsUpdated)
+    {
+        convBlendParamsUpdated = false;
+        conv.blend();
+        selSlotID = "cv-result";
     }
 
     ImGui::NewLine();
@@ -1026,90 +1054,47 @@ void layoutConvolution()
     ImGui::End();
 }
 
-void layoutDiffraction()
+void layoutDispersion()
 {
-    CmImage& imgAperture = *getImageByID("aperture");
-    CmImage& imgDispInput = *getImageByID("disp-input");
-    CmImage& imgDispResult = *getImageByID("disp-result");
+    RealBloom::DispersionParams* dispParams = disp.getParams();
 
-    ImGui::Begin("Diffraction");
+    CmImage& imgDispInput = *getSlotByID("disp-input").viewImage;
+    CmImage& imgDispResult = *getSlotByID("disp-result").viewImage;
 
-    imGuiBold("DIFFRACTION PATTERN");
+    ImGui::Begin("Dispersion");
 
+    imGuiBold("INPUT");
+
+    if (layoutImageTransformParams("Input", "DispInput", dispParams->inputTransformParams))
+        dispInputUpdated = true;
+
+    if (dispInputUpdated)
     {
-        static std::string loadError = "";
-        if (ImGui::Button("Browse Aperture##DP", btnSize()))
-            openImage(imgAperture, imgAperture.getID(), loadError);
-        imGuiText(loadError, true, false);
-    }
-
-    ImGui::Checkbox("Grayscale##DP", &(vars.dp_grayscale));
-
-    if (ImGui::Button("Compute##DP", btnSize()))
-    {
-        updateDiffParams();
-        diff.compute();
-        vars.dispParamsChanged = true;
-    }
-
-    if (!diff.getStatus().isOK())
-    {
-        std::string dpError = diff.getStatus().getError();
-        imGuiText(dpError, true, false);
+        dispInputUpdated = false;
+        disp.previewInput();
+        selSlotID = "disp-input";
     }
 
     imGuiDiv();
     imGuiBold("DISPERSION");
 
-    {
-        static std::string loadError;
-        if (ImGui::Button("Browse Input##Disp", btnSize()))
-        {
-            CmImage* inputSrc = disp.getImgInputSrc();
-            if (openImage(*inputSrc, imgDispInput.getID(), loadError))
-                vars.dispParamsChanged = true;
-        }
-        imGuiText(loadError, true, false);
-    }
+    if (ImGui::SliderFloat("Amount##Disp", &dispParams->amount, 0.0f, 1.0f))
+        dispParams->amount = fmaxf(dispParams->amount, 0.0f);
 
-    if (ImGui::SliderFloat("Exposure##Disp", &(vars.ds_exposure), -10, 10))
-        vars.dispParamsChanged = true;
+    if (ImGui::SliderFloat("Edge Offset##Disp", &dispParams->edgeOffset, -1.0f, 1.0f))
+        dispParams->edgeOffset = std::clamp(dispParams->edgeOffset, -1.0f, 1.0f);
 
-    if (ImGui::SliderFloat("Contrast##Disp", &(vars.ds_contrast), -1, 1))
-        vars.dispParamsChanged = true;
-
-    if (ImGui::ColorEdit3("Color##Disp", vars.ds_color,
-        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoAlpha))
-    {
-        vars.dispParamsChanged = true;
-    }
-
-    if (vars.dispParamsChanged)
-    {
-        vars.dispParamsChanged = false;
-        updateDispParams();
-        disp.previewInput();
-        selImageID = "disp-input";
-    }
-
-    if (ImGui::SliderFloat("Amount##Disp", &(vars.ds_amount), 0, 1))
-        vars.ds_amount = std::clamp(vars.ds_amount, 0.0f, 1.0f);
-
-    if (ImGui::SliderInt("Steps##Disp", &(vars.ds_steps), 32, 1024))
-        vars.ds_steps = std::clamp(vars.ds_steps, 1, RealBloom::DISP_MAX_STEPS);
+    if (imGuiSliderUInt("Steps##Disp", &dispParams->steps, 32, 1024))
+        dispParams->steps = std::clamp(dispParams->steps, 1u, RealBloom::DISP_MAX_STEPS);
 
     const char* const dispMethodItems[]{ "CPU", "GPU" };
-    if (ImGui::Combo("Method##Disp", &(vars.ds_method), dispMethodItems, 2))
+    if (ImGui::Combo("Method##Disp", (int*)(&dispParams->methodInfo.method), dispMethodItems, RealBloom::DispersionMethod_EnumSize))
         disp.cancel();
 
-    if (vars.ds_method == (int)RealBloom::DispersionMethod::CPU)
+    if (dispParams->methodInfo.method == RealBloom::DispersionMethod::CPU)
     {
-        if (ImGui::SliderInt("Threads##Disp", &(vars.ds_numThreads), 1, getMaxNumThreads()))
-            vars.ds_numThreads = std::clamp(vars.ds_numThreads, 1, (int)getMaxNumThreads());
-    }
-    else if (vars.ds_method == (int)RealBloom::DispersionMethod::GPU)
-    {
-        // No parameters yet
+        if (imGuiSliderUInt("Threads##Disp", &dispParams->methodInfo.numThreads, 1, getMaxNumThreads()))
+            dispParams->methodInfo.numThreads = std::clamp(dispParams->methodInfo.numThreads, 1u, getMaxNumThreads());
     }
 
     if (ImGui::Button("Apply Dispersion##Disp", btnSize()))
@@ -1117,9 +1102,8 @@ void layoutDiffraction()
         imgDispResult.resize(imgDispInput.getWidth(), imgDispInput.getHeight(), true);
         imgDispResult.fill(std::array<float, 4>{ 0, 0, 0, 1 }, true);
         imgDispResult.moveToGPU();
-        selImageID = "disp-result";
+        selSlotID = "disp-result";
 
-        updateDispParams();
         disp.compute();
     }
 
@@ -1137,9 +1121,325 @@ void layoutDiffraction()
     ImGui::End();
 }
 
+void layoutDiffraction()
+{
+    RealBloom::DiffractionParams* diffParams = diff.getParams();
+
+    ImGui::Begin("Diffraction");
+
+    imGuiBold("INPUT");
+
+    if (layoutImageTransformParams("Input", "DiffInput", diffParams->inputTransformParams))
+    {
+        diffInputUpdated = true;
+    }
+
+    if (diffInputUpdated)
+    {
+        diffInputUpdated = false;
+        diff.previewInput();
+        selSlotID = "diff-input";
+    }
+
+    imGuiDiv();
+    imGuiBold("DIFFRACTION");
+
+    ImGui::Checkbox("Logarithmic Normalization##Diff", &diffParams->logNorm);
+
+    if (ImGui::Button("Compute##Diff", btnSize()))
+    {
+        selSlotID = "diff-result";
+        diff.compute();
+    }
+
+    if (!diff.getStatus().isOK())
+    {
+        std::string dpError = diff.getStatus().getError();
+        imGuiText(dpError, true, false);
+    }
+
+    ImGui::NewLine();
+    imGuiDialogs();
+    ImGui::End();
+}
+
+void layoutDebug()
+{
+    if (!showDebugPanel)
+        return;
+
+    ImGui::Begin("Debug");
+
+    ImGui::Checkbox("Image Transform: Use GPU##Debug", &ImageTransform::S_USE_GPU);
+
+    ImGui::End();
+}
+
+bool layoutImageTransformParams(const std::string& imageName, const std::string& imGuiID, ImageTransformParams& params)
+{
+    bool changed = false;
+
+    static std::unordered_map<std::string, bool> lockCrop;
+    if (!lockCrop.contains(imGuiID))
+        lockCrop[imGuiID] = true;
+
+    static std::unordered_map<std::string, bool> lockResize;
+    if (!lockResize.contains(imGuiID))
+        lockResize[imGuiID] = true;
+
+    static std::unordered_map<std::string, bool> lockScale;
+    if (!lockScale.contains(imGuiID))
+        lockScale[imGuiID] = true;
+
+    ImGui::PushID(imGuiID.c_str());
+    if (ImGui::CollapsingHeader(strFormat("%s Transform", imageName.c_str()).c_str()))
+    {
+        ImGui::Indent();
+
+        imGuiBold("CROP & RESIZE");
+
+        {
+            ImGui::Indent();
+
+            // Crop
+            if (ImGui::Checkbox("Lock Crop##CropResize", &lockCrop[imGuiID]))
+            {
+                if (lockCrop[imGuiID])
+                {
+                    params.cropResize.crop[0] = (params.cropResize.crop[0] + params.cropResize.crop[1]) / 2.0f;
+                    params.cropResize.crop[1] = params.cropResize.crop[0];
+                }
+                changed = true;
+            }
+            if (lockCrop[imGuiID])
+            {
+                if (ImGui::SliderFloat("Crop##CropResize", &params.cropResize.crop[0], 0.01f, 1.0f))
+                {
+                    params.cropResize.crop[0] = std::clamp(params.cropResize.crop[0], 0.01f, 1.0f);
+                    params.cropResize.crop[1] = params.cropResize.crop[0];
+                    changed = true;
+                }
+            }
+            else
+            {
+                if (ImGui::SliderFloat2("Crop##CropResize", &params.cropResize.crop[0], 0.01f, 1.0f))
+                {
+                    params.cropResize.crop[0] = std::clamp(params.cropResize.crop[0], 0.01f, 1.0f);
+                    params.cropResize.crop[1] = std::clamp(params.cropResize.crop[1], 0.01f, 1.0f);
+                    changed = true;
+                }
+            }
+
+            // Resize
+            if (ImGui::Checkbox("Lock Resize##CropResize", &lockResize[imGuiID]))
+            {
+                if (lockResize[imGuiID])
+                {
+                    params.cropResize.resize[0] = (params.cropResize.resize[0] + params.cropResize.resize[1]) / 2.0f;
+                    params.cropResize.resize[1] = params.cropResize.resize[0];
+                }
+                changed = true;
+            }
+            if (lockResize[imGuiID])
+            {
+                if (ImGui::SliderFloat("Resize##CropResize", &params.cropResize.resize[0], 0.01f, 2.0f))
+                {
+                    params.cropResize.resize[0] = std::max(params.cropResize.resize[0], 0.01f);
+                    params.cropResize.resize[1] = params.cropResize.resize[0];
+                    changed = true;
+                }
+            }
+            else
+            {
+                if (ImGui::SliderFloat2("Resize##CropResize", &params.cropResize.resize[0], 0.01f, 2.0f))
+                {
+                    params.cropResize.resize[0] = std::max(params.cropResize.resize[0], 0.01f);
+                    params.cropResize.resize[1] = std::max(params.cropResize.resize[1], 0.01f);
+                    changed = true;
+                }
+            }
+
+            // Origin
+            if (ImGui::SliderFloat2("Origin##CropResize", params.cropResize.origin.data(), 0.0f, 1.0f))
+            {
+                params.cropResize.origin[0] = std::clamp(params.cropResize.origin[0], 0.0f, 1.0f);
+                params.cropResize.origin[1] = std::clamp(params.cropResize.origin[1], 0.0f, 1.0f);
+                changed = true;
+            }
+            if (ImGui::Checkbox("Preview Origin##CropResize", &params.cropResize.previewOrigin))
+                changed = true;
+
+            // Reset
+            if (ImGui::Button("Reset##CropResize", btnSize()))
+            {
+                params.cropResize.reset();
+                lockCrop[imGuiID] = true;
+                lockResize[imGuiID] = true;
+                changed = true;
+            }
+
+            ImGui::Unindent();
+        }
+
+        imGuiDiv();
+        imGuiBold("TRANSFORM");
+
+        {
+            ImGui::Indent();
+
+            // Scale
+            if (ImGui::Checkbox("Lock Scale##Transform", &lockScale[imGuiID]))
+            {
+                if (lockScale[imGuiID])
+                {
+                    params.transform.scale[0] = (params.transform.scale[0] + params.transform.scale[1]) / 2.0f;
+                    params.transform.scale[1] = params.transform.scale[0];
+                }
+                changed = true;
+            }
+            if (lockScale[imGuiID])
+            {
+                if (ImGui::SliderFloat("Scale##Transform", &params.transform.scale[0], 0.01f, 2.0f))
+                {
+                    params.transform.scale[1] = params.transform.scale[0];
+                    changed = true;
+                }
+            }
+            else
+            {
+                if (ImGui::SliderFloat2("Scale##Transform", &params.transform.scale[0], 0.01f, 2.0f))
+                {
+                    changed = true;
+                }
+            }
+
+            // Rotate
+            if (ImGui::SliderFloat("Rotate##Transform", &params.transform.rotate, -180.0f, 180.0f))
+                changed = true;
+
+            // Translate
+            if (ImGui::SliderFloat2("Translate##Transform", params.transform.translate.data(), -1.0f, 1.0f))
+                changed = true;
+
+            // Origin
+            if (ImGui::SliderFloat2("Origin##Transform", params.transform.origin.data(), 0.0f, 1.0f))
+            {
+                params.transform.origin[0] = std::clamp(params.transform.origin[0], 0.0f, 1.0f);
+                params.transform.origin[1] = std::clamp(params.transform.origin[1], 0.0f, 1.0f);
+                changed = true;
+            }
+            if (ImGui::Checkbox("Preview Origin##Transform", &params.transform.previewOrigin))
+                changed = true;
+
+            // Reset
+            if (ImGui::Button("Reset##Transform", btnSize()))
+            {
+                params.transform.reset();
+                lockScale[imGuiID] = true;
+                changed = true;
+            }
+
+            ImGui::Unindent();
+        }
+
+        imGuiDiv();
+        imGuiBold("COLOR");
+
+        {
+            ImGui::Indent();
+
+            // Filter
+            if (ImGui::ColorEdit3("Filter##Color", params.color.filter.data(), ImGuiColorEditFlags_RealBloom))
+            {
+                changed = true;
+            }
+
+            // Exposure
+            if (ImGui::SliderFloat("Exposure##Color", &params.color.exposure, -EXPOSURE_RANGE, EXPOSURE_RANGE))
+                changed = true;
+
+            // Contrast
+            if (ImGui::SliderFloat("Contrast##Color", &params.color.contrast, -1.0f, 1.0f))
+                changed = true;
+
+            // Grayscale Type
+            {
+                const char* const grayscaleItems[]{
+                    "None",
+                    "Luminance",
+                    "Average",
+                    "Sum",
+                    "Maximum",
+                    "Minimum",
+                    "Magnitude",
+                    "Mag. Over Sqrt(3)",
+                    "Red",
+                    "Green",
+                    "Blue",
+                    "Alpha"
+                };
+                int selIndex = (int)params.color.grayscaleType;
+                if (ImGui::Combo("Grayscale##Color", &selIndex, grayscaleItems, sizeof(grayscaleItems) / sizeof(grayscaleItems[0])))
+                {
+                    params.color.grayscaleType = (GrayscaleType)(selIndex);
+                    changed = true;
+                }
+            }
+
+            // Grayscale Mix
+            if (ImGui::SliderFloat("Mix##Color", &params.color.grayscaleMix, -1.0f, 1.0f))
+                changed = true;
+
+            // Reset
+            if (ImGui::Button("Reset##Color", btnSize()))
+            {
+                params.color.reset();
+                changed = true;
+            }
+
+            ImGui::Unindent();
+        }
+
+        imGuiDiv();
+        imGuiBold("GENERAL");
+
+        {
+            ImGui::Indent();
+
+            // Transparency
+            if (ImGui::Checkbox("Transparency##General", &params.transparency))
+                changed = true;
+
+            // Reset all
+            if (ImGui::Button("Reset All##General", btnSize()))
+            {
+                params.reset();
+                lockCrop[imGuiID] = true;
+                lockResize[imGuiID] = true;
+                lockScale[imGuiID] = true;
+                changed = true;
+            }
+
+            ImGui::Unindent();
+        }
+
+        ImGui::NewLine();
+        ImGui::Unindent();
+    }
+    ImGui::PopID();
+
+    return changed;
+}
+
 void imGuiDiv()
 {
     ImGui::NewLine();
+}
+
+void imGuiHorzDiv()
+{
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 0.3), " | ");
 }
 
 void imGuiBold(const std::string& s)
@@ -1168,10 +1468,34 @@ void imGuiText(const std::string& s, bool isError, bool newLine)
     }
 }
 
+bool imGuiSliderUInt(const std::string& label, uint32_t* v, uint32_t min, uint32_t max)
+{
+    int vInt = u32ToI32(*v);
+    if (ImGui::SliderInt(label.c_str(), &vInt, u32ToI32(min), u32ToI32(max)))
+    {
+        *v = i32ToU32(vInt);
+        return true;
+    }
+    return false;
+}
+
+bool imGuiInputUInt(const std::string& label, uint32_t* v)
+{
+    int vInt = u32ToI32(*v);
+    if (ImGui::InputInt(label.c_str(), &vInt))
+    {
+        *v = i32ToU32(vInt);
+        return true;
+    }
+    return false;
+}
+
 bool imGuiCombo(const std::string& label, const std::vector<std::string>& items, int* selectedIndex, bool fullWidth)
 {
+    static std::vector<std::string> activeComboList;
+
     activeComboList = items;
-    bool result;
+    bool result = false;
 
     if (fullWidth)
         ImGui::PushItemWidth(-1);
@@ -1194,102 +1518,129 @@ bool imGuiCombo(const std::string& label, const std::vector<std::string>& items,
 
 void imGuiDialogs()
 {
-    //
-}
-
-void addImage(const std::string& id, const std::string& name)
-{
-    std::shared_ptr<CmImage> img = std::make_shared<CmImage>(id, name);
-    images.push_back(img);
-    imageNames.push_back(name);
-}
-
-CmImage* getImageByID(const std::string& id)
-{
-    for (auto& img : images)
-        if (img->getID() == id)
-            return img.get();
-    return nullptr;
-}
-
-bool openImage(CmImage& image, const std::string& dlgID, std::string& outError)
-{
-    std::string filename;
-    if (FileDialogs::openDialog(dlgID, CmImageIO::getOpenFilterList(), filename))
+    // Move To
+    if (ImGui::BeginPopupModal(DIALOG_TITLE_MOVETO, 0, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        outError = "";
-        try
+        // Draw controls
         {
-            CmImageIO::readImage(image, filename);
-            selImageID = image.getID();
-            return true;
+
+            ImGui::Text("Source:");
+            imGuiCombo("##Dialog_MoveTo_SourceSlot", slotNames, &dialogParams_MoveTo.selSourceSlot, true);
+
+            ImGui::Text("Destination:");
+            imGuiCombo("##Dialog_MoveTo_DestSlot", loadableSlotNames, &dialogParams_MoveTo.selDestSlot, true);
+
+            ImGui::Checkbox("Preserve Original##Dialog_MoveTo", &dialogParams_MoveTo.preserveOriginal);
+
         }
-        catch (const std::exception& e)
+
+        if (ImGui::Button("OK##Dialog_MoveTo", dlgBtnSize()))
         {
-            outError = e.what();
+            int sourceSlotGlobalIndex = -1;
+            int destSlotGlobalIndex = -1;
+
+            bool validParams = false;
+            if (dialogParams_MoveTo.selSourceSlot >= 0
+                && dialogParams_MoveTo.selDestSlot >= 0)
+            {
+                sourceSlotGlobalIndex = dialogParams_MoveTo.selSourceSlot;
+                destSlotGlobalIndex = loadableSlotIndices[dialogParams_MoveTo.selDestSlot];
+
+                validParams = (sourceSlotGlobalIndex != destSlotGlobalIndex);
+            }
+
+            if (validParams)
+            {
+                ImageSlot& sourceSlot = slots[sourceSlotGlobalIndex];
+                ImageSlot& destSlot = slots[destSlotGlobalIndex];
+
+                if (destSlot.internalImage != nullptr)
+                {
+                    sourceSlot.viewImage->moveContent(*destSlot.internalImage, dialogParams_MoveTo.preserveOriginal);
+                    destSlot.indicateUpdate();
+                }
+                else
+                {
+                    sourceSlot.viewImage->moveContent(*destSlot.viewImage, dialogParams_MoveTo.preserveOriginal);
+                }
+
+                selSlotID = destSlot.id;
+            }
+
+            ImGui::CloseCurrentPopup();
         }
+
+        if (ImGui::Button("Cancel##Dialog_MoveTo", dlgBtnSize()))
+            ImGui::CloseCurrentPopup();
+
+        ImGui::NewLine();
+    }
+
+}
+
+void addImageSlot(const std::string& id, const std::string& name, bool canLoad, CmImage* internalImage, bool* updateIndicator)
+{
+    ImageSlot slot;
+    slot.id = id;
+    slot.name = name;
+    slot.canLoad = canLoad;
+    slot.viewImage = std::make_shared<CmImage>(id, name);
+    slot.internalImage = internalImage;
+    slot.updateIndicator = updateIndicator;
+
+    slots.push_back(slot);
+}
+
+ImageSlot& getSlotByID(const std::string& id)
+{
+    for (auto& slot : slots)
+        if (slot.id == id)
+            return slot;
+
+    static ImageSlot s{};
+    return s;
+}
+
+void loadImageToSlot(ImageSlot& slot, const std::string& filename)
+{
+    if (!slot.canLoad)
+        return;
+
+    if (slot.internalImage != nullptr)
+    {
+        CmImageIO::readImage(*slot.internalImage, filename);
+        slot.indicateUpdate();
+    }
+    else
+    {
+        CmImageIO::readImage(*slot.viewImage, filename);
+    }
+    selSlotID = slot.id;
+}
+
+bool browseImageForSlot(ImageSlot& slot)
+{
+    if (!slot.canLoad)
+        return false;
+
+    std::string filename;
+    if (FileDialogs::openDialog(slot.id, CmImageIO::getOpenFilterList(), filename))
+    {
+        loadImageToSlot(slot, filename);
+        return true;
     }
     return false;
 }
 
-bool saveImage(CmImage& image, const std::string& dlgID, std::string& outError)
+bool saveImageFromSlot(ImageSlot& slot)
 {
     std::string filename;
-    if (FileDialogs::saveDialog(dlgID, CmImageIO::getSaveFilterList(), CmImageIO::getDefaultFilename(), filename))
+    if (FileDialogs::saveDialog(slot.id, CmImageIO::getSaveFilterList(), CmImageIO::getDefaultFilename(), filename))
     {
-        outError = "";
-        try
-        {
-            CmImageIO::writeImage(image, filename);
-            return true;
-        }
-        catch (const std::exception& e)
-        {
-            outError = e.what();
-        }
+        CmImageIO::writeImage(*slot.viewImage, filename);
+        return true;
     }
     return false;
-}
-
-void updateDiffParams()
-{
-    RealBloom::DiffractionPatternParams* params = diff.getParams();
-    params->grayscale = vars.dp_grayscale;
-}
-
-void updateDispParams()
-{
-    RealBloom::DispersionParams* params = disp.getParams();
-    params->methodInfo.method = (RealBloom::DispersionMethod)(vars.ds_method);
-    params->methodInfo.numThreads = vars.ds_numThreads;
-    params->exposure = vars.ds_exposure;
-    params->contrast = vars.ds_contrast;
-    params->color = std::array<float, 3>{ vars.ds_color[0], vars.ds_color[1], vars.ds_color[2] };
-    params->amount = vars.ds_amount;
-    params->steps = vars.ds_steps;
-}
-
-void updateConvParams()
-{
-    RealBloom::ConvolutionParams* params = conv.getParams();
-    params->methodInfo.method = (RealBloom::ConvolutionMethod)(vars.cv_method);
-    params->methodInfo.numThreads = vars.cv_numThreads;
-    params->methodInfo.numChunks = vars.cv_numChunks;
-    params->methodInfo.chunkSleep = vars.cv_chunkSleep;
-    params->kernelExposure = vars.cv_kernelExposure;
-    params->kernelContrast = vars.cv_kernelContrast;
-    params->kernelColor = std::array<float, 3>{ vars.cv_kernelColor[0], vars.cv_kernelColor[1], vars.cv_kernelColor[2] };
-    params->kernelRotation = vars.cv_kernelRotation;
-    params->kernelScaleX = vars.cv_kernelScale[0];
-    params->kernelScaleY = vars.cv_kernelScale[1];
-    params->kernelCropX = vars.cv_kernelCrop[0];
-    params->kernelCropY = vars.cv_kernelCrop[1];
-    params->kernelPreviewCenter = vars.cv_kernelPreviewCenter;
-    params->kernelCenterX = vars.cv_kernelCenter[0];
-    params->kernelCenterY = vars.cv_kernelCenter[1];
-    params->threshold = vars.cv_convThreshold;
-    params->knee = vars.cv_convKnee;
-    params->autoExposure = vars.cv_autoExposure;
 }
 
 ImVec2 btnSize()
@@ -1317,16 +1668,21 @@ bool setupGLFW()
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, glVersionMajor);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, glVersionMinor);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     // Create window with graphics context
-    window = glfwCreateWindow(Config::S_WINDOW_WIDTH, Config::S_WINDOW_HEIGHT, Config::S_APP_TITLE, NULL, NULL);
+    window = glfwCreateWindow(Config::WINDOW_WIDTH, Config::WINDOW_HEIGHT, Config::APP_TITLE, NULL, NULL);
     if (window == NULL)
     {
-        std::cout << "Failed to create a window.\n";
+        std::cout << "Failed to create the main window.\n";
         return false;
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
+
+    // Set Drag-Drop callback
+    glfwSetDropCallback(window, dragDropCallback);
 
     return true;
 }
@@ -1374,19 +1730,19 @@ bool setupImGui()
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
-    io->FontGlobalScale = Config::UI_SCALE / Config::S_UI_MAX_SCALE;
+    io->FontGlobalScale = Config::UI_SCALE / Config::UI_MAX_SCALE;
 
     fontRoboto = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/RobotoCondensed-Regular.ttf").c_str(),
-        18.0f * Config::S_UI_MAX_SCALE);
+        17.5f * Config::UI_MAX_SCALE);
 
     fontRobotoBold = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/RobotoCondensed-Bold.ttf").c_str(),
-        19.0f * Config::S_UI_MAX_SCALE);
+        19.5f * Config::UI_MAX_SCALE);
 
     fontMono = io->Fonts->AddFontFromFileTTF(
         getLocalPath("assets/fonts/mono/RobotoMono-Regular.ttf").c_str(),
-        18.0f * Config::S_UI_MAX_SCALE);
+        17.5f * Config::UI_MAX_SCALE);
 
     if (fontRoboto && fontRobotoBold && fontMono)
         return true;
@@ -1500,9 +1856,22 @@ void applyStyle_RealBloomGray()
 
 void cleanUp()
 {
+    Config::save();
+
+    if (!CLI::Interface::active() && convResUsageThread)
+    {
+        convResUsageThread->join();
+        convResUsageThread = nullptr;
+    }
+
+    disp.cancel();
+    conv.cancel();
+
+    ImageTransform::cleanUp();
+
     if (!CLI::Interface::active())
     {
-        clearVector(images);
+        clearVector(slots);
         imgui_widgets_cleanup_cmimages();
     }
 
@@ -1510,6 +1879,8 @@ void cleanUp()
     CmImageIO::cleanUp();
     CMF::cleanUp();
     CMS::cleanUp();
+
+    GlFullPlaneVertices::cleanUp();
 
     if (!CLI::Interface::active())
     {
@@ -1524,4 +1895,31 @@ void cleanUp()
     }
 
     CLI::Interface::cleanUp();
+}
+
+void dragDropCallback(GLFWwindow* window, int count, const char** paths)
+{
+    if (count < 1)
+        return;
+
+    std::string lastPath = paths[count - 1];
+    if (!std::filesystem::exists(lastPath))
+        return;
+    if (std::filesystem::is_directory(lastPath))
+        return;
+
+    try
+    {
+        loadImageToSlot(slots[selSlotIndex], lastPath);
+    }
+    catch (const std::exception& e)
+    {
+        printError(__FUNCTION__, "", e.what());
+    }
+}
+
+void ImageSlot::indicateUpdate()
+{
+    if (updateIndicator != nullptr)
+        *updateIndicator = true;
 }

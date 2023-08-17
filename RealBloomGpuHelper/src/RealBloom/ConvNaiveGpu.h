@@ -23,8 +23,22 @@
 namespace RealBloom
 {
 
+    // Convolution method: Naive GPU
     class ConvNaiveGpu
     {
+    public:
+        ConvNaiveGpu(BinaryConvNaiveGpuInput* binInput);
+
+        void prepare();
+        void process(uint32_t chunkIndex);
+        void cleanUp();
+
+        uint32_t getNumVertices() const;
+        const std::vector<float>& getBuffer() const;
+        const BaseStatus& getStatus() const;
+
+        static uint32_t getNumAttribs();
+
     private:
         BaseStatus m_status;
         BinaryConvNaiveGpuInput* m_binInput;
@@ -55,18 +69,6 @@ namespace RealBloom
         void setUniforms(uint32_t kernelWidth, uint32_t kernelHeight, float* kernelTopLeft, float* kernelSize);
         void specifyLayout();
         void drawScene(uint32_t numPoints);
-
-    public:
-        ConvNaiveGpu(BinaryConvNaiveGpuInput* binInput);
-        void prepare();
-        void process(uint32_t chunkIndex);
-        void cleanUp();
-
-        uint32_t getNumVertices() const;
-        const std::vector<float>& getBuffer() const;
-        const BaseStatus& getStatus() const;
-
-        static uint32_t getNumAttribs();
 
     };
 

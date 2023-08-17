@@ -58,6 +58,13 @@ void clearVector(std::vector<T>& v)
 }
 
 template <typename T>
+void insertContents(std::vector<T>& a, const std::vector<T>& b)
+{
+    a.reserve(a.size() + b.size());
+    a.insert(a.end(), b.begin(), b.end());
+}
+
+template <typename T>
 int findIndex(const std::vector<T>& vector, const T& value)
 {
     for (size_t i = 0; i < vector.size(); i++)
@@ -107,8 +114,6 @@ const std::string& getTempDirectory();
 std::string getLocalPath(const std::string& path);
 std::string getFileExtension(const std::string& filename);
 bool deleteFile(const std::string& filename);
-
-
 
 void killProcess(PROCESS_INFORMATION pi);
 bool processIsRunning(PROCESS_INFORMATION pi);

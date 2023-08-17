@@ -4,14 +4,10 @@
 
 #include "Misc.h"
 
+// 2D Array
 template <typename T>
 class Array2D
 {
-private:
-    std::vector<T> m_vector;
-    size_t m_rows = 0;
-    size_t m_cols = 0;
-
 public:
     Array2D() {};
 
@@ -25,6 +21,12 @@ public:
 
     T& operator()(const size_t& row, const size_t& col);
     const T& operator()(const size_t& row, const size_t& col) const;
+
+private:
+    std::vector<T> m_vector;
+    size_t m_rows = 0;
+    size_t m_cols = 0;
+
 };
 
 template <typename T>

@@ -21,6 +21,7 @@ namespace RealBloom
         ~BinaryDispGpuInput() {};
 
         float dp_amount = 0.0f;
+        float dp_edgeOffset = 0.0f;
         uint32_t dp_steps = 32;
 
         uint32_t inputWidth = 0;

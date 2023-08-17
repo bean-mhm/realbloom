@@ -7,6 +7,7 @@
 #include "ConsoleColors.h"
 #include "Misc.h"
 
+// Scoped Timer for CLI Commands
 class CliStackTimer
 {
 private:
@@ -16,6 +17,7 @@ private:
 
 public:
     CliStackTimer(const std::string& title, bool isTotal = false);
+
     CliStackTimer(const CliStackTimer&) = delete;
     CliStackTimer& operator= (const CliStackTimer&) = delete;
 

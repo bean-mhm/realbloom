@@ -13,6 +13,9 @@ namespace RealBloom
         dp_amount = stmReadScalar<float>(stream);
         stmCheck(stream, __FUNCTION__, "dp_amount");
 
+        dp_edgeOffset = stmReadScalar<float>(stream);
+        stmCheck(stream, __FUNCTION__, "dp_edgeOffset");
+
         dp_steps = stmReadScalar<uint32_t>(stream);
         stmCheck(stream, __FUNCTION__, "dp_steps");
 
@@ -33,6 +36,9 @@ namespace RealBloom
     {
         stmWriteScalar(stream, dp_amount);
         stmCheck(stream, __FUNCTION__, "dp_amount");
+
+        stmWriteScalar(stream, dp_edgeOffset);
+        stmCheck(stream, __FUNCTION__, "dp_edgeOffset");
 
         stmWriteScalar(stream, dp_steps);
         stmCheck(stream, __FUNCTION__, "dp_steps");

@@ -17,15 +17,15 @@ enum class XyzConversionMethod
 {
     // A method couldn't be automatically decided,
     // and we need the user to choose one.
-    None = 0,
+    None,
 
     // Use an XYZ color space in the user config
-    UserConfig = 1,
+    UserConfig,
 
     // Convert from XYZ to a common space in the
     // internal and user configs, then to the
     // working space
-    CommonSpace = 2
+    CommonSpace
 };
 
 struct XyzConversionInfo
@@ -36,12 +36,9 @@ struct XyzConversionInfo
     std::string commonUser = "";
 };
 
+// XYZ Conversion Guide (Global)
 class CmXYZ
 {
-private:
-    static XyzConversionInfo S_INFO;
-    static BaseStatus S_STATUS;
-
 public:
     CmXYZ() = delete;
     CmXYZ(const CmXYZ&) = delete;
@@ -54,4 +51,9 @@ public:
 
     static const BaseStatus& getStatus();
     static void ensureOK();
+
+private:
+    static XyzConversionInfo S_INFO;
+    static BaseStatus S_STATUS;
+
 };

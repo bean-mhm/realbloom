@@ -7,73 +7,68 @@ uint8_t doubleTo8bit(double v)
     return (uint8_t)(round(v * 255.0));
 }
 
-float contrastCurve(float v, float contrast)
+float applyContrast(float v, float contrast)
 {
-    if (v == 0.0f)
-        return 0.0f;
-
     if (contrast == 0.0f)
         return v;
 
-    v = fminf(fmaxf(v, 0.0f), 1.0f);
-
-    contrast *= 4.0f;
+    // v0.5.2-dev
+    static constexpr float pivot = 0.5f;
     float c =
         (contrast >= 0.0f) ?
-        (contrast + 1.0f) :
-        (1.0f / (1.0f - contrast));
+        (2.0f * contrast + 1.0f) :
+        (1.0f / (-2.0f * contrast + 1.0f));
+    return powf(v / pivot, c) * pivot;
 
-    if (v > 0.5f)
-        return powf((1.0f - v), c) * (powf(2.0f, c) / (-2.0f)) + 1.0f;
-    else
-        return powf(v, c) * (powf(2.0f, c) / 2.0f);
+    // v0.4.0-alpha
+    if (0)
+    {
+        // v should be normalized using the maximum value in the image
+        v = fminf(fmaxf(v, 0.0f), 1.0f);
 
-#if 0
-    // Old implementation
+        contrast *= 4.0f;
+        float c =
+            (contrast >= 0.0f) ?
+            (contrast + 1.0f) :
+            (1.0f / (1.0f - contrast));
 
-    if (v == 0.0f)
-        return 0.0f;
+        if (v > 0.5f)
+            return powf((1.0f - v), c) * (powf(2.0f, c) / (-2.0f)) + 1.0f;
+        else
+            return powf(v, c) * (powf(2.0f, c) / 2.0f);
+    }
 
-    if (contrast == 0.0f)
-        return v;
+    // Initial implementation
+    if (0)
+    {
+        if (v == 0.0f)
+            return 0.0f;
 
-    contrast *= 3.0f;
-    v = fmaxf(v, 0.0f);
+        if (contrast == 0.0f)
+            return v;
 
-    float c = (4.0f / 5.0f) * fabsf(contrast) + 1.0f;
-    return (contrast >= 0.0f) ? powf(v, c) : powf(v, 1.0f / c);
-#endif
-}
+        contrast *= 3.0f;
+        v = fmaxf(v, 0.0f);
 
-double contrastCurve(double v, double contrast)
-{
-    if (v == 0.0)
-        return 0.0;
-
-    if (contrast == 0.0)
-        return v;
-
-    v = fmin(fmax(v, 0.0), 1.0);
-
-    contrast *= 4.0;
-    double c =
-        (contrast >= 0.0) ?
-        (contrast + 1.0) :
-        (1.0 / (1.0 - contrast));
-
-    if (v > 0.5)
-        return pow((1.0 - v), c) * (pow(2.0, c) / (-2.0)) + 1.0;
-    else
-        return pow(v, c) * (pow(2.0, c) / 2.0);
+        float c = (4.0f / 5.0f) * fabsf(contrast) + 1.0f;
+        return (contrast >= 0.0f) ? powf(v, c) : powf(v, 1.0f / c);
+    }
 }
 
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY)
 {
     float s = sinf(angle * DEG_TO_RAD);
     float c = cosf(angle * DEG_TO_RAD);
-
     outX = ((x - pivotX) * c - (y - pivotY) * s) + pivotX;
     outY = ((x - pivotX) * s + (y - pivotY) * c) + pivotY;
+}
+
+void rotatePointInPlace(float& x, float& y, float pivotX, float pivotY, float angle)
+{
+    float resultX, resultY;
+    rotatePoint(x, y, pivotX, pivotY, angle, resultX, resultY);
+    x = resultX;
+    y = resultY;
 }
 
 void calcFftConvPadding(
@@ -83,13 +78,13 @@ void calcFftConvPadding(
     uint32_t inputHeight,
     uint32_t kernelWidth,
     uint32_t kernelHeight,
-    float kernelCenterX,
-    float kernelCenterY,
+    float kernelOriginX,
+    float kernelOriginY,
     uint32_t& outPaddedWidth,
     uint32_t& outPaddedHeight)
 {
-    int kernelExtraPaddingX = (int)fabsf(floorf((float)kernelWidth / 2.0f) - floorf(kernelCenterX * (float)kernelWidth)) + 1;
-    int kernelExtraPaddingY = (int)fabsf(floorf((float)kernelHeight / 2.0f) - floorf(kernelCenterY * (float)kernelHeight)) + 1;
+    int kernelExtraPaddingX = (int)fabsf(floorf((float)kernelWidth / 2.0f) - floorf(kernelOriginX * (float)kernelWidth)) + 1;
+    int kernelExtraPaddingY = (int)fabsf(floorf((float)kernelHeight / 2.0f) - floorf(kernelOriginY * (float)kernelHeight)) + 1;
 
     uint32_t totalWidth = inputWidth + kernelWidth + kernelExtraPaddingX;
     uint32_t totalHeight = inputHeight + kernelHeight + kernelExtraPaddingY;
@@ -110,6 +105,21 @@ void calcFftConvPadding(
         outPaddedWidth = totalWidth + 32 - (totalWidth % 32);
         outPaddedHeight = totalHeight + 32 - (totalHeight % 32);
     }
+}
+
+void calcDispScale(uint32_t index, uint32_t steps, float amount, float edgeOffset, float& outScale, float& outAreaMul)
+{
+    float minLogScale = amount * mapRangeClamp(edgeOffset, -1, 1, -1, 0);
+    float maxLogScale = amount * mapRangeClamp(edgeOffset, -1, 1, 0, 1);
+
+    float t = (float)index / (float)steps;
+    float logScale = lerp(minLogScale, maxLogScale, t);
+    outScale = powf(2.0f, logScale);
+
+    // Area compensation
+    float innerScale = powf(2.0f, lerp(-amount * 0.5, amount * 0.5, t));
+    float area = innerScale * innerScale;
+    outAreaMul = 1.0f / area;
 }
 
 float srgbToLinear_DEPRECATED(float x)

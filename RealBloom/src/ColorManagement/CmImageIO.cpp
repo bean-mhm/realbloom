@@ -1,96 +1,112 @@
 #include "CmImageIO.h"
 
-CmImageIO::CmImageIoVars* CmImageIO::S_VARS = nullptr;
+CmImageIO::CmImageIoVars CmImageIO::S_VARS;
 
 static const std::string attribNameColorSpace = "colorspace";
 
-bool CmImageIO::init()
+void CmImageIO::init()
 {
-    S_VARS = new CmImageIoVars();
-
     // Default values
-    S_VARS->inputSpace = CMS::getWorkingSpace();
-    S_VARS->outputSpace = S_VARS->inputSpace;
-    S_VARS->nonLinearSpace = S_VARS->inputSpace;
+    S_VARS.inputSpace = CMS::getWorkingSpace();
+    S_VARS.outputSpace = S_VARS.inputSpace;
+    S_VARS.nonLinearSpace = S_VARS.inputSpace;
 
-    // Get the color spaces in the user config
+    // Get the user config and the color spaces in it
+    OCIO::ConstConfigRcPtr config = CMS::getConfig();
     const std::vector<std::string>& userSpaces = CMS::getColorSpaces();
 
-    // Find Linear BT.709 I-D65
-    for (const auto& space : userSpaces)
+    // Find the appropriate color space for linear image files (OpenEXR, HDR, etc.)
+    if (config->hasRole("default_float"))
     {
-        std::string spaceLower = strLowercase(space);
-        if (spaceLower.starts_with("linear") && strContains(spaceLower, "709") && !strContains(spaceLower, "i-e"))
+        S_VARS.inputSpace = CMS::getRoleColorSpaceByName(config, "default_float");
+    }
+    else
+    {
+        // Manually look for Linear BT.709
+        for (const auto& space : userSpaces)
         {
-            S_VARS->inputSpace = space;
-            break;
+            std::string spaceLower = strLowercase(space);
+            if (spaceLower.starts_with("linear") && strContains(spaceLower, "709") && !strContains(spaceLower, "i-e"))
+            {
+                S_VARS.inputSpace = space;
+                break;
+            }
         }
     }
 
-    // Find sRGB
-    for (const auto& space : userSpaces)
+    // Find the appropriate color space for non-linear image files (PNG, JPEG, etc.)
+    if (config->hasRole("default_byte"))
     {
-        if (strLowercase(space).starts_with("srgb"))
+        S_VARS.nonLinearSpace = CMS::getRoleColorSpaceByName(config, "default_byte");
+    }
+    else
+    {
+        // Manually look for sRGB
+        for (const auto& space : userSpaces)
         {
-            S_VARS->nonLinearSpace = space;
-            break;
+            std::string spaceLower = strLowercase(space);
+            if (spaceLower.starts_with("srgb") && !strContains(spaceLower, "i-e"))
+            {
+                S_VARS.nonLinearSpace = space;
+                break;
+            }
         }
     }
 }
 
 void CmImageIO::cleanUp()
 {
-    DELPTR(S_VARS);
+    //
 }
 
 const std::string& CmImageIO::getInputSpace()
 {
-    return S_VARS->inputSpace;
+    return S_VARS.inputSpace;
 }
 
 const std::string& CmImageIO::getOutputSpace()
 {
-    return S_VARS->outputSpace;
+    return S_VARS.outputSpace;
 }
 
 const std::string& CmImageIO::getNonLinearSpace()
 {
-    return S_VARS->nonLinearSpace;
+    return S_VARS.nonLinearSpace;
 }
 
 bool CmImageIO::getAutoDetect()
 {
-    return S_VARS->autoDetect;
+    return S_VARS.autoDetect;
 }
 
 bool CmImageIO::getApplyViewTransform()
 {
-    return S_VARS->applyViewTransform;
+    return S_VARS.applyViewTransform;
 }
 
 void CmImageIO::setInputSpace(const std::string& colorSpace)
 {
-    S_VARS->inputSpace = colorSpace;
+    S_VARS.inputSpace = colorSpace;
 }
 
 void CmImageIO::setOutputSpace(const std::string& colorSpace)
 {
-    S_VARS->outputSpace = colorSpace;
+    S_VARS.outputSpace = colorSpace;
 }
 
 void CmImageIO::setNonLinearSpace(const std::string& colorSpace)
 {
-    S_VARS->nonLinearSpace = colorSpace;
+    S_VARS.nonLinearSpace = colorSpace;
 }
 
 void CmImageIO::setAutoDetect(bool autoDetect)
 {
-    S_VARS->autoDetect = autoDetect;
+    S_VARS.autoDetect = autoDetect;
 }
 
 void CmImageIO::setApplyViewTransform(bool applyViewTransform)
 {
-    S_VARS->applyViewTransform = applyViewTransform;
+    S_VARS.applyViewTransform = applyViewTransform;
 }
 
 std::string makeIoError(const std::string& message, bool hasError, const std::string& error)
@@ -115,11 +131,11 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         std::string csName;
         if (contains(getLinearExtensions(), extension))
         {
-            csName = CMS::resolveColorSpace(S_VARS->inputSpace);
+            csName = CMS::resolveColorSpace(S_VARS.inputSpace);
         }
         else if (contains(getNonLinearExtensions(), extension))
         {
-            csName = CMS::resolveColorSpace(S_VARS->nonLinearSpace);
+            csName = CMS::resolveColorSpace(S_VARS.nonLinearSpace);
         }
         else
         {
@@ -140,7 +156,7 @@ void CmImageIO::readImage(CmImage& target, const std::string& filename)
         uint32_t channels = spec.nchannels;
 
         // Attempt to read the color space name
-        if (S_VARS->autoDetect && contains(getMetaExtensions(), extension))
+        if (S_VARS.autoDetect && contains(getMetaExtensions(), extension))
         {
             std::string attribColorSpace = spec.get_string_attribute(attribNameColorSpace, "");
             if (!attribColorSpace.empty())
@@ -307,23 +323,23 @@ void CmImageIO::writeImage(CmImage& source, const std::string& filename)
         OCIO::ConstConfigRcPtr config = CMS::getConfig();
 
         // Resolve the output color space name
-        std::string csName = CMS::resolveColorSpace(S_VARS->outputSpace);
+        std::string csName = CMS::resolveColorSpace(S_VARS.outputSpace);
 
-        bool viewTransform = S_VARS->applyViewTransform || nonLinear;
+        bool viewTransform = S_VARS.applyViewTransform || nonLinear;
 
         // Color transform
         if (viewTransform)
         {
             // Apply view transform
             std::shared_ptr<GlTexture> texture = nullptr;
-            std::shared_ptr<GlFrameBuffer> frameBuffer = nullptr;
+            std::shared_ptr<GlFramebuffer> framebuffer = nullptr;
             CmImage::applyViewTransform(
                 buffer.data(),
                 width,
                 height,
                 CMS::getExposure(),
                 texture,
-                frameBuffer,
+                framebuffer,
                 true,
                 true,
                 true,
@@ -436,20 +452,13 @@ const std::vector<std::string>& CmImageIO::getNonLinearExtensions()
 const std::vector<std::string>& CmImageIO::getAllExtensions()
 {
     static std::vector<std::string> exts;
-    static bool init = false;
-
-    if (!init)
+    static bool init = true;
+    if (init)
     {
-        init = true;
-
-        const std::vector<std::string>& linearExts = getLinearExtensions();
-        const std::vector<std::string>& nonLinearExts = getNonLinearExtensions();
-
-        exts.reserve(linearExts.size() + nonLinearExts.size());
-        exts.insert(exts.end(), linearExts.begin(), linearExts.end());
-        exts.insert(exts.end(), nonLinearExts.begin(), nonLinearExts.end());
+        init = false;
+        insertContents(exts, getLinearExtensions());
+        insertContents(exts, getNonLinearExtensions());
     }
-
     return exts;
 }
 

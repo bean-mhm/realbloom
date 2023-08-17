@@ -16,53 +16,9 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "../Utils/Misc.h"
 #include "../CLI.h"
 
+// Color Management System (Global)
 class CMS
 {
-private:
-    static std::string CONFIG_PATH;
-    static std::string INTERNAL_CONFIG_PATH;
-    static std::string INTERNAL_XYZ_IE;
-    static bool USE_GPU;
-
-    struct CmVars
-    {
-        OCIO::ConstConfigRcPtr config;
-        OCIO::ConstConfigRcPtr internalConfig;
-
-        std::string internalXyzSpace = "";
-        std::string workingSpace = "";
-        std::string workingSpaceDesc = "";
-
-        std::vector<std::string> internalColorSpaces;
-        std::vector<std::string> colorSpaces;
-        std::vector<std::string> displays;
-        std::vector<std::string> views;
-        std::vector<std::string> looks;
-
-        std::string activeDisplay = "";
-        std::string activeView = "";
-        std::string activeLook = "";
-
-        float exposure = 0.0f;
-
-        bool initProcessors = false;
-        OCIO::GroupTransformRcPtr groupTransform;
-        OCIO::ConstProcessorRcPtr processor;
-        OCIO::ConstCPUProcessorRcPtr cpuProcessor;
-        OCIO::ConstGPUProcessorRcPtr gpuProcessor;
-
-        std::shared_ptr<OcioShader> shader;
-
-        void retrieveColorSpaces();
-        void retrieveDisplays();
-        void retrieveViews();
-        void retrieveLooks();
-    };
-    static CmVars* S_VARS;
-    static BaseStatus S_STATUS;
-
-    static void ensureProcessors();
-
 public:
     CMS() = delete;
     CMS(const CMS&) = delete;
@@ -107,6 +63,53 @@ public:
 
     static std::string resolveColorSpace(const std::string& name, bool preserve = true);
     static std::string getColorSpaceDesc(OCIO::ConstConfigRcPtr config, const std::string& colorSpace);
+    static std::string getRoleColorSpaceByName(OCIO::ConstConfigRcPtr config, const std::string& role);
     static std::array<float, 4> getDisplayColor(std::array<float, 4> v);
     static std::array<float, 3> getDisplayColor(const std::array<float, 3>& v);
+
+private:
+    static std::string CONFIG_PATH;
+    static std::string INTERNAL_CONFIG_PATH;
+    static std::string INTERNAL_XYZ_IE;
+    static bool USE_GPU;
+
+    struct CmVars
+    {
+        OCIO::ConstConfigRcPtr config;
+        OCIO::ConstConfigRcPtr internalConfig;
+
+        std::string internalXyzSpace = "";
+        std::string workingSpace = "";
+        std::string workingSpaceDesc = "";
+
+        std::vector<std::string> internalColorSpaces;
+        std::vector<std::string> colorSpaces;
+        std::vector<std::string> displays;
+        std::vector<std::string> views;
+        std::vector<std::string> looks;
+
+        std::string activeDisplay = "";
+        std::string activeView = "";
+        std::string activeLook = "";
+
+        float exposure = 0.0f;
+
+        bool initProcessors = false;
+        OCIO::GroupTransformRcPtr groupTransform;
+        OCIO::ConstProcessorRcPtr processor;
+        OCIO::ConstCPUProcessorRcPtr cpuProcessor;
+        OCIO::ConstGPUProcessorRcPtr gpuProcessor;
+
+        std::shared_ptr<OcioShader> shader;
+
+        void retrieveColorSpaces();
+        void retrieveDisplays();
+        void retrieveViews();
+        void retrieveLooks();
+    };
+    static CmVars S_VARS;
+    static BaseStatus S_STATUS;
+
+    static void ensureProcessors();
+
 };

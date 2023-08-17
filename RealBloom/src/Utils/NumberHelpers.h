@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <numbers>
 #include <complex>
 #include <cstdint>
@@ -7,6 +8,7 @@
 
 constexpr float DEG_TO_RAD = (float)std::numbers::pi / 180.0f;
 constexpr float EPSILON = 0.000001f;
+constexpr float SQRT3 = 1.7320508075688772935274463415059;
 
 inline bool areEqual(float a, float b, float epsilon = EPSILON)
 {
@@ -55,6 +57,17 @@ inline float lerp(float a, float b, float t)
     return a + ((b - a) * t);
 }
 
+inline float mapRange(float value, float inpStart, float inpEnd, float outStart, float outEnd)
+{
+    return outStart + ((outEnd - outStart) / (inpEnd - inpStart)) * (value - inpStart);
+}
+
+inline float mapRangeClamp(float value, float inpStart, float inpEnd, float outStart, float outEnd)
+{
+    float t = std::clamp((value - inpStart) / (inpEnd - inpStart), 0.0f, 1.0f);
+    return outStart + t * (outEnd - outStart);
+}
+
 inline uint32_t upperPowerOf2(uint32_t v)
 {
     return (uint32_t)floor(pow(2, ceil(log(v) / log(2))));
@@ -65,14 +78,90 @@ inline int shiftIndex(int i, int shift, int size)
     return (i + shift) % size;
 }
 
-inline float rgbToGrayscale(float r, float g, float b)
+inline uint32_t i32ToU32(int v)
 {
-    return (r * 0.2126f) + (g * 0.7152f) + (b * 0.0722f);
+    return std::max(v, 0);
 }
 
-inline double rgbToGrayscale(double r, double g, double b)
+inline int u32ToI32(uint32_t v)
 {
-    return (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+    return std::min(v, (uint32_t)INT_MAX);
+}
+
+enum class GrayscaleType
+{
+    None,
+    Luminance,
+    Average,
+    Sum,
+    Maximum,
+    Minimum,
+    Magnitude,
+    MagOverSqrt3,
+    Red,
+    Green,
+    Blue,
+    Alpha
+};
+constexpr uint32_t GrayscaleType_EnumSize = 12;
+
+constexpr GrayscaleType CONV_THRESHOLD_GRAYSCALE_TYPE = GrayscaleType::Average;
+
+inline float rgbaToGrayscale(float* rgba, GrayscaleType type)
+{
+    switch (type)
+    {
+    case GrayscaleType::Luminance:
+        return (rgba[0] * 0.2126f) + (rgba[1] * 0.7152f) + (rgba[2] * 0.0722f);
+        break;
+    case GrayscaleType::Average:
+        return (rgba[0] + rgba[1] + rgba[2]) / 3.0f;
+        break;
+    case GrayscaleType::Sum:
+        return rgba[0] + rgba[1] + rgba[2];
+        break;
+    case GrayscaleType::Maximum:
+        return std::max(std::max(rgba[0], rgba[1]), rgba[2]);
+        break;
+    case GrayscaleType::Minimum:
+        return std::min(std::min(rgba[0], rgba[1]), rgba[2]);
+        break;
+    case GrayscaleType::Magnitude:
+        return sqrtf((rgba[0] * rgba[0]) + (rgba[1] * rgba[1]) + (rgba[2] * rgba[2]));
+        break;
+    case GrayscaleType::MagOverSqrt3:
+        return sqrtf((rgba[0] * rgba[0]) + (rgba[1] * rgba[1]) + (rgba[2] * rgba[2])) / SQRT3;
+        break;
+    case GrayscaleType::Red:
+        return rgba[0];
+        break;
+    case GrayscaleType::Green:
+        return rgba[1];
+        break;
+    case GrayscaleType::Blue:
+        return rgba[2];
+        break;
+    case GrayscaleType::Alpha:
+        return rgba[3];
+        break;
+    default:
+        break;
+    }
+
+    return rgba[0];
+}
+
+inline float rgbToGrayscale(float* rgb, GrayscaleType type)
+{
+    switch (type)
+    {
+    case GrayscaleType::Alpha:
+        return 1.0f;
+        break;
+    default:
+        return rgbaToGrayscale(rgb, type);
+        break;
+    }
 }
 
 inline float transformKnee(float v)
@@ -104,27 +193,35 @@ inline bool checkBounds(int x, int y, int w, int h)
     return true;
 }
 
-inline void blendAddRGB(float* colorA, uint32_t indexA, float* colorB, uint32_t indexB, float t)
+inline void blendAddRGBA(float* colorA, uint32_t indexA, const float* colorB, uint32_t indexB, float t)
+{
+    colorA[indexA + 0] += colorB[indexB + 0] * t;
+    colorA[indexA + 1] += colorB[indexB + 1] * t;
+    colorA[indexA + 2] += colorB[indexB + 2] * t;
+    colorA[indexA + 3] += colorB[indexB + 3] * t;
+}
+
+inline void blendAddRGB(float* colorA, uint32_t indexA, const float* colorB, uint32_t indexB, float t)
 {
     colorA[indexA + 0] += colorB[indexB + 0] * t;
     colorA[indexA + 1] += colorB[indexB + 1] * t;
     colorA[indexA + 2] += colorB[indexB + 2] * t;
 }
 
-inline float applyExposure(float v)
+inline float getExposureMul(float v)
 {
     return powf(2.0f, v);
 }
 
-inline double applyExposure(double v)
+inline double getExposureMul(double v)
 {
     return pow(2.0, v);
 }
 
-uint8_t doubleTo8bit(double v);
-float contrastCurve(float v, float contrast);
-double contrastCurve(double v, double contrast);
+float applyContrast(float v, float contrast);
+
 void rotatePoint(float x, float y, float pivotX, float pivotY, float angle, float& outX, float& outY);
+void rotatePointInPlace(float& x, float& y, float pivotX, float pivotY, float angle);
 
 void calcFftConvPadding(
     bool powerOfTwo,
@@ -137,6 +234,8 @@ void calcFftConvPadding(
     float kernelCenterY,
     uint32_t& outPaddedWidth,
     uint32_t& outPaddedHeight);
+
+void calcDispScale(uint32_t index, uint32_t steps, float amount, float edgeOffset, float& outScale, float& outAreaMul);
 
 float srgbToLinear_DEPRECATED(float x);
 float linearToSrgb_DEPRECATED(float x);

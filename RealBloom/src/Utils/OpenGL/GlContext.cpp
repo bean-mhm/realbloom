@@ -1,13 +1,13 @@
 #include "GlContext.h"
 
-HGLRC realContext = NULL;
+static HGLRC realContext = NULL;
 
-int g_glVersionMajor;
-int g_glVersionMinor;
+static int g_glVersionMajor;
+static int g_glVersionMinor;
 
-std::function<void()> g_job;
-bool g_success = false;
-std::string* g_outError = nullptr;
+static std::function<void()> g_job;
+static bool g_success = false;
+static std::string* g_outError = nullptr;
 
 LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -91,13 +91,14 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         wglMakeCurrent(devContext, tempContext);
 
         // Initialize GLEW
-        glewExperimental = GL_TRUE;
-        GLenum err = glewInit();
         wglewInit();
+        glewExperimental = GL_TRUE;
+        GLenum glewInitResult = glewInit();
+
+        // Delete the temporary context
         wglDeleteContext(tempContext);
 
-        bool glewReady = (err == GLEW_OK);
-        if (glewReady)
+        if (glewInitResult == GLEW_OK)
         {
             // Real context
             static const int ctxAttribs[] = {
@@ -132,10 +133,10 @@ LRESULT CALLBACK MyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
         }
         else
         {
-            *g_outError = "GLEW was not initialized.";
+            *g_outError = strFormat("Failed to initialize GLEW: %d", glewInitResult);
         }
 
-        // Delete the device context
+        // Clean up
         ReleaseDC(hWnd, devContext);
         DestroyWindow(hWnd);
         PostQuitMessage(0);

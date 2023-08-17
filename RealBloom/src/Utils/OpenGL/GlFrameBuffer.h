@@ -10,26 +10,28 @@
 #include "GlUtils.h"
 #include "../Misc.h"
 
-class GlFrameBuffer : public GlWrapper
+// OpenGL Framebuffer Wrapper
+class GlFramebuffer : public GlWrapper
 {
-private:
-    GLuint m_frameBuffer = 0;
-    GLuint m_texColorBuffer = 0;
-
-    uint32_t m_width;
-    uint32_t m_height;
-
 public:
-    GlFrameBuffer(uint32_t width, uint32_t height);
-    virtual ~GlFrameBuffer();
+    GlFramebuffer(uint32_t width, uint32_t height);
+    virtual ~GlFramebuffer();
 
     uint32_t getWidth() const;
     uint32_t getHeight() const;
-    GLuint getFrameBuffer() const;
+    GLuint getFramebuffer() const;
     GLuint getColorBuffer() const;
 
     void bind();
     void unbind();
     void viewport();
+
+private:
+    GLuint m_framebuffer = 0;
+    GLuint m_texColorBuffer = 0;
+
+    uint32_t m_width;
+    uint32_t m_height;
+
 };
 

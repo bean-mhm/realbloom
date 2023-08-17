@@ -27,8 +27,24 @@ namespace RealBloom
         uint32_t numDone = 0;
     };
 
+    // Convolution Thread, used for method: Naive CPU
     class ConvolutionThread
     {
+    public:
+        ConvolutionThread(
+            uint32_t numThreads, uint32_t threadIndex, const ConvolutionParams& params,
+            float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
+            float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight);
+
+        void start();
+        void stop();
+
+        std::vector<float>& getBuffer();
+        std::shared_ptr<std::jthread> getThread();
+        void setThread(std::shared_ptr<std::jthread> thread);
+
+        ConvolutionThreadStats* getStats();
+
     private:
         uint32_t m_numThreads;
         uint32_t m_threadIndex;
@@ -49,20 +65,6 @@ namespace RealBloom
 
         std::vector<float> m_outputBuffer;
 
-    public:
-        ConvolutionThread(
-            uint32_t numThreads, uint32_t threadIndex, const ConvolutionParams& params,
-            float* inputBuffer, uint32_t inputWidth, uint32_t inputHeight,
-            float* kernelBuffer, uint32_t kernelWidth, uint32_t kernelHeight);
-
-        void start();
-        void stop();
-
-        std::vector<float>& getBuffer();
-        std::shared_ptr<std::jthread> getThread();
-        void setThread(std::shared_ptr<std::jthread> thread);
-
-        ConvolutionThreadStats* getStats();
     };
 
 }

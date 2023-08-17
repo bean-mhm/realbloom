@@ -9,18 +9,9 @@
 
 #include "Misc.h"
 
+// File Dialog Handler (Global)
 class FileDialogs
 {
-private:
-    static std::unordered_map<std::string, std::string> S_PATHS;
-
-    static bool genericDialog(
-        const std::string& id,
-        std::vector<std::string> filterList,
-        std::string defaultName,
-        std::string& outFilename,
-        bool save);
-
 public:
     FileDialogs() = delete;
     FileDialogs(const FileDialogs&) = delete;
@@ -36,5 +27,15 @@ public:
         const std::vector<std::string>& filterList,
         const std::string& defaultName,
         std::string& outFilename);
+
+private:
+    static std::unordered_map<std::string, std::string> S_PATHS;
+
+    static bool genericDialog(
+        const std::string& id,
+        std::vector<std::string> filterList,
+        std::string defaultName,
+        std::string& outFilename,
+        bool save);
 
 };

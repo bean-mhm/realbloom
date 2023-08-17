@@ -22,8 +22,22 @@
 namespace RealBloom
 {
 
+    // Convolution method: FFT GPU
     class ConvFftGpu
     {
+    public:
+        ConvFftGpu(BinaryConvFftGpuInput* binInput);
+        ~ConvFftGpu();
+
+        void pad();
+        void inputFFT(uint32_t ch);
+        void kernelFFT(uint32_t ch);
+        void multiply(uint32_t ch);
+        void inverse(uint32_t ch);
+        void output();
+
+        const std::vector<float>& getBuffer() const;
+
     private:
         BinaryConvFftGpuInput* m_binInput;
 
@@ -42,19 +56,6 @@ namespace RealBloom
         Array2D<std::complex<float>> m_iFFT[3];
 
         std::vector<float> m_outputBuffer;
-
-    public:
-        ConvFftGpu(BinaryConvFftGpuInput* binInput);
-        ~ConvFftGpu();
-
-        void pad();
-        void inputFFT(uint32_t ch);
-        void kernelFFT(uint32_t ch);
-        void multiply(uint32_t ch);
-        void inverse(uint32_t ch);
-        void output();
-
-        const std::vector<float>& getBuffer() const;
 
     };
 

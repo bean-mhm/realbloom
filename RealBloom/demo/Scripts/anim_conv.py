@@ -25,36 +25,8 @@ kernel_cs = 'w'
 output_cs = 'w'
 
 # Additional arguments
-arguments = '--kernel-contrast 0.05 --kernel-crop 0.8 --autoexp --mix 0.15'
-
-'''
-Arguments:
-  --input, -i             * Input filename
-  --input-space, -a       * Input color space
-  --kernel, -k            * Kernel filename
-  --kernel-space, -b      * Kernel color space
-  --output, -o            * Output filename
-  --output-space, -p      Output color space (no view transform)
-  --display, -h           Display name for view transform
-  --view, -j              View name for view transform
-  --look, -l              Look name for view transform
-  --view-exp              Exposure for view transform [def: 0]
-  --kernel-exposure, -e   Kernel exposure [def: 0]
-  --kernel-contrast, -c   Kernel contrast [def: 0]
-  --kernel-color, -f      Kernel color [def: 1,1,1]
-  --kernel-rotation, -r   Kernel rotation [def: 0]
-  --kernel-scale, -s      Kernel scale [def: 1]
-  --kernel-crop, -q       Kernel crop [def: 1]
-  --kernel-center, -u     Kernel center [def: 0.5,0.5]
-  --threshold, -t         Threshold [def: 0]
-  --knee, -w              Threshold knee [def: 0]
-  --autoexp, -n           Auto-Exposure
-  --input-mix, -x         Input mix (additive blending)
-  --conv-mix, -y          Output mix (additive blending)
-  --mix, -m               Blend between input and output (normal blending) [def: 1]
-  --conv-exposure, -z     Conv. output exposure [def: 0]
-  --verbose, -v           Enable verbose logging
-'''
+# Use 'help conv' in the CLI to see all the arguments
+arguments = '--kernel-contrast 0.05 --kernel-crop 0.8 --autoexp --blend-mix 0.1'
 
 # Print the command line output from RealBloom
 def print_stdout(proc: subprocess.Popen):

@@ -1,11 +1,8 @@
-This folder contains the default OpenColorIO config for RealBloom, which is a custom config made by combining Troy Sobotka's new AgX and Eary Chow's version of AgX.
+This directory contains a copy of grace, the default OpenColorIO config for RealBloom.
+You are free to swap the contents of this directory with your own custom OCIO config.
 
-You are free to swap this with your own custom OCIO config.
+Links:
+  RealBloom - https://github.com/bean-mhm/realbloom
+  grace - https://github.com/bean-mhm/grace
 
-Troy's AgX:
-https://github.com/sobotka/SB2383-Configuration-Generation
-
-Eary's AgX:
-https://github.com/EaryChow/AgX/releases/tag/v11.9
-
-Last Updated: February 5, 2023
+Last Updated: 2023-08-11

@@ -30,7 +30,8 @@ namespace RealBloom
             if (i % m_numThreads == m_threadIndex)
                 m_state.numSteps++;
 
-        float amount = fminf(fmaxf(m_params.amount, 0.0f), 1.0f);
+        float amount = fmaxf(m_params.amount, 0.0f);
+        float edgeOffset = std::clamp(m_params.edgeOffset, -1.0f, 1.0f);
 
         float centerX = (float)m_inputWidth / 2.0f;
         float centerY = (float)m_inputHeight / 2.0f;
@@ -55,18 +56,14 @@ namespace RealBloom
             if (i % m_numThreads != m_threadIndex)
                 continue;
 
-            float scale = lerp(
-                1.0f - (amount / 2.0f),
-                1.0f + (amount / 2.0f),
-                (i + 1.0f) / (float)steps);
+            float scale, areaMul;
+            calcDispScale(i, steps, amount, edgeOffset, scale, areaMul);
 
-            float scaledArea = scale * scale;
-            float scaledMul = 1.0f / scaledArea;
-
+            // Wavelength to RGB
             uint32_t smpIndex = i * 3;
-            float wlR = m_cmfSamples[smpIndex + 0] * scaledMul;
-            float wlG = m_cmfSamples[smpIndex + 1] * scaledMul;
-            float wlB = m_cmfSamples[smpIndex + 2] * scaledMul;
+            float wlR = m_cmfSamples[smpIndex + 0] * areaMul;
+            float wlG = m_cmfSamples[smpIndex + 1] * areaMul;
+            float wlB = m_cmfSamples[smpIndex + 2] * areaMul;
 
             // Clear scaledBuffer
             for (auto& v : scaledBuffer)
@@ -75,13 +72,12 @@ namespace RealBloom
             // Scale
             if (areEqual(scale, 1))
             {
-                uint32_t redIndexDP, redIndexScaled;
-                for (uint32_t y = 0; y < m_inputHeight; y++)
+                for (int y = 0; y < m_inputHeight; y++)
                 {
-                    for (uint32_t x = 0; x < m_inputWidth; x++)
+                    for (int x = 0; x < m_inputWidth; x++)
                     {
-                        redIndexDP = (y * m_inputWidth + x) * 4;
-                        redIndexScaled = (y * m_inputWidth + x) * 3;
+                        uint32_t redIndexDP = (y * m_inputWidth + x) * 4;
+                        uint32_t redIndexScaled = (y * m_inputWidth + x) * 3;
 
                         scaledBuffer[redIndexScaled + 0] = m_inputBuffer[redIndexDP + 0];
                         scaledBuffer[redIndexScaled + 1] = m_inputBuffer[redIndexDP + 1];
@@ -91,11 +87,12 @@ namespace RealBloom
             }
             else
             {
-                float targetColor[3];
-                Bilinear bil;
-                for (uint32_t y = 0; y < m_inputHeight; y++)
+                for (int y = 0; y < m_inputHeight; y++)
                 {
-                    for (uint32_t x = 0; x < m_inputWidth; x++)
+                    float targetColor[3];
+                    Bilinear bil;
+
+                    for (int x = 0; x < m_inputWidth; x++)
                     {
                         float transX = (((x + 0.5f) - centerX) / scale) + centerX;
                         float transY = (((y + 0.5f) - centerY) / scale) + centerY;
@@ -135,19 +132,16 @@ namespace RealBloom
             }
 
             // Colorize and add to dispBuffer
+            for (int y = 0; y < m_inputHeight; y++)
             {
-                uint32_t redIndexOutput, redIndexScaled;
-                for (uint32_t y = 0; y < m_inputHeight; y++)
+                for (int x = 0; x < m_inputWidth; x++)
                 {
-                    for (uint32_t x = 0; x < m_inputWidth; x++)
-                    {
-                        redIndexScaled = (y * m_inputWidth + x) * 3;
-                        redIndexOutput = (y * m_inputWidth + x) * 4;
+                    uint32_t redIndexScaled = (y * m_inputWidth + x) * 3;
+                    uint32_t redIndexOutput = (y * m_inputWidth + x) * 4;
 
-                        m_outputBuffer[redIndexOutput + 0] += scaledBuffer[redIndexScaled + 0] * wlR;
-                        m_outputBuffer[redIndexOutput + 1] += scaledBuffer[redIndexScaled + 1] * wlG;
-                        m_outputBuffer[redIndexOutput + 2] += scaledBuffer[redIndexScaled + 2] * wlB;
-                    }
+                    m_outputBuffer[redIndexOutput + 0] += scaledBuffer[redIndexScaled + 0] * wlR;
+                    m_outputBuffer[redIndexOutput + 1] += scaledBuffer[redIndexScaled + 1] * wlG;
+                    m_outputBuffer[redIndexOutput + 2] += scaledBuffer[redIndexScaled + 2] * wlB;
                 }
             }
 
@@ -162,7 +156,7 @@ namespace RealBloom
         m_mustStop = true;
     }
 
-    std::vector<float>& DispersionThread::getBuffer()
+    std::vector<float>& DispersionThread::getOutputBuffer()
     {
         return m_outputBuffer;
     }

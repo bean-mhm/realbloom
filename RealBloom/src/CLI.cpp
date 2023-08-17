@@ -12,24 +12,26 @@ namespace OCIO = OpenColorIO_v2_1;
 #include "ColorManagement/CmImage.h"
 #include "ColorManagement/CmImageIO.h"
 
-#include "RealBloom/DiffractionPattern.h"
+#include "RealBloom/Diffraction.h"
 #include "RealBloom/Dispersion.h"
 #include "RealBloom/Convolution.h"
 
 #include "Utils/ConsoleColors.h"
 #include "Utils/CliStackTimer.h"
+#include "Utils/ImageTransform.h"
 #include "Utils/Misc.h"
 
+#include "Async.h"
 #include "Config.h"
 
 namespace CLI
 {
 
-    constexpr uint32_t LINE_LENGTH = 80;
-    constexpr uint32_t WAIT_TIMESTEP = 5;
+    static constexpr uint32_t LINE_LENGTH = 80;
+    static constexpr uint32_t WAIT_TIMESTEP = 5;
 
-    constexpr const char* INIT_WORD = "cli";
-    constexpr const char* QUIT_WORD = "quit";
+    static constexpr const char* INIT_WORD = "cli";
+    static constexpr const char* QUIT_WORD = "quit";
 
     bool Interface::S_ACTIVE = false;
 
@@ -40,6 +42,8 @@ namespace CLI
 
     void cmdVersion(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
     void cmdHelp(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
+
+    void cmdImageTransform(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
 
     void cmdDiff(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
     void cmdDisp(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose);
@@ -72,20 +76,35 @@ namespace CLI
             if (arg.type == ArgumentType::Optional)
                 std::cout
                 << "  "
-                << consoleColor(COL_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
-                << strWordWrap(desc, LINE_LENGTH, 26)
+                << consoleColor(COL_SEC) << strRightPadding(s_aliases, 28) << consoleColor()
+                << strWordWrap(desc, LINE_LENGTH, 30)
                 << consoleColor() << "\n";
             else
                 std::cout
                 << "  "
-                << consoleColor(COL_SEC) << strRightPadding(s_aliases, 24) << consoleColor()
+                << consoleColor(COL_SEC) << strRightPadding(s_aliases, 28) << consoleColor()
                 << consoleColor(arg.type == ArgumentType::Required ? COL_ERR : COL_PRI) << "* " << consoleColor()
-                << strWordWrap(desc, LINE_LENGTH, 28)
+                << strWordWrap(desc, LINE_LENGTH, 32)
                 << consoleColor() << "\n";
         }
     }
 
-    // Print the parsed parameters (used in verbose mode)
+    // Print the notes of a command
+    void printNotes(const Command& command)
+    {
+        for (uint32_t i = 0; i < command.notes.size(); i++)
+        {
+            std::string prefix = strFormat("%u. ", i + 1);
+
+            std::cout
+                << "  "
+                << consoleColor(COL_SEC) << strRightPadding(prefix, 4) << consoleColor()
+                << strWordWrap(command.notes[i], LINE_LENGTH, 6)
+                << consoleColor() << "\n";
+        }
+    }
+
+    // Print the parsed parameters
     void printParameters(const std::vector<std::string>& params)
     {
         std::cout << consoleColor(COL_PRI) << "Parameters:" << consoleColor() << "\n";
@@ -107,7 +126,7 @@ namespace CLI
 
     void printVersion()
     {
-        std::cout << Config::S_APP_VERSION << "\n";
+        std::cout << Config::APP_VERSION << "\n";
     }
 
     void printHelp(const std::string& commandName = "")
@@ -117,7 +136,7 @@ namespace CLI
             // Header
             std::cout
                 << consoleColor(COL_PRI)
-                << Config::S_APP_TITLE << " v" << Config::S_APP_VERSION << "\n"
+                << Config::APP_TITLE << " v" << Config::APP_VERSION << "\n"
                 << "Usage:\n"
                 << consoleColor();
 
@@ -125,8 +144,8 @@ namespace CLI
             for (const auto& cmd : commands)
                 std::cout
                 << "  "
-                << consoleColor(COL_SEC) << strRightPadding(cmd.name, 16) << consoleColor()
-                << strWordWrap(cmd.desc, LINE_LENGTH, 18) << "\n";
+                << consoleColor(COL_SEC) << strRightPadding(cmd.name, 18) << consoleColor()
+                << strWordWrap(cmd.desc, LINE_LENGTH, 20) << "\n";
 
             // Footer
             std::cout
@@ -168,6 +187,14 @@ namespace CLI
                         << consoleColor(COL_PRI) << "Arguments:\n" << consoleColor();
                     printArguments(*cmdPtr);
                 }
+
+                if (cmdPtr->notes.size() > 0)
+                {
+                    std::cout
+                        << "\n"
+                        << consoleColor(COL_PRI) << "Notes:\n" << consoleColor();
+                    printNotes(*cmdPtr);
+                }
             }
             else
             {
@@ -176,194 +203,559 @@ namespace CLI
         }
     }
 
+    void addOutputColorManagementArguments(Command& cmd)
+    {
+        insertContents(cmd.arguments, {
+            {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
+            {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
+            {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
+            {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
+            {{"--view-exposure"}, "Exposure for view transform", "0", ArgumentType::Optional}
+            });
+    }
+
+    void addXyzConversionArguments(Command& cmd)
+    {
+        insertContents(cmd.arguments, {
+            {{"--user-space", "-x"}, "XYZ I-E color space in the user config (UserConfig)", "", ArgumentType::Optional},
+            {{"--common-internal", "-w"}, "Common XYZ color space in the internal config (CommonSpace)", "", ArgumentType::Optional},
+            {{"--common-user", "-u"}, "Common XYZ color space in the user config (CommonSpace)", "", ArgumentType::Optional}
+            });
+    }
+
+    void readXyzConversionArguments(StringMap& args)
+    {
+        if (args.contains("--user-space"))
+        {
+            XyzConversionInfo info;
+            info.method = XyzConversionMethod::UserConfig;
+            info.userSpace = args["--user-space"];
+            CmXYZ::setConversionInfo(info);
+        }
+        else if (args.contains("--common-internal") && args.contains("--common-user"))
+        {
+            XyzConversionInfo info;
+            info.method = XyzConversionMethod::CommonSpace;
+            info.commonInternal = args["--common-internal"];
+            info.commonUser = args["--common-user"];
+            CmXYZ::setConversionInfo(info);
+        }
+    }
+
+    StringMap& getImageTransformArgumentsAliasMap(uint32_t index = 0)
+    {
+        static std::vector<StringMap> aliasMaps;
+
+        // Initialize the list
+        if (aliasMaps.size() < 1)
+        {
+            // Primary alias map
+            {
+                StringMap map;
+                map["crop"] = "-C";
+                map["crop-origin"] = "-U";
+                map["resize"] = "-R";
+                map["scale"] = "-S";
+                map["rotate"] = "-D";
+                map["translate"] = "-T";
+                map["origin"] = "-V";
+                map["filter"] = "-F";
+                map["exposure"] = "-E";
+                map["contrast"] = "-X";
+                map["grayscale"] = "-G";
+                map["grayscale-mix"] = "-Z";
+                map["transparency"] = "-W";
+                aliasMaps.push_back(map);
+            }
+
+            // Secondary alias map
+            {
+                StringMap map;
+                map["crop"] = "-A";
+                map["crop-origin"] = "-B";
+                map["resize"] = "-H";
+                map["scale"] = "-I";
+                map["rotate"] = "-J";
+                map["translate"] = "-K";
+                map["origin"] = "-L";
+                map["filter"] = "-N";
+                map["exposure"] = "-O";
+                map["contrast"] = "-P";
+                map["grayscale"] = "-Q";
+                map["grayscale-mix"] = "-Y";
+                map["transparency"] = "-M";
+                aliasMaps.push_back(map);
+            }
+        }
+
+        // Verify the index
+        if (index >= aliasMaps.size())
+            throw std::exception(makeError(__FUNCTION__, "", "Invalid alias map index").c_str());
+
+        // Get a reference to the alias map that'll be used
+        return aliasMaps[index];
+    }
+
+    void addImageTransformArguments(Command& cmd, const std::string& imageID, const std::string& imageName, uint32_t imageIndex = 0)
+    {
+        StringMap& aliasMap = getImageTransformArgumentsAliasMap(imageIndex);
+
+        // Make prefixes
+        std::string argPrefix = imageID.empty() ? "--" : strFormat("--%s-", imageID.c_str());
+        std::string descPrefix = imageName.empty() ? "" : strFormat("%s: ", imageName.c_str());
+
+        // Add the arguments
+        insertContents(cmd.arguments, {
+            {
+                {argPrefix + "crop", aliasMap["crop"]},
+                descPrefix + "Crop",
+                "1,1",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "crop-origin", aliasMap["crop-origin"]},
+                descPrefix + "Crop Origin",
+                "0.5,0.5",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "resize", aliasMap["resize"]},
+                descPrefix + "Resize",
+                "1,1",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "scale", aliasMap["scale"]},
+                descPrefix + "Scale",
+                "1,1",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "rotate", aliasMap["rotate"]},
+                descPrefix + "Rotate",
+                "0",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "translate", aliasMap["translate"]},
+                descPrefix + "Translate",
+                "0,0",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "origin", aliasMap["origin"]},
+                descPrefix + "Transform Origin",
+                "0.5,0.5",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "filter", aliasMap["filter"]},
+                descPrefix + "Filter",
+                "1,1,1",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "exposure", aliasMap["exposure"]},
+                descPrefix + "Exposure",
+                "0",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "contrast", aliasMap["contrast"]},
+                descPrefix + "Contrast",
+                "0",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "grayscale", aliasMap["grayscale"]},
+                descPrefix + "Grayscale Type",
+                "0",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "grayscale-mix", aliasMap["grayscale-mix"]},
+                descPrefix + "Grayscale Mix",
+                "1",
+                ArgumentType::Optional
+            },
+            {
+                {argPrefix + "transparency", aliasMap["transparency"]},
+                descPrefix + "Transparency",
+                "",
+                ArgumentType::Optional
+            }
+            });
+
+        // Add notes if they haven't been added already
+        if (imageIndex == 0)
+        {
+            cmd.notes.push_back(strFromEnumValues("Grayscale Type", {
+                "None",
+                "Luminance",
+                "Average",
+                "Sum",
+                "Maximum",
+                "Minimum",
+                "Magnitude",
+                "Mag. Over Sqrt(3)",
+                "Red",
+                "Green",
+                "Blue",
+                "Alpha"
+                }));
+        }
+    }
+
+    void readImageTransformArguments(StringMap& args, const std::string& imageID, ImageTransformParams& outParams)
+    {
+        // Make the prefix
+        std::string argPrefix = imageID.empty() ? "--" : strFormat("--%s-", imageID.c_str());
+
+        // Read the arguments
+
+        std::string arg;
+        outParams.reset();
+
+        arg = "crop";
+        if (args.contains(argPrefix + arg))
+            outParams.cropResize.crop = strToXY(args[argPrefix + arg]);
+
+        arg = "crop-origin";
+        if (args.contains(argPrefix + arg))
+            outParams.cropResize.origin = strToXY(args[argPrefix + arg]);
+
+        arg = "resize";
+        if (args.contains(argPrefix + arg))
+            outParams.cropResize.resize = strToXY(args[argPrefix + arg]);
+
+        arg = "scale";
+        if (args.contains(argPrefix + arg))
+            outParams.transform.scale = strToXY(args[argPrefix + arg]);
+
+        arg = "rotate";
+        if (args.contains(argPrefix + arg))
+            outParams.transform.rotate = strToFloat(args[argPrefix + arg]);
+
+        arg = "translate";
+        if (args.contains(argPrefix + arg))
+            outParams.transform.translate = strToXY(args[argPrefix + arg]);
+
+        arg = "origin";
+        if (args.contains(argPrefix + arg))
+            outParams.transform.origin = strToXY(args[argPrefix + arg]);
+
+        arg = "filter";
+        if (args.contains(argPrefix + arg))
+            outParams.color.filter = strToRGB(args[argPrefix + arg]);
+
+        arg = "exposure";
+        if (args.contains(argPrefix + arg))
+            outParams.color.exposure = strToFloat(args[argPrefix + arg]);
+
+        arg = "contrast";
+        if (args.contains(argPrefix + arg))
+            outParams.color.contrast = strToFloat(args[argPrefix + arg]);
+
+        arg = "grayscale";
+        if (args.contains(argPrefix + arg))
+        {
+            int enumIndex = strToInt(args[argPrefix + arg]);
+            if (enumIndex >= 0 && enumIndex < GrayscaleType_EnumSize)
+            {
+                outParams.color.grayscaleType = (GrayscaleType)enumIndex;
+            }
+        }
+
+        arg = "grayscale-mix";
+        if (args.contains(argPrefix + arg))
+            outParams.color.grayscaleMix = strToFloat(args[argPrefix + arg]);
+
+        arg = "transparency";
+        outParams.transparency = args.contains(argPrefix + arg);
+    }
+
     void Interface::init(int& argc, char** argv)
     {
-        if (argc < 2)
-            return;
+        constexpr bool DEBUG_MODE = false;
 
-        if (strLowercase(std::string(argv[1])) == INIT_WORD)
+        if (DEBUG_MODE)
+        {
             S_ACTIVE = true;
+        }
         else
-            return;
+        {
+            if (argc < 2)
+                return;
+
+            if (strLowercase(std::string(argv[1])) == INIT_WORD)
+                S_ACTIVE = true;
+            else
+                return;
+        }
 
         // Define the supported commands
+
         commands.clear();
+
+        // version
         {
-            commands.push_back(Command{
+            Command cmd
+            {
                 "version",
                 "Print the current version",
                 "",
                 {},
-                cmdVersion }
-            );
+                {},
+                cmdVersion
+            };
+            commands.push_back(cmd);
+        }
 
-            commands.push_back(Command{
+        // help
+        {
+            Command cmd
+            {
                 "help",
                 "Print guide for all commands or a specific command",
                 "help <command>",
                 {},
-                cmdHelp }
-            );
+                {},
+                cmdHelp
+            };
+            commands.push_back(cmd);
+        }
 
-            commands.push_back(Command{
+        // image-transform
+        {
+            Command cmd
+            {
+                "image-transform",
+                "Apply an image transform",
+                "image-transform -i input.png -a sRGB -o output.exr -p w",
+                {},
+                {},
+                cmdImageTransform,
+                true
+            };
+
+            insertContents(cmd.arguments, {
+                {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
+                {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
+                {{"--output", "-o"}, "Output filename", "", ArgumentType::Required}
+                });
+
+            addOutputColorManagementArguments(cmd);
+
+            addImageTransformArguments(cmd, "", "");
+
+            commands.push_back(cmd);
+        }
+
+        // diff
+        {
+            Command cmd
+            {
                 "diff",
                 "Generate diffraction pattern",
                 "diff -i aperture.png -a sRGB -o output.exr -p w",
-                {
-                    {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
-                    {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
-
-                    {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
-                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
-                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
-                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
-                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
-                    {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional},
-
-                    {{"--grayscale", "-g"}, "Grayscale", "", ArgumentType::Optional}
-                },
+                {},
+                {},
                 cmdDiff,
-                true }
-            );
+                true
+            };
 
-            commands.push_back(Command{
+            insertContents(cmd.arguments, {
+                {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
+                {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
+                {{"--output", "-o"}, "Output filename", "", ArgumentType::Required}
+                });
+
+            addOutputColorManagementArguments(cmd);
+
+            addImageTransformArguments(cmd, "input", "Input");
+
+            commands.push_back(cmd);
+        }
+
+        // disp
+        {
+            Command cmd
+            {
                 "disp",
                 "Apply dispersion",
                 "disp -i input.exr -a Linear -o output.exr -p w "
                 "-s 128 -d 0.4",
-                {
-                    {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
-                    {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
-
-                    {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
-                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
-                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
-                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
-                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
-                    {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional},
-
-                    {{"--amount", "-d"}, "Amount of dispersion", "", ArgumentType::Required},
-                    {{"--steps", "-s"}, "Number of wavelengths to sample", "", ArgumentType::Required},
-
-                    {{"--exposure", "-e"}, "Exposure", "0", ArgumentType::Optional},
-                    {{"--contrast", "-c"}, "Contrast", "0", ArgumentType::Optional},
-                    {{"--color", "-m"}, "Dispersion color", "1,1,1", ArgumentType::Optional},
-                    {{"--threads", "-t"}, "Number of threads to use", "", ArgumentType::Optional},
-                    {{"--gpu", "-g"}, "Use the GPU method", "", ArgumentType::Optional},
-
-                    {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Optional},
-                    {{"--user-space", "-x"}, "XYZ I-E color space in the user config (UserConfig)", "", ArgumentType::Optional},
-                    {{"--common-internal", "-w"}, "Common XYZ color space in the internal config (CommonSpace)", "", ArgumentType::Optional},
-                    {{"--common-user", "-u"}, "Common XYZ color space in the user config (CommonSpace)", "", ArgumentType::Optional}
-                },
+                {},
+                {},
                 cmdDisp,
-                true }
-            );
+                true
+            };
 
-            commands.push_back(Command{
+            insertContents(cmd.arguments, {
+                {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
+                {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
+                {{"--output", "-o"}, "Output filename", "", ArgumentType::Required}
+                });
+
+            addOutputColorManagementArguments(cmd);
+
+            addImageTransformArguments(cmd, "input", "Input");
+
+            insertContents(cmd.arguments, {
+                {{"--amount", "-d"}, "Amount of dispersion", "", ArgumentType::Required},
+                {{"--edge", "-e"}, "Edge offset", "", ArgumentType::Required},
+                {{"--steps", "-s"}, "Number of wavelengths to sample", "", ArgumentType::Required},
+
+                {{"--gpu", "-g"}, "Use the GPU method", "", ArgumentType::Optional},
+                {{"--threads", "-t"}, "Number of threads to use", "", ArgumentType::Optional},
+
+                {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Optional},
+                });
+
+            addXyzConversionArguments(cmd);
+
+            commands.push_back(cmd);
+        }
+
+        // conv
+        {
+            Command cmd
+            {
                 "conv",
-                "Perform convolution (FFT)",
+                "Perform convolution (FFT CPU)",
                 "conv -i input.exr -a Linear -k kernel.exr -b w -o conv.png -j AgX",
-                {
-                    {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
-                    {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
-
-                    {{"--kernel", "-k"}, "Kernel filename", "", ArgumentType::Required},
-                    {{"--kernel-space", "-b"}, "Kernel color space", "", ArgumentType::Required},
-
-                    {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
-                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
-                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
-                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
-                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
-                    {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional},
-
-                    {{"--kernel-exposure", "-e"}, "Kernel exposure", "0", ArgumentType::Optional},
-                    {{"--kernel-contrast", "-c"}, "Kernel contrast", "0", ArgumentType::Optional},
-                    {{"--kernel-color", "-f"}, "Kernel color", "1,1,1", ArgumentType::Optional},
-                    {{"--kernel-rotation", "-r"}, "Kernel rotation", "0", ArgumentType::Optional},
-                    {{"--kernel-scale", "-s"}, "Kernel scale", "1", ArgumentType::Optional},
-                    {{"--kernel-crop", "-q"}, "Kernel crop", "1", ArgumentType::Optional},
-                    {{"--kernel-center", "-u"}, "Kernel center", "0.5,0.5", ArgumentType::Optional},
-                    {{"--threshold", "-t"}, "Threshold", "0", ArgumentType::Optional},
-                    {{"--knee", "-w"}, "Threshold knee", "0", ArgumentType::Optional},
-                    {{"--autoexp", "-n"}, "Auto-Exposure", "", ArgumentType::Optional},
-                    {{"--input-mix", "-x"}, "Input mix (additive blending)", "", ArgumentType::Optional},
-                    {{"--conv-mix", "-y"}, "Output mix (additive blending)", "", ArgumentType::Optional},
-                    {{"--mix", "-m"}, "Blend between input and output (normal blending)", "1", ArgumentType::Optional},
-                    {{"--conv-exposure", "-z"}, "Conv. output exposure", "0", ArgumentType::Optional}
-                },
+                {},
+                {},
                 cmdConv,
-                true }
-            );
+                true
+            };
 
-            commands.push_back(Command{
+            insertContents(cmd.arguments, {
+                {{"--input", "-i"}, "Input filename", "", ArgumentType::Required},
+                {{"--input-space", "-a"}, "Input color space", "", ArgumentType::Required},
+                {{"--kernel", "-k"}, "Kernel filename", "", ArgumentType::Required},
+                {{"--kernel-space", "-b"}, "Kernel color space", "", ArgumentType::Required},
+                {{"--output", "-o"}, "Output filename", "", ArgumentType::Required}
+                });
+
+            addOutputColorManagementArguments(cmd);
+
+            addImageTransformArguments(cmd, "input", "Input", 0);
+            addImageTransformArguments(cmd, "kernel", "Kernel", 1);
+
+            insertContents(cmd.arguments, {
+                {{"--use-origin", "-u"}, "Use the kernel transform origin in convolution", "", ArgumentType::Optional},
+                {{"--deconvolve", "-d"}, "Deconvolve", "", ArgumentType::Optional},
+                {{"--threshold", "-t"}, "Threshold", "0", ArgumentType::Optional},
+                {{"--knee", "-w"}, "Threshold knee", "0", ArgumentType::Optional},
+                {{"--autoexp", "-n"}, "Auto-Exposure", "", ArgumentType::Optional},
+                {{"--blend-input", "-x"}, "Input blend (additive blending)", "", ArgumentType::Optional},
+                {{"--blend-conv", "-y"}, "Conv. blend (additive blending)", "", ArgumentType::Optional},
+                {{"--blend-mix", "-m"}, "Blend between input and conv.", "1", ArgumentType::Optional},
+                {{"--blend-exposure", "-z"}, "Conv. exposure adjustment when blending", "0", ArgumentType::Optional}
+                });
+
+            commands.push_back(cmd);
+        }
+
+        // cmf-details
+        {
+            Command cmd
+            {
                 "cmf-details",
                 "Print CMF table details",
                 "cmf-details -f \"CIE 1931 2-deg.csv\"",
                 {
                     {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Required}
                 },
-                cmdCmfDetails }
-            );
+                {},
+                cmdCmfDetails
+            };
+            commands.push_back(cmd);
+        }
 
-            commands.push_back(Command{
+        // cmf-preview
+        {
+            Command cmd
+            {
                 "cmf-preview",
                 "Preview CMF",
                 "cmf-preview -f \"CIE 1931 2-deg.csv\" -o cmf.exr -p w",
-                {
-                    {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Required},
+                {},
+                {},
+                cmdCmfPreview
+            };
 
-                    {{"--output", "-o"}, "Output filename", "", ArgumentType::Required},
-                    {{"--output-space", "-p"}, "Output color space (no view transform)", "", ArgumentType::Optional},
-                    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
-                    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
-                    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
-                    {{"--view-exp"}, "Exposure for view transform", "0", ArgumentType::Optional},
+            insertContents(cmd.arguments, {
+                {{"--cmf", "-f"}, "CMF table filename", "", ArgumentType::Required},
+                });
 
-                    {{"--user-space", "-x"}, "XYZ I-E color space in the user config (UserConfig)", "", ArgumentType::Optional},
-                    {{"--common-internal", "-w"}, "Common XYZ color space in the internal config (CommonSpace)", "", ArgumentType::Optional},
-                    {{"--common-user", "-u"}, "Common XYZ color space in the user config (CommonSpace)", "", ArgumentType::Optional}
-                },
-                cmdCmfPreview }
-            );
+            addOutputColorManagementArguments(cmd);
 
-            commands.push_back(Command{
+            addXyzConversionArguments(cmd);
+
+            commands.push_back(cmd);
+        }
+
+        // colorspaces
+        {
+            Command cmd
+            {
                 "colorspaces",
                 "Print the available color spaces",
                 "",
                 {
                     {{"--internal", "-i"}, "Use the internal config", "", ArgumentType::Optional}
                 },
+                {},
                 cmdColorSpaces,
-                true }
-            );
+                true
+            };
+            commands.push_back(cmd);
+        }
 
-            commands.push_back(Command{
+        // displays
+        {
+            Command cmd
+            {
                 "displays",
                 "Print the available displays",
                 "",
                 {},
-                cmdDisplays }
-            );
+                {},
+                cmdDisplays
+            };
+            commands.push_back(cmd);
+        }
 
-            commands.push_back(Command{
+        // views
+        {
+            Command cmd
+            {
                 "views",
                 "Print the available views for a given display",
                 "",
                 {
                     {{"--display", "-d"}, "Display name", "", ArgumentType::Required}
                 },
-                cmdViews }
-            );
+                {},
+                cmdViews
+            };
+            commands.push_back(cmd);
+        }
 
-            commands.push_back(Command{
+        // looks
+        {
+            Command cmd
+            {
                 "looks",
                 "Print the available looks",
                 "",
                 {},
-                cmdLooks }
-            );
+                {},
+                cmdLooks
+            };
+            commands.push_back(cmd);
         }
     }
 
@@ -480,6 +872,68 @@ namespace CLI
             printHelp();
     }
 
+    void cmdImageTransform(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose)
+    {
+        CliStackTimer totalTimer("", true);
+
+        // Arguments
+
+        std::string inpFilename = args["--input"];
+        std::string inpColorSpace = CMS::resolveColorSpace(args["--input-space"]);
+
+        std::string outFilename = args["--output"];
+        OutputColorManagement outputCM(args, outFilename);
+
+        // Read image transform arguments
+        ImageTransformParams inputTransformParams;
+        readImageTransformArguments(args, "", inputTransformParams);
+
+        // Image
+        CmImage img;
+
+        // Read the input image
+        {
+            CliStackTimer timer("Read the input image");
+            setInputColorSpace(inpColorSpace);
+            CmImageIO::readImage(img, inpFilename);
+            timer.done(verbose);
+        }
+
+        // Transform
+        {
+            CliStackTimer timer("Transform");
+
+            std::vector<float> outputBuffer;
+            uint32_t outputWidth, outputHeight;
+
+            ImageTransform::apply(
+                inputTransformParams,
+                img.getImageDataVector(),
+                img.getWidth(),
+                img.getHeight(),
+                outputBuffer,
+                outputWidth,
+                outputHeight,
+                false);
+
+            std::scoped_lock lock(img);
+            img.resize(outputWidth, outputHeight, false);
+            img.getImageDataVector() = std::move(outputBuffer);
+
+            timer.done(verbose);
+        }
+
+        // Write the output image
+        {
+            CliStackTimer timer("Write the output image");
+            outputCM.apply();
+            CmImageIO::writeImage(img, outFilename);
+            timer.done(verbose);
+        }
+
+        totalTimer.done(verbose);
+    }
+
     void cmdDiff(const Command& cmd, const CliParser& parser, StringMap& args, bool verbose)
     {
         CliStackTimer totalTimer("", true);
@@ -490,48 +944,27 @@ namespace CLI
         std::string inpColorSpace = CMS::resolveColorSpace(args["--input-space"]);
 
         std::string outFilename = args["--output"];
-        OutputColorManagement outCm(args, outFilename);
-
-        bool grayscale = args.contains("--grayscale");
-
-        if (verbose)
-        {
-            printParameters({
-                "Input Filename", inpFilename,
-                "Input Color Space", inpColorSpace,
-
-                "Output Filename", outFilename,
-                "Apply View Transform", strFromBool(outCm.applyViewTransform),
-                "Output Color Space", outCm.colorSpace,
-                "Output Display", outCm.display,
-                "Output View", outCm.view,
-                "Output Look", outCm.look,
-                "Output Exposure", strFromFloat(outCm.exposure),
-
-                "Grayscale", strFromBool(grayscale)
-                });
-        }
+        OutputColorManagement outputCM(args, outFilename);
 
         // Images
+        CmImage imgInput;
+        CmImage imgOutput;
 
-        CmImage imgInput("", "", 1, 1);
+        // Diffraction
+        RealBloom::Diffraction diff;
+        diff.setImgInput(&imgInput);
+        diff.setImgDiff(&imgOutput);
+
+        // Read image transform arguments
+        readImageTransformArguments(args, "input", diff.getParams()->inputTransformParams);
+
+        // Read the input image
         {
             CliStackTimer timer("Read the input image");
             setInputColorSpace(inpColorSpace);
-            CmImageIO::readImage(imgInput, inpFilename);
+            CmImageIO::readImage(*diff.getImgInputSrc(), inpFilename);
             timer.done(verbose);
         }
-
-        CmImage imgOutput("", "", 1, 1);
-
-        // Diffraction Pattern
-
-        RealBloom::DiffractionPattern diff;
-        diff.setImgAperture(&imgInput);
-        diff.setImgDiffPattern(&imgOutput);
-
-        RealBloom::DiffractionPatternParams* params = diff.getParams();
-        params->grayscale = grayscale;
 
         // Compute
         {
@@ -547,7 +980,7 @@ namespace CLI
         // Write the output image
         {
             CliStackTimer timer("Write the output image");
-            outCm.apply();
+            outputCM.apply();
             CmImageIO::writeImage(imgOutput, outFilename);
             timer.done(verbose);
         }
@@ -565,9 +998,10 @@ namespace CLI
         std::string inpColorSpace = CMS::resolveColorSpace(args["--input-space"]);
 
         std::string outFilename = args["--output"];
-        OutputColorManagement outCm(args, outFilename);
+        OutputColorManagement outputCM(args, outFilename);
 
         float amount = strToFloat(args["--amount"]);
+        float edgeOffset = strToFloat(args["--edge"]);
         uint32_t steps = strToInt(args["--steps"]);
 
         float exposure = 0;
@@ -588,30 +1022,6 @@ namespace CLI
 
         bool useGpu = args.contains("--gpu");
 
-        if (verbose)
-        {
-            printParameters({
-                "Input Filename", inpFilename,
-                "Input Color Space", inpColorSpace,
-
-                "Output Filename", outFilename,
-                "Apply View Transform", strFromBool(outCm.applyViewTransform),
-                "Output Color Space", outCm.colorSpace,
-                "Output Display", outCm.display,
-                "Output View", outCm.view,
-                "Output Look", outCm.look,
-                "Output Exposure", strFromFloat(outCm.exposure),
-
-                "Amount", strFromFloat(amount),
-                "Steps", strFormat("%u", steps),
-                "Exposure", strFromFloat(exposure),
-                "Contrast", strFromFloat(contrast),
-                "Color", strFromFloatArray(color),
-                "Threads", strFormat("%u", numThreads),
-                "GPU", strFromBool(useGpu)
-                });
-        }
-
         // CMF table
         if (args.contains("--cmf"))
         {
@@ -620,22 +1030,25 @@ namespace CLI
         }
 
         // XYZ conversions
-        handleXyzArgs(args);
+        readXyzConversionArguments(args);
 
         // Images
-        CmImage imgInputPrev("", "", 1, 1);
-        CmImage imgOutput("", "", 1, 1);
+        CmImage imgInput;
+        CmImage imgOutput;
 
         // Dispersion
         RealBloom::Dispersion disp;
-        disp.setImgInput(&imgInputPrev);
+        disp.setImgInput(&imgInput);
         disp.setImgDisp(&imgOutput);
+
+        // Read image transform arguments
+        readImageTransformArguments(args, "input", disp.getParams()->inputTransformParams);
 
         // Read the input image
         {
             CliStackTimer timer("Read the input image");
             setInputColorSpace(inpColorSpace);
-            CmImageIO::readImage(*(disp.getImgInputSrc()), inpFilename);
+            CmImageIO::readImage(*disp.getImgInputSrc(), inpFilename);
             timer.done(verbose);
         }
 
@@ -644,10 +1057,8 @@ namespace CLI
         params->methodInfo.method =
             useGpu ? RealBloom::DispersionMethod::GPU : RealBloom::DispersionMethod::CPU;
         params->methodInfo.numThreads = numThreads;
-        params->exposure = exposure;
-        params->contrast = contrast;
-        params->color = color;
         params->amount = amount;
+        params->edgeOffset = edgeOffset;
         params->steps = steps;
 
         // Compute
@@ -664,6 +1075,9 @@ namespace CLI
                     disp.cancel();
                     return;
                 }
+
+                Async::processJobs("CLI");
+
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP));
             }
 
@@ -677,7 +1091,7 @@ namespace CLI
         // Write the output image
         {
             CliStackTimer timer("Write the output image");
-            outCm.apply();
+            outputCM.apply();
             CmImageIO::writeImage(imgOutput, outFilename);
             timer.done(verbose);
         }
@@ -698,7 +1112,7 @@ namespace CLI
         std::string knlColorSpace = CMS::resolveColorSpace(args["--kernel-space"]);
 
         std::string outFilename = args["--output"];
-        OutputColorManagement outCm(args, outFilename);
+        OutputColorManagement outputCM(args, outFilename);
 
         float kernelExposure = 0;
         if (args.contains("--kernel-exposure"))
@@ -728,6 +1142,10 @@ namespace CLI
         if (args.contains("--kernel-center"))
             kernelCenter = strToXY(args["--kernel-center"]);
 
+        bool useKernelTransformOrigin = args.contains("--use-origin");
+
+        bool deconvolve = args.contains("--deconvolve");
+
         float threshold = 0;
         if (args.contains("--threshold"))
             threshold = strToFloat(args["--threshold"]);
@@ -738,67 +1156,31 @@ namespace CLI
 
         bool autoExposure = args.contains("--autoexp");
 
-        bool additive = false;
-        float mix = 1.0f;
-        float inputMix = 1.0f;
-        float convMix = 0.2f;
+        bool blendAdditive = false;
+        float blendInput = 1.0f;
+        float blendConv = 0.2f;
+        float blendMix = 1.0f;
+        float blendExposure = 0.0f;
 
-        if (args.contains("--mix"))
+        if (args.contains("--blend-mix"))
         {
-            mix = strToFloat(args["--mix"]);
+            blendMix = strToFloat(args["--blend-mix"]);
         }
-        else if (args.contains("--input-mix") && args.contains("--conv-mix"))
+        else if (args.contains("--blend-input") && args.contains("--blend-conv"))
         {
-            additive = true;
-            inputMix = strToFloat(args["--input-mix"]);
-            convMix = strToFloat(args["--conv-mix"]);
+            blendAdditive = true;
+            blendInput = strToFloat(args["--blend-input"]);
+            blendConv = strToFloat(args["--blend-conv"]);
         }
-
-        float convExposure = 0;
-        if (args.contains("--conv-exposure"))
-            convExposure = strToFloat(args["--conv-exposure"]);
-
-        if (verbose)
-        {
-            printParameters({
-                "Input Filename", inpFilename,
-                "Input Color Space", inpColorSpace,
-
-                "Kernel Filename", knlFilename,
-                "Kernel Color Space", knlColorSpace,
-
-                "Output Filename", outFilename,
-                "Apply View Transform", strFromBool(outCm.applyViewTransform),
-                "Output Color Space", outCm.colorSpace,
-                "Output Display", outCm.display,
-                "Output View", outCm.view,
-                "Output Look", outCm.look,
-                "Output Exposure", strFromFloat(outCm.exposure),
-
-                "Kernel Exposure", strFromFloat(kernelExposure),
-                "Kernel Contrast", strFromFloat(kernelContrast),
-                "Kernel Color", strFromFloatArray(kernelColor),
-                "Kernel Rotation", strFromFloat(kernelRotation),
-                "Kernel Scale", strFromFloatArray(kernelScale),
-                "Kernel Crop", strFromFloatArray(kernelCrop),
-                "Kernel Center", strFromFloatArray(kernelCenter),
-                "Threshold", strFromFloat(threshold),
-                "Knee", strFromFloat(knee),
-                "Auto-Exposure", strFromBool(autoExposure),
-                "Additive Blending", strFromBool(additive),
-                "Input Mix (Additive)", strFromFloat(inputMix),
-                "Conv Mix (Additive)", strFromFloat(convMix),
-                "Mix", strFromFloat(mix),
-                "Conv. Exposure", strFromFloat(convExposure)
-                });
-        }
+        if (args.contains("--blend-exposure"))
+            blendExposure = strToFloat(args["--blend-exposure"]);
 
         // Images
 
-        CmImage imgInput("", "", 1, 1);
-        CmImage imgKernel("", "", 1, 1);
-        CmImage imgConvPreview("", "", 1, 1);
-        CmImage imgConvMix("", "", 1, 1);
+        CmImage imgInput;
+        CmImage imgKernel;
+        CmImage imgConvPreview;
+        CmImage imgConvResult;
 
         // Convolution
 
@@ -806,13 +1188,17 @@ namespace CLI
         conv.setImgInput(&imgInput);
         conv.setImgKernel(&imgKernel);
         conv.setImgConvPreview(&imgConvPreview);
-        conv.setImgConvMix(&imgConvMix);
+        conv.setImgConvResult(&imgConvResult);
+
+        // Read image transform arguments
+        readImageTransformArguments(args, "input", conv.getParams()->inputTransformParams);
+        readImageTransformArguments(args, "kernel", conv.getParams()->kernelTransformParams);
 
         // Read the input image
         {
             CliStackTimer timer("Read the input image");
             setInputColorSpace(inpColorSpace);
-            CmImageIO::readImage(imgInput, inpFilename);
+            CmImageIO::readImage(*conv.getImgInputSrc(), inpFilename);
             timer.done(verbose);
         }
 
@@ -820,7 +1206,7 @@ namespace CLI
         {
             CliStackTimer timer("Read the kernel image");
             setInputColorSpace(knlColorSpace);
-            CmImageIO::readImage(*(conv.getImgKernelSrc()), knlFilename);
+            CmImageIO::readImage(*conv.getImgKernelSrc(), knlFilename);
             timer.done(verbose);
         }
 
@@ -828,20 +1214,16 @@ namespace CLI
 
         RealBloom::ConvolutionParams* params = conv.getParams();
         params->methodInfo.method = RealBloom::ConvolutionMethod::FFT_CPU;
-        params->kernelExposure = kernelExposure;
-        params->kernelContrast = kernelContrast;
-        params->kernelColor = kernelColor;
-        params->kernelRotation = kernelRotation;
-        params->kernelScaleX = kernelScale[0];
-        params->kernelScaleY = kernelScale[1];
-        params->kernelCropX = kernelCrop[0];
-        params->kernelCropY = kernelCrop[1];
-        params->kernelPreviewCenter = false;
-        params->kernelCenterX = kernelCenter[0];
-        params->kernelCenterY = kernelCenter[1];
+        params->methodInfo.FFT_CPU_deconvolve = deconvolve;
+        params->useKernelTransformOrigin = useKernelTransformOrigin;
         params->threshold = threshold;
         params->knee = knee;
         params->autoExposure = autoExposure;
+        params->blendAdditive = blendAdditive;
+        params->blendInput = blendInput;
+        params->blendConv = blendConv;
+        params->blendMix = blendMix;
+        params->blendExposure = blendExposure;
 
         // Compute
         {
@@ -857,6 +1239,9 @@ namespace CLI
                     conv.cancel();
                     return;
                 }
+
+                Async::processJobs("CLI");
+
                 std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIMESTEP));
             }
 
@@ -870,15 +1255,15 @@ namespace CLI
         // Blending
         {
             CliStackTimer timer("Blending");
-            conv.mix(additive, inputMix, convMix, mix, convExposure);
+            conv.blend();
             timer.done(verbose);
         }
 
         // Write the output image
         {
             CliStackTimer timer("Write the output image");
-            outCm.apply();
-            CmImageIO::writeImage(imgConvMix, outFilename);
+            outputCM.apply();
+            CmImageIO::writeImage(imgConvResult, outFilename);
             timer.done(verbose);
         }
 
@@ -913,13 +1298,13 @@ namespace CLI
 
         // Output info
         std::string outFilename = args["--output"];
-        OutputColorManagement outCm(args, outFilename);
+        OutputColorManagement outputCM(args, outFilename);
 
         // XYZ conversions
-        handleXyzArgs(args);
+        readXyzConversionArguments(args);
 
         // Image
-        CmImage img("", "", 1, 1);
+        CmImage img;
 
         // Compute
         RealBloom::Dispersion disp;
@@ -927,7 +1312,7 @@ namespace CLI
         disp.previewCmf(&table);
 
         // Write output image
-        outCm.apply();
+        outputCM.apply();
         CmImageIO::writeImage(img, outFilename);
     }
 
@@ -992,25 +1377,6 @@ namespace CLI
         }
     }
 
-    void handleXyzArgs(StringMap& args)
-    {
-        if (args.contains("--user-space"))
-        {
-            XyzConversionInfo info;
-            info.method = XyzConversionMethod::UserConfig;
-            info.userSpace = args["--user-space"];
-            CmXYZ::setConversionInfo(info);
-        }
-        else if (args.contains("--common-internal") && args.contains("--common-user"))
-        {
-            XyzConversionInfo info;
-            info.method = XyzConversionMethod::CommonSpace;
-            info.commonInternal = args["--common-internal"];
-            info.commonUser = args["--common-user"];
-            CmXYZ::setConversionInfo(info);
-        }
-    }
-
     OutputColorManagement::OutputColorManagement(StringMap& args, const std::string& filename)
     {
         std::string extension = getFileExtension(filename);
@@ -1030,8 +1396,8 @@ namespace CLI
         if (args.contains("--look"))
             look = args["--look"];
 
-        if (args.contains("--view-exp"))
-            exposure = strToFloat(args["--view-exp"]);
+        if (args.contains("--view-exposure"))
+            exposure = strToFloat(args["--view-exposure"]);
 
         /*
         *    Arguments:
@@ -1041,7 +1407,7 @@ namespace CLI
         *    {{"--display", "-h"}, "Display name for view transform", "", ArgumentType::Optional},
         *    {{"--view", "-j"}, "View name for view transform", "", ArgumentType::Optional},
         *    {{"--look", "-l"}, "Look name for view transform", "", ArgumentType::Optional},
-        *    {{"--view-exp"}, "Exposure for view transform", "", ArgumentType::Optional},
+        *    {{"--view-exposure"}, "Exposure for view transform", "", ArgumentType::Optional},
         */
 
         /*
@@ -1068,7 +1434,7 @@ namespace CLI
             else if (args.contains("--display")
                 || args.contains("--view")
                 || args.contains("--look")
-                || args.contains("--view-exp"))
+                || args.contains("--view-exposure"))
             {
                 applyViewTransform = true;
             }
