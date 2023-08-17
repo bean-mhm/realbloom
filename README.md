@@ -55,7 +55,7 @@ RealBloom is a bloom simulation / post processing tool for achieving more realis
 
 ![RealBloom Screenshot](images/2-main-conv.png)
 
-RealBloom was started as a hobby project in late August 2022, inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it in a physically accurate manner. **I highly recommend watching this video** to get a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets!
+RealBloom was started as a hobby project in late August 2022, inspired by [AngeTheGreat's video](https://www.youtube.com/watch?v=QWqb5Gewbx8) on bloom and how to simulate it in a physically accurate manner. I highly recommend watching this video to get a basic understanding of how RealBloom works. Make sure to check out their [GitHub page](https://github.com/ange-yaghi) and their other projcets!
 
 The ultimate goal of bloom is to achieve more realism in 3D renders that contain bright spots on dark backgrounds. For example, the sun in a blue sky, a car headlight at night, bright lights at a concert, a flashlight pointing directly at the camera, you name it.
 
@@ -107,7 +107,7 @@ RealBloom requires [Microsoft Visual C++ Runtime](https://learn.microsoft.com/en
 <!-- USAGE -->
 # How To Use
 
-If you're using RealBloom for the first time, check out [this article](USAGE.md) for a step-by-step tutorial on getting started with RealBloom, along with more details and information about the project. This will cover most of what you need to know.
+If you're using RealBloom for the first time, check out [this step-by-step tutorial](USAGE.md) on getting started with RealBloom, along with more details and information about the project. This will cover most of what you need to know.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -122,7 +122,7 @@ The project was made for Windows and built with MSVC. To build a local copy of R
 
 RealBloom uses [vcpkg](https://vcpkg.io/en/index.html) to link some of the libraries, specifically, [OpenColorIO](https://opencolorio.org/) and [OpenImageIO](https://github.com/OpenImageIO/oiio). Here are the basic steps to install vcpkg and the mentioned libraries.
 
-1. Follow [vcpkg installation instructions](https://github.com/Microsoft/vcpkg#quick-start-windows) to install vcpkg and **enable Visual Studio integration**.
+1. Follow the [vcpkg installation instructions](https://github.com/Microsoft/vcpkg#quick-start-windows) to install vcpkg and **enable Visual Studio integration**.
 
 2. Run the following command from vcpkg's root directory:
    ```sh
