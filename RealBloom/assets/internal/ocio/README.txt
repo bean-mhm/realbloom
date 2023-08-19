@@ -1,5 +1,4 @@
-This directory contains a copy of grace, the default OpenColorIO config for RealBloom.
-You are free to swap the contents of this directory with your own custom OCIO config.
+This directory contains a copy of grace, the default internal OpenColorIO config for RealBloom. Please do not modify the contents unless you know what you're doing.  
 
 Links:
   RealBloom - https://github.com/bean-mhm/realbloom
