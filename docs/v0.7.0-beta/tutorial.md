@@ -52,13 +52,15 @@ Let's now see what the diffraction pattern of our aperture looks like, but first
 
 ## Image Transforms
 
-You'll notice a collapsed group of controls named *Input Transform* in the *INPUT* section under the *Diffraction* panel. RealBloom applies what's called an *Image Transform* on any input image used by any module. An *Image Transform* lets us apply basic corrections and modifications to our input images before feeding them to modules. You'll see *Image Transform* controls in the other module panels as well. Here's what you can generally achieve with an *Image Transform*.
+You'll notice a collapsed group of controls named *Input Transform* in the *INPUT* section under the *Diffraction* panel. RealBloom applies what's called an *Image Transform* on any input image used by any module. An *Image Transform* lets us apply basic corrections and modifications to our input images before feeding them to modules. You'll see *Image Transform* controls in the other module panels as well. There are 3 categories of transformations in an *Image Transform*.
 
-| Section | Description |
+| Category | Description |
 |--|--|
 | CROP & RESIZE | Controls for cropping and/or resizing the image |
 | TRANSFORM | Simple linear transformations including scaling, rotation, and translation |
 | COLOR | Basic color transformations |
+
+![Image Transform controls](../../images/tutorial/image-transform.png)
 
 We'll leave the *Input Transform* settings unchanged in this case.
 
