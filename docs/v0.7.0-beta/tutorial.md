@@ -50,6 +50,8 @@ Let's start by loading an image that represents the geometric shape of our apert
 
 Let's now see what the diffraction pattern of our aperture looks like, but first, let's look at the input options and controls in the *Diffraction* panel.
 
+## Image Transforms
+
 You'll notice a collapsed group of controls named *Input Transform* in the *INPUT* section under the *Diffraction* panel. RealBloom applies what's called an *Image Transform* on any input image used by any module. An *Image Transform* lets us apply basic corrections and modifications to our input images before feeding them to modules. You'll see *Image Transform* controls in the other module panels as well. Here's what you can generally achieve with an *Image Transform*.
 
 | Section | Description |
@@ -60,9 +62,11 @@ You'll notice a collapsed group of controls named *Input Transform* in the *INPU
 
 We'll leave the *Input Transform* settings unchanged in this case.
 
+## The *DIFFRACTION* Section
+
 The *Logarithmic Normalization* option in the *DIFFRACTION* section can be used to generate images with visually less dynamic range or contrast. For more realistic results, we'll leave this off.
 
-Continue by clicking the *Compute* button in the *DIFFRACTION* section. This will generate the diffraction pattern of our aperture shape using a [2D FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform). Keep in mind we're referring to the far-field [Fraunhofer diffraction pattern](https://en.wikipedia.org/wiki/Fraunhofer_diffraction) here.
+Continue by clicking the *Compute* button. This will generate the diffraction pattern of our aperture shape using a [2D FFT algorithm](https://en.wikipedia.org/wiki/Fast_Fourier_transform). Keep in mind we're referring to the far-field [Fraunhofer diffraction pattern](https://en.wikipedia.org/wiki/Fraunhofer_diffraction) here.
 
 ![Diffraction pattern of an octagon](../../images/tutorial/2-diff.png)
 
@@ -86,7 +90,7 @@ Back to the *Dispersion* panel. We'll leave the *Input Transform* settings uncha
 | Parameter | Description | Range |
 |--|--|--|
 | Amount | Amount of dispersion. This defines the logarithmic difference between the largest and the smallest scale. | [0, +inf) |
-| Edge Offset | Offset for the scale range. A value of -1 will fit all sample in the image, such that the largest scale will be 1. A value of +1 will define the minimum scale as 1, and all other samples will be larger than the image can fit. | [-1, +1] |
+| Edge Offset | Offset for the scale range. A value of -1 will scale the samples inward, while a value of +1 will scale them outward. | [-1, +1] |
 | Steps | Number of wavelengths to sample from the visible light spectrum, and the number of copies made. A value of 32 is only enough for previewing. | [1, 2048] |
 | Method | Dispersion method | - |
 | Threads | Number of threads to use in the CPU method | Hardware-dependant |
@@ -159,7 +163,9 @@ Also in the *COLOR* section, I'll set the *Exposure* to 6.0, and *Contrast* to 0
 
 > Ctrl+Click on a slider to type a custom value.
 
-In the *KERNEL* section, the *Use Transform Origin* option defines whether the origin point from the *TRANSFORM* section in the *Kernel Transform* options will be used as the origin for convolution, that is, whether the kernel will be centered around this point. If you want the kernel to be perfectly centered in convolution, adjust the scale such that the resolution only has odd numbers. To get intuition for why this is the case, suppose we have a 3x3 grid of pixels, and another 4x4 grid of pixels. Clearly, the 3x3 grid has a pixel that is perfectly centered, while the 4x4 grid does not.
+In the *KERNEL* section, the *Use Transform Origin* option defines whether the origin point from the *TRANSFORM* section in the *Kernel Transform* options will be used as the origin for convolution, that is, whether the kernel will be centered around this point. If you want the kernel to be perfectly centered in convolution, adjust the scale such that the resolution only has odd numbers. To get an intuition for why this is the case, suppose we have a 3x3 grid of pixels, and another 4x4 grid of pixels. Clearly, the 3x3 grid has a pixel that is perfectly centered, while the 4x4 grid does not.
+
+> The *Diffraction* module always produces outputs with odd resolutions.
 
 At this point, our input images for convolution are ready.
 
@@ -230,6 +236,8 @@ You can enable additive blending using the *Additive* checkbox, although it is u
 > You'll notice a *Compare* button in the *Image Slots* panel. We can use this to compare *Conv. Input* with *Conv. Result*. This button works with the other modules as well.
 
 Finally, having selected the *Conv. Result* slot, click the *Save* button in the *Image Viewer* panel to export the result into an image file.
+
+> The *Clear* button in the *Image Viewer* panel can be used to clear and reset the contents of the selected slot.
 
 # Congratulations
 
