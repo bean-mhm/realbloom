@@ -37,7 +37,6 @@
     <li><a href="#how-to-run">How To Run</a></li>
     <li><a href="#how-to-use">How To Use</a></li>
     <li><a href="#how-to-build">How To Build</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -148,38 +147,20 @@ Now, to build RealBloom,
 
 
 
-<!-- ROADMAP -->
-# Roadmap
-
-- [x] Color Management System
-- [x] OpenEXR support
-- [x] Command Line Interface
-- [x] GPU Dispersion
-- [ ] [WIP] GPU FFT Convolution
-- [ ] GPU Image Transforms
-- [ ] ~~Node-based workflow~~
-- [ ] ~~Support for animated apertures, kernels and input images~~ 
-- [ ] ~~GPU Diffraction Pattern~~
-
-See [open issues](https://github.com/bean-mhm/realbloom/issues) for a full list of proposed features (and known issues).
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
 <!-- CONTRIBUTING -->
 # Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". Don't forget to give the project a star! Thanks again!
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+See [open issues](https://github.com/bean-mhm/realbloom/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
