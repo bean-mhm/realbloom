@@ -60,12 +60,43 @@ static constexpr float EXPOSURE_RANGE = 10.0f;
 // Dialog Params
 DialogParams_MoveTo dialogParams_MoveTo;
 
+class NumPunctFacet : public std::numpunct<char>
+{
+protected:
+    char do_decimal_point() const override
+    {
+        return '.';
+    }
+
+    char do_thousands_sep() const override
+    {
+        return ',';
+    }
+
+    std::string do_grouping() const override
+    {
+        return "\3";
+    }
+
+    std::string do_truename() const override
+    {
+        return "true";
+    }
+
+    std::string do_falsename() const override
+    {
+        return "false";
+    }
+
+};
 
 int main(int argc, char** argv)
 {
     // Set Locale
-    if (!std::setlocale(LC_ALL, Config::APP_LOCALE))
-        std::cout << "Couldn't set locale to \"" << Config::APP_LOCALE << "\".\n";
+    std::locale::global(std::locale(
+        std::locale(Config::APP_LOCALE),
+        new NumPunctFacet
+    ));
 
     // Load config
     Config::load();
