@@ -75,7 +75,7 @@ protected:
 
     std::string do_grouping() const override
     {
-        return "\3";
+        return "\0";
     }
 
     std::string do_truename() const override
