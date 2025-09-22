@@ -5,7 +5,7 @@ environment:
 search_path: LUTs
 strictparsing: true
 luma: [0.2126, 0.7152, 0.0722]
-description: grace v1.1 - https://github.com/bean-mhm/grace
+description: grace v1.2 - https://github.com/bean-mhm/grace
 
 roles:
   color_picking: Linear BT.2020 I-E
@@ -29,12 +29,14 @@ displays:
   sRGB:
     - !<View> {name: Display's Native, colorspace: sRGB 2.2}
     - !<View> {name: flim (default), colorspace: flim (default)}
+    - !<View> {name: flim (nostalgia), colorspace: flim (nostalgia)}
     - !<View> {name: flim (silver), colorspace: flim (silver)}
     - !<View> {name: AgX, colorspace: AgX Base}
     - !<View> {name: None, colorspace: Generic Data}
   BT.1886:
     - !<View> {name: Display's Native, colorspace: BT.1886 2.4}
     - !<View> {name: flim (default), colorspace: flim (default) - BT.1886 2.4}
+    - !<View> {name: flim (nostalgia), colorspace: flim (nostalgia) - BT.1886 2.4}
     - !<View> {name: flim (silver), colorspace: flim (silver) - BT.1886 2.4}
     - !<View> {name: AgX, colorspace: AgX Base BT.1886}
     - !<View> {name: None, colorspace: Generic Data}
@@ -287,50 +289,78 @@ colorspaces:
     family: Image Formation
     equalitygroup: ""
     bitdepth: unknown
-    description: flim v1.1.0 - https://github.com/bean-mhm/flim
+    description: flim v1.2.0 - https://github.com/bean-mhm/flim
     isdata: false
     allocation: uniform
     from_scene_reference: !<GroupTransform>
       children:
         - !<ColorSpaceTransform> {src: reference, dst: Linear BT.709 I-D65}
         - !<RangeTransform> {min_in_value: 0., min_out_value: 0.}
-        - !<AllocationTransform> {allocation: lg2, vars: [-10, 10, 0.0009765625]}
+        - !<AllocationTransform> {allocation: lg2, vars: [-10.0, 10.0, 0.0009765625]}
         - !<FileTransform> {src: flim_default.spi3d, interpolation: linear}
-  
+
   - !<ColorSpace>
     name: flim (default) - BT.1886 2.4
     family: Image Formation
     equalitygroup: ""
     bitdepth: unknown
-    description: flim v1.1.0 - https://github.com/bean-mhm/flim
+    description: flim v1.2.0 - https://github.com/bean-mhm/flim
     isdata: false
     allocation: uniform
     from_scene_reference: !<GroupTransform>
       children:
         - !<ColorSpaceTransform> {src: reference, dst: flim (default)}
         - !<ColorSpaceTransform> {src: sRGB 2.2, dst: BT.1886 2.4}
-  
+
   - !<ColorSpace>
-    name: flim (silver)
+    name: flim (nostalgia)
     family: Image Formation
     equalitygroup: ""
     bitdepth: unknown
-    description: flim v1.1.0 - https://github.com/bean-mhm/flim
+    description: flim v1.2.0 - https://github.com/bean-mhm/flim
     isdata: false
     allocation: uniform
     from_scene_reference: !<GroupTransform>
       children:
         - !<ColorSpaceTransform> {src: reference, dst: Linear BT.709 I-D65}
         - !<RangeTransform> {min_in_value: 0., min_out_value: 0.}
-        - !<AllocationTransform> {allocation: lg2, vars: [-10, 10, 0.0009765625]}
+        - !<AllocationTransform> {allocation: lg2, vars: [-10.0, 10.0, 0.0009765625]}
+        - !<FileTransform> {src: flim_nostalgia.spi3d, interpolation: linear}
+
+  - !<ColorSpace>
+    name: flim (nostalgia) - BT.1886 2.4
+    family: Image Formation
+    equalitygroup: ""
+    bitdepth: unknown
+    description: flim v1.2.0 - https://github.com/bean-mhm/flim
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: reference, dst: flim (nostalgia)}
+        - !<ColorSpaceTransform> {src: sRGB 2.2, dst: BT.1886 2.4}
+
+  - !<ColorSpace>
+    name: flim (silver)
+    family: Image Formation
+    equalitygroup: ""
+    bitdepth: unknown
+    description: flim v1.2.0 - https://github.com/bean-mhm/flim
+    isdata: false
+    allocation: uniform
+    from_scene_reference: !<GroupTransform>
+      children:
+        - !<ColorSpaceTransform> {src: reference, dst: Linear BT.709 I-D65}
+        - !<RangeTransform> {min_in_value: 0., min_out_value: 0.}
+        - !<AllocationTransform> {allocation: lg2, vars: [-10.0, 10.0, 0.0009765625]}
         - !<FileTransform> {src: flim_silver.spi3d, interpolation: linear}
-  
+
   - !<ColorSpace>
     name: flim (silver) - BT.1886 2.4
     family: Image Formation
     equalitygroup: ""
     bitdepth: unknown
-    description: flim v1.1.0 - https://github.com/bean-mhm/flim
+    description: flim v1.2.0 - https://github.com/bean-mhm/flim
     isdata: false
     allocation: uniform
     from_scene_reference: !<GroupTransform>
