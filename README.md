@@ -183,7 +183,7 @@ Distributed under the [AGPL-3.0 license](https://github.com/bean-mhm/realbloom/b
 
 ☀️ **RealBloom Community Server:** [Discord](https://discord.gg/Xez5yec8Hh)
 
-🧑‍💻 **Harry Bean (Developer):** [Email](mailto:harry.bean.dev@gmail.com)
+🧑‍💻 **bean (Developer):** [Email](mailto:harry.bean.dev@gmail.com)
 
 🔗 **Project Link:** [GitHub](https://github.com/bean-mhm/realbloom)
 
